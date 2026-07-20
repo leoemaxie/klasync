@@ -1,0 +1,80 @@
+.panel,
+.session-panel {
+  background: var(--color-walnut-shadow);
+  padding: 45px clamp(24px, 5vw, 68px);
+  border-right: 1px dashed var(--color-cork-border);
+}
+
+.session-panel {
+  background: var(--color-bark-brown);
+  border-right: 0;
+}
+
+label {
+  display: block;
+  color: var(--color-warm-cream);
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0 0 18px;
+}
+
+label span,
+.hint,
+small {
+  color: var(--color-driftwood);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+input,
+textarea {
+  width: 100%;
+  margin-top: 8px;
+  border: 0;
+  border-bottom: 1px solid var(--color-warm-cream);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-warm-cream);
+  padding: 8px 2px;
+}
+
+input[type="file"] {
+  border: 1px dashed var(--color-cork-border);
+  padding: 10px;
+}
+
+textarea {
+  border: 1px dashed var(--color-cork-border);
+  padding: 12px;
+  resize: vertical;
+}
+
+.twocol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.success,
+.error {
+  color: var(--color-ember-accent);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.code {
+  font-size: clamp(51px, 7vw, 86px);
+  line-height: 0.9;
+}
+
+.qr {
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  background: var(--color-warm-cream);
+  color: var(--color-walnut-shadow);
+  font-weight: 900;
+  margin: 22px 0;
+}

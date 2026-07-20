@@ -1,0 +1,108 @@
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(16, 9, 4, 0.96);
+  border-bottom: 1px dashed var(--color-cork-border);
+  padding: 18px clamp(18px, 2.4vw, 31px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand,
+.brand span {
+  color: var(--color-warm-cream);
+  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  font-weight: 500;
+  border: 0;
+  background: transparent;
+}
+
+.nav-actions,
+.actions,
+.invite {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.hero,
+.page-head,
+.join-wrap,
+.live-top {
+  max-width: none;
+  padding: clamp(108px, 18vh, 204px) clamp(24px, 5vw, 68px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero {
+  background: radial-gradient(ellipse at 75% 44%, #382416 0%, #100904 46%);
+}
+
+.feature-grid,
+.workspace,
+.live-grid {
+  display: grid;
+  background: transparent;
+  border: 0;
+  gap: 0;
+}
+
+.feature-grid {
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px dashed var(--color-cork-border);
+  border-bottom: 1px dashed var(--color-cork-border);
+}
+
+.feature-grid article {
+  background: var(--color-walnut-shadow);
+  border-right: 1px dashed var(--color-cork-border);
+  min-height: 52vh;
+  padding: 45px 24px;
+}
+
+.feature-grid article:last-child {
+  border-right: 0;
+}
+
+.workspace {
+  max-width: none;
+  margin: 0;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px dashed var(--color-cork-border);
+}
+
+.live-grid {
+  max-width: none;
+  grid-template-columns: 1.5fr 0.75fr;
+}
+
+@media (max-width: 700px) {
+  .feature-grid,
+  .workspace,
+  .live-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-grid article {
+    border-right: 0;
+    border-bottom: 1px dashed var(--color-cork-border);
+  }
+  .feature-grid article:last-child {
+    border-bottom: 0;
+  }
+  .hero,
+  .page-head,
+  .join-wrap,
+  .live-top {
+    padding: 108px 24px 68px;
+  }
+  .nav-actions {
+    gap: 8px;
+  }
+}

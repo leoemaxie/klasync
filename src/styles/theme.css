@@ -1,0 +1,40 @@
+:global(:root) {
+  --color-warm-cream: #ffedd7;
+  --color-walnut-shadow: #100904;
+  --color-bark-brown: #382416;
+  --color-cork-border: #40372e;
+  --color-driftwood: #6c5f51;
+  --color-ember-accent: #dc5000;
+  --font-display: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+:global(*) {
+  box-sizing: border-box;
+}
+
+:global(body) {
+  margin: 0;
+  background: var(--color-walnut-shadow);
+  color: var(--color-warm-cream);
+  font-family: var(--font-display);
+}
+
+:global(button),
+:global(input),
+:global(textarea) {
+  font: inherit;
+}
+
+:global(button) {
+  cursor: pointer;
+}
+
+:global(button:disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+main {
+  background: var(--color-walnut-shadow);
+  min-height: 100vh;
+}
