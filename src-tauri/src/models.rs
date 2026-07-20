@@ -10,7 +10,7 @@ pub struct Lecturer {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct Course {
     pub id: Uuid,
     pub lecturer_id: Uuid,
@@ -25,14 +25,15 @@ pub struct RosterStudent {
     pub email: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::Type)]
+#[sqlx(type_name = "session_status", rename_all = "lowercase")]
 #[serde(rename_all = "snake_case")]
 pub enum SessionStatus {
     Live,
     Ended,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct LectureSession {
     pub id: Uuid,
     pub course_id: Uuid,
@@ -43,14 +44,15 @@ pub struct LectureSession {
     pub started_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::Type)]
+#[sqlx(type_name = "verification_status", rename_all = "lowercase")]
 #[serde(rename_all = "snake_case")]
 pub enum VerificationStatus {
     Verified,
     Provisional,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct SessionParticipant {
     pub id: Uuid,
     pub session_id: Uuid,
@@ -62,7 +64,7 @@ pub struct SessionParticipant {
     pub heartbeat_count: u32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct CaptionChunk {
     pub id: Uuid,
     pub session_id: Uuid,

@@ -24,7 +24,10 @@ pub struct AuthenticatedLecturer {
 impl FromRequestParts<AppState> for AuthenticatedAccount {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         if !state.config.production_auth_ready() {
             return Err(ApiError::service_unavailable("auth_not_configured"));
         }
@@ -48,7 +51,10 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
 impl FromRequestParts<AppState> for AuthenticatedLecturer {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         let account = AuthenticatedAccount::from_request_parts(parts, state).await?;
         if !matches!(account.role, AccountRole::Lecturer) {
             return Err(ApiError::forbidden("lecturer_role_required"));
