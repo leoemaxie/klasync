@@ -13,8 +13,8 @@ use tower_http::{
     trace::TraceLayer,
 };
 
-use crate::state::AppState;
-use handlers::*;
+use crate::{config::AppConfig, state::AppState};
+use handlers::{auth, captions, courses, health, lecturers, participants, sessions};
 
 pub fn router(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -23,31 +23,53 @@ pub fn router(state: AppState) -> Router {
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
-        .route("/health", get(health))
-        .route("/api/v1/lecturers/register", post(register_lecturer))
-        .route("/api/v1/courses", get(list_courses).post(create_course))
-        .route("/api/v1/courses/{course_id}/roster", post(upload_roster))
-        .route("/api/v1/sessions", post(create_session))
+        .route("/health", get(health::health))
+        .route(
+            "/api/v1/auth/lecturers/register",
+            post(auth::register_lecturer),
+        )
+        .route("/api/v1/auth/lecturers/login", post(auth::login_lecturer))
+        .route(
+            "/api/v1/auth/students/register",
+            post(auth::register_student),
+        )
+        .route("/api/v1/auth/students/login", post(auth::login_student))
+        .route("/api/v1/auth/refresh", post(auth::refresh))
+        .route("/api/v1/auth/logout", post(auth::logout))
+        .route("/api/v1/lecturers/register", post(lecturers::register))
+        .route("/api/v1/courses", get(courses::list).post(courses::create))
+        .route(
+            "/api/v1/courses/{course_id}/roster",
+            post(courses::upload_roster),
+        )
+        .route("/api/v1/sessions", post(sessions::create))
         .route(
             "/api/v1/sessions/code/{short_code}",
-            get(get_session_by_code),
+            get(sessions::get_by_code),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/join",
-            post(join_session),
+            post(participants::join),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/participants",
-            get(list_session_participants),
+            get(participants::list_for_session),
         )
-        .route("/api/v1/sessions/code/{short_code}/end", post(end_session))
+        .route(
+            "/api/v1/sessions/code/{short_code}/attendance",
+            get(participants::attendance_summary),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/end",
+            post(sessions::end),
+        )
         .route(
             "/api/v1/sessions/code/{short_code}/captions",
-            get(list_captions).post(publish_caption),
+            get(captions::list).post(captions::publish),
         )
         .route(
             "/api/v1/participants/{participant_id}/heartbeat",
-            post(heartbeat),
+            post(participants::heartbeat),
         )
         .layer(cors)
         .layer(TraceLayer::new_for_http())
@@ -55,7 +77,10 @@ pub fn router(state: AppState) -> Router {
 }
 
 pub async fn start_server() {
-    let state = AppState::default();
+    let config = AppConfig::from_env();
+    let state = AppState::from_config(config)
+        .await
+        .expect("connect configured PostgreSQL database");
     let app = router(state);
 
     let address = SocketAddr::from(([127, 0, 0, 1], 8787));

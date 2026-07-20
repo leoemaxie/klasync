@@ -118,3 +118,12 @@ pub struct SessionDetail {
     pub course: Course,
     pub participant_count: usize,
 }
+
+#[derive(Serialize)]
+pub struct AttendanceSummary {
+    pub session_id: Uuid,
+    pub participant_count: usize,
+    pub verified_count: usize,
+    pub provisional_count: usize,
+    pub total_heartbeats: u32,
+}
