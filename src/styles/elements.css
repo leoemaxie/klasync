@@ -1,84 +1,178 @@
+/* ── Headings ────────────────────────────────────────────── */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--color-warm-cream);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--text-display);
+  line-height: var(--leading-display);
+}
+
+h1 em {
+  color: var(--color-ember-accent);
+  font-style: italic;
+}
+
+h2 {
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+}
+
+h3 {
+  font-size: var(--text-heading-sm);
+  line-height: var(--leading-heading-sm);
+}
+
+/* ── Labels / Eyebrows ───────────────────────────────────── */
+.eyebrow,
+.label {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-driftwood);
+}
+
+.eyebrow-accent {
+  color: var(--color-ember-accent);
+}
+
+/* ── Body copy ───────────────────────────────────────────── */
+.lede,
+.page-head > p,
+.join-wrap > p {
+  font-family: var(--font-body);
+  color: var(--color-warm-cream-dim);
+  font-size: clamp(16px, 1.4vw, 20px);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.65;
+  max-width: 640px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
 .text,
 .outline,
 .primary,
 .danger {
-  color: var(--color-warm-cream);
-  border-color: var(--color-warm-cream);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: normal;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  border: 0;
   background: transparent;
+  color: var(--color-warm-cream);
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .text {
   text-decoration: underline;
   text-underline-offset: 4px;
-  border: 0;
+  padding: 0;
+}
+
+.text:hover {
+  opacity: 0.7;
 }
 
 .outline {
-  border: 1px solid var(--color-warm-cream);
-  border-radius: 22.5px;
-  padding: 7.5px 15px;
+  border: 1px solid var(--color-cork-border);
+  border-radius: var(--radius-buttons-outlined);
+  padding: 9px var(--spacing-24);
+  color: var(--color-warm-cream-dim);
+}
+
+.outline:hover {
+  border-color: var(--color-warm-cream);
+  color: var(--color-warm-cream);
 }
 
 .primary {
+  background: var(--color-ember-accent);
+  border: 1px solid var(--color-ember-accent);
+  border-radius: var(--radius-buttons-pill);
+  padding: var(--spacing-14) var(--spacing-31);
+  color: var(--color-warm-cream);
+}
+
+.primary:hover:not(:disabled) {
+  background: #f06010;
+  border-color: #f06010;
+}
+
+.primary-bark {
   background: var(--color-bark-brown);
-  border: 1px solid var(--color-bark-brown);
-  border-radius: 36px;
-  padding: 14px 24px;
+  border: 1px solid var(--color-cork-border);
+  border-radius: var(--radius-buttons-pill);
+  padding: var(--spacing-14) var(--spacing-31);
+  color: var(--color-warm-cream);
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.primary-bark:hover:not(:disabled) {
+  background: var(--color-bark-glow);
 }
 
 .danger {
-  color: var(--color-warm-cream);
-  border: 1px solid var(--color-warm-cream);
-  background: transparent;
+  color: var(--color-ember-accent);
+  border: 1px solid var(--color-cork-border);
+  border-radius: var(--radius-buttons-outlined);
+  padding: 9px var(--spacing-24);
+}
+
+.danger:hover {
+  border-color: var(--color-ember-accent);
 }
 
 .full {
   width: 100%;
 }
 
-.eyebrow {
-  color: var(--color-warm-cream);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: normal;
+/* ── Status messages ─────────────────────────────────────── */
+.success {
+  color: #8ec99a;
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-h1,
-h2,
+.error {
+  color: var(--color-ember-accent);
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Code badge ──────────────────────────────────────────── */
 .code {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-display), 7vw, 86px);
+  line-height: var(--leading-display);
   color: var(--color-warm-cream);
-  font-weight: 500;
-  letter-spacing: normal;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 
-h1 {
-  font-size: clamp(51px, 8vw, 116px);
-  line-height: 0.9;
-  max-width: 1030px;
-}
-
-h1 em {
-  color: inherit;
-  font-style: normal;
-}
-
-h2 {
-  font-size: 41px;
-  line-height: 0.9;
-}
-
-.lede,
-.page-head > p,
-.join-wrap > p {
-  color: var(--color-warm-cream);
-  font-size: clamp(21px, 2.1vw, 29px);
-  font-weight: 400;
-  line-height: 1.26;
-  text-transform: none;
+/* ── QR placeholder ──────────────────────────────────────── */
+.qr {
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  background: var(--color-warm-cream);
+  color: var(--color-walnut-shadow);
+  font-weight: 900;
+  margin: 22px 0;
+  border-radius: var(--radius-cards);
 }

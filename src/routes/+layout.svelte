@@ -8,8 +8,8 @@
 </script>
 
 <svelte:head>
-  <title>KLASYNC — accessible learning, in sync</title>
-  <meta name="description" content="Guest-first accessible lecture sessions." />
+  <title>Klasync — Every lecture, within reach</title>
+  <meta name="description" content="Live captions, fair attendance, and a lasting learning archive — without making students create an account just to join class." />
 </svelte:head>
 
 {@render children()}
