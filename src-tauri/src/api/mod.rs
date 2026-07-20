@@ -14,7 +14,9 @@ use tower_http::{
 };
 
 use crate::{config::AppConfig, state::AppState};
-use handlers::{auth, captions, courses, health, lecturers, participants, sessions};
+use handlers::{
+    auth, captions, claims, courses, health, lecturers, participants, resources, sessions,
+};
 
 pub fn router(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -36,6 +38,14 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/auth/students/login", post(auth::login_student))
         .route("/api/v1/auth/refresh", post(auth::refresh))
         .route("/api/v1/auth/logout", post(auth::logout))
+        .route(
+            "/api/v1/students/claims",
+            post(claims::claim_guest_participation),
+        )
+        .route(
+            "/api/v1/students/archive",
+            get(resources::list_student_archive),
+        )
         .route("/api/v1/lecturers/register", post(lecturers::register))
         .route("/api/v1/courses", get(courses::list).post(courses::create))
         .route(
@@ -66,6 +76,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/sessions/code/{short_code}/captions",
             get(captions::list).post(captions::publish),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/resources",
+            post(resources::create_for_session),
         )
         .route(
             "/api/v1/participants/{participant_id}/heartbeat",

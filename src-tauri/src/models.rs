@@ -129,3 +129,29 @@ pub struct AttendanceSummary {
     pub provisional_count: usize,
     pub total_heartbeats: u32,
 }
+
+#[derive(Deserialize)]
+pub struct ClaimGuestParticipationRequest {
+    pub participant_id: Uuid,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct LectureResource {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub resource_type: String,
+    pub storage_key: Option<String>,
+    pub content: Option<serde_json::Value>,
+    pub checksum: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Deserialize)]
+pub struct CreateLectureResourceRequest {
+    pub resource_type: String,
+    pub storage_key: Option<String>,
+    pub content: Option<serde_json::Value>,
+    pub checksum: Option<String>,
+    pub expires_at: Option<DateTime<Utc>>,
+}

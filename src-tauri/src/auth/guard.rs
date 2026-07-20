@@ -21,6 +21,11 @@ pub struct AuthenticatedLecturer {
     pub id: Uuid,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct AuthenticatedStudent {
+    pub id: Uuid,
+}
+
 impl FromRequestParts<AppState> for AuthenticatedAccount {
     type Rejection = ApiError;
 
@@ -58,6 +63,21 @@ impl FromRequestParts<AppState> for AuthenticatedLecturer {
         let account = AuthenticatedAccount::from_request_parts(parts, state).await?;
         if !matches!(account.role, AccountRole::Lecturer) {
             return Err(ApiError::forbidden("lecturer_role_required"));
+        }
+        Ok(Self { id: account.id })
+    }
+}
+
+impl FromRequestParts<AppState> for AuthenticatedStudent {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let account = AuthenticatedAccount::from_request_parts(parts, state).await?;
+        if !matches!(account.role, AccountRole::Student) {
+            return Err(ApiError::forbidden("student_role_required"));
         }
         Ok(Self { id: account.id })
     }
