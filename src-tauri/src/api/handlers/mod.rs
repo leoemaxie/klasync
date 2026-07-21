@@ -1,9 +1,13 @@
 pub mod auth;
+pub mod caption_stream;
 pub mod captions;
 pub mod claims;
 pub mod courses;
 pub mod health;
+pub mod invites;
 pub mod lecturers;
 pub mod participants;
 pub mod resources;
+pub mod recovery;
+pub mod rosters;
 pub mod sessions;

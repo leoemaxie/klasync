@@ -155,3 +155,50 @@ pub struct CreateLectureResourceRequest {
     pub checksum: Option<String>,
     pub expires_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Serialize)]
+pub struct RosterImportReport {
+    pub imported_count: usize,
+    pub issues: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AttendanceReviewDecision {
+    Flagged,
+    Approved,
+    Rejected,
+}
+
+#[derive(Deserialize)]
+pub struct ReviewAttendanceRequest {
+    pub decision: AttendanceReviewDecision,
+    pub note: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct InviteResolution {
+    pub session: LectureSession,
+    pub course: Course,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct AiJob {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub job_type: String,
+    pub status: String,
+    pub input_resource_id: Option<Uuid>,
+    pub output_resource_id: Option<Uuid>,
+    pub error_message: Option<String>,
+    pub attempts: i32,
+    pub created_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Deserialize)]
+pub struct CreateAiJobRequest {
+    pub job_type: String,
+    pub input_resource_id: Option<Uuid>,
+}

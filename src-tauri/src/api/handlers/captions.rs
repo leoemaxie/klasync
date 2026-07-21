@@ -80,5 +80,6 @@ pub async fn publish(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable("caption_persistence_failed"))?;
+    state.captions.publish(caption.clone()).await;
     Ok((StatusCode::CREATED, Json(caption)))
 }

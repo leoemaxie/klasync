@@ -6,6 +6,8 @@ pub struct AppConfig {
     pub jwt_secret: Option<String>,
     pub access_token_minutes: i64,
     pub refresh_token_days: i64,
+    pub password_reset_outbox_dir: Option<String>,
+    pub object_storage_dir: String,
 }
 
 impl AppConfig {
@@ -22,6 +24,9 @@ impl AppConfig {
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(30),
+            password_reset_outbox_dir: env::var("PASSWORD_RESET_OUTBOX_DIR").ok(),
+            object_storage_dir: env::var("OBJECT_STORAGE_DIR")
+                .unwrap_or_else(|_| "data/objects".to_owned()),
         }
     }
 

@@ -1,0 +1,48 @@
+use axum::{
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path, State,
+    },
+    response::Response,
+};
+use futures_util::{SinkExt, StreamExt};
+
+use crate::{
+    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    models::CaptionChunk,
+    state::AppState,
+};
+
+pub async fn connect(
+    State(state): State<AppState>,
+    Path(short_code): Path<String>,
+    websocket: WebSocketUpgrade,
+) -> Result<Response, ApiError> {
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+    let session = database_session_by_code(pool, &short_code).await?;
+    let receiver = state.captions.subscribe(session.id).await;
+    Ok(websocket.on_upgrade(move |socket| stream(socket, receiver)))
+}
+
+async fn stream(socket: WebSocket, mut captions: tokio::sync::broadcast::Receiver<CaptionChunk>) {
+    let (mut sender, mut receiver) = socket.split();
+    loop {
+        tokio::select! {
+            caption = captions.recv() => match caption {
+                Ok(caption) => {
+                    let Ok(payload) = serde_json::to_string(&caption) else { continue; };
+                    if sender.send(Message::Text(payload.into())).await.is_err() { break; }
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+            },
+            message = receiver.next() => match message {
+                Some(Ok(Message::Close(_))) | None => break,
+                Some(Err(_)) => break,
+                _ => {}
+            }
+        }
+    }
+}

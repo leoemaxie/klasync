@@ -6,13 +6,15 @@ use uuid::Uuid;
 use crate::models::{
     CaptionChunk, Course, LectureSession, Lecturer, RosterStudent, SessionParticipant,
 };
-use crate::{config::AppConfig, database};
+use crate::{config::AppConfig, database, realtime::CaptionHub, storage::LocalObjectStore};
 
 #[derive(Clone)]
 pub struct AppState {
     pub store: Arc<Mutex<Store>>,
     pub database: Option<PgPool>,
     pub config: AppConfig,
+    pub captions: CaptionHub,
+    pub storage: LocalObjectStore,
 }
 
 impl Default for AppState {
@@ -21,6 +23,8 @@ impl Default for AppState {
             store: Arc::new(Mutex::new(Store::default())),
             database: None,
             config: AppConfig::from_env(),
+            captions: CaptionHub::default(),
+            storage: LocalObjectStore::new(AppConfig::from_env().object_storage_dir),
         }
     }
 }
@@ -31,10 +35,13 @@ impl AppState {
             Some(database_url) => Some(database::connect(database_url).await?),
             None => None,
         };
+        let storage = LocalObjectStore::new(config.object_storage_dir.clone());
         Ok(Self {
             store: Arc::new(Mutex::new(Store::default())),
             database,
             config,
+            captions: CaptionHub::default(),
+            storage,
         })
     }
 

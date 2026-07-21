@@ -3,6 +3,10 @@ pub mod auth;
 pub mod config;
 pub mod database;
 pub mod models;
+pub mod outbox;
+pub mod realtime;
+pub mod roster_file;
+pub mod storage;
 pub mod state;
 pub mod utils;
 

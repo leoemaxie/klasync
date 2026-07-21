@@ -15,7 +15,8 @@ use tower_http::{
 
 use crate::{config::AppConfig, state::AppState};
 use handlers::{
-    auth, captions, claims, courses, health, lecturers, participants, resources, sessions,
+    auth, caption_stream, captions, claims, courses, health, invites, lecturers, participants,
+    recovery, resources, rosters, sessions,
 };
 
 pub fn router(state: AppState) -> Router {
@@ -38,6 +39,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/auth/students/login", post(auth::login_student))
         .route("/api/v1/auth/refresh", post(auth::refresh))
         .route("/api/v1/auth/logout", post(auth::logout))
+        .route("/api/v1/auth/password-reset/request", post(recovery::request))
+        .route("/api/v1/auth/password-reset/complete", post(recovery::complete))
         .route(
             "/api/v1/students/claims",
             post(claims::claim_guest_participation),
@@ -52,7 +55,12 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/courses/{course_id}/roster",
             post(courses::upload_roster),
         )
+        .route(
+            "/api/v1/courses/{course_id}/roster/import",
+            post(rosters::import_file),
+        )
         .route("/api/v1/sessions", post(sessions::create))
+        .route("/api/v1/invites/{token}", get(invites::resolve))
         .route(
             "/api/v1/sessions/code/{short_code}",
             get(sessions::get_by_code),
@@ -78,8 +86,20 @@ pub fn router(state: AppState) -> Router {
             get(captions::list).post(captions::publish),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/captions/ws",
+            get(caption_stream::connect),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/resources",
             post(resources::create_for_session),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/invite/qr.svg",
+            get(invites::qr_svg),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/invite/revoke",
+            post(invites::revoke),
         )
         .route(
             "/api/v1/participants/{participant_id}/heartbeat",
