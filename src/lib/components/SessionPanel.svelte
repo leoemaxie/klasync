@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Session } from "$lib/types";
+  import QrCodeSvg from "./QrCodeSvg.svelte";
 
   let {
     session,
@@ -31,31 +32,28 @@
 </script>
 
 <div class="panel session-panel">
-  <p class="eyebrow">LIVE SESSION</p>
+  <p class="eyebrow">LIVE SESSION CONTROL</p>
   {#if session?.live}
     <h2>{session.title}</h2>
     <div class="code">{session.code}</div>
-    <p>
-      Students can enter this code, scan your QR invite, or use the link below.
+    <p class="hint">
+      Students can enter this code, scan your generated QR invite, or open the link below.
     </p>
     <div class="invite">
       <input readonly value={inviteUrl} />
       <button class="outline" onclick={onCopyInvite}>
-        {copied ? "Copied" : "Copy"}
+        {copied ? "Copied" : "Copy Link"}
       </button>
     </div>
-    <div class="qr" aria-label="QR-code placeholder">{session.code}</div>
-    <p class="hint">
-      The API now issues the session; QR image generation is the remaining
-      invite-format task.
-    </p>
+    <div class="qr-preview-box">
+      <QrCodeSvg value={inviteUrl || session.code} size={140} />
+    </div>
     {#if apiNotice}<p class="error">{apiNotice}</p>{/if}
-    <button class="danger" onclick={onEndSession}>End session</button>
+    <button class="danger full" onclick={onEndSession}>End Live Session</button>
   {:else}
     <h2>Ready when you are.</h2>
-    <p>
-      Create a live session through the local KLASYNC API to generate a code
-      and invite link.
+    <p class="lede">
+      Start a live session to generate a 6-character short code, invite link, and QR code for your students.
     </p>
     {#if apiNotice}<p class="error">{apiNotice}</p>{/if}
     <button
@@ -63,7 +61,15 @@
       onclick={onStartSession}
       disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}
     >
-      {isSaving ? "Starting session" : "Start live session"}
+      {isSaving ? "Starting live room..." : "Start Live Session"}
     </button>
   {/if}
 </div>
+
+<style>
+  .qr-preview-box {
+    margin: var(--spacing-18) 0;
+    display: flex;
+    justify-content: center;
+  }
+</style>

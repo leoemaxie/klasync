@@ -3,6 +3,7 @@
   import "../styles/layout.css";
   import "../styles/elements.css";
   import "../styles/forms.css";
+  import "../styles/components.css";
 
   let { children } = $props();
 </script>

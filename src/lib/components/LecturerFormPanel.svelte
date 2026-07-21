@@ -1,4 +1,7 @@
 <script lang="ts">
+  import RosterUploadPanel from "./lecturer/RosterUploadPanel.svelte";
+  import MicStatusPanel from "./lecturer/MicStatusPanel.svelte";
+
   let {
     lecturerName = $bindable(""),
     lecturerEmail = $bindable(""),
@@ -20,35 +23,37 @@
   } = $props();
 </script>
 
-<div class="panel">
-  <label>
-    Your name
-    <input bind:value={lecturerName} placeholder="Dr. Amara Okeke" />
-  </label>
-  <label>
-    Lecturer email
-    <input
-      type="email"
-      bind:value={lecturerEmail}
-      placeholder="amara@university.edu"
-    />
-  </label>
-  <div class="twocol">
-    <label>Course code<input bind:value={courseCode} /></label>
-    <label>Course title<input bind:value={courseTitle} /></label>
+<div class="lecturer-workspace-left">
+  <div class="panel">
+    <p class="eyebrow">COURSE DETAILS &amp; LECTURER INFO</p>
+    <label>
+      Lecturer name
+      <input bind:value={lecturerName} placeholder="Dr. Amara Okeke" />
+    </label>
+    <label>
+      Institutional email
+      <input type="email" bind:value={lecturerEmail} placeholder="amara@university.edu" />
+    </label>
+    <div class="twocol">
+      <label>Course code<input bind:value={courseCode} /></label>
+      <label>Course title<input bind:value={courseTitle} /></label>
+    </div>
   </div>
-  <label>
-    Roster CSV <span>optional</span>
-    <input type="file" accept=".csv,text/csv" onchange={onImportFile} />
-  </label>
-  <p class="hint">
-    Or paste CSV rows below: <code>matric number, full name</code>
-  </p>
-  <textarea bind:value={rosterText} rows="5"></textarea>
-  <button class="outline full" onclick={onParseRoster}>
-    Prepare roster
-  </button>
-  {#if rosterNotice}
-    <p class="success">{rosterNotice}</p>
-  {/if}
+
+  <MicStatusPanel />
+
+  <RosterUploadPanel
+    bind:rosterText
+    {rosterNotice}
+    {onImportFile}
+    {onParseRoster}
+  />
 </div>
+
+<style>
+  .lecturer-workspace-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-24);
+  }
+</style>

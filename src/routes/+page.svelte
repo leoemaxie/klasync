@@ -9,6 +9,12 @@
   import JoinScreen from "$lib/components/JoinScreen.svelte";
   import LiveScreen from "$lib/components/LiveScreen.svelte";
   import ArchiveScreen from "$lib/components/ArchiveScreen.svelte";
+  import NotFoundScreen from "$lib/components/NotFoundScreen.svelte";
+  import LecturerSignIn from "$lib/components/auth/LecturerSignIn.svelte";
+  import LecturerRegister from "$lib/components/auth/LecturerRegister.svelte";
+  import StudentSignIn from "$lib/components/auth/StudentSignIn.svelte";
+  import StudentRegister from "$lib/components/auth/StudentRegister.svelte";
+  import PasswordRecovery from "$lib/components/auth/PasswordRecovery.svelte";
   import { createSessionState } from "$lib/sessionState.svelte";
   import {
     copyInvite, endSession, heartbeat, importFile, joinSession, parseRoster,
@@ -44,6 +50,16 @@
 
   {#if state.screen === "home"}
     <HomeScreen bind:screen={state.screen} />
+  {:else if state.screen === "lecturer-login"}
+    <LecturerSignIn bind:screen={state.screen} />
+  {:else if state.screen === "lecturer-register"}
+    <LecturerRegister bind:screen={state.screen} />
+  {:else if state.screen === "student-login"}
+    <StudentSignIn bind:screen={state.screen} />
+  {:else if state.screen === "student-register"}
+    <StudentRegister bind:screen={state.screen} />
+  {:else if state.screen === "recover-password" || state.screen === "reset-password"}
+    <PasswordRecovery bind:screen={state.screen} />
   {:else if state.screen === "lecturer"}
     <section class="page-head">
       <p class="eyebrow">LECTURER WORKSPACE</p>
@@ -89,7 +105,9 @@
       bind:accountCreated={state.accountCreated} bind:screen={state.screen}
       onNextCaption={() => refreshCaptions(state)} onHeartbeat={() => heartbeat(state)}
     />
-  {:else}
+  {:else if state.screen === "archive"}
     <ArchiveScreen bind:screen={state.screen} />
+  {:else}
+    <NotFoundScreen bind:screen={state.screen} />
   {/if}
 </main>

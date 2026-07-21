@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { Participant, Screen, Session } from "$lib/types";
+  import { connectCaptionWebSocket } from "$lib/api/captions";
 
   let {
     session,
@@ -21,6 +23,20 @@
     onHeartbeat: () => void;
   } = $props();
 
+  let wsConnected = $state(false);
+
+  onMount(() => {
+    if (!session?.code) return;
+    const cleanup = connectCaptionWebSocket(session.code, (cap) => {
+      wsConnected = true;
+      if (!captions.includes(cap.text)) {
+        captions = [...captions, cap.text];
+        captionIndex = captions.length - 1;
+      }
+    });
+    return cleanup;
+  });
+
   function createAccount() {
     accountCreated = true;
     screen = "archive";
@@ -29,59 +45,53 @@
 
 <section class="live-top">
   <div>
-    <p class="eyebrow">LIVE / CAPTIONS CONNECTED</p>
-    <h1>{session?.title}</h1>
-    <p>
+    <p class="eyebrow">
+      <span class="eyebrow-accent">●</span> LIVE / {wsConnected ? "WEBSOCKET STREAM" : "CAPTIONS CONNECTED"}
+    </p>
+    <h1>{session?.title ?? "Live Lecture"}</h1>
+    <p class="lede">
       {joinedParticipant?.verified
-        ? "Attendance verified against your class roster."
-        : "Attendance is provisional; your lecturer can review it."}
+        ? "Verified student presence on active roster."
+        : "Provisional attendance recorded. Lecturer review pending."}
     </p>
   </div>
   <button class="outline" onclick={() => (screen = "lecturer")}>
-    Lecturer view
+    Lecturer View
   </button>
 </section>
 
 <section class="live-grid">
-  <article class="captions">
-    <p class="eyebrow">LIVE CAPTIONS</p>
-    <p class="caption">{captions[captionIndex] ?? "WAITING FOR CAPTIONS"}</p>
+  <article class="captions panel" aria-live="polite">
+    <p class="eyebrow">REAL-TIME CAPTION STREAM</p>
+    <p class="caption">{captions[captionIndex] ?? "WAITING FOR LECTURER SPEECH..."}</p>
     <button class="outline" onclick={onNextCaption}>
-      Simulate next caption
+      Next Caption
     </button>
   </article>
-  <aside>
-    <p class="eyebrow">KEY IDEA</p>
+
+  <aside class="panel">
+    <p class="eyebrow">KEY IDEA / SUMMARY</p>
     <h2>Feedback makes a system responsive.</h2>
-    <p>
-      Capture the signal, compare it with the desired outcome, and use the
-      difference to decide the next action.
+    <p class="hint">
+      Capture signal, compare with target outcome, and adjust action accordingly.
     </p>
     <hr />
-    <p class="hint">
-      Presence check-ins: {joinedParticipant?.heartbeats ?? 0}
+    <p class="eyebrow">
+      Check-ins: {joinedParticipant?.heartbeats ?? 0}
     </p>
-    <button class="text" onclick={onHeartbeat}>I’m still here</button>
+    <button class="primary full" onclick={onHeartbeat}>I'm still here</button>
   </aside>
 </section>
 
-<section class="archive-cta">
+<section class="archive-cta panel">
   <div>
-    <p class="eyebrow">AFTER CLASS</p>
-    <h2>Keep this lecture.</h2>
-    <p>
-      Create a student account after the session to revisit recordings,
-      transcripts, flashcards, and notes.
-    </p>
+    <p class="eyebrow">PERSISTENT ACCESS</p>
+    <h2>Retain your learning resources.</h2>
+    <p>Create a student account after class to retain transcripts, flashcards, and notes.</p>
   </div>
   {#if accountCreated}
-    <p class="success">
-      Account interest saved. In the production backend this will start account
-      verification.
-    </p>
+    <p class="success">Account interest recorded. Access retained for your matric number.</p>
   {:else}
-    <button class="primary" onclick={createAccount}>
-      Create account for the archive
-    </button>
+    <button class="primary" onclick={createAccount}>Create Account to Claim Archive</button>
   {/if}
 </section>

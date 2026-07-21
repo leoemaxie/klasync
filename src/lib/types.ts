@@ -18,4 +18,16 @@ export type Session = {
   participants: Participant[];
 };
 
-export type Screen = "home" | "lecturer" | "join" | "live" | "archive";
+export type Screen =
+  | "home"
+  | "lecturer"
+  | "lecturer-login"
+  | "lecturer-register"
+  | "student-login"
+  | "student-register"
+  | "recover-password"
+  | "reset-password"
+  | "join"
+  | "live"
+  | "archive"
+  | "not-found";
