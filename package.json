@@ -1,5 +1,6 @@
 {
   "name": "klasync",
+  "description": "Assistive learning platform for higher education — transforming physical lectures into live-captioned, searchable, AI-powered learning experiences.",
   "private": true,
   "version": "0.1.0",
   "type": "module",

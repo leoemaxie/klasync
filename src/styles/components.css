@@ -351,15 +351,53 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 380px;
-  background: rgba(16, 9, 4, 0.88);
+  max-width: 410px;
+  background: rgba(16, 9, 4, 0.92);
   border: 1px solid var(--color-cork-border);
-  border-radius: 8px;
-  padding: var(--spacing-18);
+  border-top: 2px solid var(--color-ember-accent);
+  border-radius: 10px;
+  padding: var(--spacing-24);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-12);
-  backdrop-filter: blur(8px);
+  gap: var(--spacing-14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(220, 80, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.caption-preview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 28px rgba(220, 80, 0, 0.15);
+}
+
+.header-tag-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+
+.mini-equalizer .m-bar {
+  width: 2px;
+  background: var(--color-ember-accent);
+  height: 100%;
+  border-radius: 1px;
+  animation: miniPulse 0.8s ease-in-out infinite alternate;
+}
+
+.mini-equalizer .m-bar:nth-child(2) { animation-delay: 0.2s; }
+.mini-equalizer .m-bar:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes miniPulse {
+  0% { height: 30%; }
+  100% { height: 100%; }
 }
 
 .card-header {
@@ -374,17 +412,36 @@
 .live-tag {
   color: var(--color-ember-accent);
   font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.12em;
   border: 1px solid var(--color-ember-accent);
-  padding: 1px 6px;
+  background: rgba(220, 80, 0, 0.12);
+  padding: 2px 8px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .preview-text {
   font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--color-warm-cream);
   font-style: italic;
+  min-height: 52px;
+}
+
+.typing-cursor {
+  color: var(--color-ember-accent);
+  font-style: normal;
+  font-weight: 700;
+  animation: cursorBlink 0.6s infinite alternate;
+}
+
+@keyframes cursorBlink {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .preview-metrics {
@@ -394,7 +451,7 @@
   letter-spacing: 0.1em;
   color: var(--color-driftwood);
   border-top: 1px dashed var(--color-cork-border);
-  padding-top: var(--spacing-8);
+  padding-top: var(--spacing-12);
 }
 
 .visual-footer {
