@@ -6,7 +6,14 @@ use uuid::Uuid;
 use crate::models::{
     CaptionChunk, Course, LectureSession, Lecturer, RosterStudent, SessionParticipant,
 };
-use crate::{config::AppConfig, database, realtime::CaptionHub, storage::LocalObjectStore};
+use crate::{
+    ai::{self, SharedAiAdapter},
+    config::AppConfig,
+    database,
+    email::{self, SharedEmailSender},
+    realtime::CaptionHub,
+    storage::{self, SharedStorageAdapter},
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -14,17 +21,22 @@ pub struct AppState {
     pub database: Option<PgPool>,
     pub config: AppConfig,
     pub captions: CaptionHub,
-    pub storage: LocalObjectStore,
+    pub storage: SharedStorageAdapter,
+    pub mailer: SharedEmailSender,
+    pub ai: SharedAiAdapter,
 }
 
 impl Default for AppState {
     fn default() -> Self {
+        let config = AppConfig::from_env();
         Self {
             store: Arc::new(Mutex::new(Store::default())),
             database: None,
-            config: AppConfig::from_env(),
+            storage: storage::adapter_from_config(&config),
+            mailer: email::sender_from_config(&config),
+            ai: ai::adapter_from_config(&config),
+            config,
             captions: CaptionHub::default(),
-            storage: LocalObjectStore::new(AppConfig::from_env().object_storage_dir),
         }
     }
 }
@@ -35,13 +47,17 @@ impl AppState {
             Some(database_url) => Some(database::connect(database_url).await?),
             None => None,
         };
-        let storage = LocalObjectStore::new(config.object_storage_dir.clone());
+        let storage = storage::adapter_from_config(&config);
+        let mailer = email::sender_from_config(&config);
+        let ai = ai::adapter_from_config(&config);
         Ok(Self {
             store: Arc::new(Mutex::new(Store::default())),
             database,
             config,
             captions: CaptionHub::default(),
             storage,
+            mailer,
+            ai,
         })
     }
 

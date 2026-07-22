@@ -1,7 +1,9 @@
 pub mod api;
+pub mod ai;
 pub mod auth;
 pub mod config;
 pub mod database;
+pub mod email;
 pub mod models;
 pub mod outbox;
 pub mod realtime;

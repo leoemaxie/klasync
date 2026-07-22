@@ -10,7 +10,7 @@ use crate::{
         passwords,
         service::{parse_opaque_token, require_database},
     },
-    outbox,
+    email,
     state::AppState,
 };
 
@@ -56,7 +56,11 @@ pub async fn request(
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable("reset_token_persistence_failed"))?;
-    outbox::write_password_reset(&config, input.email.trim(), &format!("{token_id}.{secret}"))
+    state.mailer.send(email::password_reset_message(
+        &config,
+        input.email.trim().to_owned(),
+        &format!("{token_id}.{secret}"),
+    ))
         .await
         .map_err(|_| ApiError::service_unavailable("reset_delivery_not_configured"))?;
     Ok(StatusCode::ACCEPTED)

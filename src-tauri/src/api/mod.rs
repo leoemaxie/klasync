@@ -15,7 +15,7 @@ use tower_http::{
 
 use crate::{config::AppConfig, state::AppState};
 use handlers::{
-    auth, caption_stream, captions, claims, courses, health, invites, lecturers, participants,
+    attendance, auth, caption_stream, captions, claims, courses, health, invites, lecturers, participants,
     recovery, resources, rosters, sessions,
 };
 
@@ -78,6 +78,14 @@ pub fn router(state: AppState) -> Router {
             get(participants::attendance_summary),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/participants/{participant_id}/review",
+            post(attendance::review),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/attendance.csv",
+            get(attendance::export_csv),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/end",
             post(sessions::end),
         )
@@ -92,6 +100,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/sessions/code/{short_code}/resources",
             post(resources::create_for_session),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/resources/{resource_type}/upload",
+            post(handlers::uploads::upload),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/ai-jobs",
+            get(handlers::jobs::list).post(handlers::jobs::create),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/invite/qr.svg",
