@@ -1,8 +1,9 @@
 # KLASYNC — Assistive Learning Infrastructure for Higher Education
+Codex Session ID: 019f7b7e-2d62-7272-bdb1-5dd549904ee6
 
 > **Turn every physical lecture into an accessible, searchable, AI-powered learning experience.**
 
-KLASYNC is an accessibility-first learning platform engineered for university auditoriums and lecture halls. It breaks down physical, sensory, and cognitive learning barriers by transforming physical speech into real-time captions, searchable transcripts, interactive flashcards, and verified attendance rosters—without requiring students to create an account to join.
+KLASYNC is an accessibility-first learning platform engineered for university auditoriums and lecture halls. It breaks down physical, sensory, and cognitive learning barriers by transforming physical speech into real-time captions, searchable transcripts, interactive flashcards, and verified attendance rosters without requiring students to create an account to join.
 
 ---
 
