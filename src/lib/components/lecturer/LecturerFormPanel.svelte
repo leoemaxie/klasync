@@ -1,6 +1,6 @@
 <script lang="ts">
-  import RosterUploadPanel from "./lecturer/RosterUploadPanel.svelte";
-  import MicStatusPanel from "./lecturer/MicStatusPanel.svelte";
+  import RosterUploadPanel from "./RosterUploadPanel.svelte";
+  import MicStatusPanel from "./MicStatusPanel.svelte";
 
   let {
     lecturerName = $bindable(""),

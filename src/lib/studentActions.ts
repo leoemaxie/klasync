@@ -1,7 +1,7 @@
 import {
-  getLiveCaptions,
-  joinLiveSession,
-  resolveLiveSession,
+  getCaptions,
+  joinSessionByCode,
+  lookupSessionByCode,
   sendHeartbeat,
 } from "./api";
 import { persist } from "./rosterUtils";
@@ -15,8 +15,8 @@ export async function joinSession(state: SessionState) {
     return;
   }
   try {
-    const detail = await resolveLiveSession(state.sessionCode.trim());
-    const remote = await joinLiveSession(
+    const detail = await lookupSessionByCode(state.sessionCode.trim());
+    const remote = await joinSessionByCode(
       state.sessionCode.trim(),
       state.matric.trim(),
       state.displayName.trim()
@@ -66,7 +66,7 @@ export async function heartbeat(state: SessionState) {
 export async function refreshCaptions(state: SessionState) {
   if (!state.session) return;
   try {
-    const remote = await getLiveCaptions(state.session.code);
+    const remote = await getCaptions(state.session.code);
     state.captions = remote.length
       ? remote.map((c) => c.text)
       : ["WAITING FOR LIVE CAPTIONS."];

@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Navbar from "$lib/components/Navbar.svelte";
-  import HomeScreen from "$lib/components/HomeScreen.svelte";
-  import LecturerFormPanel from "$lib/components/LecturerFormPanel.svelte";
-  import SessionPanel from "$lib/components/SessionPanel.svelte";
-  import CaptionControlPanel from "$lib/components/CaptionControlPanel.svelte";
-  import AttendancePanel from "$lib/components/AttendancePanel.svelte";
-  import JoinScreen from "$lib/components/JoinScreen.svelte";
-  import LiveScreen from "$lib/components/LiveScreen.svelte";
-  import ArchiveScreen from "$lib/components/ArchiveScreen.svelte";
-  import NotFoundScreen from "$lib/components/NotFoundScreen.svelte";
+  import Navbar from "$lib/components/shared/Navbar.svelte";
+  import NotFoundScreen from "$lib/components/shared/NotFoundScreen.svelte";
+  import HomeScreen from "$lib/components/home/HomeScreen.svelte";
+  import LecturerFormPanel from "$lib/components/lecturer/LecturerFormPanel.svelte";
+  import SessionPanel from "$lib/components/session/SessionPanel.svelte";
+  import CaptionControlPanel from "$lib/components/session/CaptionControlPanel.svelte";
+  import AttendancePanel from "$lib/components/session/AttendancePanel.svelte";
+  import JoinScreen from "$lib/components/session/JoinScreen.svelte";
+  import LiveScreen from "$lib/components/session/LiveScreen.svelte";
+  import ArchiveScreen from "$lib/components/archive/ArchiveScreen.svelte";
   import LecturerSignIn from "$lib/components/auth/LecturerSignIn.svelte";
   import LecturerRegister from "$lib/components/auth/LecturerRegister.svelte";
   import StudentSignIn from "$lib/components/auth/StudentSignIn.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import Navbar from "$lib/components/Navbar.svelte";
+  import Navbar from "$lib/components/shared/Navbar.svelte";
   import type { Screen } from "$lib/types";
 
   let screen = $state<Screen>("not-found");

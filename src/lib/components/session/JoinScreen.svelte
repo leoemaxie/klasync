@@ -1,6 +1,6 @@
 <script lang="ts">
   import { lookupSessionByCode } from "$lib/api/sessions";
-  import PublicVisualPanel from "./PublicVisualPanel.svelte";
+  import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
 
   let {
     sessionCode = $bindable(""),

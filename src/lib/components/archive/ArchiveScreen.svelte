@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
-  import PublicVisualPanel from "./PublicVisualPanel.svelte";
-  import TranscriptViewer from "./archive/TranscriptViewer.svelte";
-  import FlashcardDeck from "./archive/FlashcardDeck.svelte";
-  import AudioPlayerPanel from "./archive/AudioPlayerPanel.svelte";
+  import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import TranscriptViewer from "./TranscriptViewer.svelte";
+  import FlashcardDeck from "./FlashcardDeck.svelte";
+  import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 

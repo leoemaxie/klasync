@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
   import { registerStudent } from "$lib/api/auth";
-  import PublicVisualPanel from "../PublicVisualPanel.svelte";
+  import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 

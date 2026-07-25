@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Session } from "$lib/types";
-  import QrCodeSvg from "./QrCodeSvg.svelte";
+  import QrCodeSvg from "$lib/components/shared/QrCodeSvg.svelte";
 
   let {
     session,

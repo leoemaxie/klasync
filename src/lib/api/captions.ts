@@ -1,5 +1,5 @@
 import { http } from "./http";
-import type { ApiCaption } from "../api";
+import type { ApiCaption } from "./types";
 
 export function getCaptions(shortCode: string): Promise<ApiCaption[]> {
   return http<ApiCaption[]>(`/sessions/code/${encodeURIComponent(shortCode)}/captions`);

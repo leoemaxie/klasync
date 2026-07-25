@@ -1,8 +1,8 @@
 import {
   createLiveSession,
-  endLiveSession,
-  getSessionParticipants,
-  publishLiveCaption,
+  endSession as apiEndSession,
+  getParticipants,
+  publishCaption as apiPublishCaption,
 } from "./api";
 import { persist } from "./rosterUtils";
 import { refreshCaptions } from "./studentActions";
@@ -43,7 +43,7 @@ export async function startSession(state: SessionState) {
 export async function publishCaption(state: SessionState) {
   if (!state.session || !state.captionDraft.trim()) return;
   try {
-    await publishLiveCaption(state.session.code, state.captionDraft.trim());
+    await apiPublishCaption(state.session.code, state.captionDraft.trim());
     state.captionDraft = "";
     await refreshCaptions(state);
   } catch (error) {
@@ -62,7 +62,7 @@ export async function refreshAttendance(state: SessionState) {
   if (!state.session) return;
   state.apiNotice = "";
   try {
-    const remote = await getSessionParticipants(state.session.code);
+    const remote = await getParticipants(state.session.code);
     const participants: Participant[] = remote.map((p) => ({
       id: p.id,
       matric: p.matric_number,
@@ -82,7 +82,7 @@ export async function endSession(state: SessionState) {
   if (!state.session) return;
   state.apiNotice = "";
   try {
-    await endLiveSession(state.session.code);
+    await apiEndSession(state.session.code);
     state.session = { ...state.session, live: false };
     persist(state);
   } catch (error) {
