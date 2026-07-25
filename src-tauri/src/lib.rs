@@ -1,17 +1,3 @@
-pub mod api;
-pub mod ai;
-pub mod auth;
-pub mod config;
-pub mod database;
-pub mod email;
-pub mod models;
-pub mod outbox;
-pub mod realtime;
-pub mod roster_file;
-pub mod storage;
-pub mod state;
-pub mod utils;
-
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -20,7 +6,7 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    tauri::Builder::<tauri::Wry>::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())

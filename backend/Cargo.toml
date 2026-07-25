@@ -1,0 +1,40 @@
+[package]
+name = "klasync-backend"
+version = "0.1.0"
+edition = "2021"
+description = "Klasync Standalone Axum Backend API Server"
+
+[lib]
+name = "klasync_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "klasync-backend"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.8", default-features = false, features = ["multipart", "ws", "http1", "json", "tokio"] }
+tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "net", "sync", "fs", "io-util", "time"] }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "derive"] }
+argon2 = { version = "0.5", default-features = false, features = ["std", "password-hash"] }
+jsonwebtoken = { version = "9", default-features = false }
+aws-config = { version = "1", default-features = false }
+aws-credential-types = "1"
+aws-sdk-s3 = { version = "1", default-features = false, features = ["rt-tokio"] }
+aws-types = "1"
+base64 = "0.22"
+calamine = { version = "0.26", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["serde", "std", "clock"] }
+csv = "1"
+dotenvy = "0.15"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+thiserror = "2"
+futures-util = { version = "0.3", default-features = false }
+tower-http = { version = "0.6", default-features = false, features = ["cors", "trace"] }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
+uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7", "std"] }
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+async-trait = "0.1"

@@ -11,3 +11,5 @@ vite.config.ts.timestamp-*
 /dist
 .agents/
 .codex/
+.cargo/
+target/
