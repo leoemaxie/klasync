@@ -2,7 +2,7 @@
 name = "klasync"
 version = "0.1.0"
 description = "Assistive learning platform host for higher education"
-authors = ["you"]
+authors = ["triumphsystems"]
 edition = "2021"
 
 [lib]
