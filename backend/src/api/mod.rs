@@ -11,7 +11,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 
-use crate::{config::AppConfig, state::AppState};
+use crate::state::AppState;
 use handlers::{
     attendance, auth, caption_stream, captions, claims, courses, health, invites, participants,
     recovery, resources, rosters, sessions,

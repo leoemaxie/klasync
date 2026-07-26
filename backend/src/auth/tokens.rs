@@ -23,7 +23,7 @@ pub fn issue_access_token(
         .jwt_secret
         .as_deref()
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| jsonwebtoken::errors::ErrorKind::InvalidToken)?;
+        .ok_or(jsonwebtoken::errors::ErrorKind::InvalidToken)?;
     let now = Utc::now();
     let claims = Claims {
         sub: account_id,
@@ -46,7 +46,7 @@ pub fn validate_access_token(
         .jwt_secret
         .as_deref()
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| jsonwebtoken::errors::ErrorKind::InvalidToken)?;
+        .ok_or(jsonwebtoken::errors::ErrorKind::InvalidToken)?;
     decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
