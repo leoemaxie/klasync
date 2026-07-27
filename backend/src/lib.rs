@@ -1,4 +1,6 @@
 pub mod ai;
+pub mod ai_worker;
+pub mod audit;
 pub mod api;
 pub mod auth;
 pub mod config;
@@ -7,6 +9,7 @@ pub mod email;
 pub mod models;
 pub mod realtime;
 pub mod roster_file;
+pub mod security;
 pub mod state;
 pub mod storage;
 pub mod utils;

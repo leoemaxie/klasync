@@ -26,6 +26,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Failed to initialize database pool and app state");
 
+    tokio::spawn(klasync_backend::ai_worker::run_loop(state.clone()));
+
     let app = klasync_backend::api::router(state);
 
     tracing::info!("KLASYNC Standalone Cloud Backend listening on http://{}", addr);

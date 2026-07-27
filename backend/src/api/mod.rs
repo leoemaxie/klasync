@@ -2,7 +2,9 @@ pub mod error;
 pub mod handlers;
 
 use axum::{
+    extract::DefaultBodyLimit,
     http::{header, Method},
+    middleware,
     routing::{get, post},
     Router,
 };
@@ -27,7 +29,7 @@ pub fn router(state: AppState) -> Router {
 
     let cors = CorsLayer::new()
         .allow_origin(origins)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     Router::new()
@@ -51,8 +53,20 @@ pub fn router(state: AppState) -> Router {
             post(claims::claim_guest_participation),
         )
         .route(
+            "/api/v1/students/claims/request-verification",
+            post(handlers::student_claims::request),
+        )
+        .route(
+            "/api/v1/students/claims/verify",
+            post(handlers::student_claims::verify),
+        )
+        .route(
             "/api/v1/students/archive",
             get(resources::list_student_archive),
+        )
+        .route(
+            "/api/v1/students/resources/{resource_id}/download",
+            get(resources::download_for_student),
         )
         .route("/api/v1/courses", get(courses::list).post(courses::create))
         .route(
@@ -67,7 +81,19 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/invites/{token}", get(invites::resolve))
         .route(
             "/api/v1/sessions/code/{short_code}",
-            get(sessions::get_by_code),
+            get(sessions::get_by_code).patch(handlers::lifecycle::update),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/archive",
+            post(handlers::lifecycle::archive),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/reopen",
+            post(handlers::lifecycle::reopen),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/delete",
+            post(handlers::lifecycle::remove),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/join",
@@ -90,12 +116,44 @@ pub fn router(state: AppState) -> Router {
             get(attendance::export_csv),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/attendance/reconcile",
+            post(handlers::attendance_scoring::reconcile),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/end",
             post(sessions::end),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/captions",
             get(captions::list).post(captions::publish),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/live-controls",
+            post(handlers::live_controls::update),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/captions/pause",
+            post(handlers::live_controls::pause_captions),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/captions/resume",
+            post(handlers::live_controls::resume_captions),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/audio/start",
+            post(handlers::live_controls::start_audio),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/audio/stop",
+            post(handlers::live_controls::stop_audio),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/participants/{participant_id}/{action}",
+            post(handlers::live_controls::participant_action),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/captions/{caption_id}/moderate",
+            post(handlers::live_controls::moderate_caption),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/captions/ws",
@@ -110,8 +168,20 @@ pub fn router(state: AppState) -> Router {
             post(handlers::uploads::upload),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/resources/{resource_id}/download",
+            get(resources::download_for_lecturer),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/audio/upload",
+            post(handlers::audio::upload),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/ai-jobs",
             get(handlers::jobs::list).post(handlers::jobs::create),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/ai-jobs/{job_id}/dispatch",
+            post(crate::ai_worker::dispatch),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/invite/qr.svg",
@@ -126,6 +196,8 @@ pub fn router(state: AppState) -> Router {
             post(participants::heartbeat),
         )
         .layer(cors)
+        .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
+        .layer(middleware::from_fn(crate::security::rate_limit))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

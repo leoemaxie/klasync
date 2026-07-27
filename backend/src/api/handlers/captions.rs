@@ -54,9 +54,17 @@ pub async fn publish(
         .production_database()
         .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
-    if !matches!(session.status, SessionStatus::Live) {
-        return Err(ApiError::conflict("Captions can only be published to live sessions"));
-    }
+      if !matches!(session.status, SessionStatus::Live) {
+          return Err(ApiError::conflict("Captions can only be published to live sessions"));
+      }
+      let captions_paused: bool = sqlx::query_scalar(
+          "select coalesce((select captions_paused from session_live_controls where session_id = $1), false)",
+      )
+      .bind(session.id)
+      .fetch_one(pool)
+      .await
+      .map_err(|_| ApiError::service_unavailable())?;
+      if captions_paused { return Err(ApiError::conflict("Captions are paused")); }
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
     )

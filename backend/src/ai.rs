@@ -138,7 +138,7 @@ impl OpenRouterAdapter {
     fn bearer(&self, request: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         request
             .bearer_auth(&self.api_key)
-            .header("HTTP-Referer", "https://klasync.app")
+            .header("HTTP-Referer", "https://klasync.triumphsystems.tech")
             .header("X-Title", "KLASYNC Assistive Learning")
             .header(reqwest::header::USER_AGENT, "klasync-api/0.1")
     }

@@ -15,7 +15,7 @@ pub fn parse(file_name: &str, bytes: &[u8]) -> Result<ParsedRoster, String> {
     } else if file_name.to_ascii_lowercase().ends_with(".xlsx") {
         parse_xlsx(bytes)
     } else {
-        Err("unsupported_roster_format".to_owned())
+        Err("Unsupported file format".to_owned())
     }
 }
 
@@ -23,11 +23,11 @@ fn parse_csv(bytes: &[u8]) -> Result<ParsedRoster, String> {
     let mut reader = csv::ReaderBuilder::new().flexible(true).from_reader(bytes);
     let headers = reader
         .headers()
-        .map_err(|_| "invalid_csv_headers".to_owned())?
+        .map_err(|_| "Invalid CSV headers".to_owned())?
         .clone();
     let mapping = ColumnMapping::from_headers(headers.iter())?;
     let rows = reader.records().enumerate().map(|(index, row)| {
-        let row = row.map_err(|_| format!("row_{}_invalid_csv", index + 2))?;
+        let row = row.map_err(|_| format!("Row_{}: invalid csv", index + 2))?;
         Ok((index + 2, mapping.read_csv(&row)))
     });
     collect_rows(rows)
@@ -35,15 +35,15 @@ fn parse_csv(bytes: &[u8]) -> Result<ParsedRoster, String> {
 
 fn parse_xlsx(bytes: &[u8]) -> Result<ParsedRoster, String> {
     let mut workbook =
-        Xlsx::new(Cursor::new(bytes)).map_err(|_| "invalid_xlsx_workbook".to_owned())?;
+        Xlsx::new(Cursor::new(bytes)).map_err(|_| "Invalid XLSX workbook".to_owned())?;
     let range = workbook
         .worksheet_range_at(0)
-        .ok_or_else(|| "xlsx_sheet_missing".to_owned())
-        .and_then(|result| result.map_err(|_| "invalid_xlsx_sheet".to_owned()))?;
+        .ok_or_else(|| "Missing XLSX sheet".to_owned())
+        .and_then(|result| result.map_err(|_| "Invalid XLSX sheet".to_owned()))?;
     let mut rows = range.rows();
     let headers = rows
         .next()
-        .ok_or_else(|| "xlsx_headers_missing".to_owned())?;
+        .ok_or_else(|| "Missing XLSX headers".to_owned())?;
     let mapping = ColumnMapping::from_headers(headers.iter().map(ToString::to_string))?;
     collect_rows(rows.enumerate().map(|(index, row)| {
         let values: Vec<String> = row.iter().map(ToString::to_string).collect();
@@ -64,11 +64,11 @@ where
             continue;
         }
         if matric_number.is_empty() || full_name.is_empty() {
-            issues.push(format!("row_{row_number}_missing_matric_or_name"));
+            issues.push(format!("Row_{row_number}: missing matric or name"));
             continue;
         }
         if !seen.insert(matric_number.to_ascii_lowercase()) {
-            issues.push(format!("row_{row_number}_duplicate_matric_number"));
+            issues.push(format!("Row_{row_number}: duplicate matric number"));
             continue;
         }
         students.push(RosterStudent {
@@ -103,9 +103,9 @@ impl ColumnMapping {
         };
         Ok(Self {
             matric: find(&["matric_number", "matric", "student_id", "student_number"])
-                .ok_or_else(|| "roster_matric_column_missing".to_owned())?,
+                .ok_or_else(|| "Missing matric column".to_owned())?,
             name: find(&["full_name", "name", "student_name"])
-                .ok_or_else(|| "roster_name_column_missing".to_owned())?,
+                .ok_or_else(|| "Missing name column".to_owned())?,
             email: find(&["email", "email_address"]),
         })
     }

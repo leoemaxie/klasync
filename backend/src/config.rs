@@ -4,6 +4,7 @@ use std::env;
 pub struct AppConfig {
     pub database_url: Option<String>,
     pub jwt_secret: Option<String>,
+    pub jwt_secrets: Vec<String>,
     pub access_token_minutes: i64,
     pub refresh_token_days: i64,
     pub password_reset_outbox_dir: Option<String>,
@@ -39,6 +40,14 @@ impl AppConfig {
         Self {
             database_url: env::var("DATABASE_URL").ok(),
             jwt_secret: env::var("JWT_SECRET").ok(),
+            jwt_secrets: {
+                let mut secrets = Vec::new();
+                if let Ok(current) = env::var("JWT_SECRET") { if !current.is_empty() { secrets.push(current); } }
+                if let Ok(previous) = env::var("JWT_PREVIOUS_SECRETS") {
+                    secrets.extend(previous.split(',').map(str::trim).filter(|value| !value.is_empty()).map(ToOwned::to_owned));
+                }
+                secrets
+            },
             access_token_minutes: env::var("ACCESS_TOKEN_MINUTES")
                 .ok()
                 .and_then(|value| value.parse().ok())

@@ -24,9 +24,9 @@ pub async fn issue_tokens(
     account_id: Uuid,
     role: AccountRole,
 ) -> Result<AuthTokens, ApiError> {
-    let access_token = tokens::issue_access_token(config, account_id, role)
-        .map_err(|_| ApiError::service_unavailable())?;
     let session_id = Uuid::now_v7();
+    let access_token = tokens::issue_access_token(config, account_id, role, session_id)
+        .map_err(|_| ApiError::service_unavailable())?;
     let secret = Uuid::now_v7().simple().to_string();
     let refresh_hash = passwords::hash_async(secret.clone())
         .await
