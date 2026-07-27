@@ -16,7 +16,7 @@ pub struct LiveControlPatch {
     pub late_join_policy: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct LiveControlState {
     pub session_id: Uuid,
     pub captions_paused: bool,

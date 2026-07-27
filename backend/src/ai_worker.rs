@@ -28,7 +28,6 @@ struct PendingJob {
 
 #[derive(Debug, FromRow)]
 struct InputResource {
-    resource_type: String,
     storage_key: Option<String>,
     content: Option<String>,
     content_type: Option<String>,
@@ -118,7 +117,7 @@ async fn execute_claimed_job(
 ) -> Result<Uuid, ApiError> {
     let resource = match job.input_resource_id {
         Some(resource_id) => sqlx::query_as::<_, InputResource>(
-            "select resource_type, storage_key, content, content_type from lecture_resources where id = $1 and session_id = $2",
+            "select storage_key, content, content_type from lecture_resources where id = $1 and session_id = $2",
         )
         .bind(resource_id)
         .bind(job.session_id)
@@ -127,7 +126,6 @@ async fn execute_claimed_job(
         .map_err(|_| ApiError::service_unavailable())?
         .ok_or_else(|| ApiError::not_found("Resource for AI job input not found"))?,
         None => InputResource {
-            resource_type: "text".to_owned(),
             storage_key: None,
             content: Some(String::new()),
             content_type: None,

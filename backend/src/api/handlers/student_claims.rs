@@ -28,12 +28,11 @@ pub struct ClaimVerifyInput { pub verification_id: Uuid, pub code: String }
 pub struct ClaimVerifyResponse { pub participant_id: Uuid, pub status: &'static str }
 
 #[derive(Debug, FromRow)]
-struct ClaimContext { session_id: Uuid, matric_number: String, email: String }
+struct ClaimContext { email: String }
 
 #[derive(Debug, FromRow)]
 struct VerificationRecord {
     id: Uuid,
-    student_account_id: Uuid,
     participant_id: Uuid,
     session_id: Uuid,
     matric_number: String,
@@ -51,7 +50,7 @@ pub async fn request(
 ) -> Result<(StatusCode, Json<ClaimRequestResponse>), ApiError> {
     let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
     let context = sqlx::query_as::<_, ClaimContext>(
-        "select p.session_id, p.matric_number, a.email
+        "select a.email
          from session_participants p join student_accounts a on a.id = $2
          where p.id = $1 and p.student_account_id is null",
     )
@@ -92,7 +91,7 @@ pub async fn verify(
 ) -> Result<Json<ClaimVerifyResponse>, ApiError> {
     let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
     let record = sqlx::query_as::<_, VerificationRecord>(
-        "select v.id, v.student_account_id, v.participant_id, p.session_id, p.matric_number, v.email, v.code_hash, v.attempts, v.expires_at, v.consumed_at
+        "select v.id, v.participant_id, p.session_id, p.matric_number, v.email, v.code_hash, v.attempts, v.expires_at, v.consumed_at
          from student_claim_verifications v join session_participants p on p.id = v.participant_id
          where v.id = $1 and v.student_account_id = $2",
     )

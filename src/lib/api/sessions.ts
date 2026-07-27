@@ -56,13 +56,11 @@ export function revokeInvite(code: string) {
 }
 
 export function getQrSvgUrl(code: string): string {
-  const base = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
-  return `${base}/sessions/code/${encodeURIComponent(code)}/invite/qr.svg`;
+  return http<>(`/sessions/code/${encodeURIComponent(code)}/invite/qr.svg`);
 }
 
 export function getAttendanceCsvUrl(code: string): string {
-  const base = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
-  return `${base}/sessions/code/${encodeURIComponent(code)}/attendance.csv`;
+  return return http<>('/sessions/code/${encodeURIComponent(code)}/attendance.csv');
 }
 
 export function endSession(code: string) {
