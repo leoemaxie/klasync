@@ -37,7 +37,7 @@ pub async fn request(
         .bind(input.email.trim())
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("account_lookup_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let Some(account_id) = account_id else {
         return Ok(StatusCode::ACCEPTED);
     };
@@ -45,7 +45,7 @@ pub async fn request(
     let secret = Uuid::now_v7().simple().to_string();
     let token_hash = passwords::hash_async(secret.clone())
         .await
-        .map_err(|_| ApiError::service_unavailable("password_hashing_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     sqlx::query(
         "insert into password_reset_tokens (id, account_id, account_role, token_hash, expires_at) values ($1, $2, $3, $4, $5)",
     )
@@ -56,14 +56,14 @@ pub async fn request(
     .bind(Utc::now() + Duration::minutes(30))
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("reset_token_persistence_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     state.mailer.send(email::password_reset_message(
         &config,
         input.email.trim().to_owned(),
         &format!("{token_id}.{secret}"),
     ))
         .await
-        .map_err(|_| ApiError::service_unavailable("reset_delivery_not_configured"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(StatusCode::ACCEPTED)
 }
 
@@ -72,7 +72,7 @@ pub async fn complete(
     Json(input): Json<CompletePasswordResetInput>,
 ) -> Result<StatusCode, ApiError> {
     if input.new_password.len() < 12 {
-        return Err(ApiError::bad_request("password_too_short"));
+        return Err(ApiError::bad_request("Password must be at least 12 characters long"));
     }
     let config = state.config.clone();
     let pool = require_database(state.production_database(), &config)?;
@@ -83,29 +83,29 @@ pub async fn complete(
     .bind(token_id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("reset_token_lookup_failed"))?
-    .ok_or_else(|| ApiError::unauthorized("invalid_reset_token"))?;
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::unauthorized("Invalid or expired password reset token"))?;
     let valid_hash = passwords::verify_async(secret.to_owned(), record.token_hash.clone()).await;
     let valid_token = record.used_at.is_none() && record.expires_at > Utc::now();
     if !valid_hash || !valid_token {
-        return Err(ApiError::unauthorized("invalid_reset_token"));
+        return Err(ApiError::unauthorized("Invalid or expired password reset token"));
     }
     let password_hash = passwords::hash_async(input.new_password.clone())
         .await
-        .map_err(|_| ApiError::service_unavailable("password_hashing_failed"))?;
-    let mut transaction = pool.begin().await.map_err(|_| ApiError::service_unavailable("reset_transaction_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
+    let mut transaction = pool.begin().await.map_err(|_| ApiError::service_unavailable())?;
     let update = match record.account_role {
         AccountRole::Lecturer => "update lecturers set password_hash = $1 where id = $2",
         AccountRole::Student => "update student_accounts set password_hash = $1 where id = $2",
     };
     sqlx::query(update).bind(password_hash).bind(record.account_id).execute(&mut *transaction).await
-        .map_err(|_| ApiError::service_unavailable("password_update_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     sqlx::query("update password_reset_tokens set used_at = now() where id = $1")
         .bind(token_id).execute(&mut *transaction).await
-        .map_err(|_| ApiError::service_unavailable("reset_token_update_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     sqlx::query("update auth_sessions set revoked_at = now() where account_id = $1 and account_role = $2 and revoked_at is null")
         .bind(record.account_id).bind(record.account_role).execute(&mut *transaction).await
-        .map_err(|_| ApiError::service_unavailable("session_revocation_failed"))?;
-    transaction.commit().await.map_err(|_| ApiError::service_unavailable("reset_commit_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
+    transaction.commit().await.map_err(|_| ApiError::service_unavailable())?;
     Ok(StatusCode::NO_CONTENT)
 }

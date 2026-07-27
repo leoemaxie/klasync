@@ -20,7 +20,7 @@ pub async fn connect(
 ) -> Result<Response, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let receiver = state.captions.subscribe(session.id).await;
     Ok(websocket.on_upgrade(move |socket| stream(socket, receiver)))

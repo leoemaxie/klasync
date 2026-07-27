@@ -34,18 +34,18 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         if !state.config.production_auth_ready() {
-            return Err(ApiError::service_unavailable("auth_not_configured"));
+            return Err(ApiError::service_unavailable());
         }
         let value = parts
             .headers
             .get(AUTHORIZATION)
             .and_then(|header| header.to_str().ok())
-            .ok_or_else(|| ApiError::unauthorized("authorization_required"))?;
+            .ok_or_else(|| ApiError::unauthorized("Authorization header is required"))?;
         let token = value
             .strip_prefix("Bearer ")
-            .ok_or_else(|| ApiError::unauthorized("invalid_authorization_scheme"))?;
+            .ok_or_else(|| ApiError::unauthorized("Authorization header must use Bearer scheme"))?;
         let claims = tokens::validate_access_token(&state.config, token)
-            .map_err(|_| ApiError::unauthorized("invalid_access_token"))?;
+            .map_err(|_| ApiError::unauthorized("Invalid or expired access token"))?;
         Ok(Self {
             id: claims.sub,
             role: claims.role,
@@ -62,7 +62,7 @@ impl FromRequestParts<AppState> for AuthenticatedLecturer {
     ) -> Result<Self, Self::Rejection> {
         let account = AuthenticatedAccount::from_request_parts(parts, state).await?;
         if !matches!(account.role, AccountRole::Lecturer) {
-            return Err(ApiError::forbidden("lecturer_role_required"));
+            return Err(ApiError::forbidden("Lecturer access required"));
         }
         Ok(Self { id: account.id })
     }
@@ -77,7 +77,7 @@ impl FromRequestParts<AppState> for AuthenticatedStudent {
     ) -> Result<Self, Self::Rejection> {
         let account = AuthenticatedAccount::from_request_parts(parts, state).await?;
         if !matches!(account.role, AccountRole::Student) {
-            return Err(ApiError::forbidden("student_role_required"));
+            return Err(ApiError::forbidden("Student access required"));
         }
         Ok(Self { id: account.id })
     }

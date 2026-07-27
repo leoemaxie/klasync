@@ -13,9 +13,9 @@ pub fn require_database<'a>(
     config: &AppConfig,
 ) -> Result<&'a PgPool, ApiError> {
     if !config.production_auth_ready() {
-        return Err(ApiError::service_unavailable("auth_not_configured"));
+        return Err(ApiError::service_unavailable());
     }
-    pool.ok_or_else(|| ApiError::service_unavailable("database_not_configured"))
+    pool.ok_or_else(|| ApiError::service_unavailable())
 }
 
 pub async fn issue_tokens(
@@ -25,12 +25,12 @@ pub async fn issue_tokens(
     role: AccountRole,
 ) -> Result<AuthTokens, ApiError> {
     let access_token = tokens::issue_access_token(config, account_id, role)
-        .map_err(|_| ApiError::service_unavailable("token_issuance_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let session_id = Uuid::now_v7();
     let secret = Uuid::now_v7().simple().to_string();
     let refresh_hash = passwords::hash_async(secret.clone())
         .await
-        .map_err(|_| ApiError::service_unavailable("password_hashing_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let expires_at = Utc::now() + Duration::days(config.refresh_token_days);
     sqlx::query(
         "insert into auth_sessions (id, account_id, account_role, refresh_token_hash, expires_at) values ($1, $2, $3, $4, $5)",
@@ -42,7 +42,7 @@ pub async fn issue_tokens(
     .bind(expires_at)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_persistence_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
 
     Ok(tokens::token_response(
         access_token,
@@ -54,11 +54,11 @@ pub async fn issue_tokens(
 pub fn parse_opaque_token(value: &str) -> Result<(Uuid, &str), ApiError> {
     let (session_id, secret) = value
         .split_once('.')
-        .ok_or_else(|| ApiError::unauthorized("invalid_refresh_token"))?;
+        .ok_or_else(|| ApiError::unauthorized("Invalid or expired refresh token"))?;
     let session_id =
-        Uuid::parse_str(session_id).map_err(|_| ApiError::unauthorized("invalid_refresh_token"))?;
+        Uuid::parse_str(session_id).map_err(|_| ApiError::unauthorized("Invalid or expired refresh token"))?;
     if secret.is_empty() {
-        return Err(ApiError::unauthorized("invalid_refresh_token"));
+        return Err(ApiError::unauthorized("Invalid or expired refresh token"));
     }
     Ok((session_id, secret))
 }

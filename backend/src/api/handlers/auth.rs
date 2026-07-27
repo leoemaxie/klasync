@@ -40,7 +40,7 @@ pub async fn register_lecturer(
     let pool = require_database(state.production_database(), &config)?;
     let password_hash = passwords::hash_async(input.password.clone())
         .await
-        .map_err(|_| ApiError::service_unavailable("password_hashing_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let account_id = sqlx::query_scalar::<_, Uuid>(
         "insert into lecturers (name, email, password_hash) values ($1, lower($2), $3) returning id",
     )
@@ -49,7 +49,7 @@ pub async fn register_lecturer(
     .bind(password_hash)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::conflict("lecturer_email_unavailable"))?;
+    .map_err(|_| ApiError::conflict("An account with this email address already exists"))?;
     let tokens = issue_tokens(pool, &config, account_id, AccountRole::Lecturer).await?;
     Ok((StatusCode::CREATED, Json(tokens)))
 }
@@ -63,7 +63,7 @@ pub async fn register_student(
     let pool = require_database(state.production_database(), &config)?;
     let password_hash = passwords::hash_async(input.password.clone())
         .await
-        .map_err(|_| ApiError::service_unavailable("password_hashing_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let account_id = sqlx::query_scalar::<_, Uuid>(
         "insert into student_accounts (matric_number, display_name, email, password_hash) values ($1, $2, lower($3), $4) returning id",
     )
@@ -73,7 +73,7 @@ pub async fn register_student(
     .bind(password_hash)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::conflict("student_identity_unavailable"))?;
+    .map_err(|_| ApiError::conflict("A student account with this matriculation number or email already exists"))?;
     let tokens = issue_tokens(pool, &config, account_id, AccountRole::Student).await?;
     Ok((StatusCode::CREATED, Json(tokens)))
 }
@@ -105,18 +105,18 @@ pub async fn refresh(
     .bind(session_id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_lookup_failed"))?
-    .ok_or_else(|| ApiError::unauthorized("invalid_refresh_token"))?;
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::unauthorized("Invalid or expired refresh token"))?;
     let valid_hash = passwords::verify_async(secret.to_owned(), session.refresh_token_hash.clone()).await;
     let valid_session = session.revoked_at.is_none() && session.expires_at > Utc::now();
     if !valid_hash || !valid_session {
-        return Err(ApiError::unauthorized("invalid_refresh_token"));
+        return Err(ApiError::unauthorized("Invalid or expired refresh token"));
     }
     sqlx::query("update auth_sessions set revoked_at = now() where id = $1")
         .bind(session_id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("session_update_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(
         issue_tokens(pool, &config, session.account_id, session.account_role).await?,
     ))
@@ -133,7 +133,7 @@ pub async fn logout(
         .bind(session_id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("session_update_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -152,17 +152,17 @@ async fn login(
         .bind(input.email.trim())
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("account_lookup_failed"))?
-        .ok_or_else(|| ApiError::unauthorized("invalid_credentials"))?;
+        .map_err(|_| ApiError::service_unavailable())?
+        .ok_or_else(|| ApiError::unauthorized("Invalid email or password"))?;
     if !passwords::verify_async(input.password, account.password_hash).await {
-        return Err(ApiError::unauthorized("invalid_credentials"));
+        return Err(ApiError::unauthorized("Invalid email or password"));
     }
     issue_tokens(pool, &config, account.id, role).await
 }
 
 fn validate_password(password: &str) -> Result<(), ApiError> {
     if password.len() < 12 {
-        return Err(ApiError::bad_request("password_too_short"));
+        return Err(ApiError::bad_request("Password must be at least 12 characters long"));
     }
     Ok(())
 }

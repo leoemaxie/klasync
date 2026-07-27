@@ -26,7 +26,7 @@ pub async fn create(
         .bind(input.title.trim())
         .fetch_one(pool)
         .await
-        .map_err(|_| ApiError::conflict("course_creation_failed"))?;
+        .map_err(|_| ApiError::conflict("Course code already exists for this lecturer"))?;
         return Ok((StatusCode::CREATED, Json(course)));
     }
     let mut store = state.store.lock().await;
@@ -51,7 +51,7 @@ pub async fn list(
         .bind(lecturer.id)
         .fetch_all(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("course_lookup_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         return Ok(Json(courses));
     }
     let courses = state
@@ -76,7 +76,7 @@ pub async fn upload_roster(
         let mut transaction = pool
             .begin()
             .await
-            .map_err(|_| ApiError::service_unavailable("roster_transaction_failed"))?;
+            .map_err(|_| ApiError::service_unavailable())?;
         let owns_course: bool = sqlx::query_scalar(
             "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
         )
@@ -84,15 +84,15 @@ pub async fn upload_roster(
         .bind(lecturer.id)
         .fetch_one(&mut *transaction)
         .await
-        .map_err(|_| ApiError::service_unavailable("course_lookup_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         if !owns_course {
-            return Err(ApiError::not_found("course_not_found"));
+            return Err(ApiError::not_found("Course not found"));
         }
         sqlx::query("delete from roster_students where course_id = $1")
             .bind(course_id)
             .execute(&mut *transaction)
             .await
-            .map_err(|_| ApiError::service_unavailable("roster_replace_failed"))?;
+            .map_err(|_| ApiError::service_unavailable())?;
         for student in &input.students {
             sqlx::query(
                 "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
@@ -103,12 +103,12 @@ pub async fn upload_roster(
             .bind(student.email.as_deref())
             .execute(&mut *transaction)
             .await
-            .map_err(|_| ApiError::conflict("invalid_or_duplicate_roster_record"))?;
+            .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;
         }
         transaction
             .commit()
             .await
-            .map_err(|_| ApiError::service_unavailable("roster_commit_failed"))?;
+            .map_err(|_| ApiError::service_unavailable())?;
         return Ok(Json(input.students));
     }
     let mut store = state.store.lock().await;
@@ -117,7 +117,7 @@ pub async fn upload_roster(
         .get(&course_id)
         .is_some_and(|course| course.lecturer_id == lecturer.id)
     {
-        return Err(ApiError::not_found("course_not_found"));
+        return Err(ApiError::not_found("Course not found"));
     }
     store.rosters.insert(course_id, input.students.clone());
     Ok(Json(input.students))

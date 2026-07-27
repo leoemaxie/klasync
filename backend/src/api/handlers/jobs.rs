@@ -16,15 +16,15 @@ pub async fn create(
     Path(short_code): Path<String>,
     Json(input): Json<CreateAiJobRequest>,
 ) -> Result<(StatusCode, Json<AiJob>), ApiError> {
-    if !["transcribe", "summarize", "flashcards", "lecture_qa_index"].contains(&input.job_type.as_str()) {
-        return Err(ApiError::bad_request("invalid_ai_job_type"));
+    if !["transcribe", "summarize", "flashcards", "lecture_qa_index", "explain", "question_answer"].contains(&input.job_type.as_str()) {
+        return Err(ApiError::bad_request("Invalid AI job type specified"));
     }
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar("select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)")
         .bind(session.id).bind(lecturer.id).fetch_one(pool).await
-        .map_err(|_| ApiError::service_unavailable("session_lookup_failed"))?;
-    if !owns_session { return Err(ApiError::not_found("session_not_found")); }
+        .map_err(|_| ApiError::service_unavailable())?;
+    if !owns_session { return Err(ApiError::not_found("Session not found")); }
     let job = sqlx::query_as::<_, AiJob>(&format!(
         "insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, $4, $5) returning {JOB_COLUMNS}"
     ))
@@ -35,7 +35,7 @@ pub async fn create(
     .bind(input.input_resource_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("ai_job_persistence_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     Ok((StatusCode::ACCEPTED, Json(job)))
 }
 
@@ -44,7 +44,7 @@ pub async fn list(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Json<Vec<AiJob>>, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let jobs = sqlx::query_as::<_, AiJob>(&format!(
         "select {JOB_COLUMNS} from ai_jobs where session_id = $1 and requested_by = $2 order by created_at desc"
@@ -53,6 +53,6 @@ pub async fn list(
     .bind(lecturer.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("ai_job_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(jobs))
 }

@@ -29,7 +29,7 @@ pub async fn join(
     if let Some(pool) = state.production_database() {
         let session = database_session_by_code(pool, &short_code).await?;
         if !matches!(session.status, SessionStatus::Live) {
-            return Err(ApiError::conflict("session_not_live"));
+            return Err(ApiError::conflict("This lecture session is not currently active"));
         }
         let roster_name: Option<String> = sqlx::query_scalar(
             "select full_name from roster_students where course_id = $1 and lower(matric_number) = lower($2)",
@@ -38,7 +38,7 @@ pub async fn join(
         .bind(input.matric_number.trim())
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("roster_lookup_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         let status = if roster_name.is_some() {
             VerificationStatus::Verified
         } else {
@@ -61,21 +61,21 @@ pub async fn join(
         .bind(status)
         .fetch_one(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("participant_persistence_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         sqlx::query(
             "insert into attendance_events (participant_id, event_type) values ($1, 'joined')",
         )
         .bind(participant.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("attendance_event_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         return Ok((StatusCode::CREATED, Json(participant)));
     }
 
     let mut store = state.store.lock().await;
     let session = find_by_code(&store.sessions, &short_code)?.clone();
     if !matches!(session.status, SessionStatus::Live) {
-        return Err(ApiError::conflict("session_not_live"));
+        return Err(ApiError::conflict("This lecture session is not currently active"));
     }
     if let Some(existing) = store
         .participants
@@ -128,7 +128,7 @@ pub async fn list_for_session(
 ) -> Result<Json<Vec<SessionParticipant>>, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = owned_session(pool, &short_code, lecturer.id).await?;
     let participants = sqlx::query_as::<_, SessionParticipant>(&format!(
         "select {PARTICIPANT_COLUMNS} from session_participants where session_id = $1 order by joined_at"
@@ -136,7 +136,7 @@ pub async fn list_for_session(
     .bind(session.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("attendance_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(participants))
 }
 
@@ -153,22 +153,22 @@ pub async fn heartbeat(
         .bind(participant_id)
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("heartbeat_update_failed"))?
-        .ok_or_else(|| ApiError::conflict("participant_or_session_not_live"))?;
+        .map_err(|_| ApiError::service_unavailable())?
+        .ok_or_else(|| ApiError::conflict("Participant record not found or session is no longer active"))?;
         sqlx::query(
             "insert into attendance_events (participant_id, event_type) values ($1, 'heartbeat')",
         )
         .bind(participant.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("attendance_event_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         return Ok(Json(participant));
     }
     let mut store = state.store.lock().await;
     let participant = store
         .participants
         .get_mut(&participant_id)
-        .ok_or_else(|| ApiError::not_found("participant_not_found"))?;
+        .ok_or_else(|| ApiError::not_found("Participant not found"))?;
     participant.last_seen_at = Utc::now();
     participant.heartbeat_count += 1;
     Ok(Json(participant.clone()))
@@ -181,7 +181,7 @@ pub async fn attendance_summary(
 ) -> Result<Json<AttendanceSummary>, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = owned_session(pool, &short_code, lecturer.id).await?;
     let (participant_count, verified_count, provisional_count, total_heartbeats): (i64, i64, i64, i64) = sqlx::query_as(
         "select count(*), count(*) filter (where verification_status = 'verified'), count(*) filter (where verification_status = 'provisional'), coalesce(sum(heartbeat_count), 0) from session_participants where session_id = $1",
@@ -189,7 +189,7 @@ pub async fn attendance_summary(
     .bind(session.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("attendance_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(AttendanceSummary {
         session_id: session.id,
         participant_count: participant_count as usize,
@@ -212,9 +212,9 @@ async fn owned_session(
     .bind(lecturer_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     if !owns_session {
-        return Err(ApiError::not_found("session_not_found"));
+        return Err(ApiError::not_found("Session not found"));
     }
     Ok(session)
 }

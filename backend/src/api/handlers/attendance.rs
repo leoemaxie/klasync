@@ -23,7 +23,7 @@ pub async fn review(
 ) -> Result<Json<SessionParticipant>, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let (status, event) = match input.decision {
         AttendanceReviewDecision::Flagged => (VerificationStatus::Provisional, "flagged"),
         AttendanceReviewDecision::Approved => (VerificationStatus::Verified, "approved"),
@@ -41,15 +41,15 @@ pub async fn review(
     .bind(short_code)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("attendance_review_failed"))?
-    .ok_or_else(|| ApiError::not_found("participant_not_found"))?;
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::not_found("Participant not found"))?;
     sqlx::query("insert into attendance_events (participant_id, event_type, metadata) values ($1, $2, jsonb_build_object('reviewed_by', $3))")
         .bind(participant.id)
         .bind(event)
         .bind(lecturer.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("attendance_event_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(participant))
 }
 
@@ -60,7 +60,7 @@ pub async fn export_csv(
 ) -> Result<Response, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let rows = sqlx::query_as::<_, SessionParticipant>(&format!(
         "select participant.{PARTICIPANT_COLUMNS} from session_participants participant \
          join lecture_sessions session on session.id = participant.session_id \
@@ -70,11 +70,11 @@ pub async fn export_csv(
     .bind(lecturer.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("attendance_export_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     let mut writer = csv::Writer::from_writer(Vec::new());
     writer
         .write_record(["matric_number", "display_name", "verification_status", "joined_at", "last_seen_at", "heartbeat_count"])
-        .map_err(|_| ApiError::service_unavailable("attendance_export_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     for row in rows {
         writer
             .write_record([
@@ -85,11 +85,11 @@ pub async fn export_csv(
                 row.last_seen_at.to_rfc3339(),
                 row.heartbeat_count.to_string(),
             ])
-            .map_err(|_| ApiError::service_unavailable("attendance_export_failed"))?;
+            .map_err(|_| ApiError::service_unavailable())?;
     }
     let body = writer
         .into_inner()
-        .map_err(|_| ApiError::service_unavailable("attendance_export_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok((
         [
             (header::CONTENT_TYPE, "text/csv; charset=utf-8"),

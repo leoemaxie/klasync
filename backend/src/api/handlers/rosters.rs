@@ -19,18 +19,18 @@ pub async fn import_file(
     let file = multipart
         .next_field()
         .await
-        .map_err(|_| ApiError::bad_request("invalid_multipart_upload"))?
-        .ok_or_else(|| ApiError::bad_request("roster_file_required"))?;
+        .map_err(|_| ApiError::bad_request("Invalid upload format"))?
+        .ok_or_else(|| ApiError::bad_request("Roster file is required"))?;
     let file_name = file
         .file_name()
         .map(ToOwned::to_owned)
-        .ok_or_else(|| ApiError::bad_request("roster_file_name_required"))?;
+        .ok_or_else(|| ApiError::bad_request("Roster file name is required"))?;
     let bytes = file
         .bytes()
         .await
-        .map_err(|_| ApiError::bad_request("roster_file_read_failed"))?;
+        .map_err(|_| ApiError::bad_request("Failed to read roster file"))?;
     let parsed = roster_file::parse(&file_name, &bytes)
-        .map_err(|_| ApiError::bad_request("invalid_roster_file"))?;
+        .map_err(|_| ApiError::bad_request("Invalid or unsupported roster file format"))?;
     let report = RosterImportReport {
         imported_count: parsed.students.len(),
         issues: parsed.issues,
@@ -41,11 +41,11 @@ pub async fn import_file(
 
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable("roster_transaction_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -53,15 +53,15 @@ pub async fn import_file(
     .bind(lecturer.id)
     .fetch_one(&mut *transaction)
     .await
-    .map_err(|_| ApiError::service_unavailable("course_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     if !owns_course {
-        return Err(ApiError::not_found("course_not_found"));
+        return Err(ApiError::not_found("Course not found"));
     }
     sqlx::query("delete from roster_students where course_id = $1")
         .bind(course_id)
         .execute(&mut *transaction)
         .await
-        .map_err(|_| ApiError::service_unavailable("roster_replace_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     for student in parsed.students {
         sqlx::query(
             "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
@@ -72,11 +72,11 @@ pub async fn import_file(
         .bind(student.email)
         .execute(&mut *transaction)
         .await
-        .map_err(|_| ApiError::conflict("invalid_or_duplicate_roster_record"))?;
+        .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;
     }
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable("roster_commit_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok((StatusCode::OK, Json(report)))
 }

@@ -13,11 +13,11 @@ pub async fn claim_guest_participation(
 ) -> Result<StatusCode, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable("claim_transaction_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let claim_id = sqlx::query_scalar::<_, Uuid>(
         "insert into student_session_claims (participant_id, student_account_id, verified_at) \
          select p.id, sa.id, now() from session_participants p \
@@ -30,8 +30,8 @@ pub async fn claim_guest_participation(
     .bind(student.id)
     .fetch_optional(&mut *transaction)
     .await
-    .map_err(|_| ApiError::service_unavailable("claim_lookup_failed"))?
-    .ok_or_else(|| ApiError::forbidden("claim_identity_mismatch"))?;
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::forbidden("Student identity does not match participant record"))?;
     sqlx::query(
         "insert into resource_access_grants (resource_id, student_account_id) \
          select resource.id, $2 from lecture_resources resource \
@@ -43,11 +43,11 @@ pub async fn claim_guest_participation(
     .bind(student.id)
     .execute(&mut *transaction)
     .await
-    .map_err(|_| ApiError::service_unavailable("resource_grant_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable("claim_commit_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
     let _ = claim_id;
     Ok(StatusCode::NO_CONTENT)
 }

@@ -48,9 +48,9 @@ impl ApiError {
         }
     }
 
-    pub fn service_unavailable(error: &'static str) -> Self {
+    pub fn service_unavailable() -> Self {
         Self {
-            error,
+            error: "Service unavailable, please try again later",
             status: StatusCode::SERVICE_UNAVAILABLE,
         }
     }

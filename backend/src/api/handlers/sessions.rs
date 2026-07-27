@@ -26,7 +26,7 @@ pub async fn create(
 ) -> Result<(StatusCode, Json<InviteResponse>), ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -34,9 +34,9 @@ pub async fn create(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("course_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     if !owns_course {
-        return Err(ApiError::not_found("course_not_found"));
+        return Err(ApiError::not_found("Course not found"));
     }
 
     let code = short_code();
@@ -54,7 +54,7 @@ pub async fn create(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::conflict("session_code_collision"))?;
+    .map_err(|_| ApiError::conflict("A session code collision occurred, please try again"))?;
 
     sqlx::query(
         "insert into session_invites (session_id, token, short_code, created_by) values ($1, $2, $3, $4)",
@@ -65,7 +65,7 @@ pub async fn create(
     .bind(lecturer.id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("invite_persistence_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
 
     let join_url = format!("/?join={code}");
     Ok((
@@ -89,14 +89,14 @@ pub async fn get_by_code(
                 .bind(session.course_id)
                 .fetch_optional(pool)
                 .await
-                .map_err(|_| ApiError::service_unavailable("course_lookup_failed"))?
-                .ok_or_else(|| ApiError::not_found("course_not_found"))?;
+                .map_err(|_| ApiError::service_unavailable())?
+                .ok_or_else(|| ApiError::not_found("Course not found"))?;
         let participant_count: i64 =
             sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
                 .bind(session.id)
                 .fetch_one(pool)
                 .await
-                .map_err(|_| ApiError::service_unavailable("attendance_lookup_failed"))?;
+                .map_err(|_| ApiError::service_unavailable())?;
         return Ok(Json(SessionDetail {
             session,
             course,
@@ -110,7 +110,7 @@ pub async fn get_by_code(
         .courses
         .get(&session.course_id)
         .cloned()
-        .ok_or_else(|| ApiError::not_found("course_not_found"))?;
+        .ok_or_else(|| ApiError::not_found("Course not found"))?;
     let participant_count = store
         .participants
         .values()
@@ -130,7 +130,7 @@ pub async fn end(
 ) -> Result<Json<LectureSession>, ApiError> {
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = sqlx::query_as::<_, LectureSession>(&format!(
         "update lecture_sessions set status = 'ended', ended_at = now() \
          where short_code = upper($1) and lecturer_id = $2 returning {SESSION_COLUMNS}"
@@ -139,8 +139,8 @@ pub async fn end(
     .bind(lecturer.id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_update_failed"))?
-    .ok_or_else(|| ApiError::not_found("session_not_found"))?;
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::not_found("Session not found"))?;
     Ok(Json(session))
 }
 
@@ -154,8 +154,8 @@ pub async fn database_session_by_code(
     .bind(short_code)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_lookup_failed"))?
-    .ok_or_else(|| ApiError::not_found("session_not_found"))
+    .map_err(|_| ApiError::service_unavailable())?
+    .ok_or_else(|| ApiError::not_found("Session not found"))
 }
 
 pub fn find_by_code<'a>(
@@ -165,5 +165,5 @@ pub fn find_by_code<'a>(
     sessions
         .values()
         .find(|session| session.short_code.eq_ignore_ascii_case(short_code))
-        .ok_or_else(|| ApiError::not_found("session_not_found"))
+        .ok_or_else(|| ApiError::not_found("Session not found"))
 }

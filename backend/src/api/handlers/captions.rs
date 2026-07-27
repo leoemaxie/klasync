@@ -30,7 +30,7 @@ pub async fn list(
         .bind(session.id)
         .fetch_all(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable("caption_lookup_failed"))?;
+        .map_err(|_| ApiError::service_unavailable())?;
         return Ok(Json(captions));
     }
     let store = state.store.lock().await;
@@ -48,14 +48,14 @@ pub async fn publish(
 ) -> Result<(StatusCode, Json<CaptionChunk>), ApiError> {
     let text = input.text.trim();
     if text.is_empty() {
-        return Err(ApiError::bad_request("caption_text_required"));
+        return Err(ApiError::bad_request("Caption text cannot be empty"));
     }
     let pool = state
         .production_database()
-        .ok_or_else(|| ApiError::service_unavailable("database_not_configured"))?;
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     if !matches!(session.status, SessionStatus::Live) {
-        return Err(ApiError::conflict("session_not_live"));
+        return Err(ApiError::conflict("Captions can only be published to live sessions"));
     }
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -64,9 +64,9 @@ pub async fn publish(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("session_lookup_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     if !owns_session {
-        return Err(ApiError::not_found("session_not_found"));
+        return Err(ApiError::not_found("Session not found"));
     }
     let caption = sqlx::query_as::<_, CaptionChunk>(&format!(
         "insert into caption_chunks (id, session_id, sequence_number, text, created_at) \
@@ -79,7 +79,7 @@ pub async fn publish(
     .bind(Utc::now())
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable("caption_persistence_failed"))?;
+    .map_err(|_| ApiError::service_unavailable())?;
     state.captions.publish(caption.clone()).await;
     Ok((StatusCode::CREATED, Json(caption)))
 }
