@@ -9,6 +9,7 @@ pub mod email;
 pub mod models;
 pub mod realtime;
 pub mod roster_file;
+pub mod redis;
 pub mod security;
 pub mod state;
 pub mod storage;

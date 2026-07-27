@@ -32,6 +32,10 @@ pub struct AppConfig {
     pub openrouter_allow_paid_fallback: bool,
     pub ai_max_output_tokens: u32,
     pub ai_max_cost_usd: f64,
+    pub redis_url: Option<String>,
+    pub redis_key_prefix: String,
+    pub redis_command_timeout_ms: u64,
+    pub redis_required: bool,
 }
 
 impl AppConfig {
@@ -111,6 +115,16 @@ impl AppConfig {
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(0.02),
+            redis_url: env::var("REDIS_URL").ok().filter(|value| !value.is_empty()),
+            redis_key_prefix: env::var("REDIS_KEY_PREFIX")
+                .unwrap_or_else(|_| "klasync:development".to_owned())
+                .trim_end_matches(':')
+                .to_owned(),
+            redis_command_timeout_ms: env::var("REDIS_COMMAND_TIMEOUT_MS")
+                .ok().and_then(|value| value.parse().ok()).unwrap_or(1000),
+            redis_required: env::var("REDIS_REQUIRED")
+                .map(|value| value.eq_ignore_ascii_case("true"))
+                .unwrap_or(false),
         }
     }
 

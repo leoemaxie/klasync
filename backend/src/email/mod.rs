@@ -1,3 +1,14 @@
+/// KLASYNC transactional email module.
+///
+/// Provides transport-agnostic email sending via the `EmailSender` trait,
+/// with pluggable backends (Resend API, development file outbox, unconfigured
+/// stub). All outgoing emails are rendered through branded templates defined
+/// in the `templates` submodule.
+
+pub mod escape;
+pub mod layout;
+pub mod templates;
+
 use std::{path::PathBuf, sync::Arc};
 
 use async_trait::async_trait;
@@ -24,7 +35,7 @@ pub struct EmailMessage {
 pub enum EmailError {
     #[error("email delivery is not configured")]
     Unavailable,
-    #[error("Resend rejected the message: {0}")]
+    #[error("email provider rejected the message: {0}")]
     Rejected(String),
     #[error("email request failed: {0}")]
     Transport(#[from] reqwest::Error),
@@ -39,6 +50,10 @@ pub trait EmailSender: Send + Sync {
     async fn send(&self, message: EmailMessage) -> Result<(), EmailError>;
     fn provider_name(&self) -> &'static str;
 }
+
+// ---------------------------------------------------------------------------
+// Resend API transport
+// ---------------------------------------------------------------------------
 
 pub struct ResendEmailSender {
     client: Client,
@@ -87,6 +102,10 @@ impl EmailSender for ResendEmailSender {
     fn provider_name(&self) -> &'static str { "resend" }
 }
 
+// ---------------------------------------------------------------------------
+// Development file outbox
+// ---------------------------------------------------------------------------
+
 /// Keeps local onboarding usable without accidentally sending test mail.
 pub struct DevelopmentOutbox { root: PathBuf }
 
@@ -111,6 +130,10 @@ impl EmailSender for DevelopmentOutbox {
     fn provider_name(&self) -> &'static str { "development-outbox" }
 }
 
+// ---------------------------------------------------------------------------
+// Unconfigured stub
+// ---------------------------------------------------------------------------
+
 pub struct UnconfiguredEmailSender;
 
 #[async_trait]
@@ -119,6 +142,10 @@ impl EmailSender for UnconfiguredEmailSender {
     fn provider_name(&self) -> &'static str { "unconfigured" }
 }
 
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
 pub fn sender_from_config(config: &AppConfig) -> SharedEmailSender {
     if let (Some(api_key), Some(from)) = (&config.resend_api_key, &config.resend_from) {
         Arc::new(ResendEmailSender::new(api_key.clone(), from.clone()))
@@ -126,16 +153,5 @@ pub fn sender_from_config(config: &AppConfig) -> SharedEmailSender {
         Arc::new(DevelopmentOutbox::new(directory))
     } else {
         Arc::new(UnconfiguredEmailSender)
-    }
-}
-
-pub fn password_reset_message(config: &AppConfig, email: String, token: &str) -> EmailMessage {
-    let reset_url = format!("{}/reset-password?token={token}", config.public_app_url);
-    EmailMessage {
-        to: email,
-        subject: "Reset your KLASYNC password".to_owned(),
-        text: format!("Reset your KLASYNC password: {reset_url}\n\nThis link expires shortly."),
-        html: format!("<p>Reset your KLASYNC password.</p><p><a href=\"{reset_url}\">Reset password</a></p><p>This link expires shortly.</p>"),
-        idempotency_key: format!("password-reset-{token}"),
     }
 }

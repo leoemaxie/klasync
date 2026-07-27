@@ -10,7 +10,7 @@ use crate::{
         passwords,
         service::{parse_opaque_token, require_database},
     },
-    email,
+    email::{EmailMessage, templates::password_reset::PasswordResetTemplate},
     state::AppState,
 };
 
@@ -57,10 +57,14 @@ pub async fn request(
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    state.mailer.send(email::password_reset_message(
-        &config,
-        input.email.trim().to_owned(),
-        &format!("{token_id}.{secret}"),
+    let token = format!("{token_id}.{secret}");
+    let reset_url = format!("{}/reset-password?token={token}", config.public_app_url);
+    let template = PasswordResetTemplate { reset_url, expires_minutes: 30 };
+    state.mailer.send(EmailMessage::from_template(
+        input.email.trim(),
+        format!("password-reset-{token}"),
+        &template,
+        &config.public_app_url,
     ))
         .await
         .map_err(|_| ApiError::service_unavailable())?;

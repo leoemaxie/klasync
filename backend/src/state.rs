@@ -12,6 +12,7 @@ use crate::{
     database,
     email::{self, SharedEmailSender},
     realtime::CaptionHub,
+    redis::RedisStore,
     storage::{self, SharedStorageAdapter},
 };
 
@@ -24,6 +25,7 @@ pub struct AppState {
     pub storage: SharedStorageAdapter,
     pub mailer: SharedEmailSender,
     pub ai: SharedAiAdapter,
+    pub redis: Option<Arc<RedisStore>>,
 }
 
 impl Default for AppState {
@@ -35,6 +37,7 @@ impl Default for AppState {
             storage: storage::adapter_from_config(&config),
             mailer: email::sender_from_config(&config),
             ai: ai::adapter_from_config(&config),
+            redis: None,
             config: Arc::new(config),
             captions: CaptionHub::default(),
         }
@@ -50,6 +53,19 @@ impl AppState {
         let storage = storage::adapter_from_config(&config);
         let mailer = email::sender_from_config(&config);
         let ai = ai::adapter_from_config(&config);
+        let redis = match config.redis_url.as_ref() {
+            Some(_) => match RedisStore::connect(&config).await {
+                Ok(store) => Some(Arc::new(store)),
+                Err(error) if config.redis_required => {
+                    return Err(sqlx::Error::Protocol(format!("Managed Redis connection failed: {error}")));
+                }
+                Err(error) => {
+                    tracing::warn!(error = %error, "Managed Redis unavailable; starting in degraded mode");
+                    None
+                }
+            },
+            None => None,
+        };
         Ok(Self {
             store: Arc::new(Mutex::new(Store::default())),
             database,
@@ -58,6 +74,7 @@ impl AppState {
             storage,
             mailer,
             ai,
+            redis,
         })
     }
 

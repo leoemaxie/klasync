@@ -8,7 +8,10 @@ use crate::{
     api::error::ApiError,
     audit::{self, AuditEvent},
     auth::{guard::AuthenticatedStudent, passwords},
-    email::EmailMessage,
+    email::{
+        EmailMessage,
+        templates::{claim_confirm::ClaimConfirmTemplate, claim_verify::ClaimVerifyTemplate},
+    },
     state::AppState,
 };
 
@@ -72,13 +75,13 @@ pub async fn request(
     .bind(verification_id).bind(student.id).bind(input.participant_id).bind(&context.email).bind(code_hash).bind(expires_at)
     .execute(pool).await
     .map_err(|_| ApiError::service_unavailable())?;
-    state.mailer.send(EmailMessage {
-        to: context.email,
-        subject: "Verify your KLASYNC lecture claim".to_owned(),
-        text: format!("Your KLASYNC verification code is {code}. It expires in 10 minutes."),
-        html: format!("<p>Your KLASYNC verification code is <strong>{code}</strong>.</p><p>It expires in 10 minutes.</p>"),
-        idempotency_key: format!("claim-verification-{verification_id}"),
-    }).await.map_err(|_| ApiError::service_unavailable())?;
+    let template = ClaimVerifyTemplate { code, expires_minutes: 10 };
+    state.mailer.send(EmailMessage::from_template(
+        context.email,
+        format!("claim-verification-{verification_id}"),
+        &template,
+        &state.config.public_app_url,
+    )).await.map_err(|_| ApiError::service_unavailable())?;
     Ok((StatusCode::ACCEPTED, Json(ClaimRequestResponse { verification_id, expires_at })))
 }
 
@@ -118,13 +121,12 @@ pub async fn verify(
         event_type: "student_participant_claimed",
         metadata: serde_json::json!({"participant_id": record.participant_id, "matric_number": record.matric_number}),
     }).await;
-    let _ = state.mailer.send(EmailMessage {
-        to: record.email,
-        subject: "KLASYNC lecture claim confirmed".to_owned(),
-        text: "Your lecture participation has been linked to your KLASYNC account.".to_owned(),
-        html: "<p>Your lecture participation has been linked to your KLASYNC account.</p>".to_owned(),
-        idempotency_key: format!("claim-confirmed-{}", record.participant_id),
-    }).await;
+    let _ = state.mailer.send(EmailMessage::from_template(
+        record.email,
+        format!("claim-confirmed-{}", record.participant_id),
+        &ClaimConfirmTemplate,
+        &state.config.public_app_url,
+    )).await;
     Ok(Json(ClaimVerifyResponse { participant_id: record.participant_id, status: "claimed" }))
 }
 

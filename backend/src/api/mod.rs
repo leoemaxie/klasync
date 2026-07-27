@@ -34,6 +34,7 @@ pub fn router(state: AppState) -> Router {
 
     Router::new()
         .route("/health", get(health::health))
+        .route("/health/ready", get(handlers::readiness::ready))
         .route(
             "/api/v1/auth/lecturers/register",
             post(auth::register_lecturer),
@@ -197,7 +198,7 @@ pub fn router(state: AppState) -> Router {
         )
         .layer(cors)
         .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
-        .layer(middleware::from_fn(crate::security::rate_limit))
+        .layer(middleware::from_fn_with_state(state.clone(), crate::security::rate_limit))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

@@ -13,6 +13,7 @@ pub mod lifecycle;
 pub mod jobs;
 pub mod participants;
 pub mod recovery;
+pub mod readiness;
 pub mod resources;
 pub mod rosters;
 pub mod sessions;
