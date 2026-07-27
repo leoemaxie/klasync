@@ -3,7 +3,8 @@
 
 use std::time::Duration;
 
-use redis::{aio::ConnectionManager, AsyncCommands, RedisError, Script};
+use redis::{aio::ConnectionManager, streams::{StreamReadOptions, StreamReadReply}, AsyncCommands, RedisError, Script};
+use uuid::Uuid;
 
 use crate::config::AppConfig;
 
@@ -13,6 +14,13 @@ pub struct RedisStore {
     manager: ConnectionManager,
     prefix: String,
     command_timeout: Duration,
+}
+
+#[derive(Clone)]
+pub struct RedisLock {
+    store: RedisStore,
+    key: String,
+    token: String,
 }
 
 impl RedisStore {
@@ -101,5 +109,75 @@ impl RedisStore {
         let mut pubsub = self.client.get_async_pubsub().await?;
         pubsub.subscribe(self.caption_channel(session_id)).await?;
         Ok(pubsub)
+    }
+
+    pub async fn enqueue_ai_job(&self, job_id: &str) -> Result<(), RedisError> {
+        let stream = self.key("ai-jobs", "stream");
+        let mut manager = self.manager.clone();
+        tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("XADD")
+                .arg(stream)
+                .arg("MAXLEN").arg("~").arg(10000)
+                .arg("*").arg("job_id").arg(job_id)
+                .query_async::<_, String>(&mut manager),
+        )
+        .await
+        .map_err(|_| RedisError::from((redis::ErrorKind::IoError, "Redis command timed out")))??;
+        Ok(())
+    }
+
+    pub async fn ensure_ai_consumer_group(&self) -> Result<(), RedisError> {
+        let stream = self.key("ai-jobs", "stream");
+        let mut manager = self.manager.clone();
+        let result: redis::RedisResult<String> = redis::cmd("XGROUP")
+            .arg("CREATE").arg(stream).arg("ai-workers").arg("$").arg("MKSTREAM")
+            .query_async(&mut manager).await;
+        match result {
+            Ok(_) => Ok(()),
+            Err(error) if error.to_string().contains("BUSYGROUP") => Ok(()),
+            Err(error) => Err(error),
+        }
+    }
+
+    pub async fn read_ai_job(&self, consumer: &str) -> Result<Option<(String, String)>, RedisError> {
+        let stream = self.key("ai-jobs", "stream");
+        let options = StreamReadOptions::default().group("ai-workers", consumer).count(1).block(1000);
+        let mut manager = self.manager.clone();
+        let reply: StreamReadReply = manager.xread_options(&[stream], &[">"], &options).await?;
+        for key in reply.keys {
+            for entry in key.ids {
+                if let Some(value) = entry.map.get("job_id") {
+                    if let Ok(job_id) = redis::from_redis_value::<String>(value) {
+                        return Ok(Some((entry.id, job_id)));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    pub async fn acknowledge_ai_job(&self, message_id: &str) -> Result<(), RedisError> {
+        let stream = self.key("ai-jobs", "stream");
+        let mut manager = self.manager.clone();
+        manager.xack::<_, _, ()>(stream, "ai-workers", message_id).await
+    }
+
+    pub async fn try_lock(&self, scope: &str, identity: &str, ttl_seconds: u64) -> Result<Option<RedisLock>, RedisError> {
+        let key = self.key("lock", &format!("{scope}:{identity}"));
+        let token = Uuid::now_v7().to_string();
+        let script = Script::new("if redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', ARGV[2]) then return 1 else return 0 end");
+        let mut manager = self.manager.clone();
+        let acquired: i32 = script.key(&key).arg(&token).arg(ttl_seconds).invoke_async(&mut manager).await?;
+        if acquired == 1 { Ok(Some(RedisLock { store: self.clone(), key, token })) } else { Ok(None) }
+    }
+}
+
+impl RedisLock {
+    pub async fn release(self) -> Result<(), RedisError> {
+        let script = Script::new("if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end");
+        let mut manager = self.store.manager.clone();
+        let _: i32 = script.key(self.key).arg(self.token).invoke_async(&mut manager).await?;
+        Ok(())
     }
 }

@@ -196,6 +196,10 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/participants/{participant_id}/heartbeat",
             post(participants::heartbeat),
         )
+        .route(
+            "/api/v1/participants/{participant_id}/presence",
+            post(handlers::presence::heartbeat),
+        )
         .layer(cors)
         .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), crate::security::rate_limit))

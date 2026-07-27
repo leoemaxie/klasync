@@ -88,6 +88,15 @@ pub async fn publish(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    state.captions.publish(caption.clone()).await;
+    let payload = serde_json::to_string(&caption)
+        .map_err(|_| ApiError::service_unavailable())?;
+    if let Some(redis) = &state.redis {
+        if let Err(error) = redis.publish_caption(&session.id.to_string(), &payload).await {
+            tracing::warn!(%error, "Redis caption publish failed; using local broadcast");
+            state.captions.publish(caption.clone()).await;
+        }
+    } else {
+        state.captions.publish(caption.clone()).await;
+    }
     Ok((StatusCode::CREATED, Json(caption)))
 }

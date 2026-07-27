@@ -61,3 +61,11 @@ impl IntoResponse for ApiError {
         (self.status, Json(self)).into_response()
     }
 }
+
+impl std::fmt::Display for ApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.error)
+    }
+}
+
+impl std::error::Error for ApiError {}

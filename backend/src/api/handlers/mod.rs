@@ -12,6 +12,7 @@ pub mod live_controls;
 pub mod lifecycle;
 pub mod jobs;
 pub mod participants;
+pub mod presence;
 pub mod recovery;
 pub mod readiness;
 pub mod resources;

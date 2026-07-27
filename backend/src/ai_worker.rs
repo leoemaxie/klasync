@@ -47,6 +47,22 @@ pub async fn process_job(
     job_id: Uuid,
     lecturer_id: Uuid,
 ) -> Result<ExecutionResponse, ApiError> {
+    if let Some(redis) = &state.redis {
+        let lock = redis.try_lock("ai-job", &job_id.to_string(), 300).await
+            .map_err(|_| ApiError::service_unavailable())?
+            .ok_or_else(|| ApiError::conflict("This AI job is already being processed."))?;
+        let result = process_job_unlocked(state, job_id, lecturer_id).await;
+        let _ = lock.release().await;
+        return result;
+    }
+    process_job_unlocked(state, job_id, lecturer_id).await
+}
+
+async fn process_job_unlocked(
+    state: &AppState,
+    job_id: Uuid,
+    lecturer_id: Uuid,
+) -> Result<ExecutionResponse, ApiError> {
     let pool = state
         .production_database()
         .ok_or_else(|| ApiError::service_unavailable())?;
@@ -189,8 +205,38 @@ async fn execute_claimed_job(
 /// `process_job`, so multiple instances may run this loop safely.
 pub async fn run_loop(state: AppState) {
     let mut ticker = tokio::time::interval(std::time::Duration::from_secs(5));
+    let consumer = format!("worker-{}", Uuid::now_v7());
+    let mut redis_group_ready = false;
     loop {
         ticker.tick().await;
+        if let Some(redis) = &state.redis {
+            if !redis_group_ready {
+                match redis.ensure_ai_consumer_group().await {
+                    Ok(()) => redis_group_ready = true,
+                    Err(error) => tracing::warn!(%error, "Unable to initialize AI Redis consumer group"),
+                }
+            }
+            if redis_group_ready {
+                match redis.read_ai_job(&consumer).await {
+                    Ok(Some((message_id, job_id))) => {
+                        if let Ok(job_id) = Uuid::parse_str(&job_id) {
+                            let pool = state.production_database();
+                            if let Some(pool) = pool {
+                                if let Ok(Some(lecturer_id)) = sqlx::query_scalar::<_, Uuid>("select requested_by from ai_jobs where id = $1").bind(job_id).fetch_optional(pool).await {
+                                    if let Err(error) = process_job(&state, job_id, lecturer_id).await {
+                                        tracing::warn!(%job_id, error = %error, "AI Redis stream job failed");
+                                    }
+                                }
+                            }
+                        }
+                        let _ = redis.acknowledge_ai_job(&message_id).await;
+                        continue;
+                    }
+                    Ok(None) => {}
+                    Err(error) => tracing::warn!(%error, "Unable to read AI Redis stream; using database queue"),
+                }
+            }
+        }
         let Some(pool) = state.production_database() else { continue; };
         let candidate = sqlx::query_as::<_, (Uuid, Uuid)>(
             "select id, requested_by from ai_jobs where status = 'queued' and attempts < $1 order by created_at asc limit 1",

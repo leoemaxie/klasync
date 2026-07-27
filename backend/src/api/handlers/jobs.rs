@@ -36,6 +36,12 @@ pub async fn create(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
+    if let Some(redis) = &state.redis {
+        if let Err(error) = redis.enqueue_ai_job(&job.id.to_string()).await {
+            if state.config.redis_required { return Err(ApiError::service_unavailable()); }
+            tracing::warn!(%error, "Managed Redis AI queue unavailable; database worker will poll");
+        }
+    }
     Ok((StatusCode::ACCEPTED, Json(job)))
 }
 
