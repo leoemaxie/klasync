@@ -38,3 +38,4 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["e
 uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7", "std"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 async-trait = "0.1"
+sha2 = "0.10"

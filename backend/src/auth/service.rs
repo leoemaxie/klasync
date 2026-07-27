@@ -1,10 +1,12 @@
+use base64::Engine;
 use chrono::{Duration, Utc};
+use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::{
     contracts::{AccountRole, AuthTokens},
-    passwords, tokens,
+    tokens,
 };
 use crate::{api::error::ApiError, config::AppConfig};
 
@@ -18,6 +20,19 @@ pub fn require_database<'a>(
     pool.ok_or_else(|| ApiError::service_unavailable())
 }
 
+pub fn generate_refresh_secret() -> String {
+    let mut bytes = [0u8; 32];
+    bytes[..16].copy_from_slice(Uuid::new_v4().as_bytes());
+    bytes[16..].copy_from_slice(Uuid::new_v4().as_bytes());
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+pub fn hash_token_secret(secret: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(secret.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
 pub async fn issue_tokens(
     pool: &PgPool,
     config: &AppConfig,
@@ -27,10 +42,8 @@ pub async fn issue_tokens(
     let session_id = Uuid::now_v7();
     let access_token = tokens::issue_access_token(config, account_id, role, session_id)
         .map_err(|_| ApiError::service_unavailable())?;
-    let secret = Uuid::now_v7().simple().to_string();
-    let refresh_hash = passwords::hash_async(secret.clone())
-        .await
-        .map_err(|_| ApiError::service_unavailable())?;
+    let secret = generate_refresh_secret();
+    let refresh_hash = hash_token_secret(&secret);
     let expires_at = Utc::now() + Duration::days(config.refresh_token_days);
     sqlx::query(
         "insert into auth_sessions (id, account_id, account_role, refresh_token_hash, expires_at) values ($1, $2, $3, $4, $5)",

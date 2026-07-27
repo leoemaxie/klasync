@@ -11,7 +11,7 @@ use crate::{
             RegisterStudentInput,
         },
         passwords,
-        service::{issue_tokens, parse_opaque_token, require_database},
+        service::{hash_token_secret, issue_tokens, parse_opaque_token, require_database},
     },
     state::AppState,
 };
@@ -107,7 +107,7 @@ pub async fn refresh(
     .await
     .map_err(|_| ApiError::service_unavailable())?
     .ok_or_else(|| ApiError::unauthorized("Invalid or expired refresh token"))?;
-    let valid_hash = passwords::verify_async(secret.to_owned(), session.refresh_token_hash.clone()).await;
+    let valid_hash = hash_token_secret(secret) == session.refresh_token_hash;
     let valid_session = session.revoked_at.is_none() && session.expires_at > Utc::now();
     if !valid_hash || !valid_session {
         return Err(ApiError::unauthorized("Invalid or expired refresh token"));
@@ -129,7 +129,7 @@ pub async fn logout(
     let config = state.config.clone();
     let pool = require_database(state.production_database(), &config)?;
     let (session_id, _) = parse_opaque_token(&input.refresh_token)?;
-    sqlx::query("update auth_sessions set revoked_at = now() where id = $1 and revoked_at is null")
+    sqlx::query("delete from auth_sessions where id = $1")
         .bind(session_id)
         .execute(pool)
         .await
@@ -161,8 +161,8 @@ async fn login(
 }
 
 fn validate_password(password: &str) -> Result<(), ApiError> {
-    if password.len() < 12 {
-        return Err(ApiError::bad_request("Password must be at least 12 characters long"));
+    if password.len() < 8 {
+        return Err(ApiError::bad_request("Password must be at least 8 characters long"));
     }
     Ok(())
 }
