@@ -13,3 +13,4 @@ vite.config.ts.timestamp-*
 .codex/
 .cargo/
 target/
+DESIGN.md
