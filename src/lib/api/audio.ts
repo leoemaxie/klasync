@@ -14,3 +14,19 @@ export async function uploadSessionAudio(shortCode: string, file: File): Promise
   }
   return response.json() as Promise<Resource>;
 }
+
+export function getAudioChunkUrl(shortCode: string, seq: number): string {
+  const apiBase = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
+  return `${apiBase}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk/${seq}`;
+}
+
+export async function uploadAudioChunk(shortCode: string, chunk: Blob, seq: number): Promise<void> {
+  const formData = new FormData();
+  formData.append("chunk", chunk);
+  formData.append("seq", seq.toString());
+  const apiBase = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
+  await fetch(`${apiBase}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk`, {
+    method: 'POST',
+    body: formData,
+  });
+}

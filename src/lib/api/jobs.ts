@@ -6,3 +6,7 @@ export function dispatchAiJob(shortCode: string, jobId: string): Promise<AiJob> 
     method: 'POST'
   });
 }
+
+export function getJobStatus(jobId: string): Promise<AiJob> {
+  return http<AiJob>(`/jobs/${encodeURIComponent(jobId)}`);
+}

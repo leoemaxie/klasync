@@ -24,6 +24,18 @@ export function updateSessionLifecycle(shortCode: string, input: LifecyclePatch)
   });
 }
 
+export function pauseSession(shortCode: string): Promise<LifecycleView> {
+  return http<LifecycleView>(`/sessions/code/${encodeURIComponent(shortCode)}/pause`, {
+    method: 'POST'
+  });
+}
+
+export function resumeSession(shortCode: string): Promise<LifecycleView> {
+  return http<LifecycleView>(`/sessions/code/${encodeURIComponent(shortCode)}/resume`, {
+    method: 'POST'
+  });
+}
+
 export function archiveSession(shortCode: string): Promise<LifecycleView> {
   return http<LifecycleView>(`/sessions/code/${encodeURIComponent(shortCode)}/archive`, {
     method: 'POST'

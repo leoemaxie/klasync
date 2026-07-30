@@ -3,8 +3,14 @@ import { http } from "./http";
 export type ClaimRecord = { id: string; course_code: string; session_title: string; date: string };
 
 export type Resource = { id: string; type: 'transcript' | 'summary' | 'flashcards' | 'audio'; title: string; content?: string };
+export type ApiResource = Resource;
 
 export type AiJob = { id: string; job_type: string; status: 'pending' | 'processing' | 'completed' | 'failed' };
+
+export function getArchiveResources(shortCode?: string): Promise<Resource[]> {
+  const path = shortCode ? `/sessions/code/${encodeURIComponent(shortCode)}/resources` : '/resources';
+  return http<Resource[]>(path);
+}
 
 export function claimLecture(participantId: string): Promise<{ success: boolean }> {
   return http<{ success: boolean }>('/students/claims', {

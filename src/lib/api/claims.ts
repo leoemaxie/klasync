@@ -23,3 +23,16 @@ export function verifyClaimCode(verificationId: string, code: string): Promise<C
     body: JSON.stringify({ verification_id: verificationId, code })
   });
 }
+
+export function claimAttendance(shortCode: string, matricNumber: string): Promise<{ success: boolean }> {
+  return http<{ success: boolean }>(`/sessions/code/${encodeURIComponent(shortCode)}/claims`, {
+    method: 'POST',
+    body: JSON.stringify({ matric_number: matricNumber })
+  });
+}
+
+export function verifyClaim(claimId: string): Promise<ClaimVerifyResponse> {
+  return http<ClaimVerifyResponse>(`/claims/${encodeURIComponent(claimId)}/verify`, {
+    method: 'POST'
+  });
+}

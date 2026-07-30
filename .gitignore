@@ -14,3 +14,4 @@ vite.config.ts.timestamp-*
 .cargo/
 target/
 DESIGN.md
+.vercel/

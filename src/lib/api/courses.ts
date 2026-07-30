@@ -37,3 +37,6 @@ export async function importRosterFile(courseId: string, file: File): Promise<Ro
   }
   return response.json() as Promise<RosterImportReport>;
 }
+
+export const uploadCourseRoster = uploadRoster;
+export const uploadCourseRosterFile = importRosterFile;

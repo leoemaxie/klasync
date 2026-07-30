@@ -54,3 +54,19 @@ export function moderateCaption(shortCode: string, captionId: string, input: Cap
     body: JSON.stringify(input)
   });
 }
+
+export function toggleRecording(shortCode: string, active: boolean): Promise<LiveControlState> {
+  return active ? startAudioIngestion(shortCode) : stopAudioIngestion(shortCode);
+}
+
+export function sendHandRaise(shortCode: string, participantId: string): Promise<void> {
+  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`, {
+    method: 'POST'
+  });
+}
+
+export function clearHandRaise(shortCode: string, participantId: string): Promise<void> {
+  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`, {
+    method: 'DELETE'
+  });
+}
