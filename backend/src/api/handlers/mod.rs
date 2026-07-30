@@ -11,6 +11,7 @@ pub mod invites;
 pub mod live_controls;
 pub mod lifecycle;
 pub mod jobs;
+pub mod not_found;
 pub mod participants;
 pub mod presence;
 pub mod recovery;

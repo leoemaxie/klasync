@@ -15,8 +15,8 @@ use tower_http::{
 
 use crate::state::AppState;
 use handlers::{
-    attendance, auth, caption_stream, captions, claims, courses, health, invites, participants,
-    recovery, resources, rosters, sessions,
+    attendance, auth, caption_stream, captions, claims, courses, health, invites, not_found,
+    participants, recovery, resources, rosters, sessions,
 };
 
 pub fn router(state: AppState) -> Router {
@@ -33,6 +33,7 @@ pub fn router(state: AppState) -> Router {
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     Router::new()
+        .route("/", get(health::health))
         .route("/health", get(health::health))
         .route("/health/ready", get(handlers::readiness::ready))
         .route(
@@ -200,6 +201,7 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/participants/{participant_id}/presence",
             post(handlers::presence::heartbeat),
         )
+        .fallback(not_found::not_found)
         .layer(cors)
         .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), crate::security::rate_limit))
