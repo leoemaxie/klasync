@@ -88,6 +88,7 @@
     {/if}
     {#if state.session}
       <AttendancePanel
+        sessionCode={state.session.code}
         participants={state.session.participants}
         onRefreshAttendance={() => refreshAttendance(state)}
       />

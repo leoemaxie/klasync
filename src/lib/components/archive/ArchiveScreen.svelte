@@ -1,18 +1,29 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { Screen } from "$lib/types";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import TranscriptViewer from "./TranscriptViewer.svelte";
   import FlashcardDeck from "./FlashcardDeck.svelte";
   import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
+  import { getArchiveResources, type ApiResource } from "$lib/api";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
   let searchQuery = $state("");
   let activeTab = $state<"transcript" | "flashcards" | "audio">("transcript");
+  let apiResources = $state<ApiResource[]>([]);
 
   let claims = $state([
     { id: "1", course_code: "CSC 312", session_title: "Human Computer Interaction", date: "2026-07-21" }
   ]);
+
+  onMount(async () => {
+    try {
+      apiResources = await getArchiveResources();
+    } catch {
+      // Fallback to local default state
+    }
+  });
 
   const filteredClaims = $derived(
     claims.filter(

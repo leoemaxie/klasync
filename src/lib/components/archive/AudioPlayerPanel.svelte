@@ -1,7 +1,13 @@
 <script lang="ts">
+  import { getAudioChunkUrl } from "$lib/api";
+
+  let { sessionCode = "DEMO312" }: { sessionCode?: string } = $props();
+
   let isPlaying = $state(false);
   let progress = $state(32);
   let playbackRate = $state<"1.0x" | "1.25x" | "1.5x">("1.0x");
+
+  const chunkUrl = $derived(getAudioChunkUrl(sessionCode, 1));
 </script>
 
 <div class="panel audio-player-panel">
@@ -9,6 +15,8 @@
     <p class="eyebrow">LECTURE AUDIO REPLAY STREAM</p>
     <span class="player-format">48kHz PCM STEREOPHONIC</span>
   </div>
+
+  <audio src={chunkUrl} preload="none"></audio>
 
   <div class="player-controls-row">
     <button class="primary play-btn" onclick={() => (isPlaying = !isPlaying)}>

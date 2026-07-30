@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
+  import { logout } from "$lib/api/auth";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
   let mobileMenuOpen = $state(false);
@@ -7,6 +8,15 @@
   function navigate(target: Screen) {
     screen = target;
     mobileMenuOpen = false;
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch {
+      // Clear token locally regardless
+    }
+    navigate("home");
   }
 </script>
 
@@ -49,6 +59,9 @@
     <button class="nav-btn text" onclick={() => navigate("join")}>Join Session</button>
     <button class="nav-btn text" onclick={() => navigate("student-login")}>Student Archive</button>
     <button class="nav-btn outline" onclick={() => navigate("lecturer-login")}>Lecturer Access</button>
+    {#if screen === "lecturer" || screen === "archive" || screen === "live"}
+      <button class="nav-btn text" onclick={handleLogout}>Sign Out</button>
+    {/if}
   </div>
 </nav>
 
