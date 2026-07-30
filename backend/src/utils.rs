@@ -1,7 +1,5 @@
 use uuid::Uuid;
 
-/// Generates a human-friendly, cryptographically random, unambiguous 8-character short code.
-/// Excludes visually ambiguous characters (0, O, 1, I, L) and uses CSPRNG entropy from Uuid v4.
 pub fn short_code() -> String {
     const CHARSET: &[u8] = b"23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     let bytes = Uuid::new_v4().into_bytes();
