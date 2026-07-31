@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
     api::{
         error::ApiError,
-        handlers::sessions::{database_session_by_code, find_by_code},
+        handlers::sessions::database_session_by_code,
     },
     auth::guard::AuthenticatedLecturer,
     models::{CaptionChunk, PublishCaptionRequest, SessionStatus},
@@ -22,22 +22,16 @@ pub async fn list(
     State(state): State<AppState>,
     Path(short_code): Path<String>,
 ) -> Result<Json<Vec<CaptionChunk>>, ApiError> {
-    if let Some(pool) = state.production_database() {
-        let session = database_session_by_code(pool, &short_code).await?;
-        let captions = sqlx::query_as::<_, CaptionChunk>(&format!(
-            "select {CAPTION_COLUMNS} from caption_chunks where session_id = $1 order by sequence_number"
-        ))
-        .bind(session.id)
-        .fetch_all(pool)
-        .await
-        .map_err(|_| ApiError::service_unavailable())?;
-        return Ok(Json(captions));
-    }
-    let store = state.store.lock().await;
-    let session = find_by_code(&store.sessions, &short_code)?;
-    Ok(Json(
-        store.captions.get(&session.id).cloned().unwrap_or_default(),
+    let pool = state.db_pool();
+    let session = database_session_by_code(pool, &short_code).await?;
+    let captions = sqlx::query_as::<_, CaptionChunk>(&format!(
+        "select {CAPTION_COLUMNS} from caption_chunks where session_id = $1 order by sequence_number"
     ))
+    .bind(session.id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    Ok(Json(captions))
 }
 
 pub async fn publish(
@@ -50,21 +44,19 @@ pub async fn publish(
     if text.is_empty() {
         return Err(ApiError::bad_request("Caption text cannot be empty"));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-      if !matches!(session.status, SessionStatus::Live) {
-          return Err(ApiError::conflict("Captions can only be published to live sessions"));
-      }
-      let captions_paused: bool = sqlx::query_scalar(
-          "select coalesce((select captions_paused from session_live_controls where session_id = $1), false)",
-      )
-      .bind(session.id)
-      .fetch_one(pool)
-      .await
-      .map_err(|_| ApiError::service_unavailable())?;
-      if captions_paused { return Err(ApiError::conflict("Captions are paused")); }
+    if !matches!(session.status, SessionStatus::Live) {
+        return Err(ApiError::conflict("Captions can only be published to live sessions"));
+    }
+    let captions_paused: bool = sqlx::query_scalar(
+        "select coalesce((select captions_paused from session_live_controls where session_id = $1), false)",
+    )
+    .bind(session.id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    if captions_paused { return Err(ApiError::conflict("Captions are paused")); }
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
     )

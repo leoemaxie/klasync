@@ -1,22 +1,19 @@
 /// KLASYNC transactional email module.
 ///
 /// Provides transport-agnostic email sending via the `EmailSender` trait,
-/// with pluggable backends (Resend API, development file outbox, unconfigured
-/// stub). All outgoing emails are rendered through branded templates defined
-/// in the `templates` submodule.
+/// with pluggable backends (Resend API, unconfigured stub). All outgoing emails
+/// are rendered through branded templates defined in the `templates` submodule.
 
 pub mod escape;
 pub mod layout;
 pub mod templates;
 
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
-use chrono::Utc;
 use reqwest::{header, Client, StatusCode};
 use serde::Serialize;
 use thiserror::Error;
-use uuid::Uuid;
 
 use crate::config::AppConfig;
 
@@ -39,10 +36,6 @@ pub enum EmailError {
     Rejected(String),
     #[error("email request failed: {0}")]
     Transport(#[from] reqwest::Error),
-    #[error("development outbox failed: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("development outbox serialization failed: {0}")]
-    Serialization(#[from] serde_json::Error),
 }
 
 #[async_trait]
@@ -103,34 +96,6 @@ impl EmailSender for ResendEmailSender {
 }
 
 // ---------------------------------------------------------------------------
-// Development file outbox
-// ---------------------------------------------------------------------------
-
-/// Keeps local onboarding usable without accidentally sending test mail.
-pub struct DevelopmentOutbox { root: PathBuf }
-
-impl DevelopmentOutbox {
-    pub fn new(root: impl Into<PathBuf>) -> Self { Self { root: root.into() } }
-}
-
-#[async_trait]
-impl EmailSender for DevelopmentOutbox {
-    async fn send(&self, message: EmailMessage) -> Result<(), EmailError> {
-        tokio::fs::create_dir_all(&self.root).await?;
-        let payload = serde_json::json!({
-            "to": message.to, "subject": message.subject, "text": message.text,
-            "html": message.html, "idempotency_key": message.idempotency_key,
-            "created_at": Utc::now(),
-        });
-        let file = self.root.join(format!("{}-{}.json", Utc::now().timestamp_millis(), Uuid::now_v7()));
-        tokio::fs::write(file, serde_json::to_vec_pretty(&payload)?).await?;
-        Ok(())
-    }
-
-    fn provider_name(&self) -> &'static str { "development-outbox" }
-}
-
-// ---------------------------------------------------------------------------
 // Unconfigured stub
 // ---------------------------------------------------------------------------
 
@@ -149,8 +114,6 @@ impl EmailSender for UnconfiguredEmailSender {
 pub fn sender_from_config(config: &AppConfig) -> SharedEmailSender {
     if let (Some(api_key), Some(from)) = (&config.resend_api_key, &config.resend_from) {
         Arc::new(ResendEmailSender::new(api_key.clone(), from.clone()))
-    } else if let Some(directory) = &config.password_reset_outbox_dir {
-        Arc::new(DevelopmentOutbox::new(directory))
     } else {
         Arc::new(UnconfiguredEmailSender)
     }

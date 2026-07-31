@@ -1,4 +1,4 @@
-use std::{path::{Path, PathBuf}, sync::Arc};
+use std::{path::Path, sync::Arc};
 
 use async_trait::async_trait;
 use aws_credential_types::Credentials;
@@ -18,6 +18,11 @@ pub enum StorageError {
     InvalidKey,
 }
 
+pub struct StoredObject {
+    pub key: String,
+    pub bytes: usize,
+}
+
 #[async_trait]
 pub trait StorageAdapter: Send + Sync {
     async fn put(&self, file_name: &str, data: Vec<u8>) -> Result<StoredObject, StorageError>;
@@ -26,74 +31,8 @@ pub trait StorageAdapter: Send + Sync {
     fn provider_name(&self) -> &'static str;
 }
 
-use uuid::Uuid;
-
-#[derive(Clone)]
-pub struct LocalObjectStore {
-    root: PathBuf,
-}
-
-pub struct StoredObject {
-    pub key: String,
-    pub bytes: usize,
-}
-
-impl LocalObjectStore {
-    pub fn new(root: impl Into<PathBuf>) -> Self {
-        Self { root: root.into() }
-    }
-
-    pub async fn put(&self, file_name: &str, data: &[u8]) -> Result<StoredObject, std::io::Error> {
-        let extension = Path::new(file_name)
-            .extension()
-            .and_then(|extension| extension.to_str())
-            .filter(|extension| extension.len() <= 16)
-            .unwrap_or("bin");
-        let key = format!("uploads/{}.{}", Uuid::now_v7(), extension.to_ascii_lowercase());
-        let destination = self.root.join(&key);
-        if let Some(parent) = destination.parent() {
-            tokio::fs::create_dir_all(parent).await?;
-        }
-        tokio::fs::write(destination, data).await?;
-        Ok(StoredObject { key, bytes: data.len() })
-    }
-
-    pub async fn get(&self, key: &str) -> Result<Vec<u8>, std::io::Error> {
-        if key.is_empty() || key.contains("..") || Path::new(key).is_absolute() || key.starts_with('\\') {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid object key"));
-        }
-        tokio::fs::read(self.root.join(key)).await
-    }
-}
-
-#[async_trait]
-impl StorageAdapter for LocalObjectStore {
-    async fn put(&self, file_name: &str, data: Vec<u8>) -> Result<StoredObject, StorageError> {
-        LocalObjectStore::put(self, file_name, &data)
-            .await
-            .map_err(|error| StorageError::Backend(error.to_string()))
-    }
-
-    async fn get(&self, key: &str) -> Result<Vec<u8>, StorageError> {
-        LocalObjectStore::get(self, key)
-            .await
-            .map_err(|error| StorageError::Backend(error.to_string()))
-    }
-
-    async fn delete(&self, key: &str) -> Result<(), StorageError> {
-        if key.is_empty() || key.contains("..") || Path::new(key).is_absolute() || key.starts_with('\\') {
-            return Err(StorageError::InvalidKey);
-        }
-        tokio::fs::remove_file(self.root.join(key))
-            .await
-            .map_err(|error| StorageError::Backend(error.to_string()))
-    }
-
-    fn provider_name(&self) -> &'static str { "local-development" }
-}
-
 /// Cloudflare R2 implementation using its S3-compatible API. `force_path_style`
-/// keeps bucket routing compatible with R2 endpoints and custom local endpoints.
+/// keeps bucket routing compatible with R2 endpoints.
 pub struct R2ObjectStore {
     client: S3Client,
     bucket: String,
@@ -175,9 +114,27 @@ impl StorageAdapter for R2ObjectStore {
     fn provider_name(&self) -> &'static str { "cloudflare-r2" }
 }
 
+pub struct UnconfiguredStorageAdapter;
+
+#[async_trait]
+impl StorageAdapter for UnconfiguredStorageAdapter {
+    async fn put(&self, _: &str, _: Vec<u8>) -> Result<StoredObject, StorageError> {
+        Err(StorageError::Backend("object storage is not configured".to_owned()))
+    }
+
+    async fn get(&self, _: &str) -> Result<Vec<u8>, StorageError> {
+        Err(StorageError::Backend("object storage is not configured".to_owned()))
+    }
+
+    async fn delete(&self, _: &str) -> Result<(), StorageError> {
+        Err(StorageError::Backend("object storage is not configured".to_owned()))
+    }
+
+    fn provider_name(&self) -> &'static str { "unconfigured" }
+}
+
 pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
     if config.r2_ready() {
-        // r2_ready guarantees every one of these values is populated.
         return Arc::new(R2ObjectStore::new(
             config.resolved_r2_endpoint().expect("validated R2 endpoint"),
             config.r2_bucket.clone().expect("validated R2 bucket"),
@@ -185,5 +142,5 @@ pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
             config.r2_secret_access_key.clone().expect("validated R2 secret key"),
         ));
     }
-    Arc::new(LocalObjectStore::new(&config.object_storage_dir))
+    Arc::new(UnconfiguredStorageAdapter)
 }

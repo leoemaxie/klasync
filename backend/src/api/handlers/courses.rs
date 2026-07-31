@@ -17,26 +17,16 @@ pub async fn create(
     lecturer: AuthenticatedLecturer,
     Json(input): Json<CreateCourseRequest>,
 ) -> Result<(StatusCode, Json<Course>), ApiError> {
-    if let Some(pool) = state.production_database() {
-        let course = sqlx::query_as::<_, Course>(
-            "insert into courses (lecturer_id, code, title) values ($1, $2, $3) returning id, lecturer_id, code, title",
-        )
-        .bind(lecturer.id)
-        .bind(input.code.trim())
-        .bind(input.title.trim())
-        .fetch_one(pool)
-        .await
-        .map_err(|_| ApiError::conflict("Course code already exists for this lecturer"))?;
-        return Ok((StatusCode::CREATED, Json(course)));
-    }
-    let mut store = state.store.lock().await;
-    let course = Course {
-        id: Uuid::now_v7(),
-        lecturer_id: lecturer.id,
-        code: input.code,
-        title: input.title,
-    };
-    store.courses.insert(course.id, course.clone());
+    let pool = state.db_pool();
+    let course = sqlx::query_as::<_, Course>(
+        "insert into courses (lecturer_id, code, title) values ($1, $2, $3) returning id, lecturer_id, code, title",
+    )
+    .bind(lecturer.id)
+    .bind(input.code.trim())
+    .bind(input.title.trim())
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::conflict("Course code already exists for this lecturer"))?;
     Ok((StatusCode::CREATED, Json(course)))
 }
 
@@ -44,25 +34,14 @@ pub async fn list(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
 ) -> Result<Json<Vec<Course>>, ApiError> {
-    if let Some(pool) = state.production_database() {
-        let courses = sqlx::query_as::<_, Course>(
-            "select id, lecturer_id, code, title from courses where lecturer_id = $1 order by created_at desc",
-        )
-        .bind(lecturer.id)
-        .fetch_all(pool)
-        .await
-        .map_err(|_| ApiError::service_unavailable())?;
-        return Ok(Json(courses));
-    }
-    let courses = state
-        .store
-        .lock()
-        .await
-        .courses
-        .values()
-        .filter(|course| course.lecturer_id == lecturer.id)
-        .cloned()
-        .collect();
+    let pool = state.db_pool();
+    let courses = sqlx::query_as::<_, Course>(
+        "select id, lecturer_id, code, title from courses where lecturer_id = $1 order by created_at desc",
+    )
+    .bind(lecturer.id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(courses))
 }
 
@@ -72,53 +51,42 @@ pub async fn upload_roster(
     Path(course_id): Path<Uuid>,
     Json(input): Json<UploadRosterRequest>,
 ) -> Result<Json<Vec<RosterStudent>>, ApiError> {
-    if let Some(pool) = state.production_database() {
-        let mut transaction = pool
-            .begin()
-            .await
-            .map_err(|_| ApiError::service_unavailable())?;
-        let owns_course: bool = sqlx::query_scalar(
-            "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
-        )
-        .bind(course_id)
-        .bind(lecturer.id)
-        .fetch_one(&mut *transaction)
+    let pool = state.db_pool();
+    let mut transaction = pool
+        .begin()
         .await
         .map_err(|_| ApiError::service_unavailable())?;
-        if !owns_course {
-            return Err(ApiError::not_found("Course not found"));
-        }
-        sqlx::query("delete from roster_students where course_id = $1")
-            .bind(course_id)
-            .execute(&mut *transaction)
-            .await
-            .map_err(|_| ApiError::service_unavailable())?;
-        for student in &input.students {
-            sqlx::query(
-                "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
-            )
-            .bind(course_id)
-            .bind(student.matric_number.trim())
-            .bind(student.full_name.trim())
-            .bind(student.email.as_deref())
-            .execute(&mut *transaction)
-            .await
-            .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;
-        }
-        transaction
-            .commit()
-            .await
-            .map_err(|_| ApiError::service_unavailable())?;
-        return Ok(Json(input.students));
-    }
-    let mut store = state.store.lock().await;
-    if !store
-        .courses
-        .get(&course_id)
-        .is_some_and(|course| course.lecturer_id == lecturer.id)
-    {
+    let owns_course: bool = sqlx::query_scalar(
+        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    )
+    .bind(course_id)
+    .bind(lecturer.id)
+    .fetch_one(&mut *transaction)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    if !owns_course {
         return Err(ApiError::not_found("Course not found"));
     }
-    store.rosters.insert(course_id, input.students.clone());
+    sqlx::query("delete from roster_students where course_id = $1")
+        .bind(course_id)
+        .execute(&mut *transaction)
+        .await
+        .map_err(|_| ApiError::service_unavailable())?;
+    for student in &input.students {
+        sqlx::query(
+            "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
+        )
+        .bind(course_id)
+        .bind(student.matric_number.trim())
+        .bind(student.full_name.trim())
+        .bind(student.email.as_deref())
+        .execute(&mut *transaction)
+        .await
+        .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;
+    }
+    transaction
+        .commit()
+        .await
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(input.students))
 }

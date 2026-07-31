@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -24,9 +22,7 @@ pub async fn create(
     lecturer: AuthenticatedLecturer,
     Json(input): Json<CreateSessionRequest>,
 ) -> Result<(StatusCode, Json<InviteResponse>), ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -82,44 +78,25 @@ pub async fn get_by_code(
     State(state): State<AppState>,
     Path(short_code): Path<String>,
 ) -> Result<Json<SessionDetail>, ApiError> {
-    if let Some(pool) = state.production_database() {
-        let session = database_session_by_code(pool, &short_code).await?;
-        let course =
-            sqlx::query_as("select id, lecturer_id, code, title from courses where id = $1")
-                .bind(session.course_id)
-                .fetch_optional(pool)
-                .await
-                .map_err(|_| ApiError::service_unavailable())?
-                .ok_or_else(|| ApiError::not_found("Course not found"))?;
-        let participant_count: i64 =
-            sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
-                .bind(session.id)
-                .fetch_one(pool)
-                .await
-                .map_err(|_| ApiError::service_unavailable())?;
-        return Ok(Json(SessionDetail {
-            session,
-            course,
-            participant_count: participant_count as usize,
-        }));
-    }
-
-    let store = state.store.lock().await;
-    let session = find_by_code(&store.sessions, &short_code)?.clone();
-    let course = store
-        .courses
-        .get(&session.course_id)
-        .cloned()
-        .ok_or_else(|| ApiError::not_found("Course not found"))?;
-    let participant_count = store
-        .participants
-        .values()
-        .filter(|participant| participant.session_id == session.id)
-        .count();
+    let pool = state.db_pool();
+    let session = database_session_by_code(pool, &short_code).await?;
+    let course =
+        sqlx::query_as("select id, lecturer_id, code, title from courses where id = $1")
+            .bind(session.course_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|_| ApiError::service_unavailable())?
+            .ok_or_else(|| ApiError::not_found("Course not found"))?;
+    let participant_count: i64 =
+        sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
+            .bind(session.id)
+            .fetch_one(pool)
+            .await
+            .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(SessionDetail {
         session,
         course,
-        participant_count,
+        participant_count: participant_count as usize,
     }))
 }
 
@@ -128,9 +105,7 @@ pub async fn end(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Json<LectureSession>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = sqlx::query_as::<_, LectureSession>(&format!(
         "update lecture_sessions set status = 'ended', ended_at = now() \
          where short_code = upper($1) and lecturer_id = $2 returning {SESSION_COLUMNS}"
@@ -156,14 +131,4 @@ pub async fn database_session_by_code(
     .await
     .map_err(|_| ApiError::service_unavailable())?
     .ok_or_else(|| ApiError::not_found("Session not found"))
-}
-
-pub fn find_by_code<'a>(
-    sessions: &'a HashMap<Uuid, LectureSession>,
-    short_code: &str,
-) -> Result<&'a LectureSession, ApiError> {
-    sessions
-        .values()
-        .find(|session| session.short_code.eq_ignore_ascii_case(short_code))
-        .ok_or_else(|| ApiError::not_found("Session not found"))
 }

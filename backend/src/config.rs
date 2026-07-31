@@ -7,8 +7,6 @@ pub struct AppConfig {
     pub jwt_secrets: Vec<String>,
     pub access_token_minutes: i64,
     pub refresh_token_days: i64,
-    pub password_reset_outbox_dir: Option<String>,
-    pub object_storage_dir: String,
     pub public_app_url: String,
     pub cors_allowed_origins: Vec<String>,
     pub resend_api_key: Option<String>,
@@ -60,9 +58,6 @@ impl AppConfig {
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(30),
-            password_reset_outbox_dir: env::var("PASSWORD_RESET_OUTBOX_DIR").ok(),
-            object_storage_dir: env::var("OBJECT_STORAGE_DIR")
-                .unwrap_or_else(|_| "data/objects".to_owned()),
             public_app_url: env::var("PUBLIC_APP_URL")
                 .unwrap_or_else(|_| "http://localhost:5173".to_owned())
                 .trim_end_matches('/')
