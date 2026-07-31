@@ -2,6 +2,7 @@
   import type { Screen } from "$lib/types";
   import { requestPasswordReset, completePasswordReset } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -96,11 +97,13 @@
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting || !!statusNotice}>
-        {isSubmitting
-          ? "Processing..."
-          : mode === "request"
-          ? "Send Reset Link"
-          : "Complete Password Reset"}
+        {#if isSubmitting}
+          <ButtonSpinner label="Processing password recovery..." /> Processing...
+        {:else if mode === "request"}
+          Send Reset Link
+        {:else}
+          Complete Password Reset
+        {/if}
       </button>
 
       <div class="auth-footer-links">

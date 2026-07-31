@@ -3,6 +3,8 @@
   import type { Participant, Screen, Session } from "$lib/types";
   import { connectCaptionWebSocket } from "$lib/api/captions";
   import { sendHandRaise, clearHandRaise, sendPresenceHeartbeat, claimAttendance } from "$lib/api";
+  import Skeleton from "$lib/components/shared/Skeleton.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let {
     session,
@@ -26,6 +28,8 @@
 
   let wsConnected = $state(false);
   let isHandRaised = $state(false);
+  let isCheckingIn = $state(false);
+  let isClaiming = $state(false);
   let claimNotice = $state("");
 
   onMount(() => {
@@ -57,22 +61,32 @@
   }
 
   async function handleCheckIn() {
-    onHeartbeat();
-    if (session?.code && joinedParticipant?.matric) {
-      await sendPresenceHeartbeat(session.code, joinedParticipant.matric).catch(() => {});
+    isCheckingIn = true;
+    try {
+      onHeartbeat();
+      if (session?.code && joinedParticipant?.matric) {
+        await sendPresenceHeartbeat(session.code, joinedParticipant.matric).catch(() => {});
+      }
+    } finally {
+      isCheckingIn = false;
     }
   }
 
   async function createAccount() {
-    if (session?.code && joinedParticipant?.matric) {
-      try {
-        await claimAttendance(session.code, joinedParticipant.matric);
-      } catch (err) {
-        claimNotice = err instanceof Error ? err.message : "Claim recorded locally";
+    isClaiming = true;
+    try {
+      if (session?.code && joinedParticipant?.matric) {
+        try {
+          await claimAttendance(session.code, joinedParticipant.matric);
+        } catch (err) {
+          claimNotice = err instanceof Error ? err.message : "Claim recorded locally";
+        }
       }
+      accountCreated = true;
+      screen = "archive";
+    } finally {
+      isClaiming = false;
     }
-    accountCreated = true;
-    screen = "archive";
   }
 </script>
 
@@ -96,7 +110,13 @@
 <section class="live-grid">
   <article class="captions panel" aria-live="polite">
     <p class="eyebrow">REAL-TIME CAPTION STREAM</p>
-    <p class="caption">{captions[captionIndex] ?? "WAITING FOR LECTURER SPEECH..."}</p>
+    {#if captions.length === 0}
+      <div style="margin: var(--spacing-14) 0;">
+        <Skeleton height="56px" label="Waiting for speech-to-text audio stream..." />
+      </div>
+    {:else}
+      <p class="caption">{captions[captionIndex] ?? "WAITING FOR LECTURER SPEECH..."}</p>
+    {/if}
     <button class="outline" onclick={onNextCaption}>
       Next Caption
     </button>
@@ -113,7 +133,13 @@
       Check-ins: {joinedParticipant?.heartbeats ?? 0}
     </p>
     <div class="student-action-row">
-      <button class="primary full" onclick={handleCheckIn}>I'm still here</button>
+      <button class="primary full" onclick={handleCheckIn} disabled={isCheckingIn}>
+        {#if isCheckingIn}
+          <ButtonSpinner label="Recording check-in..." /> Checking in...
+        {:else}
+          I'm still here
+        {/if}
+      </button>
       <button class={isHandRaised ? "danger" : "outline"} onclick={handleToggleHandRaise}>
         {isHandRaised ? "✋ Hand Raised" : "✋ Raise Hand"}
       </button>
@@ -130,7 +156,13 @@
   {#if accountCreated}
     <p class="success">Account interest recorded. Access retained for your matric number. {claimNotice}</p>
   {:else}
-    <button class="primary" onclick={createAccount}>Create Account to Claim Archive</button>
+    <button class="primary" onclick={createAccount} disabled={isClaiming}>
+      {#if isClaiming}
+        <ButtonSpinner label="Claiming lecture archive..." /> Claiming...
+      {:else}
+        Create Account to Claim Archive
+      {/if}
+    </button>
   {/if}
 </section>
 

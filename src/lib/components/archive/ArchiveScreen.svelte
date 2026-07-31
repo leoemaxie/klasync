@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import type { Screen } from "$lib/types";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import SkeletonCard from "$lib/components/shared/SkeletonCard.svelte";
   import TranscriptViewer from "./TranscriptViewer.svelte";
   import FlashcardDeck from "./FlashcardDeck.svelte";
   import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
@@ -12,6 +13,7 @@
   let searchQuery = $state("");
   let activeTab = $state<"transcript" | "flashcards" | "audio">("transcript");
   let apiResources = $state<ApiResource[]>([]);
+  let isLoading = $state(true);
 
   let claims = $state([
     { id: "1", course_code: "CSC 312", session_title: "Human Computer Interaction", date: "2026-07-21" }
@@ -22,6 +24,8 @@
       apiResources = await getArchiveResources();
     } catch {
       // Fallback to local default state
+    } finally {
+      isLoading = false;
     }
   });
 
@@ -48,7 +52,11 @@
         <input bind:value={searchQuery} placeholder="Search by course code or session title..." />
       </label>
 
-      {#if filteredClaims.length}
+      {#if isLoading}
+        <div style="margin: var(--spacing-18) 0;">
+          <SkeletonCard lines={3} label="Fetching student lecture archives from API..." />
+        </div>
+      {:else if filteredClaims.length}
         <div class="archive-list">
           {#each filteredClaims as claim}
             <div class="archive-row">
@@ -84,3 +92,4 @@
 
   <PublicVisualPanel title="SEARCHABLE LECTURE ARCHIVE" subtitle="Full-text Search · AI Summaries · Audio Stream Replays" />
 </section>
+

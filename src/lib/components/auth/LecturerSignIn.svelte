@@ -2,6 +2,7 @@
   import type { Screen } from "$lib/types";
   import { loginLecturer } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -53,7 +54,11 @@
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
-        {isSubmitting ? "Authenticating..." : "Sign In to Workspace"}
+        {#if isSubmitting}
+          <ButtonSpinner label="Authenticating credentials..." /> Authenticating...
+        {:else}
+          Sign In to Workspace
+        {/if}
       </button>
 
       <div class="auth-footer-links">

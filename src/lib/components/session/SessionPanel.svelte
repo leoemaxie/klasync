@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Session } from "$lib/types";
   import QrCodeSvg from "$lib/components/shared/QrCodeSvg.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import { pauseSession, resumeSession, toggleRecording } from "$lib/api";
 
   let {
@@ -27,6 +28,8 @@
 
   let isPaused = $state(false);
   let isRecording = $state(false);
+  let isTogglingPause = $state(false);
+  let isTogglingRec = $state(false);
   let actionError = $state("");
 
   const inviteUrl = $derived(
@@ -38,6 +41,7 @@
   async function handlePauseToggle() {
     if (!session?.code) return;
     actionError = "";
+    isTogglingPause = true;
     try {
       if (isPaused) {
         await resumeSession(session.code);
@@ -48,17 +52,22 @@
       }
     } catch (err) {
       actionError = err instanceof Error ? err.message : "Failed to toggle session state";
+    } finally {
+      isTogglingPause = false;
     }
   }
 
   async function handleRecordingToggle() {
     if (!session?.code) return;
     actionError = "";
+    isTogglingRec = true;
     try {
       await toggleRecording(session.code, !isRecording);
       isRecording = !isRecording;
     } catch (err) {
       actionError = err instanceof Error ? err.message : "Failed to toggle recording";
+    } finally {
+      isTogglingRec = false;
     }
   }
 </script>
@@ -82,11 +91,19 @@
     </div>
 
     <div class="controls-row">
-      <button class="outline" onclick={handlePauseToggle}>
-        {isPaused ? "▶ Resume Room" : "⏸ Pause Room"}
+      <button class="outline" onclick={handlePauseToggle} disabled={isTogglingPause}>
+        {#if isTogglingPause}
+          <ButtonSpinner label="Updating room status..." />
+        {:else}
+          {isPaused ? "▶ Resume Room" : "⏸ Pause Room"}
+        {/if}
       </button>
-      <button class={isRecording ? "danger" : "outline"} onclick={handleRecordingToggle}>
-        {isRecording ? "🔴 Recording Active" : "🎙 Start Recording"}
+      <button class={isRecording ? "danger" : "outline"} onclick={handleRecordingToggle} disabled={isTogglingRec}>
+        {#if isTogglingRec}
+          <ButtonSpinner label="Updating recording state..." />
+        {:else}
+          {isRecording ? "🔴 Recording Active" : "🎙 Start Recording"}
+        {/if}
       </button>
     </div>
 
@@ -103,7 +120,11 @@
       onclick={onStartSession}
       disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}
     >
-      {isSaving ? "Starting live room..." : "Start Live Session"}
+      {#if isSaving}
+        <ButtonSpinner label="Initializing live lecture room..." /> Starting live room...
+      {:else}
+        Start Live Session
+      {/if}
     </button>
   {/if}
 </div>

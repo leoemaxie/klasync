@@ -1,18 +1,23 @@
 <script lang="ts">
   import type { Participant } from "$lib/types";
   import { exportSessionAttendanceCsv, getAttendanceCsvUrl } from "$lib/api";
+  import SkeletonTable from "$lib/components/shared/SkeletonTable.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let {
     sessionCode = "",
     participants = [],
+    isLoading = false,
     onRefreshAttendance,
   }: {
     sessionCode?: string;
     participants: Participant[];
-    onRefreshAttendance: () => void;
+    isLoading?: boolean;
+    onRefreshAttendance: () => Promise<void> | void;
   } = $props();
 
   let isExporting = $state(false);
+  let isRefreshing = $state(false);
 
   async function handleExportCsv() {
     if (!sessionCode) return;
@@ -35,6 +40,15 @@
       isExporting = false;
     }
   }
+
+  async function handleRefresh() {
+    isRefreshing = true;
+    try {
+      await onRefreshAttendance();
+    } finally {
+      isRefreshing = false;
+    }
+  }
 </script>
 
 <section class="attendance">
@@ -48,16 +62,28 @@
     <div class="actions">
       {#if sessionCode}
         <button class="outline" onclick={handleExportCsv} disabled={isExporting}>
-          {isExporting ? "Exporting..." : "Export CSV"}
+          {#if isExporting}
+            <ButtonSpinner label="Exporting attendance CSV..." /> Exporting...
+          {:else}
+            Export CSV
+          {/if}
         </button>
       {/if}
-      <button class="text" onclick={onRefreshAttendance}>
-        Refresh attendance
+      <button class="text" onclick={handleRefresh} disabled={isRefreshing || isLoading}>
+        {#if isRefreshing}
+          <ButtonSpinner label="Refreshing live attendance..." /> Refreshing...
+        {:else}
+          Refresh attendance
+        {/if}
       </button>
     </div>
   </div>
 
-  {#if participants.length}
+  {#if isLoading || isRefreshing}
+    <div style="margin-top: var(--spacing-14);">
+      <SkeletonTable rows={3} cols={3} label="Fetching latest session attendance records..." />
+    </div>
+  {:else if participants.length}
     <div class="participant-list">
       {#each participants as participant}
         <p>
@@ -91,3 +117,4 @@
     gap: var(--spacing-12);
   }
 </style>
+

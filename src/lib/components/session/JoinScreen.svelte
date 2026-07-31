@@ -1,6 +1,8 @@
 <script lang="ts">
   import { lookupSessionByCode } from "$lib/api/sessions";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import Skeleton from "$lib/components/shared/Skeleton.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let {
     sessionCode = $bindable(""),
@@ -13,14 +15,17 @@
     matric: string;
     displayName: string;
     joinError?: string;
-    onJoinSession: () => void;
+    onJoinSession: () => Promise<void> | void;
   } = $props();
 
   let sessionTitle = $state("");
   let sessionStatus = $state<"idle" | "live" | "ended">("idle");
+  let isCheckingCode = $state(false);
+  let isJoining = $state(false);
 
   async function checkCode() {
     if (!sessionCode.trim() || sessionCode.trim().length < 4) return;
+    isCheckingCode = true;
     try {
       const info = await lookupSessionByCode(sessionCode.trim());
       sessionTitle = info.session.title;
@@ -28,6 +33,17 @@
     } catch {
       sessionTitle = "";
       sessionStatus = "idle";
+    } finally {
+      isCheckingCode = false;
+    }
+  }
+
+  async function handleJoin() {
+    isJoining = true;
+    try {
+      await onJoinSession();
+    } finally {
+      isJoining = false;
     }
   }
 </script>
@@ -50,7 +66,11 @@
         />
       </label>
 
-      {#if sessionTitle}
+      {#if isCheckingCode}
+        <div style="margin: var(--spacing-12) 0;">
+          <Skeleton height="36px" label="Verifying session code..." />
+        </div>
+      {:else if sessionTitle}
         <div class="session-info-badge">
           <p class="eyebrow"><span class="eyebrow-accent">●</span> {sessionStatus.toUpperCase()}</p>
           <h2>{sessionTitle}</h2>
@@ -73,10 +93,16 @@
 
       <button
         class="primary full"
-        onclick={onJoinSession}
-        disabled={sessionStatus === "ended" || !matric.trim()}
+        onclick={handleJoin}
+        disabled={sessionStatus === "ended" || !matric.trim() || isJoining}
       >
-        {sessionStatus === "ended" ? "Session Ended" : "Join live lecture"}
+        {#if isJoining}
+          <ButtonSpinner label="Verifying roster and entering session..." /> Entering room...
+        {:else if sessionStatus === "ended"}
+          Session Ended
+        {:else}
+          Join live lecture
+        {/if}
       </button>
       <p class="hint">
         Verification status will be confirmed against your course roster on entry.
@@ -86,3 +112,4 @@
 
   <PublicVisualPanel title="INSTANT GUEST ACCESS" subtitle="Zero barriers · Real-time captions · Fair attendance" />
 </section>
+

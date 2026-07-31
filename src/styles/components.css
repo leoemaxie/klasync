@@ -548,3 +548,88 @@
     align-items: flex-start;
   }
 }
+
+/* ── Accessibility & Screen Reader Utilities ─────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Skeleton Loaders & Micro-Feedback ───────────────────── */
+.skeleton-box {
+  display: block;
+  background-color: var(--color-bark-brown);
+  border: 1px solid var(--color-cork-border);
+  border-radius: var(--radius-cards, 6px);
+  position: relative;
+  overflow: hidden;
+  animation: skeletonPulse 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes skeletonPulse {
+  0% {
+    opacity: 0.45;
+    background-color: rgba(56, 36, 22, 0.4);
+    border-color: rgba(64, 55, 46, 0.5);
+  }
+  100% {
+    opacity: 0.95;
+    background-color: rgba(74, 48, 32, 0.85);
+    border-color: var(--color-cork-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-box {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.skeleton-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-18);
+  padding: var(--spacing-24);
+  background: rgba(56, 36, 22, 0.2);
+  border: 1px dashed var(--color-cork-border);
+  border-radius: var(--radius-cards);
+}
+
+.skeleton-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 var(--spacing-8);
+}
+
+.skeleton-table th,
+.skeleton-table td {
+  padding: var(--spacing-12);
+}
+
+/* Inline micro-spinner for action buttons */
+.btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 237, 215, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-warm-cream);
+  animation: btnSpin 0.75s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

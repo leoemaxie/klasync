@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+
   let {
     captionDraft = $bindable(""),
     apiNotice = "",
@@ -6,13 +8,25 @@
   }: {
     captionDraft: string;
     apiNotice?: string;
-    onPublishCaption: () => void;
+    onPublishCaption: () => Promise<void> | void;
   } = $props();
+
+  let isPublishing = $state(false);
+
+  async function handlePublish() {
+    if (!captionDraft.trim()) return;
+    isPublishing = true;
+    try {
+      await onPublishCaption();
+    } finally {
+      isPublishing = false;
+    }
+  }
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Enter") {
       event.preventDefault();
-      onPublishCaption();
+      handlePublish();
     }
   }
 </script>
@@ -29,10 +43,14 @@
   </label>
   <button
     class="outline"
-    onclick={onPublishCaption}
-    disabled={!captionDraft.trim()}
+    onclick={handlePublish}
+    disabled={!captionDraft.trim() || isPublishing}
   >
-    Publish caption
+    {#if isPublishing}
+      <ButtonSpinner label="Broadcasting caption..." /> Publishing...
+    {:else}
+      Publish caption
+    {/if}
   </button>
   {#if apiNotice}
     <p class="error">{apiNotice}</p>

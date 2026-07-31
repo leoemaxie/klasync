@@ -2,6 +2,7 @@
   import type { Screen } from "$lib/types";
   import { registerStudent } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
+  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -84,7 +85,11 @@
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
-        {isSubmitting ? "Creating Account..." : "Create Account & Retain Materials"}
+        {#if isSubmitting}
+          <ButtonSpinner label="Creating student account..." /> Creating Account...
+        {:else}
+          Create Account & Retain Materials
+        {/if}
       </button>
 
       <div class="auth-footer-links">
