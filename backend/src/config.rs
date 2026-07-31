@@ -32,7 +32,12 @@ pub struct AppConfig {
     pub ai_max_cost_usd: f64,
     pub redis_url: Option<String>,
     pub redis_key_prefix: String,
+    /// Upper bound for the complete managed Redis startup handshake.
+    pub redis_connect_timeout_ms: u64,
     pub redis_command_timeout_ms: u64,
+    /// Redis is an infrastructure requirement in all environments. This field
+    /// remains available to request handlers that must decide whether a Redis
+    /// failure should become a 503 response.
     pub redis_required: bool,
 }
 
@@ -115,11 +120,11 @@ impl AppConfig {
                 .unwrap_or_else(|_| "klasync:development".to_owned())
                 .trim_end_matches(':')
                 .to_owned(),
+            redis_connect_timeout_ms: env::var("REDIS_CONNECT_TIMEOUT_MS")
+                .ok().and_then(|value| value.parse().ok()).unwrap_or(10_000),
             redis_command_timeout_ms: env::var("REDIS_COMMAND_TIMEOUT_MS")
-                .ok().and_then(|value| value.parse().ok()).unwrap_or(1000),
-            redis_required: env::var("REDIS_REQUIRED")
-                .map(|value| value.eq_ignore_ascii_case("true"))
-                .unwrap_or(false),
+                .ok().and_then(|value| value.parse().ok()).unwrap_or(5_000),
+            redis_required: true,
         }
     }
 

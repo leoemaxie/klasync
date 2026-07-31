@@ -182,6 +182,7 @@ async fn execute_claimed_job(
     .map_err(|_| ApiError::service_unavailable())?;
     let content = serde_json::to_string(&output.content)
         .map_err(|_| ApiError::service_unavailable())?;
+    persist_study_rows(pool, job.session_id, &job.job_type, &output.content).await?;
     let resource_type = output_type(&job.job_type);
     let output_id = Uuid::now_v7();
     sqlx::query(
@@ -254,9 +255,47 @@ fn output_type(job_type: &str) -> &'static str {
         "transcribe" => "transcript",
         "summarize" => "summary",
         "flashcards" => "flashcards",
-        "lecture_qa_index" => "notes",
+        "lecture_qa_index" | "chapters" => "notes",
         _ => "notes",
     }
+}
+
+async fn persist_study_rows(
+    pool: &sqlx::PgPool,
+    session_id: Uuid,
+    job_type: &str,
+    content: &serde_json::Value,
+) -> Result<(), ApiError> {
+    let Some(text) = content.get("text").and_then(|value| value.as_str()) else { return Ok(()); };
+    if job_type == "chapters" {
+        if let Ok(chapters) = serde_json::from_str::<Vec<ChapterPayload>>(text) {
+            for (index, chapter) in chapters.into_iter().enumerate() {
+                sqlx::query("insert into session_chapters (id, session_id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec) values ($1, $2, $3, $4, $5, $6, $7) on conflict (session_id, chapter_index) do update set title = excluded.title, summary = excluded.summary, start_timestamp_sec = excluded.start_timestamp_sec, end_timestamp_sec = excluded.end_timestamp_sec")
+                    .bind(Uuid::now_v7()).bind(session_id).bind(chapter.chapter_index.unwrap_or(index as i32 + 1)).bind(chapter.title).bind(chapter.summary).bind(chapter.start_timestamp_sec.unwrap_or(0)).bind(chapter.end_timestamp_sec.unwrap_or(0))
+                    .execute(pool).await.map_err(|_| ApiError::service_unavailable())?;
+            }
+        }
+    } else if job_type == "flashcards" {
+        if let Ok(cards) = serde_json::from_str::<Vec<FlashcardPayload>>(text) {
+            for card in cards {
+                sqlx::query("insert into session_flashcards (id, session_id, prompt, answer, topic_tag, difficulty) values ($1, $2, $3, $4, $5, $6)")
+                    .bind(Uuid::now_v7()).bind(session_id).bind(card.prompt).bind(card.answer).bind(card.topic_tag).bind(card.difficulty.unwrap_or_else(|| "medium".to_owned()))
+                    .execute(pool).await.map_err(|_| ApiError::service_unavailable())?;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+struct ChapterPayload {
+    chapter_index: Option<i32>, title: String, summary: String,
+    start_timestamp_sec: Option<i32>, end_timestamp_sec: Option<i32>,
+}
+
+#[derive(serde::Deserialize)]
+struct FlashcardPayload {
+    prompt: String, answer: String, topic_tag: Option<String>, difficulty: Option<String>,
 }
 
 pub async fn dispatch(

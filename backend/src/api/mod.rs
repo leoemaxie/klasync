@@ -36,6 +36,20 @@ pub fn router(state: AppState) -> Router {
         .route("/", get(health::health))
         .route("/health", get(health::health))
         .route("/health/ready", get(handlers::readiness::ready))
+        .route("/api/v1/sessions/{code}/questions", get(handlers::questions::list).post(handlers::questions::submit))
+        .route("/api/v1/sessions/{code}/questions/{question_id}/upvote", post(handlers::questions::upvote))
+        .route("/api/v1/sessions/{code}/questions/{question_id}/resolve", post(handlers::questions::resolve))
+        .route("/api/v1/sessions/code/{code}/questions", get(handlers::questions::list).post(handlers::questions::submit))
+        .route("/api/v1/sessions/code/{code}/questions/{question_id}/upvote", post(handlers::questions::upvote))
+        .route("/api/v1/sessions/code/{code}/questions/{question_id}/resolve", post(handlers::questions::resolve))
+        .route("/api/v1/archive/sessions/{session_id}/ai/generate-chapters", post(handlers::ai_study::generate_chapters))
+        .route("/api/v1/archive/sessions/{session_id}/chapters", get(handlers::ai_study::chapters))
+        .route("/api/v1/archive/sessions/{session_id}/ai/generate-flashcards", post(handlers::ai_study::generate_flashcards))
+        .route("/api/v1/archive/sessions/{session_id}/flashcards", get(handlers::ai_study::flashcards))
+        .route("/api/v1/analytics/courses/{course_id}/attendance-summary", get(handlers::analytics::course_summary))
+        .route("/api/v1/analytics/sessions/{session_id}/anomalies", get(handlers::analytics::session_anomalies))
+        .route("/api/v1/courses/{course_id}/lms-sync/canvas", post(handlers::lms_sync::canvas))
+        .route("/api/v1/sessions/batch-sync", post(handlers::batch_sync::sync))
         .route(
             "/api/v1/auth/lecturers/register",
             post(auth::register_lecturer),

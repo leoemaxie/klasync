@@ -32,19 +32,15 @@ impl AppState {
         let storage = storage::adapter_from_config(&config);
         let mailer = email::sender_from_config(&config);
         let ai = ai::adapter_from_config(&config);
-        let redis = match config.redis_url.as_ref() {
-            Some(_) => match RedisStore::connect(&config).await {
-                Ok(store) => Some(Arc::new(store)),
-                Err(error) if config.redis_required => {
-                    return Err(sqlx::Error::Protocol(format!("Managed Redis connection failed: {error}")));
-                }
-                Err(error) => {
-                    tracing::warn!(error = %error, "Managed Redis unavailable; starting without Redis cache");
-                    None
-                }
-            },
-            None => None,
-        };
+        let redis = RedisStore::connect(&config)
+            .await
+            .map(Arc::new)
+            .map(Some)
+            .map_err(|error| {
+                sqlx::Error::Protocol(format!(
+                    "Managed Redis is required and could not be initialized: {error}"
+                ))
+            })?;
         Ok(Self {
             database,
             config: Arc::new(config),

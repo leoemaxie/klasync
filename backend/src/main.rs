@@ -22,9 +22,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
 
     let config = klasync_backend::config::AppConfig::from_env();
-    let state = klasync_backend::state::AppState::from_config(config)
-        .await
-        .expect("Failed to initialize database pool and app state");
+    let state = match klasync_backend::state::AppState::from_config(config).await {
+        Ok(state) => state,
+        Err(error) => {
+            tracing::error!(error = %error, "KLASYNC could not initialize required infrastructure");
+            return Err(error.into());
+        }
+    };
 
     tokio::spawn(klasync_backend::ai_worker::run_loop(state.clone()));
 

@@ -1,4 +1,7 @@
 pub mod attendance;
+pub mod analytics;
+pub mod ai_study;
+pub mod batch_sync;
 pub mod attendance_scoring;
 pub mod audio;
 pub mod auth;
@@ -13,6 +16,8 @@ pub mod lifecycle;
 pub mod jobs;
 pub mod not_found;
 pub mod participants;
+pub mod questions;
+pub mod lms_sync;
 pub mod presence;
 pub mod recovery;
 pub mod readiness;

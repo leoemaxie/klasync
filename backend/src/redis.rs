@@ -3,7 +3,11 @@
 
 use std::time::Duration;
 
-use redis::{aio::ConnectionManager, streams::{StreamReadOptions, StreamReadReply}, AsyncCommands, RedisError, Script};
+use redis::{
+    aio::{ConnectionManager, ConnectionManagerConfig},
+    streams::{StreamReadOptions, StreamReadReply},
+    AsyncCommands, RedisError, Script,
+};
 use uuid::Uuid;
 
 use crate::config::AppConfig;
@@ -26,15 +30,52 @@ pub struct RedisLock {
 impl RedisStore {
     pub async fn connect(config: &AppConfig) -> Result<Self, RedisError> {
         let url = config.redis_url.as_deref().ok_or_else(|| {
-            RedisError::from((redis::ErrorKind::InvalidClientConfig, "REDIS_URL is not configured"))
+            RedisError::from((
+                redis::ErrorKind::InvalidClientConfig,
+                "REDIS_URL must be configured for the managed Redis service",
+            ))
         })?;
+        if !url.starts_with("rediss://") {
+            return Err(RedisError::from((
+                redis::ErrorKind::InvalidClientConfig,
+                "REDIS_URL must use rediss:// so managed Redis traffic is encrypted",
+            )));
+        }
         let client = redis::Client::open(url)?;
-        let manager = client.get_connection_manager().await?;
+        let connect_timeout = Duration::from_millis(config.redis_connect_timeout_ms.max(5_000));
+        let command_timeout = Duration::from_millis(config.redis_command_timeout_ms.max(1_000));
+        let manager_config = ConnectionManagerConfig::new()
+            .set_connection_timeout(Some(connect_timeout))
+            .set_response_timeout(Some(command_timeout))
+            .set_number_of_retries(2)
+            .set_min_delay(Duration::from_millis(250))
+            .set_max_delay(Duration::from_secs(2));
+        // Health-check the exact manager held by the application. The previous
+        // implementation checked a separate connection, then opened another
+        // unmanaged manager connection that could time out during startup.
+        let mut manager = tokio::time::timeout(
+            connect_timeout,
+            client.get_connection_manager_with_config(manager_config),
+        )
+        .await
+        .map_err(|_| RedisError::from((
+            redis::ErrorKind::Io,
+            "managed Redis connection manager initialization timed out",
+        )))??;
+        let _: String = tokio::time::timeout(
+            command_timeout,
+            redis::cmd("PING").query_async(&mut manager),
+        )
+        .await
+        .map_err(|_| RedisError::from((
+            redis::ErrorKind::Io,
+            "managed Redis readiness PING timed out",
+        )))??;
         Ok(Self {
             client,
             manager,
             prefix: config.redis_key_prefix.clone(),
-            command_timeout: Duration::from_millis(config.redis_command_timeout_ms),
+            command_timeout,
         })
     }
 

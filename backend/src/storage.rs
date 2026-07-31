@@ -47,6 +47,7 @@ impl R2ObjectStore {
     ) -> Self {
         let credentials = Credentials::new(access_key_id, secret_access_key, None, None, "klasync-r2");
         let configuration = aws_sdk_s3::config::Builder::new()
+            .behavior_version(aws_sdk_s3::config::BehaviorVersion::latest())
             .region(Region::new("auto"))
             .endpoint_url(endpoint)
             .credentials_provider(credentials)
