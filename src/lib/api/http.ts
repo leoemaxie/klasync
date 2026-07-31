@@ -89,3 +89,6 @@ export async function http<T>(path: string, init: RequestInit = {}): Promise<T> 
   }
   return response.json() as Promise<T>;
 }
+
+export const apiRequest = http;
+

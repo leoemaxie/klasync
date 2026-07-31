@@ -1,4 +1,6 @@
 <script lang="ts">
+  import LmsSyncModal from "./LmsSyncModal.svelte";
+
   let {
     rosterText = $bindable(""), rosterNotice = "", onImportFile, onParseRoster,
   }: {
@@ -7,6 +9,8 @@
   } = $props();
 
   let isDragging = $state(false);
+  let isLmsModalOpen = $state(false);
+
   let parsedRows = $derived(
     rosterText.split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
       const parts = line.split(",");
@@ -25,10 +29,20 @@
       onImportFile({ target: { files: [e.dataTransfer.files[0]] } } as unknown as Event);
     }
   }
+
+  function handleLmsSynced(csvText: string) {
+    rosterText = rosterText ? `${rosterText}\n${csvText}` : csvText;
+  }
 </script>
 
 <div class="panel roster-upload-panel">
-  <p class="eyebrow">COURSE ROSTER IMPORT &amp; VALIDATION</p>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <p class="eyebrow">COURSE ROSTER IMPORT &amp; VALIDATION</p>
+    <button type="button" class="text" onclick={() => (isLmsModalOpen = true)}>
+      🔗 Sync from Canvas / Moodle
+    </button>
+  </div>
+
   <div
     class="dropzone" class:dragging={isDragging}
     ondragover={(e) => { e.preventDefault(); isDragging = true; }}
@@ -79,6 +93,8 @@
   </button>
   {#if rosterNotice}<p class="success">{rosterNotice}</p>{/if}
 </div>
+
+<LmsSyncModal bind:isOpen={isLmsModalOpen} onRosterSynced={handleLmsSynced} />
 
 <style>
   .roster-upload-panel { display: flex; flex-direction: column; gap: var(--spacing-14); }

@@ -5,6 +5,8 @@
   import { sendHandRaise, clearHandRaise, sendPresenceHeartbeat, claimAttendance } from "$lib/api";
   import Skeleton from "$lib/components/shared/Skeleton.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import AccessibilityDrawer from "./AccessibilityDrawer.svelte";
+  import LiveQaPanel from "./LiveQaPanel.svelte";
 
   let {
     session,
@@ -31,6 +33,11 @@
   let isCheckingIn = $state(false);
   let isClaiming = $state(false);
   let claimNotice = $state("");
+
+  // Accessibility reading settings state
+  let fontSize = $state("18px");
+  let dyslexicFont = $state(false);
+  let lineHeight = $state(1.6);
 
   onMount(() => {
     if (!session?.code) return;
@@ -107,8 +114,15 @@
   </button>
 </section>
 
+<AccessibilityDrawer bind:fontSize bind:dyslexicFont bind:lineHeight />
+
 <section class="live-grid">
-  <article class="captions panel" aria-live="polite">
+  <article
+    class="captions panel"
+    class:dyslexic-mode={dyslexicFont}
+    style="font-size: {fontSize}; line-height: {lineHeight};"
+    aria-live="polite"
+  >
     <p class="eyebrow">REAL-TIME CAPTION STREAM</p>
     {#if captions.length === 0}
       <div style="margin: var(--spacing-14) 0;">
@@ -146,6 +160,8 @@
     </div>
   </aside>
 </section>
+
+<LiveQaPanel sessionCode={session?.code ?? "A4K9QZ"} participantId={joinedParticipant?.id} />
 
 <section class="archive-cta panel">
   <div>

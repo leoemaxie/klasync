@@ -6,12 +6,13 @@
   import TranscriptViewer from "./TranscriptViewer.svelte";
   import FlashcardDeck from "./FlashcardDeck.svelte";
   import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
+  import ChapterBreakdown from "./ChapterBreakdown.svelte";
   import { getArchiveResources, type ApiResource } from "$lib/api";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
   let searchQuery = $state("");
-  let activeTab = $state<"transcript" | "flashcards" | "audio">("transcript");
+  let activeTab = $state<"transcript" | "chapters" | "flashcards" | "audio">("transcript");
   let apiResources = $state<ApiResource[]>([]);
   let isLoading = $state(true);
 
@@ -66,12 +67,15 @@
               
               <div class="tab-selector">
                 <button type="button" class={activeTab === "transcript" ? "primary" : "outline"} onclick={() => (activeTab = "transcript")}>Transcript</button>
+                <button type="button" class={activeTab === "chapters" ? "primary" : "outline"} onclick={() => (activeTab = "chapters")}>AI Chapters</button>
                 <button type="button" class={activeTab === "flashcards" ? "primary" : "outline"} onclick={() => (activeTab = "flashcards")}>Flashcards</button>
                 <button type="button" class={activeTab === "audio" ? "primary" : "outline"} onclick={() => (activeTab = "audio")}>Audio Stream</button>
               </div>
 
               {#if activeTab === "transcript"}
                 <TranscriptViewer />
+              {:else if activeTab === "chapters"}
+                <ChapterBreakdown />
               {:else if activeTab === "flashcards"}
                 <FlashcardDeck />
               {:else}

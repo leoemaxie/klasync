@@ -2,8 +2,10 @@
   import { onMount } from "svelte";
   import Navbar from "$lib/components/shared/Navbar.svelte";
   import NotFoundScreen from "$lib/components/shared/NotFoundScreen.svelte";
+  import OfflineStatusIndicator from "$lib/components/shared/OfflineStatusIndicator.svelte";
   import HomeScreen from "$lib/components/home/HomeScreen.svelte";
   import LecturerFormPanel from "$lib/components/lecturer/LecturerFormPanel.svelte";
+  import LecturerAnalyticsPanel from "$lib/components/lecturer/LecturerAnalyticsPanel.svelte";
   import SessionPanel from "$lib/components/session/SessionPanel.svelte";
   import CaptionControlPanel from "$lib/components/session/CaptionControlPanel.svelte";
   import AttendancePanel from "$lib/components/session/AttendancePanel.svelte";
@@ -47,6 +49,7 @@
 
 <main>
   <Navbar bind:screen={state.screen} />
+  <OfflineStatusIndicator />
 
   {#if state.screen === "home"}
     <HomeScreen bind:screen={state.screen} />
@@ -93,6 +96,7 @@
         onRefreshAttendance={() => refreshAttendance(state)}
       />
     {/if}
+    <LecturerAnalyticsPanel courseId={state.courseCode || "CSC312"} />
   {:else if state.screen === "join"}
     <JoinScreen
       bind:sessionCode={state.sessionCode} bind:matric={state.matric}
@@ -112,3 +116,4 @@
     <NotFoundScreen bind:screen={state.screen} />
   {/if}
 </main>
+
