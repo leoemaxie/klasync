@@ -1,17 +1,30 @@
-import adapter from "@sveltejs/adapter-static";
+import vercelAdapter from "@sveltejs/adapter-vercel";
+import staticAdapter from "@sveltejs/adapter-static";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
+
+const isStatic = Boolean(process.env.TAURI_ENV || process.env.BUILD_TARGET === "static");
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    adapter: adapter({
-      pages: "build",
-      assets: "build",
-      fallback: "index.html",
-      precompress: false,
-      strict: false,
-    }),
+    adapter: isStatic
+      ? staticAdapter({
+          pages: "build",
+          assets: "build",
+          fallback: "index.html",
+          precompress: false,
+          strict: false,
+        })
+      : vercelAdapter({
+          runtime: "nodejs20.x",
+          images: {
+            sizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+            domains: [],
+            minimumCacheTTL: 60,
+            formats: ["image/avif", "image/webp"],
+          },
+        }),
   },
 };
 
