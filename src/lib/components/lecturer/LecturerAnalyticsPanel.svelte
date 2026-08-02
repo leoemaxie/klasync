@@ -8,8 +8,21 @@
   } from "$lib/api";
   import SkeletonCard from "$lib/components/shared/SkeletonCard.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import type { Participant, RosterStudent } from "$lib/types";
 
-  let { courseId = "c-312-uuid" }: { courseId?: string } = $props();
+  let {
+    courseId = "",
+    courseCode = "",
+    courseTitle = "",
+    participants = [],
+    roster = []
+  }: {
+    courseId?: string;
+    courseCode?: string;
+    courseTitle?: string;
+    participants?: Participant[];
+    roster?: RosterStudent[];
+  } = $props();
 
   let summary = $state<CourseAnalyticsSummary | null>(null);
   let anomalies = $state<AttendanceAnomaly[]>([]);
@@ -18,14 +31,16 @@
 
   onMount(async () => {
     try {
-      const [sum, anom] = await Promise.all([
-        fetchCourseAnalytics(courseId),
-        fetchSessionAnomalies(courseId)
-      ]);
-      summary = sum;
-      anomalies = anom;
+      if (courseId) {
+        const [sum, anom] = await Promise.all([
+          fetchCourseAnalytics(courseId),
+          fetchSessionAnomalies(courseId)
+        ]);
+        summary = sum;
+        anomalies = anom;
+      }
     } catch {
-      // Fallback
+      summary = null;
     } finally {
       isLoading = false;
     }
@@ -34,13 +49,26 @@
   async function exportGradebookReport() {
     isExporting = true;
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      const csv = `Course Code,Matric Number,Student Name,Attendance %,Verification Status\nCSC 312,MAT/2023/001,Ada Okafor,96%,Verified Roster Match\nCSC 312,MAT/2023/002,Emeka Eze,92%,Verified Roster Match`;
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      const activeCourse = courseCode.trim() || summary?.course_code || "COURSE";
+      const rows: string[] = ["Course Code,Matric Number,Student Name,Verification Status,Heartbeat Count"];
+      
+      const studentsToExport = participants.length > 0
+        ? participants.map(p => `${activeCourse},"${p.matric}","${p.name}",${p.verified ? "Verified Match" : "Provisional"},${p.heartbeats}`)
+        : roster.map(r => `${activeCourse},"${r.matric}","${r.name}",Registered Roster,0`);
+
+      if (studentsToExport.length === 0) {
+        rows.push(`${activeCourse},"N/A","No registered students","Pending Session Entry",0`);
+      } else {
+        rows.push(...studentsToExport);
+      }
+
+      const csvContent = rows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `official_gradebook_${summary?.course_code || 'CSC312'}.csv`);
+      link.setAttribute("download", `official_gradebook_${activeCourse.replaceAll(" ", "_")}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -54,43 +82,45 @@
   <div class="analytics-header">
     <div>
       <p class="eyebrow">LECTURER AUDIT &amp; ATTENDANCE ANALYTICS</p>
-      <h2>{summary?.course_code ?? "CSC 312"} Attendance Dashboard</h2>
+      <h2>{courseCode.trim() ? `${courseCode}: ${courseTitle}` : "Course Attendance & Audit Dashboard"}</h2>
     </div>
     <button type="button" class="outline" onclick={exportGradebookReport} disabled={isExporting}>
       {#if isExporting}
         <ButtonSpinner label="Generating official report..." /> Exporting...
       {:else}
-        📄 Official Gradebook CSV
+        📄 Export Official Gradebook CSV
       {/if}
     </button>
   </div>
 
   {#if isLoading}
     <SkeletonCard lines={3} label="Fetching attendance analytics..." />
-  {:else if summary}
+  {:else}
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="m-val">{summary.avg_attendance_percentage}%</span>
-        <span class="m-lbl">Avg. Room Attendance</span>
+        <span class="m-val">{summary ? `${summary.avg_attendance_percentage}%` : `${participants.length}`}</span>
+        <span class="m-lbl">{summary ? "Avg. Room Attendance" : "Active Attendees"}</span>
       </div>
 
       <div class="metric-card">
-        <span class="m-val">{summary.roster_verification_match_rate}%</span>
-        <span class="m-lbl">Roster Match Integrity</span>
+        <span class="m-val">
+          {summary ? `${summary.roster_verification_match_rate}%` : `${participants.filter(p => p.verified).length}`}
+        </span>
+        <span class="m-lbl">{summary ? "Roster Match Integrity" : "Verified Roster Matches"}</span>
       </div>
 
       <div class="metric-card">
-        <span class="m-val">{summary.total_sessions}</span>
-        <span class="m-lbl">Total Sessions Held</span>
+        <span class="m-val">{summary ? summary.total_sessions : (courseCode ? "1" : "0")}</span>
+        <span class="m-lbl">Sessions Tracked</span>
       </div>
 
       <div class="metric-card">
-        <span class="m-val warning">{summary.total_anomalies_flagged}</span>
+        <span class="m-val warning">{summary ? summary.total_anomalies_flagged : anomalies.length}</span>
         <span class="m-lbl">Audit Flags</span>
       </div>
     </div>
 
-    {#if anomalies.length}
+    {#if anomalies.length > 0}
       <div class="anomalies-section">
         <p class="eyebrow">ATTENDANCE ANOMALY AUDIT LOG</p>
         <div class="anomalies-list">
@@ -109,7 +139,7 @@
 
 <style>
   .analytics-panel { display: flex; flex-direction: column; gap: var(--spacing-18); margin-top: var(--spacing-24); }
-  .analytics-header { display: flex; justify-content: space-between; align-items: center; }
+  .analytics-header { display: flex; justify-content: space-between; align-items: center; gap: var(--spacing-14); flex-wrap: wrap; }
   .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-12); }
   .metric-card { display: flex; flex-direction: column; padding: var(--spacing-14); background: rgba(16, 9, 4, 0.5); border: 1px solid var(--color-cork-border); border-radius: var(--radius-cards); text-align: center; }
   .m-val { font-family: var(--font-display); font-size: 28px; color: var(--color-warm-cream); }
@@ -124,3 +154,4 @@
     .metrics-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
+

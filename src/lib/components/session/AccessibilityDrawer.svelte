@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Settings, X } from "@lucide/svelte";
+
   let {
     fontSize = $bindable("18px"),
     dyslexicFont = $bindable(false),
@@ -19,14 +21,16 @@
     onclick={() => (drawerOpen = !drawerOpen)}
     aria-expanded={drawerOpen}
   >
-    ⚙ Accessibility Preferences
+    <Settings size={14} style="vertical-align: middle; display: inline-block;" /> Accessibility Preferences
   </button>
 
   {#if drawerOpen}
     <div class="panel drawer-content" role="region" aria-label="Accessibility Settings">
       <div class="drawer-header">
         <p class="eyebrow">ACCESSIBILITY &amp; READING DISPLAY</p>
-        <button type="button" class="text" onclick={() => (drawerOpen = false)}>✕ Close</button>
+        <button type="button" class="text" onclick={() => (drawerOpen = false)}>
+          <X size={14} style="vertical-align: middle; display: inline-block;" /> Close
+        </button>
       </div>
 
       <div class="control-group">

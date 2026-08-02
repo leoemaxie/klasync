@@ -19,27 +19,13 @@ export interface AttendanceAnomaly {
   logged_at: string;
 }
 
-export async function fetchCourseAnalytics(courseId: string): Promise<CourseAnalyticsSummary> {
-  return await apiRequest<CourseAnalyticsSummary>(`/api/v1/analytics/courses/${encodeURIComponent(courseId)}/attendance-summary`).catch(() => ({
-    course_id: courseId,
-    course_code: "CSC 312",
-    total_sessions: 12,
-    avg_attendance_percentage: 94.2,
-    roster_verification_match_rate: 98.1,
-    total_provisional_students: 4,
-    total_anomalies_flagged: 1
-  }));
+export async function fetchCourseAnalytics(courseId: string): Promise<CourseAnalyticsSummary | null> {
+  if (!courseId) return null;
+  return await apiRequest<CourseAnalyticsSummary>(`/analytics/courses/${encodeURIComponent(courseId)}/attendance-summary`).catch(() => null);
 }
 
 export async function fetchSessionAnomalies(sessionId: string): Promise<AttendanceAnomaly[]> {
-  return await apiRequest<AttendanceAnomaly[]>(`/api/v1/analytics/sessions/${encodeURIComponent(sessionId)}/anomalies`).catch(() => [
-    {
-      id: "anom-1",
-      matric_number: "MAT/2023/099",
-      anomaly_type: "heartbeat_burst",
-      description: "Multiple presence check-ins received within 150ms window.",
-      severity: "warning",
-      logged_at: new Date().toISOString()
-    }
-  ]);
+  if (!sessionId) return [];
+  return await apiRequest<AttendanceAnomaly[]>(`/analytics/sessions/${encodeURIComponent(sessionId)}/anomalies`).catch(() => []);
 }
+

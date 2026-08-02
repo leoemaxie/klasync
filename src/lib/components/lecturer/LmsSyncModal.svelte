@@ -1,5 +1,6 @@
 <script lang="ts">
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import { X } from "@lucide/svelte";
 
   let {
     isOpen = $bindable(false),
@@ -40,7 +41,9 @@
     <div class="panel modal-card">
       <div class="modal-header">
         <p class="eyebrow">LMS ROSTER AUTOMATION</p>
-        <button type="button" class="text" onclick={() => (isOpen = false)}>✕ Close</button>
+        <button type="button" class="text" onclick={() => (isOpen = false)}>
+          <X size={14} style="vertical-align: middle; display: inline-block;" /> Close
+        </button>
       </div>
 
       <h2>Sync Roster with University LMS</h2>

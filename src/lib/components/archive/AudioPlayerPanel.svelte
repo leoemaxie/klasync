@@ -1,14 +1,15 @@
 <script lang="ts">
   import { getAudioChunkUrl } from "$lib/api";
 
-  let { sessionCode = "DEMO312" }: { sessionCode?: string } = $props();
+  let { sessionCode = "" }: { sessionCode?: string } = $props();
 
   let isPlaying = $state(false);
-  let progress = $state(32);
+  let progress = $state(0);
   let playbackRate = $state<"1.0x" | "1.25x" | "1.5x">("1.0x");
 
-  const chunkUrl = $derived(getAudioChunkUrl(sessionCode, 1));
+  const chunkUrl = $derived(sessionCode ? getAudioChunkUrl(sessionCode, 1) : "");
 </script>
+
 
 <div class="panel audio-player-panel">
   <div class="player-header">

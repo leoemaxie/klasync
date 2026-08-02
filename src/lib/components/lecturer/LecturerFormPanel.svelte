@@ -35,8 +35,8 @@
       <input type="email" bind:value={lecturerEmail} placeholder="amara@university.edu" />
     </label>
     <div class="twocol">
-      <label>Course code<input bind:value={courseCode} /></label>
-      <label>Course title<input bind:value={courseTitle} /></label>
+      <label>Course code<input bind:value={courseCode} placeholder="e.g. CSC 312" /></label>
+      <label>Course title<input bind:value={courseTitle} placeholder="e.g. Human Computer Interaction" /></label>
     </div>
   </div>
 

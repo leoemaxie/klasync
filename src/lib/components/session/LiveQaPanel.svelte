@@ -9,6 +9,7 @@
   } from "$lib/api";
   import SkeletonCard from "$lib/components/shared/SkeletonCard.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import { Check, ChevronUp } from "@lucide/svelte";
 
   let {
     sessionCode = "",
@@ -114,7 +115,7 @@
             <p class="q-text">{q.question_text}</p>
             <span class="q-meta">
               Submitted at {new Date(q.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              {#if q.is_resolved} · <strong class="success">✓ Resolved</strong>{/if}
+              {#if q.is_resolved} · <strong class="success"><Check size={12} style="vertical-align: middle; display: inline-block;" /> Resolved</strong>{/if}
             </span>
           </div>
 
@@ -128,7 +129,7 @@
               {#if activeUpvotingId === q.id}
                 <ButtonSpinner label="Upvoting..." />
               {:else}
-                ▲ {q.upvote_count}
+                <ChevronUp size={14} style="vertical-align: middle; display: inline-block;" /> {q.upvote_count}
               {/if}
             </button>
 

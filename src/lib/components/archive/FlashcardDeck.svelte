@@ -1,19 +1,21 @@
 <script lang="ts">
-  let cards = $state([
-    { prompt: "What is a Feedback Loop in HCI?", answer: "A mechanism that captures output signal, compares it against a desired state, and adjusts future system inputs." },
-    { prompt: "Why is audio the primary source of truth in Klasync?", answer: "Because lightweight wireless mic streaming makes auditorium lectures accessible without complex video infrastructure." },
-    { prompt: "What defines Cognitive Accessibility in higher education?", answer: "Transforming dense, continuous speech into structured summaries, key concept cards, and digestible transcripts." }
-  ]);
+  let {
+    cards = []
+  }: {
+    cards?: { prompt: string; answer: string }[];
+  } = $props();
 
   let currentIndex = $state(0);
   let isFlipped = $state(false);
 
   function nextCard() {
+    if (!cards.length) return;
     isFlipped = false;
     currentIndex = (currentIndex + 1) % cards.length;
   }
 
   function prevCard() {
+    if (!cards.length) return;
     isFlipped = false;
     currentIndex = (currentIndex - 1 + cards.length) % cards.length;
   }
@@ -22,32 +24,40 @@
 <div class="panel flashcard-deck">
   <div class="deck-header">
     <p class="eyebrow">REVISION FLASHCARDS</p>
-    <span class="card-counter">CARD {currentIndex + 1} OF {cards.length}</span>
+    {#if cards.length > 0}
+      <span class="card-counter">CARD {currentIndex + 1} OF {cards.length}</span>
+    {/if}
   </div>
 
-  <div
-    class="flashcard-surface"
-    class:flipped={isFlipped}
-    onclick={() => (isFlipped = !isFlipped)}
-    role="button"
-    tabindex="0"
-    onkeydown={(e) => e.key === " " && (isFlipped = !isFlipped)}
-  >
-    <div class="card-face front">
-      <span class="card-label">QUESTION / PROMPT</span>
-      <h3>{cards[currentIndex].prompt}</h3>
-      <p class="hint">Click or press space to reveal answer</p>
+  {#if cards.length > 0}
+    <div
+      class="flashcard-surface"
+      class:flipped={isFlipped}
+      onclick={() => (isFlipped = !isFlipped)}
+      role="button"
+      tabindex="0"
+      onkeydown={(e) => e.key === " " && (isFlipped = !isFlipped)}
+    >
+      <div class="card-face front">
+        <span class="card-label">QUESTION / PROMPT</span>
+        <h3>{cards[currentIndex].prompt}</h3>
+        <p class="hint">Click or press space to reveal answer</p>
+      </div>
+      <div class="card-face back">
+        <span class="card-label">EXPLANATION / ANSWER</span>
+        <p class="answer-text">{cards[currentIndex].answer}</p>
+      </div>
     </div>
-    <div class="card-face back">
-      <span class="card-label">EXPLANATION / ANSWER</span>
-      <p class="answer-text">{cards[currentIndex].answer}</p>
-    </div>
-  </div>
 
-  <div class="deck-actions">
-    <button class="outline" onclick={prevCard}>Previous Card</button>
-    <button class="primary" onclick={nextCard}>Next Card</button>
-  </div>
+    <div class="deck-actions">
+      <button class="outline" onclick={prevCard} disabled={cards.length <= 1}>Previous Card</button>
+      <button class="primary" onclick={nextCard} disabled={cards.length <= 1}>Next Card</button>
+    </div>
+  {:else}
+    <div class="empty-flashcard-box">
+      <p class="empty-text">No revision flashcards generated for this lecture yet.</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -59,4 +69,7 @@
   .card-label { font-size: 9px; letter-spacing: 0.14em; color: var(--color-ember-accent); margin-bottom: 8px; display: block; }
   .answer-text { font-size: 15px; line-height: 1.6; color: var(--color-warm-cream); }
   .deck-actions { display: flex; justify-content: space-between; gap: var(--spacing-12); }
+  .empty-flashcard-box { padding: var(--spacing-18); text-align: center; border: 1px dashed var(--color-cork-border); border-radius: 6px; }
+  .empty-text { font-size: 13px; color: var(--color-driftwood); }
 </style>
+

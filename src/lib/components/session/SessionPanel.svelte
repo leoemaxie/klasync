@@ -3,6 +3,7 @@
   import QrCodeSvg from "$lib/components/shared/QrCodeSvg.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import { pauseSession, resumeSession, toggleRecording } from "$lib/api";
+  import { Play, Pause, Circle, Mic } from "@lucide/svelte";
 
   let {
     session,
@@ -34,7 +35,7 @@
 
   const inviteUrl = $derived(
     session?.code
-      ? `${typeof location !== "undefined" ? location.origin : ""}/?join=${session.code}`
+      ? `${typeof location !== "undefined" ? location.origin : ""}/#/?join=${session.code}`
       : ""
   );
 
@@ -94,15 +95,19 @@
       <button class="outline" onclick={handlePauseToggle} disabled={isTogglingPause}>
         {#if isTogglingPause}
           <ButtonSpinner label="Updating room status..." />
+        {:else if isPaused}
+          <Play size={14} style="vertical-align: middle; display: inline-block;" /> Resume Room
         {:else}
-          {isPaused ? "▶ Resume Room" : "⏸ Pause Room"}
+          <Pause size={14} style="vertical-align: middle; display: inline-block;" /> Pause Room
         {/if}
       </button>
       <button class={isRecording ? "danger" : "outline"} onclick={handleRecordingToggle} disabled={isTogglingRec}>
         {#if isTogglingRec}
           <ButtonSpinner label="Updating recording state..." />
+        {:else if isRecording}
+          <Circle size={12} fill="currentColor" style="vertical-align: middle; display: inline-block;" /> Recording Active
         {:else}
-          {isRecording ? "🔴 Recording Active" : "🎙 Start Recording"}
+          <Mic size={14} style="vertical-align: middle; display: inline-block;" /> Start Recording
         {/if}
       </button>
     </div>

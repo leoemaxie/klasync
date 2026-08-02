@@ -53,7 +53,7 @@ export async function publishCaption(state: SessionState) {
 
 export async function copyInvite(state: SessionState) {
   if (!state.session) return;
-  await navigator.clipboard?.writeText(`${location.origin}/?join=${state.session.code}`);
+  await navigator.clipboard?.writeText(`${location.origin}/#/?join=${state.session.code}`);
   state.copied = true;
   setTimeout(() => (state.copied = false), 1800);
 }
