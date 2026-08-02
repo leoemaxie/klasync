@@ -14,7 +14,6 @@
 
 <div class="session-top-card">
   <div class="header-main">
-    <p class="eyebrow">LIVE SESSION DASHBOARD</p>
     <h2 class="session-title">{title}</h2>
   </div>
 
@@ -35,7 +34,8 @@
 
 <style>
   .session-top-card { background: rgba(16, 9, 4, 0.6); border: 1px solid var(--color-cork-border); border-radius: 8px; padding: var(--spacing-16) var(--spacing-20); display: flex; justify-content: space-between; align-items: center; gap: var(--spacing-14); flex-wrap: wrap; }
-  .session-title { font-size: 24px; font-weight: 500; color: var(--color-warm-cream); padding: 8px 0; margin: 4px 0 0 0; letter-spacing: -0.01em; font-family: var(--font-display); }
+  .header-main { display: flex; flex-direction: column; gap: 4px; }
+  .session-title { font-size: 24px; font-weight: 500; color: var(--color-warm-cream); padding: 4px 0; margin: 0; letter-spacing: -0.01em; font-family: var(--font-display); line-height: 1.2; }
   .live-status-pills { display: flex; align-items: center; gap: var(--spacing-8); flex-wrap: wrap; }
   .status-pill { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; }
   .status-pill.broadcasting { background: rgba(74, 183, 114, 0.12); color: #4ab772; border: 1px solid rgba(74, 183, 114, 0.3); }
