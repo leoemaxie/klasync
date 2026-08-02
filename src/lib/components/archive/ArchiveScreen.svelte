@@ -7,24 +7,27 @@
   import FlashcardDeck from "./FlashcardDeck.svelte";
   import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
   import ChapterBreakdown from "./ChapterBreakdown.svelte";
-  import { getArchiveResources, type ApiResource } from "$lib/api";
+  import { getArchiveResources, getStudentArchive, type ApiResource, type ClaimRecord } from "$lib/api";
+  import { link } from "svelte-spa-router";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
   let searchQuery = $state("");
   let activeTab = $state<"transcript" | "chapters" | "flashcards" | "audio">("transcript");
   let apiResources = $state<ApiResource[]>([]);
+  let claims = $state<ClaimRecord[]>([]);
   let isLoading = $state(true);
-
-  let claims = $state([
-    { id: "1", course_code: "CSC 312", session_title: "Human Computer Interaction", date: "2026-07-21" }
-  ]);
 
   onMount(async () => {
     try {
-      apiResources = await getArchiveResources();
+      const [res, userClaims] = await Promise.all([
+        getArchiveResources().catch(() => []),
+        getStudentArchive().catch(() => [])
+      ]);
+      apiResources = res;
+      claims = userClaims;
     } catch {
-      // Fallback to local default state
+      claims = [];
     } finally {
       isLoading = false;
     }
@@ -57,7 +60,7 @@
         <div style="margin: var(--spacing-18) 0;">
           <SkeletonCard lines={3} label="Fetching student lecture archives from API..." />
         </div>
-      {:else if filteredClaims.length}
+      {:else if filteredClaims.length > 0}
         <div class="archive-list">
           {#each filteredClaims as claim}
             <div class="archive-row">
@@ -85,15 +88,36 @@
           {/each}
         </div>
       {:else}
-        <p class="hint">No claimed lectures match your search query.</p>
+        <div class="empty-archive-box">
+          <p class="empty-title">No claimed lectures found</p>
+          <p class="hint">Join an active lecture session with a short code and matric number to claim course materials.</p>
+        </div>
       {/if}
 
-      <button type="button" class="primary full" onclick={() => (screen = "home")}>
+      <a href="#/" use:link class="primary full" style="text-align: center; text-decoration: none;" onclick={() => (screen = "home")}>
         Return to Home
-      </button>
+      </a>
     </div>
   </div>
 
   <PublicVisualPanel title="SEARCHABLE LECTURE ARCHIVE" subtitle="Full-text Search · AI Summaries · Audio Stream Replays" />
 </section>
+
+<style>
+  .empty-archive-box {
+    padding: var(--spacing-24);
+    background: rgba(16, 9, 4, 0.4);
+    border: 1px dashed var(--color-cork-border);
+    border-radius: var(--radius-cards);
+    text-align: center;
+    margin: var(--spacing-14) 0;
+  }
+  .empty-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-warm-cream);
+    margin-bottom: 4px;
+  }
+</style>
+
 

@@ -1,13 +1,40 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
   import { logout } from "$lib/api/auth";
+  import type { SessionState } from "$lib/sessionState.svelte";
+  import { Menu, X } from "@lucide/svelte";
 
-  let { screen = $bindable() }: { screen: Screen } = $props();
+  let {
+    screen = $bindable(),
+    state
+  }: {
+    screen: Screen;
+    state?: SessionState;
+  } = $props();
+
   let mobileMenuOpen = $state(false);
 
   function navigate(target: Screen) {
     screen = target;
     mobileMenuOpen = false;
+  }
+
+  function handleLecturerAccess() {
+    if (state?.currentUser && (state.currentUser.role === "lecturer" || state.currentUser.role === "admin")) {
+      navigate("lecturer");
+    } else {
+      if (state) state.authNotice = "Please sign in to access the Lecturer Workspace.";
+      navigate("lecturer-login");
+    }
+  }
+
+  function handleStudentArchive() {
+    if (state?.currentUser) {
+      navigate("archive");
+    } else {
+      if (state) state.authNotice = "Please sign in to access your Student Archive.";
+      navigate("student-login");
+    }
   }
 
   async function handleLogout() {
@@ -16,7 +43,13 @@
     } catch {
       // Clear token locally regardless
     }
+    if (state) {
+      state.currentUser = null;
+      state.authNotice = "";
+      localStorage.removeItem("klasync-user");
+    }
     navigate("home");
+    mobileMenuOpen = false;
   }
 </script>
 
@@ -42,28 +75,27 @@
     aria-expanded={mobileMenuOpen}
   >
     {#if mobileMenuOpen}
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
+      <X size={22} />
     {:else}
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
+      <Menu size={22} />
     {/if}
   </button>
 
   <div class="nav-actions" class:open={mobileMenuOpen}>
     <button class="nav-btn text" onclick={() => navigate("join")}>Join Session</button>
-    <button class="nav-btn text" onclick={() => navigate("student-login")}>Student Archive</button>
-    <button class="nav-btn outline" onclick={() => navigate("lecturer-login")}>Lecturer Access</button>
-    {#if screen === "lecturer" || screen === "archive" || screen === "live"}
-      <button class="nav-btn text" onclick={handleLogout}>Sign Out</button>
+    <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
+    <button class="nav-btn outline" onclick={handleLecturerAccess}>Lecturer Access</button>
+
+    {#if state?.currentUser}
+      <div class="user-pill" title={state.currentUser.email}>
+        <span class="user-role-tag">{state.currentUser.role}</span>
+        <span class="user-name">{state.currentUser.name || state.currentUser.email}</span>
+      </div>
+      <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {/if}
   </div>
 </nav>
+
 
 <style>
   nav {
@@ -132,6 +164,36 @@
     gap: var(--spacing-24);
   }
 
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(56, 36, 22, 0.4);
+    border: 1px solid var(--color-cork-border);
+    padding: 4px 12px;
+    border-radius: var(--radius-buttons-outlined);
+    font-size: 11px;
+  }
+
+  .user-role-tag {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(220, 80, 0, 0.2);
+    color: var(--color-ember-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  .user-name {
+    color: var(--color-warm-cream);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     .mobile-toggle {
       display: flex;
@@ -174,5 +236,10 @@
       border: 1px solid rgba(255, 237, 215, 0.1);
       border-radius: var(--radius-buttons-outlined);
     }
+
+    .user-pill {
+      justify-content: center;
+    }
   }
 </style>
+

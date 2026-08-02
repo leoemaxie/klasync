@@ -7,6 +7,8 @@
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import AccessibilityDrawer from "./AccessibilityDrawer.svelte";
   import LiveQaPanel from "./LiveQaPanel.svelte";
+  import { link } from "svelte-spa-router";
+  import { Hand } from "@lucide/svelte";
 
   let {
     session,
@@ -155,7 +157,7 @@
         {/if}
       </button>
       <button class={isHandRaised ? "danger" : "outline"} onclick={handleToggleHandRaise}>
-        {isHandRaised ? "✋ Hand Raised" : "✋ Raise Hand"}
+        <Hand size={16} style="vertical-align: middle; display: inline-block;" /> {isHandRaised ? "Hand Raised" : "Raise Hand"}
       </button>
     </div>
   </aside>

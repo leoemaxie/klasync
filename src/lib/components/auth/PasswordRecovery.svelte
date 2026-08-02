@@ -3,6 +3,7 @@
   import { requestPasswordReset, completePasswordReset } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import { link } from "svelte-spa-router";
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -115,13 +116,14 @@
           {mode === "request" ? "Have a reset token?" : "Need to request a token?"}
         </button>
         ·
-        <button
-          type="button"
+        <a
+          href={role === "lecturer" ? "#/lecturer-login" : "#/student-login"}
+          use:link
           class="text-link"
           onclick={() => (screen = role === "lecturer" ? "lecturer-login" : "student-login")}
         >
           Back to sign in
-        </button>
+        </a>
       </div>
     </form>
   </div>

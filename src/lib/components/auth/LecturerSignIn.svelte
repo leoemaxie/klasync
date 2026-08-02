@@ -3,8 +3,18 @@
   import { loginLecturer } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import type { SessionState } from "$lib/sessionState.svelte";
+  import { persist } from "$lib/rosterUtils";
+  import { link } from "svelte-spa-router";
+  import { Lock } from "@lucide/svelte";
 
-  let { screen = $bindable() }: { screen: Screen } = $props();
+  let {
+    screen = $bindable(),
+    state
+  }: {
+    screen: Screen;
+    state?: SessionState;
+  } = $props();
 
   let email = $state("");
   let password = $state("");
@@ -20,7 +30,14 @@
     isSubmitting = true;
     errorMsg = "";
     try {
-      await loginLecturer(email.trim(), password);
+      const res = await loginLecturer(email.trim(), password);
+      if (state) {
+        state.currentUser = res.user;
+        state.lecturerName = res.user.name;
+        state.lecturerEmail = res.user.email;
+        state.authNotice = "";
+        persist(state);
+      }
       screen = "lecturer";
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : "Invalid authentication credentials.";
@@ -29,6 +46,7 @@
     }
   }
 </script>
+
 
 <section class="join-wrap">
   <div class="join-left-content">
@@ -39,6 +57,12 @@
     </p>
 
     <form class="join-card panel" onsubmit={handleLogin}>
+      {#if state?.authNotice}
+        <p class="error" style="border: 1px solid var(--color-ember-accent); padding: 8px 12px; border-radius: 4px; background: rgba(220, 80, 0, 0.1);">
+          <Lock size={14} style="vertical-align: middle; display: inline-block;" /> {state.authNotice}
+        </p>
+      {/if}
+
       <label>
         Institutional Email
         <input type="email" bind:value={email} placeholder="dr.okeke@university.edu" required />
@@ -62,12 +86,12 @@
       </button>
 
       <div class="auth-footer-links">
-        <button type="button" class="text-link" onclick={() => (screen = "lecturer-register")}>
+        <a href="#/lecturer-register" use:link class="text-link" onclick={() => (screen = "lecturer-register")}>
           Need an account? Register
-        </button>
-        <button type="button" class="text-link" onclick={() => (screen = "recover-password")}>
+        </a>
+        <a href="#/recover-password" use:link class="text-link" onclick={() => (screen = "recover-password")}>
           Forgot password?
-        </button>
+        </a>
       </div>
     </form>
   </div>

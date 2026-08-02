@@ -3,8 +3,17 @@
   import { registerLecturer } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import type { SessionState } from "$lib/sessionState.svelte";
+  import { persist } from "$lib/rosterUtils";
+  import { link } from "svelte-spa-router";
 
-  let { screen = $bindable() }: { screen: Screen } = $props();
+  let {
+    screen = $bindable(),
+    state
+  }: {
+    screen: Screen;
+    state?: SessionState;
+  } = $props();
 
   let name = $state("");
   let email = $state("");
@@ -26,7 +35,14 @@
     isSubmitting = true;
     errorMsg = "";
     try {
-      await registerLecturer({ name: name.trim(), email: email.trim(), password });
+      const res = await registerLecturer({ name: name.trim(), email: email.trim(), password });
+      if (state) {
+        state.currentUser = res.user;
+        state.lecturerName = res.user.name;
+        state.lecturerEmail = res.user.email;
+        state.authNotice = "";
+        persist(state);
+      }
       screen = "lecturer";
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : "Registration failed.";
@@ -35,6 +51,7 @@
     }
   }
 </script>
+
 
 <section class="join-wrap">
   <div class="join-left-content">
@@ -78,9 +95,9 @@
       </button>
 
       <div class="auth-footer-links">
-        <button type="button" class="text-link" onclick={() => (screen = "lecturer-login")}>
+        <a href="#/lecturer-login" use:link class="text-link" onclick={() => (screen = "lecturer-login")}>
           Already registered? Sign in
-        </button>
+        </a>
       </div>
     </form>
   </div>

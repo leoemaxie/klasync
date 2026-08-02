@@ -3,8 +3,17 @@
   import { registerStudent } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import type { SessionState } from "$lib/sessionState.svelte";
+  import { persist } from "$lib/rosterUtils";
+  import { link } from "svelte-spa-router";
 
-  let { screen = $bindable() }: { screen: Screen } = $props();
+  let {
+    screen = $bindable(),
+    state
+  }: {
+    screen: Screen;
+    state?: SessionState;
+  } = $props();
 
   let matric = $state("");
   let name = $state("");
@@ -31,12 +40,17 @@
     isSubmitting = true;
     errorMsg = "";
     try {
-      await registerStudent({
+      const res = await registerStudent({
         matric_number: matric.trim(),
         name: name.trim(),
         email: email.trim(),
         password,
       });
+      if (state) {
+        state.currentUser = res.user;
+        state.authNotice = "";
+        persist(state);
+      }
       screen = "archive";
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : "Registration failed.";
@@ -45,6 +59,7 @@
     }
   }
 </script>
+
 
 <section class="join-wrap">
   <div class="join-left-content">
@@ -93,9 +108,9 @@
       </button>
 
       <div class="auth-footer-links">
-        <button type="button" class="text-link" onclick={() => (screen = "student-login")}>
+        <a href="#/student-login" use:link class="text-link" onclick={() => (screen = "student-login")}>
           Already have an account? Sign in
-        </button>
+        </a>
       </div>
     </form>
   </div>
