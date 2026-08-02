@@ -15,10 +15,9 @@
       >
     {/if}
   </div>
-  <h1>Start a room your students can enter instantly.</h1>
+  <h1>Launch instant rooms.</h1>
   <p class="lede">
-    Configure your lecture roster, test audio inputs, stream captions, and
-    verify student attendance.
+    Manage rosters, test audio, stream captions, and verify attendance.
   </p>
 </header>
 

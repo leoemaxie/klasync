@@ -78,7 +78,7 @@
     aria-label="Upload class roster file"
   >
     <div class="dropzone-icon"><FileText size={24} /></div>
-    <p class="dropzone-title">Drag &amp; drop roster CSV or XLSX file</p>
+    <p class="dropzone-title">Drag &amp; drop CSV or XLSX file</p>
     <p class="hint">
       Supports <code>.csv</code>, <code>.tsv</code>, or <code>.xlsx</code>
     </p>
@@ -118,7 +118,7 @@
     onclick={onParseRoster}
     disabled={parsedStudents.length === 0}
   >
-    Confirm &amp; Prepare Roster ({parsedStudents.length} Students)
+    Confirm Roster ({parsedStudents.length})
   </button>
 
   {#if rosterNotice}

@@ -3,17 +3,17 @@
     {
       num: '01',
       title: 'Accessibility First',
-      desc: 'Live captions, digestible audio streams, and keyboard-navigable UI eliminate physical, sensory, and cognitive barriers in lecture halls.',
+      desc: 'Live captions, audio streams, and keyboard navigation for all students.',
     },
     {
       num: '02',
       title: 'Searchable Archive',
-      desc: 'Lectures transform into structured summaries, real-time transcripts, and downloadable study materials that outlast the classroom session.',
+      desc: 'Searchable transcripts, structured summaries, and study flashcards.',
     },
     {
       num: '03',
       title: 'Fair Attendance',
-      desc: 'Authenticated guest participation verifies presence against rosters seamlessly, ensuring fair compliance without forcing initial account creation.',
+      desc: 'Verified student presence against course rosters without required accounts.',
     },
   ];
 </script>

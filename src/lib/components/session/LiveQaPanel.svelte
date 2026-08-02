@@ -92,7 +92,7 @@
     <div>
       <p class="eyebrow">ASSISTIVE STUDENT Q&amp;A</p>
       <h2>
-        Live Micro-Questions ({questions.filter((q) => !q.is_resolved).length})
+        Live Q&amp;A ({questions.filter((q) => !q.is_resolved).length})
       </h2>
     </div>
     <button type="button" class="text" onclick={loadQuestions}
@@ -176,7 +176,7 @@
       {/each}
     </div>
   {:else}
-    <p class="hint">No questions submitted yet. Be the first to ask!</p>
+    <p class="hint">No questions submitted.</p>
   {/if}
 </div>
 

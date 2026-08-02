@@ -14,8 +14,7 @@
   <h2 class="not-found-heading">Room not found.</h2>
 
   <p class="lede">
-    The lecture code, invite link, or resource you are looking for is
-    unavailable, expired, or does not exist.
+    The session code or link is invalid or expired.
   </p>
 
   <div class="actions not-found-actions">
