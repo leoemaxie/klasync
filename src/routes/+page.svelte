@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
+  import { get } from "svelte/store";
   import Navbar from "$lib/components/shared/Navbar.svelte";
   import NotFoundScreen from "$lib/components/shared/NotFoundScreen.svelte";
   import OfflineStatusIndicator from "$lib/components/shared/OfflineStatusIndicator.svelte";
@@ -15,11 +16,10 @@
   import PasswordRecovery from "$lib/components/auth/PasswordRecovery.svelte";
   import { createSessionState } from "$lib/sessionState.svelte";
   import { heartbeat, joinSession, refreshCaptions } from "$lib/sessionActions";
-  import { location, push } from "svelte-spa-router";
+  import { location, push, replace } from "svelte-spa-router";
   import { SCREEN_TO_PATH, screenFromPath } from "$lib/router";
-  import { getAccessToken, setAccessToken } from "$lib/api/http";
 
-  const state = createSessionState();
+  const appState = createSessionState();
 
   onMount(() => {
     const savedSession = localStorage.getItem("klasync-session");
@@ -27,18 +27,22 @@
     const savedLecturer = localStorage.getItem("klasync-lecturer");
     const savedUser = localStorage.getItem("klasync-user");
 
-    if (savedSession) state.session = JSON.parse(savedSession);
-    if (savedRoster) state.roster = JSON.parse(savedRoster);
-    if (savedLecturer) state.lecturerName = savedLecturer;
+    if (savedSession) {
+      try { appState.session = JSON.parse(savedSession); } catch {}
+    }
+    if (savedRoster) {
+      try { appState.roster = JSON.parse(savedRoster); } catch {}
+    }
+    if (savedLecturer) appState.lecturerName = savedLecturer;
 
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
-        state.currentUser = user;
-        if (user.name) state.lecturerName = user.name;
-        if (user.email) state.lecturerEmail = user.email;
+        appState.currentUser = user;
+        if (user.name) appState.lecturerName = user.name;
+        if (user.email) appState.lecturerEmail = user.email;
       } catch {
-        state.currentUser = null;
+        appState.currentUser = null;
       }
     }
 
@@ -49,126 +53,106 @@
     const inviteCode = searchJoin || hashJoin;
 
     if (inviteCode) {
-      state.sessionCode = inviteCode.toUpperCase();
-      state.screen = "join";
-      void push("/join");
-    } else {
-      const initialPath = $location || "/";
-      const initialScreen = screenFromPath(initialPath);
-      
-      // Guard initial screen
-      if (initialScreen === "lecturer" && (!state.currentUser || (state.currentUser.role !== "lecturer" && state.currentUser.role !== "admin"))) {
-        state.authNotice = "Please sign in to access the Lecturer Workspace.";
-        state.screen = "lecturer-login";
-        void push("/lecturer-login");
-      } else if (initialScreen === "archive" && !state.currentUser) {
-        state.authNotice = "Please sign in to access your Student Archive.";
-        state.screen = "student-login";
-        void push("/student-login");
-      } else {
-        state.screen = initialScreen;
-        const initialTargetPath = SCREEN_TO_PATH[initialScreen];
-        if (initialTargetPath && initialPath !== initialTargetPath) {
-          void push(initialTargetPath);
-        }
-      }
+      appState.sessionCode = inviteCode.toUpperCase();
+      appState.screen = "join";
+      void replace("/join"); // Use replace here to not bloat history
     }
+
+    const unsubLoc = location.subscribe(($loc) => {
+      const currentLoc = $loc || "/";
+      let matchedScreen = screenFromPath(currentLoc);
+
+      // Auth guard for lecturer workspace
+      if (
+        matchedScreen === "lecturer" &&
+        (!appState.currentUser || (appState.currentUser.role !== "lecturer" && appState.currentUser.role !== "admin"))
+      ) {
+        appState.authNotice = "Please sign in to access the Lecturer Workspace.";
+        if (currentLoc !== "/lecturer-login") {
+          void replace("/lecturer-login");
+          return;
+        }
+        matchedScreen = "lecturer-login";
+      }
+
+      // Auth guard for student archive
+      if (matchedScreen === "archive" && !appState.currentUser) {
+        appState.authNotice = "Please sign in to access your Student Archive.";
+        if (currentLoc !== "/student-login") {
+          void replace("/student-login");
+          return;
+        }
+        matchedScreen = "student-login";
+      }
+
+      if (appState.screen !== matchedScreen) {
+        appState.screen = matchedScreen;
+      }
+    });
 
     const captionTimer = window.setInterval(() => {
-      if (state.screen === "live" && state.session?.live) void refreshCaptions(state);
+      if (appState.screen === "live" && appState.session?.live) void refreshCaptions(appState);
     }, 3000);
 
-    return () => window.clearInterval(captionTimer);
+    return () => {
+      unsubLoc();
+      window.clearInterval(captionTimer);
+    };
   });
 
+  // Synchronize screen state changes to router location when updated via component props
   $effect(() => {
-    const matchedScreen = screenFromPath($location);
-
-    // Auth guard for lecturer workspace
-    if (matchedScreen === "lecturer" && (!state.currentUser || (state.currentUser.role !== "lecturer" && state.currentUser.role !== "admin"))) {
-      state.authNotice = "Please sign in to access the Lecturer Workspace.";
-      state.screen = "lecturer-login";
-      void push("/lecturer-login");
-      return;
-    }
-
-    // Auth guard for student archive
-    if (matchedScreen === "archive" && !state.currentUser) {
-      state.authNotice = "Please sign in to access your Student Archive.";
-      state.screen = "student-login";
-      void push("/student-login");
-      return;
-    }
-
-    if (state.screen !== matchedScreen) {
-      state.screen = matchedScreen;
-    }
-  });
-
-  $effect(() => {
-    // Auth guard on state.screen changes
-    if (state.screen === "lecturer" && (!state.currentUser || (state.currentUser.role !== "lecturer" && state.currentUser.role !== "admin"))) {
-      state.authNotice = "Please sign in to access the Lecturer Workspace.";
-      state.screen = "lecturer-login";
-      void push("/lecturer-login");
-      return;
-    }
-
-    if (state.screen === "archive" && !state.currentUser) {
-      state.authNotice = "Please sign in to access your Student Archive.";
-      state.screen = "student-login";
-      void push("/student-login");
-      return;
-    }
-
-    const targetPath = SCREEN_TO_PATH[state.screen];
-    if (targetPath && $location !== targetPath) {
+    const targetPath = SCREEN_TO_PATH[appState.screen];
+    const currentLoc = untrack(() => get(location) || "/");
+    
+    if (targetPath && currentLoc !== targetPath) {
       void push(targetPath);
     }
   });
 </script>
 
 <main>
-  <Navbar bind:screen={state.screen} {state} />
+  <Navbar bind:screen={appState.screen} appState={appState} />
   <OfflineStatusIndicator />
 
-  {#if state.screen === "home"}
-    <HomeScreen bind:screen={state.screen} />
-  {:else if state.screen === "lecturer-login"}
-    <LecturerSignIn bind:screen={state.screen} {state} />
-  {:else if state.screen === "lecturer-register"}
-    <LecturerRegister bind:screen={state.screen} {state} />
-  {:else if state.screen === "student-login"}
-    <StudentSignIn bind:screen={state.screen} {state} />
-  {:else if state.screen === "student-register"}
-    <StudentRegister bind:screen={state.screen} {state} />
-  {:else if state.screen === "recover-password" || state.screen === "reset-password"}
-    <PasswordRecovery bind:screen={state.screen} />
-  {:else if state.screen === "lecturer"}
-    <LecturerScreen {state} />
-  {:else if state.screen === "join"}
+  {#if appState.screen === "home"}
+    <HomeScreen bind:screen={appState.screen} />
+  {:else if appState.screen === "lecturer-login"}
+    <LecturerSignIn bind:screen={appState.screen} appState={appState} />
+  {:else if appState.screen === "lecturer-register"}
+    <LecturerRegister bind:screen={appState.screen} appState={appState} />
+  {:else if appState.screen === "student-login"}
+    <StudentSignIn bind:screen={appState.screen} appState={appState} />
+  {:else if appState.screen === "student-register"}
+    <StudentRegister bind:screen={appState.screen} appState={appState} />
+  {:else if appState.screen === "recover-password" || appState.screen === "reset-password"}
+    <PasswordRecovery bind:screen={appState.screen} />
+  {:else if appState.screen === "lecturer"}
+    <LecturerScreen appState={appState} />
+  {:else if appState.screen === "join"}
     <JoinScreen
-      bind:sessionCode={state.sessionCode}
-      bind:matric={state.matric}
-      bind:displayName={state.displayName}
-      joinError={state.joinError}
-      onJoinSession={() => joinSession(state)}
+      bind:sessionCode={appState.sessionCode}
+      bind:matric={appState.matric}
+      bind:displayName={appState.displayName}
+      joinError={appState.joinError}
+      onJoinSession={() => joinSession(appState)}
     />
-  {:else if state.screen === "live"}
+  {:else if appState.screen === "live"}
     <LiveScreen
-      session={state.session}
-      joinedParticipant={state.joinedParticipant}
-      captions={state.captions}
-      captionIndex={state.captionIndex}
-      bind:accountCreated={state.accountCreated}
-      bind:screen={state.screen}
-      onNextCaption={() => refreshCaptions(state)}
-      onHeartbeat={() => heartbeat(state)}
+      session={appState.session}
+      joinedParticipant={appState.joinedParticipant}
+      captions={appState.captions}
+      captionIndex={appState.captionIndex}
+      bind:accountCreated={appState.accountCreated}
+      bind:screen={appState.screen}
+      onNextCaption={() => refreshCaptions(appState)}
+      onHeartbeat={() => heartbeat(appState)}
     />
-  {:else if state.screen === "archive"}
-    <ArchiveScreen bind:screen={state.screen} />
+  {:else if appState.screen === "archive"}
+    <ArchiveScreen bind:screen={appState.screen} />
   {:else}
-    <NotFoundScreen bind:screen={state.screen} />
+    <NotFoundScreen bind:screen={appState.screen} />
   {/if}
 </main>
+
 

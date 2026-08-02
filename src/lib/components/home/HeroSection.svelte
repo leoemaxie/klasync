@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
   import WaveformVisual from "./WaveformVisual.svelte";
-  import { link } from "svelte-spa-router";
+
 
   let { screen = $bindable(), visible = false }: { screen: Screen; visible?: boolean } = $props();
 </script>
@@ -29,10 +29,10 @@
     </p>
 
     <div class="actions">
-      <a href="#/join" use:link class="primary" onclick={() => (screen = "join")}>
+      <a href="#/join" class="primary" onclick={() => (screen = "join")}>
         Join a live lecture
       </a>
-      <a href="#/lecturer" use:link class="primary-bark" onclick={() => (screen = "lecturer")}>
+      <a href="#/lecturer" class="primary-bark" onclick={() => (screen = "lecturer")}>
         Lecturer workspace
       </a>
     </div>

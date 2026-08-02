@@ -5,15 +5,15 @@
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import type { SessionState } from "$lib/sessionState.svelte";
   import { persist } from "$lib/rosterUtils";
-  import { link } from "svelte-spa-router";
+
   import { Lock } from "@lucide/svelte";
 
   let {
     screen = $bindable(),
-    state
+    appState
   }: {
     screen: Screen;
-    state?: SessionState;
+    appState?: SessionState;
   } = $props();
 
   let email = $state("");
@@ -31,10 +31,10 @@
     errorMsg = "";
     try {
       const res = await loginStudent(email.trim(), password);
-      if (state) {
-        state.currentUser = res.user;
-        state.authNotice = "";
-        persist(state);
+      if (appState) {
+        appState.currentUser = res.user;
+        appState.authNotice = "";
+        persist(appState);
       }
       screen = "archive";
     } catch (err) {
@@ -54,9 +54,9 @@
     </p>
 
     <form class="join-card panel" onsubmit={handleLogin}>
-      {#if state?.authNotice}
+      {#if appState?.authNotice}
         <p class="error" style="border: 1px solid var(--color-ember-accent); padding: 8px 12px; border-radius: 4px; background: rgba(220, 80, 0, 0.1);">
-          <Lock size={14} style="vertical-align: middle; display: inline-block;" /> {state.authNotice}
+          <Lock size={14} style="vertical-align: middle; display: inline-block;" /> {appState.authNotice}
         </p>
       {/if}
 
@@ -83,10 +83,10 @@
       </button>
 
       <div class="auth-footer-links">
-        <a href="#/student-register" use:link class="text-link" onclick={() => (screen = "student-register")}>
+        <a href="#/student-register" class="text-link" onclick={() => (screen = "student-register")}>
           Create an account for persistent access
         </a>
-        <a href="#/recover-password" use:link class="text-link" onclick={() => (screen = "recover-password")}>
+        <a href="#/recover-password" class="text-link" onclick={() => (screen = "recover-password")}>
           Forgot password?
         </a>
       </div>

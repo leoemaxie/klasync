@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
-  import { link } from "svelte-spa-router";
+
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 </script>
@@ -19,13 +19,13 @@
   </p>
 
   <div class="actions not-found-actions">
-    <a href="#/" use:link class="primary" onclick={() => (screen = "home")}>
+    <a href="#/" class="primary" onclick={() => (screen = "home")}>
       Return Home
     </a>
-    <a href="#/join" use:link class="outline" onclick={() => (screen = "join")}>
+    <a href="#/join" class="outline" onclick={() => (screen = "join")}>
       Join Live Session
     </a>
-    <a href="#/lecturer-login" use:link class="primary-bark" onclick={() => (screen = "lecturer-login")}>
+    <a href="#/lecturer-login" class="primary-bark" onclick={() => (screen = "lecturer-login")}>
       Lecturer Access
     </a>
   </div>

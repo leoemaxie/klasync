@@ -7,7 +7,7 @@
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import AccessibilityDrawer from "./AccessibilityDrawer.svelte";
   import LiveQaPanel from "./LiveQaPanel.svelte";
-  import { link } from "svelte-spa-router";
+
   import { Hand } from "@lucide/svelte";
 
   let {

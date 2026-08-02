@@ -16,7 +16,7 @@
   } from "$lib/sessionActions";
   import { ClipboardList, Mic, Users, BarChart3 } from "@lucide/svelte";
 
-  let { state }: { state: SessionState } = $props();
+  let { appState }: { appState: SessionState } = $props();
 
   let activeTab = $state<"setup" | "live" | "attendance" | "analytics">("setup");
 </script>
@@ -25,11 +25,11 @@
   <header class="workspace-header">
     <div class="header-badge-row">
       <span class="eyebrow">LECTURER CONTROL ROOM</span>
-      {#if state.currentUser}
+      {#if appState.currentUser}
         <span class="auth-status-badge">AUTHENTICATED LECTURER</span>
       {/if}
-      {#if state.session?.live}
-        <span class="live-status-pill"><span class="pulse-dot">●</span> SESSION LIVE ({state.session.code})</span>
+      {#if appState.session?.live}
+        <span class="live-status-pill"><span class="pulse-dot">●</span> SESSION LIVE ({appState.session.code})</span>
       {/if}
     </div>
     <h1>Start a room your students can enter instantly.</h1>
@@ -47,7 +47,7 @@
         <ClipboardList size={14} style="vertical-align: middle; display: inline-block;" /> Course &amp; Roster Setup
       </button>
 
-      {#if state.session?.live}
+      {#if appState.session?.live}
         <button
           type="button"
           class={activeTab === "live" ? "tab-btn active" : "tab-btn"}
@@ -57,13 +57,13 @@
         </button>
       {/if}
 
-      {#if state.session}
+      {#if appState.session}
         <button
           type="button"
           class={activeTab === "attendance" ? "tab-btn active" : "tab-btn"}
           onclick={() => (activeTab = "attendance")}
         >
-          <Users size={14} style="vertical-align: middle; display: inline-block;" /> Attendance ({state.session.participants.length})
+          <Users size={14} style="vertical-align: middle; display: inline-block;" /> Attendance ({appState.session.participants.length})
         </button>
       {/if}
 
@@ -81,54 +81,54 @@
     {#if activeTab === "setup"}
       <section class="workspace-grid">
         <LecturerFormPanel
-          bind:lecturerName={state.lecturerName}
-          bind:lecturerEmail={state.lecturerEmail}
-          bind:courseCode={state.courseCode}
-          bind:courseTitle={state.courseTitle}
-          bind:rosterText={state.rosterText}
-          rosterNotice={state.rosterNotice}
-          onImportFile={(e) => importFile(state, e)}
-          onParseRoster={() => parseRoster(state)}
+          bind:lecturerName={appState.lecturerName}
+          bind:lecturerEmail={appState.lecturerEmail}
+          bind:courseCode={appState.courseCode}
+          bind:courseTitle={appState.courseTitle}
+          bind:rosterText={appState.rosterText}
+          rosterNotice={appState.rosterNotice}
+          onImportFile={(e) => importFile(appState, e)}
+          onParseRoster={() => parseRoster(appState)}
         />
         <SessionPanel
-          session={state.session}
-          apiNotice={state.apiNotice}
-          isSaving={state.isSaving}
-          copied={state.copied}
-          lecturerName={state.lecturerName}
-          lecturerEmail={state.lecturerEmail}
-          onCopyInvite={() => copyInvite(state)}
-          onEndSession={() => endSession(state)}
-          onStartSession={() => startSession(state)}
+          session={appState.session}
+          apiNotice={appState.apiNotice}
+          isSaving={appState.isSaving}
+          copied={appState.copied}
+          lecturerName={appState.lecturerName}
+          lecturerEmail={appState.lecturerEmail}
+          onCopyInvite={() => copyInvite(appState)}
+          onEndSession={() => endSession(appState)}
+          onStartSession={() => startSession(appState)}
         />
       </section>
     {:else if activeTab === "live"}
-      {#if state.session?.live}
+      {#if appState.session?.live}
         <CaptionControlPanel
-          bind:captionDraft={state.captionDraft}
-          apiNotice={state.apiNotice}
-          onPublishCaption={() => publishCaption(state)}
+          bind:captionDraft={appState.captionDraft}
+          apiNotice={appState.apiNotice}
+          onPublishCaption={() => publishCaption(appState)}
         />
       {:else}
         <p class="hint">No live session active. Start a session from the Course Setup tab.</p>
       {/if}
     {:else if activeTab === "attendance"}
-      {#if state.session}
+      {#if appState.session}
         <AttendancePanel
-          sessionCode={state.session.code}
-          participants={state.session.participants}
-          onRefreshAttendance={() => refreshAttendance(state)}
+          sessionCode={appState.session.code}
+          participants={appState.session.participants}
+          onRefreshAttendance={() => refreshAttendance(appState)}
         />
       {:else}
         <p class="hint">No session created yet. Start a session to view room attendance.</p>
       {/if}
     {:else if activeTab === "analytics"}
       <LecturerAnalyticsPanel
-        courseId={state.courseCode || ""}
-        courseCode={state.courseCode}
-        courseTitle={state.courseTitle}
-        participants={state.session?.participants || []}
-        roster={state.roster}
+        courseId={appState.courseCode || ""}
+        courseCode={appState.courseCode}
+        courseTitle={appState.courseTitle}
+        participants={appState.session?.participants || []}
+        roster={appState.roster}
       />
     {/if}
   </main>

@@ -6,10 +6,10 @@
 
   let {
     screen = $bindable(),
-    state
+    appState
   }: {
     screen: Screen;
-    state?: SessionState;
+    appState?: SessionState;
   } = $props();
 
   let mobileMenuOpen = $state(false);
@@ -20,19 +20,19 @@
   }
 
   function handleLecturerAccess() {
-    if (state?.currentUser && (state.currentUser.role === "lecturer" || state.currentUser.role === "admin")) {
+    if (appState?.currentUser && (appState.currentUser.role === "lecturer" || appState.currentUser.role === "admin")) {
       navigate("lecturer");
     } else {
-      if (state) state.authNotice = "Please sign in to access the Lecturer Workspace.";
+      if (appState) appState.authNotice = "Please sign in to access the Lecturer Workspace.";
       navigate("lecturer-login");
     }
   }
 
   function handleStudentArchive() {
-    if (state?.currentUser) {
+    if (appState?.currentUser) {
       navigate("archive");
     } else {
-      if (state) state.authNotice = "Please sign in to access your Student Archive.";
+      if (appState) appState.authNotice = "Please sign in to access your Student Archive.";
       navigate("student-login");
     }
   }
@@ -43,9 +43,9 @@
     } catch {
       // Clear token locally regardless
     }
-    if (state) {
-      state.currentUser = null;
-      state.authNotice = "";
+    if (appState) {
+      appState.currentUser = null;
+      appState.authNotice = "";
       localStorage.removeItem("klasync-user");
     }
     navigate("home");
@@ -86,10 +86,10 @@
     <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
     <button class="nav-btn outline" onclick={handleLecturerAccess}>Lecturer Access</button>
 
-    {#if state?.currentUser}
-      <div class="user-pill" title={state.currentUser.email}>
-        <span class="user-role-tag">{state.currentUser.role}</span>
-        <span class="user-name">{state.currentUser.name || state.currentUser.email}</span>
+    {#if appState?.currentUser}
+      <div class="user-pill" title={appState.currentUser.email}>
+        <span class="user-role-tag">{appState.currentUser.role}</span>
+        <span class="user-name">{appState.currentUser.name || appState.currentUser.email}</span>
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {/if}

@@ -5,14 +5,14 @@
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import type { SessionState } from "$lib/sessionState.svelte";
   import { persist } from "$lib/rosterUtils";
-  import { link } from "svelte-spa-router";
+
 
   let {
     screen = $bindable(),
-    state
+    appState
   }: {
     screen: Screen;
-    state?: SessionState;
+    appState?: SessionState;
   } = $props();
 
   let name = $state("");
@@ -36,12 +36,12 @@
     errorMsg = "";
     try {
       const res = await registerLecturer({ name: name.trim(), email: email.trim(), password });
-      if (state) {
-        state.currentUser = res.user;
-        state.lecturerName = res.user.name;
-        state.lecturerEmail = res.user.email;
-        state.authNotice = "";
-        persist(state);
+      if (appState) {
+        appState.currentUser = res.user;
+        appState.lecturerName = res.user.name;
+        appState.lecturerEmail = res.user.email;
+        appState.authNotice = "";
+        persist(appState);
       }
       screen = "lecturer";
     } catch (err) {
@@ -95,7 +95,7 @@
       </button>
 
       <div class="auth-footer-links">
-        <a href="#/lecturer-login" use:link class="text-link" onclick={() => (screen = "lecturer-login")}>
+        <a href="#/lecturer-login" class="text-link" onclick={() => (screen = "lecturer-login")}>
           Already registered? Sign in
         </a>
       </div>

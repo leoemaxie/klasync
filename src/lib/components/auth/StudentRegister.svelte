@@ -5,14 +5,14 @@
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
   import type { SessionState } from "$lib/sessionState.svelte";
   import { persist } from "$lib/rosterUtils";
-  import { link } from "svelte-spa-router";
+
 
   let {
     screen = $bindable(),
-    state
+    appState
   }: {
     screen: Screen;
-    state?: SessionState;
+    appState?: SessionState;
   } = $props();
 
   let matric = $state("");
@@ -46,10 +46,10 @@
         email: email.trim(),
         password,
       });
-      if (state) {
-        state.currentUser = res.user;
-        state.authNotice = "";
-        persist(state);
+      if (appState) {
+        appState.currentUser = res.user;
+        appState.authNotice = "";
+        persist(appState);
       }
       screen = "archive";
     } catch (err) {
@@ -108,7 +108,7 @@
       </button>
 
       <div class="auth-footer-links">
-        <a href="#/student-login" use:link class="text-link" onclick={() => (screen = "student-login")}>
+        <a href="#/student-login" class="text-link" onclick={() => (screen = "student-login")}>
           Already have an account? Sign in
         </a>
       </div>

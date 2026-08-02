@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Screen } from "$lib/types";
-  import { link } from "svelte-spa-router";
+
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 </script>
@@ -11,8 +11,8 @@
       <span>KLASYNC Guest Access &amp; Privacy Notice: No account is required to join a live lecture. Guest participation records matric numbers for lecturer roster verification.</span>
     </p>
     <div class="footer-links">
-      <a href="#/join" use:link class="text-link" onclick={() => (screen = "join")}>Join Session</a>
-      <a href="#/lecturer" use:link class="text-link" onclick={() => (screen = "lecturer")}>Lecturer Access</a>
+      <a href="#/join" class="text-link" onclick={() => (screen = "join")}>Join Session</a>
+      <a href="#/lecturer" class="text-link" onclick={() => (screen = "lecturer")}>Lecturer Access</a>
     </div>
   </div>
 </footer>

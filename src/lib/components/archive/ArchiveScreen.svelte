@@ -8,7 +8,7 @@
   import AudioPlayerPanel from "./AudioPlayerPanel.svelte";
   import ChapterBreakdown from "./ChapterBreakdown.svelte";
   import { getArchiveResources, getStudentArchive, type ApiResource, type ClaimRecord } from "$lib/api";
-  import { link } from "svelte-spa-router";
+
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -94,7 +94,7 @@
         </div>
       {/if}
 
-      <a href="#/" use:link class="primary full" style="text-align: center; text-decoration: none;" onclick={() => (screen = "home")}>
+      <a href="#/" class="primary full" style="text-align: center; text-decoration: none;" onclick={() => (screen = "home")}>
         Return to Home
       </a>
     </div>

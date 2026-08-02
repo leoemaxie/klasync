@@ -3,7 +3,7 @@
   import { requestPasswordReset, completePasswordReset } from "$lib/api/auth";
   import PublicVisualPanel from "$lib/components/shared/PublicVisualPanel.svelte";
   import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
-  import { link } from "svelte-spa-router";
+
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -118,7 +118,6 @@
         ·
         <a
           href={role === "lecturer" ? "#/lecturer-login" : "#/student-login"}
-          use:link
           class="text-link"
           onclick={() => (screen = role === "lecturer" ? "lecturer-login" : "student-login")}
         >
