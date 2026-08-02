@@ -52,8 +52,9 @@ export function getAttendanceSummary(code: string) {
 }
 
 export function reviewParticipantAttendance(code: string, participantId: string, status: 'verified' | 'rejected') {
+  const decision = status === 'verified' ? 'approved' : 'rejected';
   return http<ApiParticipant>(`/sessions/code/${encodeURIComponent(code)}/participants/${encodeURIComponent(participantId)}/review`, {
-    method: 'POST', body: JSON.stringify({ status })
+    method: 'POST', body: JSON.stringify({ decision })
   });
 }
 

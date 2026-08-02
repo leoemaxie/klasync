@@ -11,7 +11,7 @@ export interface Question {
 
 export async function fetchSessionQuestions(sessionCode: string): Promise<Question[]> {
   try {
-    return await apiRequest<Question[]>(`/api/v1/sessions/${encodeURIComponent(sessionCode)}/questions`);
+    return await apiRequest<Question[]>(`/sessions/code/${encodeURIComponent(sessionCode)}/questions`);
   } catch {
     // Return local mock fallback if API is in offline mode
     return [
@@ -39,7 +39,7 @@ export async function submitQuestion(
   participantId?: string,
   captionId?: string
 ): Promise<Question> {
-  return await apiRequest<Question>(`/api/v1/sessions/${encodeURIComponent(sessionCode)}/questions`, {
+  return await apiRequest<Question>(`/sessions/code/${encodeURIComponent(sessionCode)}/questions`, {
     method: "POST",
     body: JSON.stringify({
       participant_id: participantId,
@@ -58,14 +58,14 @@ export async function submitQuestion(
 
 export async function upvoteQuestion(sessionCode: string, questionId: string): Promise<{ new_upvote_count: number }> {
   return await apiRequest<{ new_upvote_count: number }>(
-    `/api/v1/sessions/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/upvote`,
+    `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/upvote`,
     { method: "POST" }
   ).catch(() => ({ new_upvote_count: Math.floor(Math.random() * 10) + 1 }));
 }
 
 export async function resolveQuestion(sessionCode: string, questionId: string): Promise<{ is_resolved: boolean }> {
   return await apiRequest<{ is_resolved: boolean }>(
-    `/api/v1/sessions/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/resolve`,
+    `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/resolve`,
     { method: "POST" }
   ).catch(() => ({ is_resolved: true }));
 }
