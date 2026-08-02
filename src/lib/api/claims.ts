@@ -1,4 +1,5 @@
 import { http } from "./http";
+import type { SuccessResponse } from "./types";
 
 export type ClaimRequestResponse = {
   verification_id: string;
@@ -24,8 +25,8 @@ export function verifyClaimCode(verificationId: string, code: string): Promise<C
   });
 }
 
-export function claimAttendance(shortCode: string, matricNumber: string): Promise<{ success: boolean }> {
-  return http<{ success: boolean }>(`/sessions/code/${encodeURIComponent(shortCode)}/claims`, {
+export function claimAttendance(shortCode: string, matricNumber: string): Promise<SuccessResponse> {
+  return http<SuccessResponse>(`/sessions/code/${encodeURIComponent(shortCode)}/claims`, {
     method: 'POST',
     body: JSON.stringify({ matric_number: matricNumber })
   });

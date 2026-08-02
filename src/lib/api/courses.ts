@@ -1,5 +1,5 @@
 import { http } from "./http";
-import type { ApiRosterStudent } from "./types";
+import type { ApiRosterStudent, CountResponse } from "./types";
 
 export type Course = { id: string; code: string; title: string; roster_count?: number; last_session_at?: string };
 
@@ -17,8 +17,8 @@ export function createCourse(input: { code: string; title: string }): Promise<Co
   return http<Course>('/courses', { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function uploadRoster(courseId: string, students: ApiRosterStudent[]): Promise<{ count: number }> {
-  return http<{ count: number }>(`/courses/${encodeURIComponent(courseId)}/roster`, {
+export function uploadRoster(courseId: string, students: ApiRosterStudent[]): Promise<CountResponse> {
+  return http<CountResponse>(`/courses/${encodeURIComponent(courseId)}/roster`, {
     method: 'POST', body: JSON.stringify({ students })
   });
 }

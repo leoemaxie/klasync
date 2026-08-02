@@ -1,12 +1,22 @@
 import { http } from "./http";
-import type { ApiParticipant, ApiRosterStudent, ApiSession } from "./types";
+import type {
+  ApiParticipant,
+  ApiRosterStudent,
+  ApiSession,
+  AttendanceSummaryResponse,
+  CreateCourseResponse,
+  CreateSessionResponse,
+  InviteLookupResponse,
+  RevokeInviteResponse,
+  SessionLookupResponse
+} from "./types";
 
 export type CreateSessionInput = {
   course_id: string; title: string; allow_late_join?: boolean; guest_expiry_minutes?: number;
 };
 
 export function createSession(input: CreateSessionInput) {
-  return http<{ session: ApiSession; join_url: string; qr_payload: string }>('/sessions', {
+  return http<CreateSessionResponse>('/sessions', {
     method: 'POST', body: JSON.stringify(input)
   });
 }
@@ -14,7 +24,7 @@ export function createSession(input: CreateSessionInput) {
 export async function createLiveSession(input: {
   lecturerName: string; lecturerEmail: string; courseCode: string; courseTitle: string; roster: ApiRosterStudent[];
 }) {
-  const course = await http<{ id: string }>('/courses', {
+  const course = await http<CreateCourseResponse>('/courses', {
     method: 'POST', body: JSON.stringify({ code: input.courseCode, title: input.courseTitle })
   });
   if (input.roster.length) {
@@ -24,7 +34,7 @@ export async function createLiveSession(input: {
 }
 
 export function lookupSessionByCode(code: string) {
-  return http<{ session: ApiSession; participant_count: number }>(`/sessions/code/${encodeURIComponent(code)}`);
+  return http<SessionLookupResponse>(`/sessions/code/${encodeURIComponent(code)}`);
 }
 
 export function joinSessionByCode(code: string, matric: string, name?: string) {
@@ -38,7 +48,7 @@ export function getParticipants(code: string) {
 }
 
 export function getAttendanceSummary(code: string) {
-  return http<{ total: number; verified: number; provisional: number }>(`/sessions/code/${encodeURIComponent(code)}/attendance`);
+  return http<AttendanceSummaryResponse>(`/sessions/code/${encodeURIComponent(code)}/attendance`);
 }
 
 export function reviewParticipantAttendance(code: string, participantId: string, status: 'verified' | 'rejected') {
@@ -48,11 +58,11 @@ export function reviewParticipantAttendance(code: string, participantId: string,
 }
 
 export function resolveInviteToken(token: string) {
-  return http<{ session: ApiSession; course_code: string }>(`/invites/${encodeURIComponent(token)}`);
+  return http<InviteLookupResponse>(`/invites/${encodeURIComponent(token)}`);
 }
 
 export function revokeInvite(code: string) {
-  return http<{ revoked: boolean }>(`/sessions/code/${encodeURIComponent(code)}/invite/revoke`, { method: 'POST' });
+  return http<RevokeInviteResponse>(`/sessions/code/${encodeURIComponent(code)}/invite/revoke`, { method: 'POST' });
 }
 
 export function getQrSvgUrl(code: string): string {

@@ -24,3 +24,41 @@ export type ApiCaption = {
   text: string;
   created_at: string;
 };
+
+export type SuccessResponse = {
+  success: boolean;
+};
+
+export type CountResponse = {
+  count: number;
+};
+
+export type CreateSessionResponse = {
+  session: ApiSession;
+  join_url: string;
+  qr_payload: string;
+};
+
+export type CreateCourseResponse = {
+  id: string;
+};
+
+export type SessionLookupResponse = {
+  session: ApiSession;
+  participant_count: number;
+};
+
+export type AttendanceSummaryResponse = {
+  total: number;
+  verified: number;
+  provisional: number;
+};
+
+export type InviteLookupResponse = {
+  session: ApiSession;
+  course_code: string;
+};
+
+export type RevokeInviteResponse = {
+  revoked: boolean;
+};

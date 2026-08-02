@@ -1,4 +1,5 @@
 import { http } from "./http";
+import type { SuccessResponse } from "./types";
 
 export type ClaimRecord = { id: string; course_code: string; session_title: string; date: string };
 
@@ -12,8 +13,8 @@ export function getArchiveResources(shortCode?: string): Promise<Resource[]> {
   return http<Resource[]>(path);
 }
 
-export function claimLecture(participantId: string): Promise<{ success: boolean }> {
-  return http<{ success: boolean }>('/students/claims', {
+export function claimLecture(participantId: string): Promise<SuccessResponse> {
+  return http<SuccessResponse>('/students/claims', {
     method: 'POST', body: JSON.stringify({ participant_id: participantId })
   });
 }

@@ -1,4 +1,5 @@
 import { http, setAccessToken } from "./http";
+import type { SuccessResponse } from "./types";
 
 export type AuthUser = { id: string; name: string; email: string; role: string; matric_number?: string };
 export type AuthResponse = { access_token: string; refresh_token?: string; user?: AuthUser };
@@ -51,14 +52,14 @@ export async function registerStudent(data: { matric_number: string; name: strin
   return { access_token: res.access_token, user };
 }
 
-export async function requestPasswordReset(email: string, role: string): Promise<{ success: boolean }> {
-  return http<{ success: boolean }>('/auth/password-reset/request', {
+export async function requestPasswordReset(email: string, role: string): Promise<SuccessResponse> {
+  return http<SuccessResponse>('/auth/password-reset/request', {
     method: 'POST', body: JSON.stringify({ email, role })
   });
 }
 
-export async function completePasswordReset(token: string, newPassword: string): Promise<{ success: boolean }> {
-  return http<{ success: boolean }>('/auth/password-reset/complete', {
+export async function completePasswordReset(token: string, newPassword: string): Promise<SuccessResponse> {
+  return http<SuccessResponse>('/auth/password-reset/complete', {
     method: 'POST', body: JSON.stringify({ token, new_password: newPassword })
   });
 }
