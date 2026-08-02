@@ -17,8 +17,8 @@
     {
       "files": "*.svelte",
       "options": {
-[<0;16;15M[<32;16;15M        "parser": "svelte"
-[<0;16;15m      }
+        "parser": "svelte"
+      }
     }
   ]
 }
