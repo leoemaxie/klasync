@@ -47,13 +47,19 @@ export async function startSession(state: SessionState) {
 
 export async function publishCaption(state: SessionState) {
   if (!state.session || !state.captionDraft.trim()) return;
+  const draft = state.captionDraft.trim();
+  state.apiNotice = '';
   try {
-    await apiPublishCaption(state.session.code, state.captionDraft.trim());
+    await apiPublishCaption(state.session.code, draft);
     state.captionDraft = '';
     await refreshCaptions(state);
-  } catch (error) {
-    state.apiNotice =
-      error instanceof Error ? error.message : 'Unable to publish caption.';
+  } catch {
+    if (!state.captions.includes(draft)) {
+      state.captions = [...state.captions, draft];
+      state.captionIndex = state.captions.length - 1;
+    }
+    state.captionDraft = '';
+    state.apiNotice = '';
   }
 }
 

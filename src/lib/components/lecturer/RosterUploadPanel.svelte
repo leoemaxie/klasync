@@ -105,7 +105,7 @@
       <textarea
         bind:value={rosterText}
         rows="3"
-        placeholder="MAT/2023/001, Ada Okafor&#10;MAT/2023/002, Chinedu Obi"
+        placeholder={"MAT/2023/001, Ada Okafor\nMAT/2023/002, Chinedu Obi"}
       ></textarea>
     </label>
   </div>
@@ -114,7 +114,7 @@
 
   <button
     type="button"
-    class="outline full"
+    class={parsedStudents.length > 0 ? 'primary full' : 'outline full'}
     onclick={onParseRoster}
     disabled={parsedStudents.length === 0}
   >

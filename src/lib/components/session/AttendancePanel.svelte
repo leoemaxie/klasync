@@ -7,12 +7,12 @@
     Users,
     ShieldCheck,
     UserX,
-    Activity,
     Search,
     Download,
     RefreshCw,
     X,
     Clock,
+    Activity,
   } from '@lucide/svelte';
 
   let {
@@ -68,7 +68,6 @@
         } else if (sortBy === 'heartbeats') {
           return (b.heartbeats || 0) - (a.heartbeats || 0);
         } else {
-          // Default: latest joined first
           const timeA = a.joinedAt ? new Date(a.joinedAt).getTime() : 0;
           const timeB = b.joinedAt ? new Date(b.joinedAt).getTime() : 0;
           return timeB - timeA;
@@ -102,7 +101,7 @@
     isExporting = true;
     try {
       const csv = await exportSessionAttendanceCsv(sessionCode);
-      const blob = new Blob([csv], { type: 'type/csv;charset=utf-8;' });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -129,15 +128,27 @@
 </script>
 
 <section class="attendance-container">
-  <!-- Top Header Section -->
+  <!-- Clean Header with Summary Stats -->
   <div class="panel-header">
-    <div>
-      <p class="eyebrow">SESSION ATTENDANCE MANAGEMENT</p>
-      <h2 class="panel-title">
-        {participants.length} Participant{participants.length === 1 ? '' : 's'}
-        Registered
-      </h2>
+    <div class="header-titles">
+      <p class="eyebrow">LIVE SESSION ATTENDANCE</p>
+      <h2 class="panel-title">Session Roster</h2>
+      <div class="summary-inline-pills">
+        <span class="inline-pill total">
+          <Users size={12} /> {participants.length} Registered
+        </span>
+        <span class="inline-pill verified">
+          <ShieldCheck size={12} /> {verifiedCount} Verified ({matchRate}%)
+        </span>
+        <span class="inline-pill provisional">
+          <UserX size={12} /> {provisionalCount} Provisional
+        </span>
+        <span class="inline-pill pulses">
+          <Activity size={12} /> {totalHeartbeats} Pulses
+        </span>
+      </div>
     </div>
+
     <div class="header-actions">
       {#if sessionCode}
         <button
@@ -145,86 +156,33 @@
           class="outline action-btn"
           onclick={handleExportCsv}
           disabled={isExporting || participants.length === 0}
-          title="Export current session attendance as CSV"
         >
           {#if isExporting}
-            <ButtonSpinner label="Exporting CSV..." /> Exporting...
+            <ButtonSpinner label="Exporting..." /> Exporting...
           {:else}
-            <Download size={14} /> Export CSV
+            <Download size={13} /> Export CSV
           {/if}
         </button>
       {/if}
       <button
         type="button"
-        class="text action-btn refresh-btn"
+        class="text action-btn"
         onclick={handleRefresh}
         disabled={isRefreshing || isLoading}
-        title="Sync live attendance with server"
       >
-        <RefreshCw
-          size={14}
-          class={isRefreshing ? 'spin-icon' : ''}
-        />
-        {#if isRefreshing}Refreshing...{:else}Refresh Attendance{/if}
+        <RefreshCw size={13} class={isRefreshing ? 'spin-icon' : ''} />
+        {#if isRefreshing}Refreshing...{:else}Refresh{/if}
       </button>
     </div>
   </div>
 
-  <!-- Summary Metric Grid Cards -->
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-icon-wrap">
-        <Users size={18} />
-      </div>
-      <div class="metric-data">
-        <span class="metric-label">TOTAL JOINED</span>
-        <span class="metric-val">{participants.length}</span>
-      </div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-icon-wrap verified-accent">
-        <ShieldCheck size={18} />
-      </div>
-      <div class="metric-data">
-        <div class="metric-label-row">
-          <span class="metric-label">ROSTER VERIFIED</span>
-          {#if participants.length > 0}
-            <span class="rate-badge">{matchRate}% match</span>
-          {/if}
-        </div>
-        <span class="metric-val verified-color">{verifiedCount}</span>
-      </div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-icon-wrap provisional-accent">
-        <UserX size={18} />
-      </div>
-      <div class="metric-data">
-        <span class="metric-label">PROVISIONAL GUESTS</span>
-        <span class="metric-val provisional-color">{provisionalCount}</span>
-      </div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-icon-wrap activity-accent">
-        <Activity size={18} />
-      </div>
-      <div class="metric-data">
-        <span class="metric-label">ACTIVE CHECK-IN PULSES</span>
-        <span class="metric-val pulse-color">{totalHeartbeats}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search, Filter & Sort Controls Toolbar -->
-  <div class="toolbar">
-    <div class="search-box">
+  <!-- Single Streamlined Controls Bar -->
+  <div class="controls-bar">
+    <div class="search-wrap">
       <Search size={14} class="search-icon" />
       <input
         type="text"
-        placeholder="Search student name or matric number..."
+        placeholder="Filter by student name or matric..."
         bind:value={searchQuery}
         class="search-input"
       />
@@ -233,68 +191,67 @@
           type="button"
           class="clear-search-btn"
           onclick={() => (searchQuery = '')}
-          aria-label="Clear search"
+          aria-label="Clear filter text"
         >
-          <X size={13} />
+          <X size={12} />
         </button>
       {/if}
     </div>
 
-    <div class="filter-pills">
+    <div class="filter-group">
       <button
         type="button"
-        class="pill-btn"
+        class="pill-tab"
         class:active={statusFilter === 'all'}
         onclick={() => (statusFilter = 'all')}
       >
-        All <span class="pill-count">{participants.length}</span>
+        All ({participants.length})
       </button>
       <button
         type="button"
-        class="pill-btn verified-pill"
+        class="pill-tab"
         class:active={statusFilter === 'verified'}
         onclick={() => (statusFilter = 'verified')}
       >
-        Verified <span class="pill-count">{verifiedCount}</span>
+        Verified ({verifiedCount})
       </button>
       <button
         type="button"
-        class="pill-btn provisional-pill"
+        class="pill-tab"
         class:active={statusFilter === 'provisional'}
         onclick={() => (statusFilter = 'provisional')}
       >
-        Provisional <span class="pill-count">{provisionalCount}</span>
+        Provisional ({provisionalCount})
       </button>
     </div>
 
-    <div class="sort-selector">
-      <label for="sort-select" class="sort-label">Sort:</label>
-      <select id="sort-select" bind:value={sortBy} class="sort-select">
+    <div class="sort-group">
+      <select bind:value={sortBy} class="sort-select" aria-label="Sort attendance list">
         <option value="joined">Latest Joined</option>
         <option value="name">Name (A-Z)</option>
-        <option value="heartbeats">Check-in Pulses (High to Low)</option>
+        <option value="heartbeats">Check-in Pulses</option>
       </select>
     </div>
   </div>
 
-  <!-- Content Section: Loading, Table, or Empty State -->
+  <!-- Attendance Table & States -->
   {#if isLoading || isRefreshing}
     <div class="loading-wrap">
       <SkeletonTable
         rows={4}
         cols={4}
-        label="Fetching live session attendance records..."
+        label="Fetching live attendance records..."
       />
     </div>
   {:else if filteredParticipants.length > 0}
-    <div class="table-container">
+    <div class="table-card">
       <table class="attendance-table">
         <thead>
           <tr>
             <th>STUDENT / PARTICIPANT</th>
             <th>MATRIC NUMBER</th>
             <th>ROSTER STATUS</th>
-            <th>CHECK-INS</th>
+            <th>PULSE</th>
             <th>JOINED</th>
           </tr>
         </thead>
@@ -302,84 +259,67 @@
           {#each filteredParticipants as participant (participant.id || participant.matric)}
             <tr class="table-row">
               <td class="student-cell">
-                <div class="avatar-badge" class:verified-avatar={participant.verified}>
+                <div class="avatar" class:verified-avatar={participant.verified}>
                   {getInitials(participant.name)}
                 </div>
-                <div class="student-info">
-                  <span class="student-name">{participant.name}</span>
-                </div>
+                <span class="student-name">{participant.name}</span>
               </td>
               <td>
                 <code class="matric-tag">{participant.matric}</code>
               </td>
               <td>
                 {#if participant.verified}
-                  <span class="status-badge verified">
-                    <ShieldCheck size={12} />
-                    Verified Roster Match
+                  <span class="badge verified">
+                    <ShieldCheck size={12} /> Verified Match
                   </span>
                 {:else}
-                  <span class="status-badge provisional">
-                    <UserX size={12} />
-                    Provisional Guest
+                  <span class="badge provisional">
+                    <UserX size={12} /> Provisional
                   </span>
                 {/if}
               </td>
               <td>
-                <div class="pulse-count-wrap">
-                  <span class="pulse-dot" class:active={participant.heartbeats > 0}></span>
-                  <span class="pulse-count">{participant.heartbeats} pulse{participant.heartbeats === 1 ? '' : 's'}</span>
-                </div>
-              </td>
-              <td class="joined-time-cell">
-                <span class="joined-time">
-                  <Clock size={11} />
-                  {formatJoinedTime(participant.joinedAt)}
+                <span class="pulse-tag">
+                  <span class="dot" class:active={participant.heartbeats > 0}></span>
+                  {participant.heartbeats} pulse{participant.heartbeats === 1 ? '' : 's'}
                 </span>
+              </td>
+              <td class="time-cell">
+                <Clock size={11} /> {formatJoinedTime(participant.joinedAt)}
               </td>
             </tr>
           {/each}
         </tbody>
       </table>
     </div>
-
-    <div class="table-footer-info">
-      Showing {filteredParticipants.length} of {participants.length} participant record{participants.length === 1 ? '' : 's'}
+    <div class="footer-count">
+      Showing {filteredParticipants.length} of {participants.length} record{participants.length === 1 ? '' : 's'}
     </div>
   {:else if searchQuery || statusFilter !== 'all'}
-    <div class="empty-search-state">
-      <Search size={28} class="empty-icon" />
-      <p class="empty-title">No matching participants found</p>
+    <div class="empty-state">
+      <Search size={24} class="empty-icon" />
+      <p class="empty-title">No matching participants</p>
       <p class="empty-desc">
-        No students matched your filter criteria
-        {#if searchQuery} for "<strong>{searchQuery}</strong>"{/if}.
+        No students matched your search criteria.
       </p>
       <button
         type="button"
-        class="outline reset-filter-btn"
+        class="outline reset-btn"
         onclick={() => {
           searchQuery = '';
           statusFilter = 'all';
         }}
       >
-        Reset Filters & Search
+        Clear Filters
       </button>
     </div>
   {:else}
-    <div class="empty-attendance-state">
-      <div class="empty-icon-circle">
-        <Users size={32} />
-      </div>
-      <h3>NO PARTICIPANTS YET</h3>
+    <div class="empty-state">
+      <Users size={28} class="empty-icon" />
+      <p class="empty-title">No participants joined yet</p>
       <p class="empty-desc">
-        Students joining with the session code will appear here automatically.
+        Students joining live with code <strong>{sessionCode}</strong> will appear here automatically.
       </p>
-      {#if sessionCode}
-        <div class="code-callout">
-          <span>Active Session Code:</span>
-          <code class="active-code">{sessionCode}</code>
-        </div>
-      {/if}
     </div>
   {/if}
 </section>
@@ -395,33 +335,92 @@
   .panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-14);
     flex-wrap: wrap;
+    padding-bottom: 4px;
+  }
+
+  .header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--color-driftwood);
+    margin: 0;
+    line-height: 1;
+    font-weight: 600;
   }
 
   .panel-title {
     font-size: 22px;
     font-weight: 500;
     color: var(--color-warm-cream);
-    margin: 4px 0 0 0;
-    letter-spacing: -0.01em;
+    margin: 2px 0 6px 0;
+    font-family: var(--font-display);
+    line-height: 1.2;
+  }
+
+  .summary-inline-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .inline-pill {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  .inline-pill.total {
+    background: rgba(56, 36, 22, 0.6);
+    color: var(--color-warm-cream);
+    border: 1px solid var(--color-cork-border);
+  }
+
+  .inline-pill.verified {
+    background: rgba(74, 183, 114, 0.12);
+    color: #4ab772;
+    border: 1px solid rgba(74, 183, 114, 0.25);
+  }
+
+  .inline-pill.provisional {
+    background: rgba(220, 80, 0, 0.12);
+    color: var(--color-ember-accent);
+    border: 1px solid rgba(220, 80, 0, 0.25);
+  }
+
+  .inline-pill.pulses {
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.25);
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-10);
+    gap: 8px;
   }
 
   .action-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-size: 11px;
-    letter-spacing: 0.05em;
+    padding: 6px 12px;
     text-transform: uppercase;
-    padding: 8px 14px;
+    letter-spacing: 0.05em;
   }
 
   :global(.spin-icon) {
@@ -433,149 +432,43 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Metrics Grid */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: var(--spacing-12);
-  }
-
-  .metric-card {
-    background: rgba(16, 9, 4, 0.6);
-    border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-12);
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-  }
-
-  .metric-card:hover {
-    border-color: rgba(108, 95, 81, 0.6);
-    background: rgba(24, 14, 7, 0.8);
-  }
-
-  .metric-icon-wrap {
-    width: 38px;
-    height: 38px;
-    border-radius: 6px;
-    background: rgba(56, 36, 22, 0.6);
-    border: 1px solid var(--color-cork-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-driftwood);
-    flex-shrink: 0;
-  }
-
-  .metric-icon-wrap.verified-accent {
-    color: #4ab772;
-    background: rgba(74, 183, 114, 0.1);
-    border-color: rgba(74, 183, 114, 0.3);
-  }
-
-  .metric-icon-wrap.provisional-accent {
-    color: var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.1);
-    border-color: rgba(220, 80, 0, 0.3);
-  }
-
-  .metric-icon-wrap.activity-accent {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.1);
-    border-color: rgba(56, 189, 248, 0.3);
-  }
-
-  .metric-data {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .metric-label-row {
+  /* Controls Bar */
+  .controls-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-  }
-
-  .metric-label {
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    color: var(--color-driftwood);
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
-  .rate-badge {
-    font-size: 9px;
-    color: #4ab772;
-    background: rgba(74, 183, 114, 0.15);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-weight: 600;
-  }
-
-  .metric-val {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--color-warm-cream);
-    line-height: 1.1;
-  }
-
-  .metric-val.verified-color {
-    color: #4ab772;
-  }
-
-  .metric-val.provisional-color {
-    color: var(--color-ember-accent);
-  }
-
-  .metric-val.pulse-color {
-    color: #38bdf8;
-  }
-
-  /* Toolbar */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-12);
+    gap: 12px;
     flex-wrap: wrap;
     background: rgba(16, 9, 4, 0.4);
     border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 6px;
+    padding: 8px 12px;
   }
 
-  .search-box {
+  .search-wrap {
     position: relative;
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 220px;
-    max-width: 380px;
+    min-width: 200px;
+    max-width: 320px;
   }
 
   :global(.search-icon) {
     position: absolute;
-    left: 10px;
+    left: 8px;
     color: var(--color-driftwood);
     pointer-events: none;
   }
 
   .search-input {
     width: 100%;
-    padding: 7px 30px 7px 32px;
+    padding: 6px 26px 6px 28px;
     background: rgba(10, 5, 2, 0.6);
     border: 1px solid var(--color-cork-border);
-    border-radius: 6px;
+    border-radius: 4px;
     color: var(--color-warm-cream);
-    font-size: 12px;
-    transition: border-color 0.2s ease;
+    font-size: 11px;
   }
 
   .search-input:focus {
@@ -585,92 +478,57 @@
 
   .clear-search-btn {
     position: absolute;
-    right: 8px;
+    right: 6px;
     background: none;
     border: none;
     color: var(--color-driftwood);
     cursor: pointer;
     padding: 2px;
     display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  .clear-search-btn:hover {
-    color: var(--color-warm-cream);
-  }
-
-  .filter-pills {
+  .filter-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  .pill-btn {
+  .pill-tab {
     background: transparent;
-    border: 1px solid var(--color-cork-border);
-    border-radius: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
     color: var(--color-driftwood);
     font-size: 11px;
-    padding: 5px 12px;
+    padding: 4px 10px;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
   }
 
-  .pill-btn:hover {
+  .pill-tab:hover {
     color: var(--color-warm-cream);
-    border-color: rgba(108, 95, 81, 0.6);
   }
 
-  .pill-btn.active {
+  .pill-tab.active {
     background: var(--color-bark-brown);
     color: var(--color-warm-cream);
-    border-color: var(--color-warm-cream);
-  }
-
-  .pill-count {
-    font-size: 10px;
-    background: rgba(255, 237, 215, 0.12);
-    padding: 1px 6px;
-    border-radius: 10px;
-  }
-
-  .sort-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sort-label {
-    font-size: 11px;
-    color: var(--color-driftwood);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    border-color: var(--color-cork-border);
   }
 
   .sort-select {
     background: rgba(10, 5, 2, 0.6);
     border: 1px solid var(--color-cork-border);
-    border-radius: 6px;
+    border-radius: 4px;
     color: var(--color-warm-cream);
     font-size: 11px;
-    padding: 6px 10px;
+    padding: 5px 8px;
     cursor: pointer;
   }
 
-  .sort-select:focus {
-    outline: none;
-    border-color: var(--color-warm-cream);
-  }
-
   /* Table */
-  .table-container {
+  .table-card {
     background: rgba(16, 9, 4, 0.6);
     border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
+    border-radius: 6px;
     overflow-x: auto;
   }
 
@@ -685,16 +543,16 @@
     background: rgba(24, 14, 7, 0.8);
     color: var(--color-driftwood);
     font-size: 9px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--color-cork-border);
     font-weight: 500;
   }
 
   .table-row {
-    border-bottom: 1px solid rgba(64, 55, 46, 0.4);
-    transition: background-color 0.15s ease;
+    border-bottom: 1px solid rgba(64, 55, 46, 0.3);
+    transition: background 0.15s ease;
   }
 
   .table-row:last-child {
@@ -702,167 +560,130 @@
   }
 
   .table-row:hover {
-    background: rgba(56, 36, 22, 0.3);
+    background: rgba(56, 36, 22, 0.25);
   }
 
   .attendance-table td {
-    padding: 12px 16px;
+    padding: 10px 14px;
     vertical-align: middle;
     color: var(--color-warm-cream);
   }
 
-  /* Student Cell */
   .student-cell {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
-  .avatar-badge {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: rgba(56, 36, 22, 0.8);
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: rgba(56, 36, 22, 0.6);
     border: 1px solid var(--color-cork-border);
     color: var(--color-driftwood);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    letter-spacing: 0.05em;
   }
 
-  .avatar-badge.verified-avatar {
-    background: rgba(74, 183, 114, 0.12);
-    border-color: rgba(74, 183, 114, 0.4);
+  .avatar.verified-avatar {
+    background: rgba(74, 183, 114, 0.1);
+    border-color: rgba(74, 183, 114, 0.3);
     color: #4ab772;
   }
 
-  .student-info {
-    display: flex;
-    flex-direction: column;
-  }
-
   .student-name {
+    font-size: 12px;
     font-weight: 500;
-    font-size: 13px;
-    color: var(--color-warm-cream);
   }
 
   .matric-tag {
     font-family: monospace;
-    font-size: 12px;
-    background: rgba(10, 5, 2, 0.6);
+    font-size: 11px;
+    background: rgba(10, 5, 2, 0.5);
     border: 1px solid var(--color-cork-border);
-    padding: 3px 8px;
-    border-radius: 4px;
-    color: var(--color-warm-cream);
+    padding: 2px 6px;
+    border-radius: 3px;
   }
 
-  /* Status Badges */
-  .status-badge {
+  .badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 4px 10px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 3px;
   }
 
-  .status-badge.verified {
-    background: rgba(74, 183, 114, 0.12);
+  .badge.verified {
+    background: rgba(74, 183, 114, 0.1);
     color: #4ab772;
-    border: 1px solid rgba(74, 183, 114, 0.3);
+    border: 1px solid rgba(74, 183, 114, 0.25);
   }
 
-  .status-badge.provisional {
-    background: rgba(220, 80, 0, 0.12);
+  .badge.provisional {
+    background: rgba(220, 80, 0, 0.1);
     color: var(--color-ember-accent);
-    border: 1px solid rgba(220, 80, 0, 0.3);
+    border: 1px solid rgba(220, 80, 0, 0.25);
   }
 
-  /* Pulse count */
-  .pulse-count-wrap {
+  .pulse-tag {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--color-driftwood);
   }
 
-  .pulse-dot {
-    width: 7px;
-    height: 7px;
+  .dot {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--color-driftwood);
   }
 
-  .pulse-dot.active {
+  .dot.active {
     background: #38bdf8;
     box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
   }
 
-  .pulse-count {
-    font-size: 12px;
-    color: var(--color-warm-cream);
-  }
-
-  /* Joined time */
-  .joined-time-cell {
-    color: var(--color-driftwood);
-  }
-
-  .joined-time {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
+  .time-cell {
     font-size: 11px;
     color: var(--color-driftwood);
+    display: table-cell;
   }
 
-  .table-footer-info {
+  .footer-count {
     font-size: 11px;
     color: var(--color-driftwood);
     text-align: right;
-    padding-right: 4px;
   }
 
-  /* Empty States */
-  .loading-wrap {
-    margin-top: var(--spacing-12);
-  }
-
-  .empty-search-state,
-  .empty-attendance-state {
+  /* Empty state */
+  .empty-state {
     background: rgba(16, 9, 4, 0.4);
     border: 1px dashed var(--color-cork-border);
-    border-radius: 8px;
-    padding: var(--spacing-40) var(--spacing-20);
+    border-radius: 6px;
+    padding: var(--spacing-32);
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--spacing-12);
+    gap: 8px;
   }
 
-  .empty-icon-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(56, 36, 22, 0.6);
-    border: 1px solid var(--color-cork-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  :global(.empty-icon) {
     color: var(--color-driftwood);
   }
 
   .empty-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--color-warm-cream);
     margin: 0;
@@ -871,36 +692,13 @@
   .empty-desc {
     font-size: 12px;
     color: var(--color-driftwood);
-    max-width: 420px;
     margin: 0;
-    line-height: 1.5;
   }
 
-  .reset-filter-btn {
+  .reset-btn {
     font-size: 11px;
-    margin-top: 8px;
-    padding: 6px 14px;
-  }
-
-  .code-callout {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(10, 5, 2, 0.6);
-    border: 1px solid var(--color-cork-border);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: var(--color-driftwood);
-    margin-top: 8px;
-  }
-
-  .active-code {
-    font-family: monospace;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-warm-cream);
-    letter-spacing: 0.1em;
+    margin-top: 6px;
+    padding: 4px 12px;
   }
 </style>
 

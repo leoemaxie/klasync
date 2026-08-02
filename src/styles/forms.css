@@ -29,7 +29,7 @@ small {
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.7;
+  opacity: 0.9;
 }
 
 /* ── Inputs ──────────────────────────────────────────────── */
@@ -46,6 +46,13 @@ textarea {
   font-size: 15px;
   transition: border-color 0.2s ease;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 237, 215, 0.38);
+  font-style: italic;
+  opacity: 1;
 }
 
 input:focus,

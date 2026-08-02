@@ -128,12 +128,16 @@
     transform: scale(0.96);
   }
   .tab-pill.active {
-    background: var(--color-bark-brown);
-    border-color: var(--color-warm-cream-dim);
-    color: var(--color-warm-cream);
+    background: var(--color-warm-cream);
+    border-color: var(--color-warm-cream);
+    color: var(--color-walnut-shadow);
+    font-weight: 700;
     box-shadow:
-      0 2px 10px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 2px 12px rgba(255, 237, 215, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .tab-pill.active .tab-icon {
+    color: var(--color-walnut-shadow);
   }
   .tab-badge {
     font-size: 9px;
