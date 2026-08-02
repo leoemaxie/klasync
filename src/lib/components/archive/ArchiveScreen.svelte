@@ -51,10 +51,9 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">STUDENT ARCHIVE / CLAIMED LECTURES</p>
-    <h1>Your learning outlasts the room.</h1>
+    <h1>Lecture Archive.</h1>
     <p class="lede">
-      Access searchable transcripts, interactive flashcards, and audio replays
-      for your verified claims.
+      Transcripts, flashcards, and audio replays.
     </p>
 
     <div class="join-card panel">

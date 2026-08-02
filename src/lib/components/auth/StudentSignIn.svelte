@@ -51,10 +51,9 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">STUDENT PERSISTENT ACCESS / SIGN IN</p>
-    <h1>Access your archive.</h1>
+    <h1>Sign in.</h1>
     <p class="lede">
-      Sign in to access your claimed lecture transcripts, flashcards, AI
-      summaries, and revision notes.
+      Access claimed transcripts, flashcards, and notes.
     </p>
 
     <form class="join-card panel" onsubmit={handleLogin}>
@@ -97,9 +96,9 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Authenticating student credentials..." /> Authenticating...
+          <ButtonSpinner label="Authenticating..." /> Authenticating...
         {:else}
-          Sign In to Archive
+          Sign In
         {/if}
       </button>
 
@@ -109,7 +108,7 @@
           class="text-link"
           onclick={() => (screen = 'student-register')}
         >
-          Create an account for persistent access
+          Create student account
         </a>
         <a
           href="#/recover-password"

@@ -51,10 +51,9 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">GUEST ACCESS / NO ACCOUNT REQUIRED</p>
-    <h1>Enter the room.</h1>
+    <h1>Enter room.</h1>
     <p class="lede">
-      Follow real-time captions and record your attendance seamlessly without
-      creating an account.
+      Real-time captions and verified attendance. No account required.
     </p>
     <div class="join-card panel">
       <label>
@@ -101,17 +100,15 @@
         disabled={sessionStatus === 'ended' || !matric.trim() || isJoining}
       >
         {#if isJoining}
-          <ButtonSpinner label="Verifying roster and entering session..." /> Entering
-          room...
+          <ButtonSpinner label="Verifying..." /> Entering...
         {:else if sessionStatus === 'ended'}
           Session Ended
         {:else}
-          Join live lecture
+          Join lecture
         {/if}
       </button>
       <p class="hint">
-        Verification status will be confirmed against your course roster on
-        entry.
+        Matric number verified against course roster.
       </p>
     </div>
   </div>

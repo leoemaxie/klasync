@@ -53,10 +53,9 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">LECTURER ACCESS / SIGN IN</p>
-    <h1>Welcome back.</h1>
+    <h1>Sign in.</h1>
     <p class="lede">
-      Sign in to launch live lecture rooms, stream captions, and manage
-      attendance rosters.
+      Stream live captions and manage class rosters.
     </p>
 
     <form class="join-card panel" onsubmit={handleLogin}>
@@ -99,9 +98,9 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Authenticating credentials..." /> Authenticating...
+          <ButtonSpinner label="Authenticating..." /> Authenticating...
         {:else}
-          Sign In to Workspace
+          Sign In
         {/if}
       </button>
 
@@ -111,7 +110,7 @@
           class="text-link"
           onclick={() => (screen = 'lecturer-register')}
         >
-          Need an account? Register
+          Create account
         </a>
         <a
           href="#/recover-password"

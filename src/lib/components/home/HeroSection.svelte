@@ -44,8 +44,7 @@
     </h1>
 
     <p class="lede">
-      Transforming physical lectures into live-captioned, searchable, AI-powered
-      learning experiences — with instant guest access for students.
+      Live captions, searchable transcripts, and AI notes for physical lectures. Instant guest access.
     </p>
 
     <div class="actions">
