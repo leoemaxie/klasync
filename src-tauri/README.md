@@ -33,34 +33,34 @@ Session creation/end, participant lists, attendance summaries, and caption publi
 
 ## Current HTTP contract
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/health` | Service health check |
-| `POST` | `/api/v1/lecturers/register` | Create a lecturer profile (development placeholder for full auth) |
-| `POST` | `/api/v1/auth/lecturers/register` | Register a password-protected lecturer and issue tokens |
-| `POST` | `/api/v1/auth/lecturers/login` | Authenticate a lecturer and issue tokens |
-| `POST` | `/api/v1/auth/students/register` | Create a persistent student account and issue tokens |
-| `POST` | `/api/v1/auth/students/login` | Authenticate a student account and issue tokens |
-| `POST` | `/api/v1/auth/refresh` | Rotate an opaque refresh session and issue a new JWT |
-| `POST` | `/api/v1/auth/logout` | Revoke a refresh session |
-| `POST` | `/api/v1/auth/password-reset/request` | Write a one-time password reset message to the configured delivery outbox |
-| `POST` | `/api/v1/auth/password-reset/complete` | Consume a reset token, change password, and revoke sessions |
-| `POST` | `/api/v1/students/claims` | Claim a matching guest participation record |
-| `GET` | `/api/v1/students/archive` | List persistent resources granted to the authenticated student |
-| `GET, POST` | `/api/v1/courses` | List or create courses |
-| `POST` | `/api/v1/courses/:id/roster` | Save parsed roster records |
-| `POST` | `/api/v1/courses/:id/roster/import` | Import and validate a CSV/XLSX roster file |
-| `POST` | `/api/v1/sessions` | Create a live session and return link, QR payload, and short code |
-| `GET` | `/api/v1/sessions/code/:code` | Resolve a short code |
-| `POST` | `/api/v1/sessions/code/:code/join` | Guest join with a matric number |
-| `GET` | `/api/v1/sessions/code/:code/participants` | List attendance records for a session |
-| `GET` | `/api/v1/sessions/code/:code/attendance` | Return participant, verification, and heartbeat totals |
-| `POST` | `/api/v1/sessions/code/:code/end` | End a session and reject later joins/heartbeats |
-| `GET, POST` | `/api/v1/sessions/code/:code/captions` | Retrieve or publish live caption chunks |
-| `GET` | `/api/v1/sessions/code/:code/captions/ws` | Receive new caption chunks through WebSocket |
-| `POST` | `/api/v1/sessions/code/:code/resources` | Create a lecture archive resource as the session lecturer |
-| `GET` | `/api/v1/sessions/code/:code/invite/qr.svg` | Generate an SVG QR invite for the session lecturer |
-| `POST` | `/api/v1/participants/:id/heartbeat` | Record active presence |
+| Method      | Endpoint                                    | Purpose                                                                   |
+| ----------- | ------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET`       | `/health`                                   | Service health check                                                      |
+| `POST`      | `/api/v1/lecturers/register`                | Create a lecturer profile (development placeholder for full auth)         |
+| `POST`      | `/api/v1/auth/lecturers/register`           | Register a password-protected lecturer and issue tokens                   |
+| `POST`      | `/api/v1/auth/lecturers/login`              | Authenticate a lecturer and issue tokens                                  |
+| `POST`      | `/api/v1/auth/students/register`            | Create a persistent student account and issue tokens                      |
+| `POST`      | `/api/v1/auth/students/login`               | Authenticate a student account and issue tokens                           |
+| `POST`      | `/api/v1/auth/refresh`                      | Rotate an opaque refresh session and issue a new JWT                      |
+| `POST`      | `/api/v1/auth/logout`                       | Revoke a refresh session                                                  |
+| `POST`      | `/api/v1/auth/password-reset/request`       | Write a one-time password reset message to the configured delivery outbox |
+| `POST`      | `/api/v1/auth/password-reset/complete`      | Consume a reset token, change password, and revoke sessions               |
+| `POST`      | `/api/v1/students/claims`                   | Claim a matching guest participation record                               |
+| `GET`       | `/api/v1/students/archive`                  | List persistent resources granted to the authenticated student            |
+| `GET, POST` | `/api/v1/courses`                           | List or create courses                                                    |
+| `POST`      | `/api/v1/courses/:id/roster`                | Save parsed roster records                                                |
+| `POST`      | `/api/v1/courses/:id/roster/import`         | Import and validate a CSV/XLSX roster file                                |
+| `POST`      | `/api/v1/sessions`                          | Create a live session and return link, QR payload, and short code         |
+| `GET`       | `/api/v1/sessions/code/:code`               | Resolve a short code                                                      |
+| `POST`      | `/api/v1/sessions/code/:code/join`          | Guest join with a matric number                                           |
+| `GET`       | `/api/v1/sessions/code/:code/participants`  | List attendance records for a session                                     |
+| `GET`       | `/api/v1/sessions/code/:code/attendance`    | Return participant, verification, and heartbeat totals                    |
+| `POST`      | `/api/v1/sessions/code/:code/end`           | End a session and reject later joins/heartbeats                           |
+| `GET, POST` | `/api/v1/sessions/code/:code/captions`      | Retrieve or publish live caption chunks                                   |
+| `GET`       | `/api/v1/sessions/code/:code/captions/ws`   | Receive new caption chunks through WebSocket                              |
+| `POST`      | `/api/v1/sessions/code/:code/resources`     | Create a lecture archive resource as the session lecturer                 |
+| `GET`       | `/api/v1/sessions/code/:code/invite/qr.svg` | Generate an SVG QR invite for the session lecturer                        |
+| `POST`      | `/api/v1/participants/:id/heartbeat`        | Record active presence                                                    |
 
 Duplicate joins for one matric number are idempotent, and roster matches are returned as `verified`; unmatched guests are `provisional`.
 

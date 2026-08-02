@@ -1,6 +1,6 @@
 <script lang="ts">
   let {
-    label = "Processing..."
+    label = 'Processing...',
   }: {
     label?: string;
   } = $props();

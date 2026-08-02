@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { http } from './http';
 
 export type LiveControlPatch = {
   captions_paused?: boolean;
@@ -19,54 +19,107 @@ export type CaptionModerationInput = {
   note?: string;
 };
 
-export function updateLiveControls(shortCode: string, input: LiveControlPatch): Promise<LiveControlState> {
-  return http<LiveControlState>(`/sessions/code/${encodeURIComponent(shortCode)}/live-controls`, {
-    method: 'POST',
-    body: JSON.stringify(input)
-  });
+export function updateLiveControls(
+  shortCode: string,
+  input: LiveControlPatch
+): Promise<LiveControlState> {
+  return http<LiveControlState>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/live-controls`,
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }
+  );
 }
 
 export function pauseCaptions(shortCode: string): Promise<LiveControlState> {
-  return http<LiveControlState>(`/sessions/code/${encodeURIComponent(shortCode)}/captions/pause`, { method: 'POST' });
+  return http<LiveControlState>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/captions/pause`,
+    { method: 'POST' }
+  );
 }
 
 export function resumeCaptions(shortCode: string): Promise<LiveControlState> {
-  return http<LiveControlState>(`/sessions/code/${encodeURIComponent(shortCode)}/captions/resume`, { method: 'POST' });
+  return http<LiveControlState>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/captions/resume`,
+    { method: 'POST' }
+  );
 }
 
-export function startAudioIngestion(shortCode: string): Promise<LiveControlState> {
-  return http<LiveControlState>(`/sessions/code/${encodeURIComponent(shortCode)}/audio/start`, { method: 'POST' });
+export function startAudioIngestion(
+  shortCode: string
+): Promise<LiveControlState> {
+  return http<LiveControlState>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/audio/start`,
+    { method: 'POST' }
+  );
 }
 
-export function stopAudioIngestion(shortCode: string): Promise<LiveControlState> {
-  return http<LiveControlState>(`/sessions/code/${encodeURIComponent(shortCode)}/audio/stop`, { method: 'POST' });
+export function stopAudioIngestion(
+  shortCode: string
+): Promise<LiveControlState> {
+  return http<LiveControlState>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/audio/stop`,
+    { method: 'POST' }
+  );
 }
 
-export function moderateParticipant(shortCode: string, participantId: string, action: 'mute' | 'remove'): Promise<void> {
-  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/${action}`, {
-    method: 'POST'
-  });
+export function moderateParticipant(
+  shortCode: string,
+  participantId: string,
+  action: 'mute' | 'remove'
+): Promise<void> {
+  return http<void>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/${action}`,
+    {
+      method: 'POST',
+    }
+  );
 }
 
-export function moderateCaption(shortCode: string, captionId: string, input: CaptionModerationInput): Promise<void> {
-  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/captions/${encodeURIComponent(captionId)}/moderate`, {
-    method: 'POST',
-    body: JSON.stringify(input)
-  });
+export function moderateCaption(
+  shortCode: string,
+  captionId: string,
+  input: CaptionModerationInput
+): Promise<void> {
+  return http<void>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/captions/${encodeURIComponent(captionId)}/moderate`,
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }
+  );
 }
 
-export function toggleRecording(shortCode: string, active: boolean): Promise<LiveControlState> {
-  return active ? startAudioIngestion(shortCode) : stopAudioIngestion(shortCode);
+export function toggleRecording(
+  shortCode: string,
+  active: boolean
+): Promise<LiveControlState> {
+  return active
+    ? startAudioIngestion(shortCode)
+    : stopAudioIngestion(shortCode);
 }
 
-export function sendHandRaise(shortCode: string, participantId: string): Promise<void> {
-  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`, {
-    method: 'POST'
-  });
+export function sendHandRaise(
+  shortCode: string,
+  participantId: string
+): Promise<void> {
+  return http<void>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`,
+    {
+      method: 'POST',
+    }
+  );
 }
 
-export function clearHandRaise(shortCode: string, participantId: string): Promise<void> {
-  return http<void>(`/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`, {
-    method: 'DELETE'
-  });
+export function clearHandRaise(
+  shortCode: string,
+  participantId: string
+): Promise<void> {
+  return http<void>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/participants/${encodeURIComponent(participantId)}/hand-raise`,
+    {
+      method: 'DELETE',
+    }
+  );
 }

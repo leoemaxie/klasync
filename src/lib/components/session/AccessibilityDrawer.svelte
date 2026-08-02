@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Settings, X } from "@lucide/svelte";
+  import { Settings, X } from '@lucide/svelte';
 
   let {
-    fontSize = $bindable("18px"),
+    fontSize = $bindable('18px'),
     dyslexicFont = $bindable(false),
     lineHeight = $bindable(1.6),
   }: {
@@ -21,11 +21,18 @@
     onclick={() => (drawerOpen = !drawerOpen)}
     aria-expanded={drawerOpen}
   >
-    <Settings size={14} style="vertical-align: middle; display: inline-block;" /> Accessibility Preferences
+    <Settings
+      size={14}
+      style="vertical-align: middle; display: inline-block;"
+    /> Accessibility Preferences
   </button>
 
   {#if drawerOpen}
-    <div class="panel drawer-content" role="region" aria-label="Accessibility Settings">
+    <div
+      class="panel drawer-content"
+      role="region"
+      aria-label="Accessibility Settings"
+    >
       <div class="drawer-header">
         <p class="eyebrow">ACCESSIBILITY &amp; READING DISPLAY</p>
         <button type="button" class="text" onclick={() => (drawerOpen = false)}>
@@ -38,22 +45,22 @@
         <div class="button-group" id="font-size-select">
           <button
             type="button"
-            class={fontSize === "16px" ? "primary" : "outline"}
-            onclick={() => (fontSize = "16px")}
+            class={fontSize === '16px' ? 'primary' : 'outline'}
+            onclick={() => (fontSize = '16px')}
           >
             Standard (16px)
           </button>
           <button
             type="button"
-            class={fontSize === "20px" ? "primary" : "outline"}
-            onclick={() => (fontSize = "20px")}
+            class={fontSize === '20px' ? 'primary' : 'outline'}
+            onclick={() => (fontSize = '20px')}
           >
             Large (20px)
           </button>
           <button
             type="button"
-            class={fontSize === "24px" ? "primary" : "outline"}
-            onclick={() => (fontSize = "24px")}
+            class={fontSize === '24px' ? 'primary' : 'outline'}
+            onclick={() => (fontSize = '24px')}
           >
             XL (24px)
           </button>
@@ -75,14 +82,16 @@
       <div class="control-group toggle-row">
         <div>
           <p class="toggle-title">High-Contrast Dyslexia Font</p>
-          <p class="hint">Increases character spacing and bottom-heavy letter shapes.</p>
+          <p class="hint">
+            Increases character spacing and bottom-heavy letter shapes.
+          </p>
         </div>
         <button
           type="button"
-          class={dyslexicFont ? "primary" : "outline"}
+          class={dyslexicFont ? 'primary' : 'outline'}
           onclick={() => (dyslexicFont = !dyslexicFont)}
         >
-          {dyslexicFont ? "ON" : "OFF"}
+          {dyslexicFont ? 'ON' : 'OFF'}
         </button>
       </div>
     </div>
@@ -90,13 +99,47 @@
 </div>
 
 <style>
-  .accessibility-drawer-wrap { margin: var(--spacing-14) 0; }
-  .drawer-toggle-btn { font-size: 11px; padding: 6px 14px; }
-  .drawer-content { display: flex; flex-direction: column; gap: var(--spacing-14); margin-top: var(--spacing-12); }
-  .drawer-header { display: flex; justify-content: space-between; align-items: center; }
-  .control-group { display: flex; flex-direction: column; gap: 6px; }
-  .button-group { display: flex; gap: var(--spacing-8); }
-  .button-group button { flex: 1; font-size: 10px; padding: 6px; }
-  .toggle-row { display: flex; flex-direction: row; justify-content: space-between; align-items: center; }
-  .toggle-title { font-size: 13px; font-weight: 500; color: var(--color-warm-cream); }
+  .accessibility-drawer-wrap {
+    margin: var(--spacing-14) 0;
+  }
+  .drawer-toggle-btn {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+  .drawer-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-14);
+    margin-top: var(--spacing-12);
+  }
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .button-group {
+    display: flex;
+    gap: var(--spacing-8);
+  }
+  .button-group button {
+    flex: 1;
+    font-size: 10px;
+    padding: 6px;
+  }
+  .toggle-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .toggle-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-warm-cream);
+  }
 </style>

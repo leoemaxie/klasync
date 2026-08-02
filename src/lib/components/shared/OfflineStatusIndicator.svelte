@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
 
   let isOnline = $state(true);
 
   onMount(() => {
-    isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+    isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
     function handleOnline() {
       isOnline = true;
@@ -13,12 +13,12 @@
       isOnline = false;
     }
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   });
 </script>
@@ -26,7 +26,9 @@
 {#if !isOnline}
   <div class="offline-banner" role="status" aria-live="polite">
     <span class="offline-dot">●</span>
-    <span>OFFLINE MODE ACTIVE · Local buffer queueing heartbeats &amp; captions</span>
+    <span
+      >OFFLINE MODE ACTIVE · Local buffer queueing heartbeats &amp; captions</span
+    >
   </div>
 {/if}
 
@@ -53,7 +55,11 @@
     animation: blink 1s infinite alternate;
   }
   @keyframes blink {
-    from { opacity: 0.3; }
-    to { opacity: 1; }
+    from {
+      opacity: 0.3;
+    }
+    to {
+      opacity: 1;
+    }
   }
 </style>

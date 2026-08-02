@@ -1,4 +1,5 @@
 # KLASYNC — Assistive Learning Infrastructure for Higher Education
+
 Codex Session ID: 019f7b7e-2d62-7272-bdb1-5dd549904ee6
 
 > **Turn every physical lecture into an accessible, searchable, AI-powered learning experience.**

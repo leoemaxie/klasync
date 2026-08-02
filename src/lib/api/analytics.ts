@@ -1,4 +1,4 @@
-import { apiRequest } from "./http";
+import { apiRequest } from './http';
 
 export interface CourseAnalyticsSummary {
   course_id: string;
@@ -13,19 +13,26 @@ export interface CourseAnalyticsSummary {
 export interface AttendanceAnomaly {
   id: string;
   matric_number: string;
-  anomaly_type: "heartbeat_burst" | "unverified_location" | "rapid_checkin";
+  anomaly_type: 'heartbeat_burst' | 'unverified_location' | 'rapid_checkin';
   description: string;
-  severity: "info" | "warning" | "critical";
+  severity: 'info' | 'warning' | 'critical';
   logged_at: string;
 }
 
-export async function fetchCourseAnalytics(courseId: string): Promise<CourseAnalyticsSummary | null> {
+export async function fetchCourseAnalytics(
+  courseId: string
+): Promise<CourseAnalyticsSummary | null> {
   if (!courseId) return null;
-  return await apiRequest<CourseAnalyticsSummary>(`/analytics/courses/${encodeURIComponent(courseId)}/attendance-summary`).catch(() => null);
+  return await apiRequest<CourseAnalyticsSummary>(
+    `/analytics/courses/${encodeURIComponent(courseId)}/attendance-summary`
+  ).catch(() => null);
 }
 
-export async function fetchSessionAnomalies(sessionId: string): Promise<AttendanceAnomaly[]> {
+export async function fetchSessionAnomalies(
+  sessionId: string
+): Promise<AttendanceAnomaly[]> {
   if (!sessionId) return [];
-  return await apiRequest<AttendanceAnomaly[]>(`/analytics/sessions/${encodeURIComponent(sessionId)}/anomalies`).catch(() => []);
+  return await apiRequest<AttendanceAnomaly[]>(
+    `/analytics/sessions/${encodeURIComponent(sessionId)}/anomalies`
+  ).catch(() => []);
 }
-

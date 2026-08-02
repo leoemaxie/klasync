@@ -53,7 +53,7 @@ textarea:focus {
   border-bottom-color: var(--color-warm-cream);
 }
 
-input[type="file"] {
+input[type='file'] {
   border: 1px dashed var(--color-cork-border);
   padding: var(--spacing-10);
   font-size: var(--text-label);

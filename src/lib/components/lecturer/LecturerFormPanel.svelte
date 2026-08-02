@@ -1,9 +1,9 @@
 <script lang="ts">
   let {
-    lecturerName = $bindable(""),
-    lecturerEmail = $bindable(""),
-    courseCode = $bindable(""),
-    courseTitle = $bindable(""),
+    lecturerName = $bindable(''),
+    lecturerEmail = $bindable(''),
+    courseCode = $bindable(''),
+    courseTitle = $bindable(''),
   }: {
     lecturerName: string;
     lecturerEmail: string;
@@ -20,11 +20,25 @@
   </label>
   <label>
     Institutional email
-    <input type="email" bind:value={lecturerEmail} placeholder="amara@university.edu" />
+    <input
+      type="email"
+      bind:value={lecturerEmail}
+      placeholder="amara@university.edu"
+    />
   </label>
   <div class="twocol">
-    <label>Course code<input bind:value={courseCode} placeholder="e.g. CSC 312" /></label>
-    <label>Course title<input bind:value={courseTitle} placeholder="e.g. Human Computer Interaction" /></label>
+    <label
+      >Course code<input
+        bind:value={courseCode}
+        placeholder="e.g. CSC 312"
+      /></label
+    >
+    <label
+      >Course title<input
+        bind:value={courseTitle}
+        placeholder="e.g. Human Computer Interaction"
+      /></label
+    >
   </div>
 </div>
 

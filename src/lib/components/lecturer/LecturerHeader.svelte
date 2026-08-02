@@ -1,5 +1,6 @@
 <script lang="ts">
-  let { currentUser, liveCode }: { currentUser?: unknown; liveCode?: string } = $props();
+  let { currentUser, liveCode }: { currentUser?: unknown; liveCode?: string } =
+    $props();
 </script>
 
 <header class="workspace-header">
@@ -9,12 +10,15 @@
       <span class="auth-status-badge">AUTHENTICATED LECTURER</span>
     {/if}
     {#if liveCode}
-      <span class="live-status-pill"><span class="pulse-dot">●</span> SESSION LIVE ({liveCode})</span>
+      <span class="live-status-pill"
+        ><span class="pulse-dot">●</span> SESSION LIVE ({liveCode})</span
+      >
     {/if}
   </div>
   <h1>Start a room your students can enter instantly.</h1>
   <p class="lede">
-    Configure your lecture roster, test audio inputs, stream captions, and verify student attendance.
+    Configure your lecture roster, test audio inputs, stream captions, and
+    verify student attendance.
   </p>
 </header>
 
@@ -58,6 +62,15 @@
     align-items: center;
     gap: 4px;
   }
-  .pulse-dot { animation: blink 1s infinite alternate; }
-  @keyframes blink { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+  .pulse-dot {
+    animation: blink 1s infinite alternate;
+  }
+  @keyframes blink {
+    0% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
 </style>

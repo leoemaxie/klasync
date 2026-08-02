@@ -1,4 +1,4 @@
-import { apiRequest } from "./http";
+import { apiRequest } from './http';
 
 export interface SessionChapter {
   chapter_index: number;
@@ -13,27 +13,43 @@ export interface SessionFlashcard {
   prompt: string;
   answer: string;
   topic_tag: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-export async function fetchSessionChapters(sessionId: string): Promise<SessionChapter[]> {
-  return await apiRequest<SessionChapter[]>(`/archive/sessions/${encodeURIComponent(sessionId)}/chapters`).catch(() => []);
+export async function fetchSessionChapters(
+  sessionId: string
+): Promise<SessionChapter[]> {
+  return await apiRequest<SessionChapter[]>(
+    `/archive/sessions/${encodeURIComponent(sessionId)}/chapters`
+  ).catch(() => []);
 }
 
-export async function fetchSessionFlashcards(sessionId: string): Promise<SessionFlashcard[]> {
-  return await apiRequest<SessionFlashcard[]>(`/archive/sessions/${encodeURIComponent(sessionId)}/flashcards`).catch(() => []);
+export async function fetchSessionFlashcards(
+  sessionId: string
+): Promise<SessionFlashcard[]> {
+  return await apiRequest<SessionFlashcard[]>(
+    `/archive/sessions/${encodeURIComponent(sessionId)}/flashcards`
+  ).catch(() => []);
 }
 
-export async function generateSessionChapters(sessionId: string): Promise<{ job_id: string; status: string }> {
-  return await apiRequest<{ job_id: string; status: string }>(`/archive/sessions/${encodeURIComponent(sessionId)}/ai/generate-chapters`, {
-    method: 'POST'
-  });
+export async function generateSessionChapters(
+  sessionId: string
+): Promise<{ job_id: string; status: string }> {
+  return await apiRequest<{ job_id: string; status: string }>(
+    `/archive/sessions/${encodeURIComponent(sessionId)}/ai/generate-chapters`,
+    {
+      method: 'POST',
+    }
+  );
 }
 
-export async function generateSessionFlashcards(sessionId: string): Promise<{ job_id: string; status: string }> {
-  return await apiRequest<{ job_id: string; status: string }>(`/archive/sessions/${encodeURIComponent(sessionId)}/ai/generate-flashcards`, {
-    method: 'POST'
-  });
+export async function generateSessionFlashcards(
+  sessionId: string
+): Promise<{ job_id: string; status: string }> {
+  return await apiRequest<{ job_id: string; status: string }>(
+    `/archive/sessions/${encodeURIComponent(sessionId)}/ai/generate-flashcards`,
+    {
+      method: 'POST',
+    }
+  );
 }
-
-

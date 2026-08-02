@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { Screen } from "$lib/types";
-  import { onMount } from "svelte";
-  import HeroSection from "./HeroSection.svelte";
-  import FeatureGridSection from "./FeatureGridSection.svelte";
-  import LandingFooter from "./LandingFooter.svelte";
+  import type { Screen } from '$lib/types';
+  import { onMount } from 'svelte';
+  import HeroSection from './HeroSection.svelte';
+  import FeatureGridSection from './FeatureGridSection.svelte';
+  import LandingFooter from './LandingFooter.svelte';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 

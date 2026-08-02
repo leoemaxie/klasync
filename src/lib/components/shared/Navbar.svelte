@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { Screen } from "$lib/types";
-  import { logout } from "$lib/api/auth";
-  import type { SessionState } from "$lib/sessionState.svelte";
-  import { Menu, X } from "@lucide/svelte";
+  import type { Screen } from '$lib/types';
+  import { logout } from '$lib/api/auth';
+  import type { SessionState } from '$lib/sessionState.svelte';
+  import { Menu, X } from '@lucide/svelte';
 
   let {
     screen = $bindable(),
-    appState
+    appState,
   }: {
     screen: Screen;
     appState?: SessionState;
@@ -20,20 +20,27 @@
   }
 
   function handleLecturerAccess() {
-    if (appState?.currentUser && (appState.currentUser.role === "lecturer" || appState.currentUser.role === "admin")) {
-      navigate("lecturer");
+    if (
+      appState?.currentUser &&
+      (appState.currentUser.role === 'lecturer' ||
+        appState.currentUser.role === 'admin')
+    ) {
+      navigate('lecturer');
     } else {
-      if (appState) appState.authNotice = "Please sign in to access the Lecturer Workspace.";
-      navigate("lecturer-login");
+      if (appState)
+        appState.authNotice =
+          'Please sign in to access the Lecturer Workspace.';
+      navigate('lecturer-login');
     }
   }
 
   function handleStudentArchive() {
     if (appState?.currentUser) {
-      navigate("archive");
+      navigate('archive');
     } else {
-      if (appState) appState.authNotice = "Please sign in to access your Student Archive.";
-      navigate("student-login");
+      if (appState)
+        appState.authNotice = 'Please sign in to access your Student Archive.';
+      navigate('student-login');
     }
   }
 
@@ -45,24 +52,46 @@
     }
     if (appState) {
       appState.currentUser = null;
-      appState.authNotice = "";
-      localStorage.removeItem("klasync-user");
+      appState.authNotice = '';
+      localStorage.removeItem('klasync-user');
     }
-    navigate("home");
+    navigate('home');
     mobileMenuOpen = false;
   }
 </script>
 
 <nav>
-  <button class="brand" onclick={() => navigate("home")} aria-label="Klasync home">
-    <svg class="brand-mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M8 26 A18 18 0 0 1 40 26" fill="none" stroke="#dc5000" stroke-width="2.5" stroke-linecap="round"/>
-      <text x="9" y="40" font-family="'Playfair Display', Georgia, serif" font-size="28" font-weight="500" fill="#ffedd7">K</text>
+  <button
+    class="brand"
+    onclick={() => navigate('home')}
+    aria-label="Klasync home"
+  >
+    <svg
+      class="brand-mark"
+      viewBox="0 0 48 48"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 26 A18 18 0 0 1 40 26"
+        fill="none"
+        stroke="#dc5000"
+        stroke-width="2.5"
+        stroke-linecap="round"
+      />
+      <text
+        x="9"
+        y="40"
+        font-family="'Playfair Display', Georgia, serif"
+        font-size="28"
+        font-weight="500"
+        fill="#ffedd7">K</text
+      >
       <g fill="#ffedd7" opacity="0.75">
-        <rect x="30" y="28" width="2" height="8" rx="1"/>
-        <rect x="33.5" y="24" width="2" height="12" rx="1"/>
-        <rect x="37" y="26" width="2" height="10" rx="1"/>
-        <rect x="40.5" y="29" width="2" height="6" rx="1"/>
+        <rect x="30" y="28" width="2" height="8" rx="1" />
+        <rect x="33.5" y="24" width="2" height="12" rx="1" />
+        <rect x="37" y="26" width="2" height="10" rx="1" />
+        <rect x="40.5" y="29" width="2" height="6" rx="1" />
       </g>
     </svg>
     <span class="brand-name">Klasync</span>
@@ -71,7 +100,7 @@
   <button
     class="mobile-toggle"
     onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-    aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+    aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
     aria-expanded={mobileMenuOpen}
   >
     {#if mobileMenuOpen}
@@ -82,20 +111,27 @@
   </button>
 
   <div class="nav-actions" class:open={mobileMenuOpen}>
-    <button class="nav-btn text" onclick={() => navigate("join")}>Join Session</button>
-    <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
-    <button class="nav-btn outline" onclick={handleLecturerAccess}>Lecturer Access</button>
+    <button class="nav-btn text" onclick={() => navigate('join')}
+      >Join Session</button
+    >
+    <button class="nav-btn text" onclick={handleStudentArchive}
+      >Student Archive</button
+    >
+    <button class="nav-btn outline" onclick={handleLecturerAccess}
+      >Lecturer Access</button
+    >
 
     {#if appState?.currentUser}
       <div class="user-pill" title={appState.currentUser.email}>
         <span class="user-role-tag">{appState.currentUser.role}</span>
-        <span class="user-name">{appState.currentUser.name || appState.currentUser.email}</span>
+        <span class="user-name"
+          >{appState.currentUser.name || appState.currentUser.email}</span
+        >
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {/if}
   </div>
 </nav>
-
 
 <style>
   nav {
@@ -215,7 +251,9 @@
       transform: translateY(-100%);
       opacity: 0;
       pointer-events: none;
-      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+      transition:
+        transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.25s ease;
       box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
     }
 
@@ -242,4 +280,3 @@
     }
   }
 </style>
-

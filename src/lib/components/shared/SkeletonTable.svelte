@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Skeleton from "./Skeleton.svelte";
+  import Skeleton from './Skeleton.svelte';
 
   let {
     rows = 4,
     cols = 3,
-    label = "Loading table data..."
+    label = 'Loading table data...',
   }: {
     rows?: number;
     cols?: number;
@@ -20,7 +20,11 @@
       <tr>
         {#each Array(cols) as _, colIndex}
           <th style="text-align: left;">
-            <Skeleton width="70%" height="14px" label={`Header ${colIndex + 1}`} />
+            <Skeleton
+              width="70%"
+              height="14px"
+              label={`Header ${colIndex + 1}`}
+            />
           </th>
         {/each}
       </tr>
@@ -31,7 +35,11 @@
           {#each Array(cols) as _, colIndex}
             <td>
               <Skeleton
-                width={colIndex === 0 ? "85%" : colIndex === cols - 1 ? "40%" : "60%"}
+                width={colIndex === 0
+                  ? '85%'
+                  : colIndex === cols - 1
+                    ? '40%'
+                    : '60%'}
                 height="18px"
                 label={`Row ${rowIndex + 1} item ${colIndex + 1}`}
               />

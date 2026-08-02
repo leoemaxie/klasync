@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { Screen } from "$lib/types";
-
+  import type { Screen } from '$lib/types';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 </script>
@@ -15,17 +14,22 @@
   <h2 class="not-found-heading">Room not found.</h2>
 
   <p class="lede">
-    The lecture code, invite link, or resource you are looking for is unavailable, expired, or does not exist.
+    The lecture code, invite link, or resource you are looking for is
+    unavailable, expired, or does not exist.
   </p>
 
   <div class="actions not-found-actions">
-    <a href="#/" class="primary" onclick={() => (screen = "home")}>
+    <a href="#/" class="primary" onclick={() => (screen = 'home')}>
       Return Home
     </a>
-    <a href="#/join" class="outline" onclick={() => (screen = "join")}>
+    <a href="#/join" class="outline" onclick={() => (screen = 'join')}>
       Join Live Session
     </a>
-    <a href="#/lecturer-login" class="primary-bark" onclick={() => (screen = "lecturer-login")}>
+    <a
+      href="#/lecturer-login"
+      class="primary-bark"
+      onclick={() => (screen = 'lecturer-login')}
+    >
       Lecturer Access
     </a>
   </div>

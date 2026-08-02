@@ -1,25 +1,42 @@
-import { http } from "./http";
-import type { ApiCaption } from "./types";
+import { http } from './http';
+import type { ApiCaption } from './types';
 
 export function getCaptions(shortCode: string): Promise<ApiCaption[]> {
-  return http<ApiCaption[]>(`/sessions/code/${encodeURIComponent(shortCode)}/captions`);
+  return http<ApiCaption[]>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/captions`
+  );
 }
 
-export function publishCaption(shortCode: string, text: string): Promise<ApiCaption> {
-  return http<ApiCaption>(`/sessions/code/${encodeURIComponent(shortCode)}/captions`, {
-    method: 'POST', body: JSON.stringify({ text })
-  });
+export function publishCaption(
+  shortCode: string,
+  text: string
+): Promise<ApiCaption> {
+  return http<ApiCaption>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/captions`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }
+  );
 }
 
-export function connectCaptionWebSocket(shortCode: string, onMessage: (caption: ApiCaption) => void): () => void {
-  const wsUrl = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1')
-    .replace(/^http/, 'ws') + `/sessions/code/${encodeURIComponent(shortCode)}/captions/ws`;
+export function connectCaptionWebSocket(
+  shortCode: string,
+  onMessage: (caption: ApiCaption) => void
+): () => void {
+  const wsUrl =
+    (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1').replace(
+      /^http/,
+      'ws'
+    ) + `/sessions/code/${encodeURIComponent(shortCode)}/captions/ws`;
   const ws = new WebSocket(wsUrl);
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data) as ApiCaption;
       onMessage(data);
-    } catch { /* handle non-JSON caption */ }
+    } catch {
+      /* handle non-JSON caption */
+    }
   };
   return () => ws.close();
 }

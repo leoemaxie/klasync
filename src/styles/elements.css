@@ -1,5 +1,7 @@
 /* ── Headings ────────────────────────────────────────────── */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
   color: var(--color-warm-cream);
   font-weight: var(--font-weight-medium);
@@ -66,7 +68,11 @@ h3 {
   border: 0;
   background: transparent;
   color: var(--color-warm-cream);
-  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
   white-space: nowrap;
 }
 

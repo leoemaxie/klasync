@@ -4,7 +4,11 @@ import type { ApiCaption, Course, Resource } from '../api';
 export interface KlasyncDBSchema extends DBSchema {
   captions: {
     key: string;
-    value: ApiCaption & { session_code: string; timestamp: number; cached_at: number };
+    value: ApiCaption & {
+      session_code: string;
+      timestamp: number;
+      cached_at: number;
+    };
     indexes: {
       'by-session': string;
       'by-timestamp': number;
@@ -43,27 +47,35 @@ let dbPromise: Promise<IDBPDatabase<KlasyncDBSchema>> | null = null;
 
 export function getDB(): Promise<IDBPDatabase<KlasyncDBSchema>> {
   if (typeof window === 'undefined') {
-    return Promise.reject(new Error('IndexedDB is only available in browser environments'));
+    return Promise.reject(
+      new Error('IndexedDB is only available in browser environments')
+    );
   }
   if (!dbPromise) {
     dbPromise = openDB<KlasyncDBSchema>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         // 1. Live Captions Store
         if (!db.objectStoreNames.contains('captions')) {
-          const captionStore = db.createObjectStore('captions', { keyPath: 'id' });
+          const captionStore = db.createObjectStore('captions', {
+            keyPath: 'id',
+          });
           captionStore.createIndex('by-session', 'session_code');
           captionStore.createIndex('by-timestamp', 'timestamp');
         }
 
         // 2. Courses Store
         if (!db.objectStoreNames.contains('courses')) {
-          const courseStore = db.createObjectStore('courses', { keyPath: 'id' });
+          const courseStore = db.createObjectStore('courses', {
+            keyPath: 'id',
+          });
           courseStore.createIndex('by-code', 'code');
         }
 
         // 3. Student Offline Archive Store
         if (!db.objectStoreNames.contains('archive')) {
-          const archiveStore = db.createObjectStore('archive', { keyPath: 'id' });
+          const archiveStore = db.createObjectStore('archive', {
+            keyPath: 'id',
+          });
           archiveStore.createIndex('by-session', 'session_code');
           archiveStore.createIndex('by-cached-at', 'cached_at');
         }
@@ -109,13 +121,18 @@ export async function pruneOldCache(): Promise<number> {
 // Helpers: Captions Local Cache
 // ---------------------------------------------------------------------------
 
-export async function cacheCaptions(sessionCode: string, captions: ApiCaption[]): Promise<void> {
+export async function cacheCaptions(
+  sessionCode: string,
+  captions: ApiCaption[]
+): Promise<void> {
   try {
     const db = await getDB();
     const tx = db.transaction('captions', 'readwrite');
     const now = Date.now();
     for (const caption of captions) {
-      const ts = caption.created_at ? new Date(caption.created_at).getTime() : now;
+      const ts = caption.created_at
+        ? new Date(caption.created_at).getTime()
+        : now;
       await tx.store.put({
         ...caption,
         session_code: sessionCode.toUpperCase(),
@@ -127,14 +144,20 @@ export async function cacheCaptions(sessionCode: string, captions: ApiCaption[])
   } catch {}
 }
 
-export async function getCachedCaptions(sessionCode: string): Promise<ApiCaption[]> {
+export async function getCachedCaptions(
+  sessionCode: string
+): Promise<ApiCaption[]> {
   try {
     const db = await getDB();
     const index = db.transaction('captions').store.index('by-session');
     const items = await index.getAll(sessionCode.toUpperCase());
     return items.sort((a, b) => {
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : a.timestamp;
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : b.timestamp;
+      const aTime = a.created_at
+        ? new Date(a.created_at).getTime()
+        : a.timestamp;
+      const bTime = b.created_at
+        ? new Date(b.created_at).getTime()
+        : b.timestamp;
       return aTime - bTime;
     });
   } catch {
@@ -172,7 +195,10 @@ export async function getCachedCourses(): Promise<Course[]> {
 // Helpers: Archive & Resources Local Cache
 // ---------------------------------------------------------------------------
 
-export async function cacheResource(resource: Resource, sessionCode?: string): Promise<void> {
+export async function cacheResource(
+  resource: Resource,
+  sessionCode?: string
+): Promise<void> {
   try {
     const db = await getDB();
     await db.put('archive', {
@@ -183,7 +209,9 @@ export async function cacheResource(resource: Resource, sessionCode?: string): P
   } catch {}
 }
 
-export async function getCachedResource(resourceId: string): Promise<Resource | undefined> {
+export async function getCachedResource(
+  resourceId: string
+): Promise<Resource | undefined> {
   try {
     const db = await getDB();
     return await db.get('archive', resourceId);

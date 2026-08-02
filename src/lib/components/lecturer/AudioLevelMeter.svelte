@@ -1,5 +1,6 @@
 <script lang="ts">
-  let { level = 0, isActive = false }: { level: number; isActive: boolean } = $props();
+  let { level = 0, isActive = false }: { level: number; isActive: boolean } =
+    $props();
 </script>
 
 <div class="audio-level-meter" aria-hidden="true">
@@ -12,7 +13,9 @@
       ></div>
     {/each}
   </div>
-  <span class="meter-readout">{isActive ? `${Math.round(level)} dB` : "MUTED"}</span>
+  <span class="meter-readout"
+    >{isActive ? `${Math.round(level)} dB` : 'MUTED'}</span
+  >
 </div>
 
 <style>

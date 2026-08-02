@@ -1,13 +1,21 @@
 <script lang="ts">
-  import { BookOpen, Mic, Radio, Captions, Users, BarChart3 } from "@lucide/svelte";
+  import {
+    BookOpen,
+    Mic,
+    Radio,
+    Captions,
+    Users,
+    BarChart3,
+  } from '@lucide/svelte';
 
-  export type TabKey = "course" | "device" | "session" | "live" | "attendance" | "analytics";
+  export type TabKey =
+    'course' | 'device' | 'session' | 'live' | 'attendance' | 'analytics';
 
   let {
-    activeTab = $bindable("course"),
+    activeTab = $bindable('course'),
     isLive = false,
     hasSession = false,
-    participantCount = 0
+    participantCount = 0,
   }: {
     activeTab: TabKey;
     isLive?: boolean;
@@ -15,13 +23,34 @@
     participantCount?: number;
   } = $props();
 
-  const tabs: { key: TabKey; label: string; icon: typeof BookOpen; badge?: string }[] = $derived([
-    { key: "course", label: "Course", icon: BookOpen },
-    { key: "device", label: "Device", icon: Mic },
-    { key: "session", label: "Room", icon: Radio, badge: isLive ? "LIVE" : undefined },
-    ...(isLive ? [{ key: "live" as TabKey, label: "Captions", icon: Captions }] : []),
-    ...(hasSession ? [{ key: "attendance" as TabKey, label: "Attendance", icon: Users, badge: String(participantCount) }] : []),
-    { key: "analytics", label: "Analytics", icon: BarChart3 }
+  const tabs: {
+    key: TabKey;
+    label: string;
+    icon: typeof BookOpen;
+    badge?: string;
+  }[] = $derived([
+    { key: 'course', label: 'Course', icon: BookOpen },
+    { key: 'device', label: 'Device', icon: Mic },
+    {
+      key: 'session',
+      label: 'Room',
+      icon: Radio,
+      badge: isLive ? 'LIVE' : undefined,
+    },
+    ...(isLive
+      ? [{ key: 'live' as TabKey, label: 'Captions', icon: Captions }]
+      : []),
+    ...(hasSession
+      ? [
+          {
+            key: 'attendance' as TabKey,
+            label: 'Attendance',
+            icon: Users,
+            badge: String(participantCount),
+          },
+        ]
+      : []),
+    { key: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]);
 </script>
 
@@ -37,7 +66,9 @@
         <svelte:component this={tab.icon} size={15} class="tab-icon" />
         <span class="tab-label">{tab.label}</span>
         {#if tab.badge}
-          <span class="tab-badge" class:live-badge={tab.badge === "LIVE"}>{tab.badge}</span>
+          <span class="tab-badge" class:live-badge={tab.badge === 'LIVE'}
+            >{tab.badge}</span
+          >
         {/if}
       </button>
     {/each}
@@ -67,7 +98,9 @@
     -webkit-overflow-scrolling: touch;
     padding: 2px;
   }
-  .tabs-scroll-track::-webkit-scrollbar { display: none; }
+  .tabs-scroll-track::-webkit-scrollbar {
+    display: none;
+  }
   .tab-pill {
     display: inline-flex;
     align-items: center;
@@ -88,13 +121,19 @@
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     -webkit-tap-highlight-color: transparent;
   }
-  .tab-pill:hover { color: var(--color-warm-cream); }
-  .tab-pill:active { transform: scale(0.96); }
+  .tab-pill:hover {
+    color: var(--color-warm-cream);
+  }
+  .tab-pill:active {
+    transform: scale(0.96);
+  }
   .tab-pill.active {
     background: var(--color-bark-brown);
     border-color: var(--color-warm-cream-dim);
     color: var(--color-warm-cream);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   .tab-badge {
     font-size: 9px;
@@ -109,7 +148,14 @@
     color: #fff;
     animation: blink 1.2s infinite alternate;
   }
-  @keyframes blink { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+  @keyframes blink {
+    0% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
 
   @media (max-width: 640px) {
     .mobile-native-tabs {
@@ -131,6 +177,8 @@
       flex-direction: column;
       gap: 3px;
     }
-    .tab-label { font-size: 9px; }
+    .tab-label {
+      font-size: 9px;
+    }
   }
 </style>

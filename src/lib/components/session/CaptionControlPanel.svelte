@@ -1,9 +1,9 @@
 <script lang="ts">
-  import ButtonSpinner from "$lib/components/shared/ButtonSpinner.svelte";
+  import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
 
   let {
-    captionDraft = $bindable(""),
-    apiNotice = "",
+    captionDraft = $bindable(''),
+    apiNotice = '',
     onPublishCaption,
   }: {
     captionDraft: string;
@@ -24,7 +24,7 @@
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       event.preventDefault();
       handlePublish();
     }

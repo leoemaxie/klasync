@@ -71,6 +71,7 @@
   .page-head,
   .join-wrap,
   .live-top {
-    padding: calc(var(--nav-height) + 48px) var(--card-padding) var(--spacing-45);
+    padding: calc(var(--nav-height) + 48px) var(--card-padding)
+      var(--spacing-45);
   }
 }

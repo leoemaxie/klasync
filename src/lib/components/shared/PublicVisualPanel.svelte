@@ -1,18 +1,21 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
 
-  let { title = "ACCESSIBLE LEARNING INFRASTRUCTURE", subtitle = "Live Audio · Real-time Captions · Searchable Archive" }: { title?: string; subtitle?: string } = $props();
+  let {
+    title = 'ACCESSIBLE LEARNING INFRASTRUCTURE',
+    subtitle = 'Live Audio · Real-time Captions · Searchable Archive',
+  }: { title?: string; subtitle?: string } = $props();
 
   const phrases = [
-    "...transforming physical lectures into structured, accessible, and searchable study materials in real-time.",
-    "...capturing wireless audio, generating live transcripts, and verifying roster attendance automatically.",
-    "...ensuring students with mobility or sensory impairments never miss a classroom lecture.",
-    "...retaining searchable transcripts, AI revision notes, and flashcard decks forever."
+    '...transforming physical lectures into structured, accessible, and searchable study materials in real-time.',
+    '...capturing wireless audio, generating live transcripts, and verifying roster attendance automatically.',
+    '...ensuring students with mobility or sensory impairments never miss a classroom lecture.',
+    '...retaining searchable transcripts, AI revision notes, and flashcard decks forever.',
   ];
 
   let phraseIndex = $state(0);
   let charIndex = $state(0);
-  let currentText = $state("");
+  let currentText = $state('');
   let latency = $state(118);
   let accuracy = $state(99.4);
 
@@ -26,7 +29,7 @@
         setTimeout(() => {
           phraseIndex = (phraseIndex + 1) % phrases.length;
           charIndex = 0;
-          currentText = "";
+          currentText = '';
         }, 2200);
       }
     }, 32);
@@ -45,10 +48,39 @@
 
 <div class="public-visual-panel" aria-hidden="true">
   <div class="visual-arc-bg">
-    <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="200" cy="200" r="180" fill="none" stroke="#dc5000" stroke-width="1.2" opacity="0.25" stroke-dasharray="6 6"/>
-      <circle cx="200" cy="200" r="130" fill="none" stroke="#ffedd7" stroke-width="0.8" opacity="0.15"/>
-      <circle cx="200" cy="200" r="80" stroke="#dc5000" stroke-width="1.5" opacity="0.3" fill="none"/>
+    <svg
+      viewBox="0 0 400 400"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle
+        cx="200"
+        cy="200"
+        r="180"
+        fill="none"
+        stroke="#dc5000"
+        stroke-width="1.2"
+        opacity="0.25"
+        stroke-dasharray="6 6"
+      />
+      <circle
+        cx="200"
+        cy="200"
+        r="130"
+        fill="none"
+        stroke="#ffedd7"
+        stroke-width="0.8"
+        opacity="0.15"
+      />
+      <circle
+        cx="200"
+        cy="200"
+        r="80"
+        stroke="#dc5000"
+        stroke-width="1.5"
+        opacity="0.3"
+        fill="none"
+      />
     </svg>
   </div>
 
@@ -69,7 +101,9 @@
     <div class="card-header">
       <div class="header-tag-group">
         <span class="mini-equalizer">
-          <span class="m-bar"></span><span class="m-bar"></span><span class="m-bar"></span>
+          <span class="m-bar"></span><span class="m-bar"></span><span
+            class="m-bar"
+          ></span>
         </span>
         <span class="tag">KLASYNC ACCESSIBILITY ENGINE</span>
       </div>

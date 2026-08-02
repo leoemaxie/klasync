@@ -1,64 +1,64 @@
 :root {
   /* ── Brand Palette ──────────────────────────────────────── */
-  --color-warm-cream:     #ffedd7;
+  --color-warm-cream: #ffedd7;
   --color-warm-cream-dim: rgba(255, 237, 215, 0.55);
-  --color-walnut-shadow:  #100904;
-  --color-walnut-mid:     #1c1008;
-  --color-bark-brown:     #382416;
-  --color-bark-glow:      #4a3020;
-  --color-cork-border:    #40372e;
-  --color-driftwood:      #6c5f51;
-  --color-ember-accent:   #dc5000;
-  --color-ember-glow:     rgba(220, 80, 0, 0.15);
-  --color-pure-black:     #000000;
+  --color-walnut-shadow: #100904;
+  --color-walnut-mid: #1c1008;
+  --color-bark-brown: #382416;
+  --color-bark-glow: #4a3020;
+  --color-cork-border: #40372e;
+  --color-driftwood: #6c5f51;
+  --color-ember-accent: #dc5000;
+  --color-ember-glow: rgba(220, 80, 0, 0.15);
+  --color-pure-black: #000000;
 
   /* ── Typography ─────────────────────────────────────────── */
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-body:    "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
 
   /* ── Type Scale ─────────────────────────────────────────── */
-  --text-label:        11px;
-  --text-subheading:   18px;
+  --text-label: 11px;
+  --text-subheading: 18px;
   --leading-subheading: 1;
-  --text-heading-sm:   24px;
+  --text-heading-sm: 24px;
   --leading-heading-sm: 1.09;
-  --text-body:         18px;
-  --leading-body:       1.6;
-  --text-heading:      41px;
-  --leading-heading:    1.0;
-  --text-display:      clamp(52px, 8vw, 96px);
-  --leading-display:   0.95;
+  --text-body: 18px;
+  --leading-body: 1.6;
+  --text-heading: 41px;
+  --leading-heading: 1;
+  --text-display: clamp(52px, 8vw, 96px);
+  --leading-display: 0.95;
 
   /* ── Weights ─────────────────────────────────────────────── */
   --font-weight-regular: 400;
-  --font-weight-medium:  500;
+  --font-weight-medium: 500;
 
   /* ── Spacing ─────────────────────────────────────────────── */
-  --spacing-4:   4px;
-  --spacing-6:   6px;
-  --spacing-8:   8px;
-  --spacing-9:   9px;
-  --spacing-10:  10px;
-  --spacing-12:  12px;
-  --spacing-14:  14px;
-  --spacing-18:  18px;
-  --spacing-24:  24px;
-  --spacing-31:  31px;
-  --spacing-41:  41px;
-  --spacing-45:  45px;
-  --spacing-68:  68px;
+  --spacing-4: 4px;
+  --spacing-6: 6px;
+  --spacing-8: 8px;
+  --spacing-9: 9px;
+  --spacing-10: 10px;
+  --spacing-12: 12px;
+  --spacing-14: 14px;
+  --spacing-18: 18px;
+  --spacing-24: 24px;
+  --spacing-31: 31px;
+  --spacing-41: 41px;
+  --spacing-45: 45px;
+  --spacing-68: 68px;
   --spacing-204: 204px;
 
   /* ── Layout ──────────────────────────────────────────────── */
   --card-padding: clamp(24px, 4vw, 68px);
-  --element-gap:  18px;
-  --nav-height:   64px;
+  --element-gap: 18px;
+  --nav-height: 64px;
 
   /* ── Border Radius ───────────────────────────────────────── */
-  --radius-cards:           12px;
-  --radius-inputs:          0px;
-  --radius-full-round:      9999px;
-  --radius-buttons-pill:    36px;
+  --radius-cards: 12px;
+  --radius-inputs: 0px;
+  --radius-full-round: 9999px;
+  --radius-buttons-pill: 36px;
   --radius-buttons-outlined: 22.5px;
 }
 
@@ -105,7 +105,7 @@ main {
 
 /* ── Noise texture overlay ───────────────────────────────── */
 main::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;

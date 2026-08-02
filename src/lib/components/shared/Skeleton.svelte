@@ -1,10 +1,10 @@
 <script lang="ts">
   let {
-    width = "100%",
-    height = "20px",
-    borderRadius = "6px",
-    label = "Loading content...",
-    className = ""
+    width = '100%',
+    height = '20px',
+    borderRadius = '6px',
+    label = 'Loading content...',
+    className = '',
   }: {
     width?: string;
     height?: string;

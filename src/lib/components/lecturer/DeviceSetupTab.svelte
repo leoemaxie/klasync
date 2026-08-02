@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MicStatusPanel from "./MicStatusPanel.svelte";
+  import MicStatusPanel from './MicStatusPanel.svelte';
 </script>
 
 <div class="device-setup-tab">
@@ -8,7 +8,9 @@
     <p class="eyebrow">AUDIO &amp; HARDWARE CONFIGURATION</p>
     <h3>Klasync Audio Pipeline</h3>
     <p class="hint">
-      Connect your Klasync ESP32-S3 hardware microphone or enable browser WebAudio for live caption streaming. Audio levels are processed locally before streaming.
+      Connect your Klasync ESP32-S3 hardware microphone or enable browser
+      WebAudio for live caption streaming. Audio levels are processed locally
+      before streaming.
     </p>
     <div class="pipeline-features">
       <div class="feature-chip">✓ Automatic Gain Control</div>

@@ -3,16 +3,17 @@ import {
   endSession as apiEndSession,
   getParticipants,
   publishCaption as apiPublishCaption,
-} from "./api";
-import { persist } from "./rosterUtils";
-import { refreshCaptions } from "./studentActions";
-import type { SessionState } from "./sessionState.svelte";
-import type { Participant } from "./types";
+} from './api';
+import { persist } from './rosterUtils';
+import { refreshCaptions } from './studentActions';
+import type { SessionState } from './sessionState.svelte';
+import type { Participant } from './types';
 
 export async function startSession(state: SessionState) {
-  state.apiNotice = "";
+  state.apiNotice = '';
   if (!state.lecturerName.trim() || !state.lecturerEmail.trim()) {
-    state.apiNotice = "Enter your name and email before starting a live session.";
+    state.apiNotice =
+      'Enter your name and email before starting a live session.';
     return;
   }
   state.isSaving = true;
@@ -22,7 +23,10 @@ export async function startSession(state: SessionState) {
       lecturerEmail: state.lecturerEmail,
       courseCode: state.courseCode,
       courseTitle: state.courseTitle,
-      roster: state.roster.map((s) => ({ matric_number: s.matric, full_name: s.name })),
+      roster: state.roster.map((s) => ({
+        matric_number: s.matric,
+        full_name: s.name,
+      })),
     });
     state.session = {
       title: invite.session.title,
@@ -34,7 +38,8 @@ export async function startSession(state: SessionState) {
     state.sessionCode = invite.session.short_code;
     persist(state);
   } catch (error) {
-    state.apiNotice = error instanceof Error ? error.message : "Unable to start session.";
+    state.apiNotice =
+      error instanceof Error ? error.message : 'Unable to start session.';
   } finally {
     state.isSaving = false;
   }
@@ -44,48 +49,53 @@ export async function publishCaption(state: SessionState) {
   if (!state.session || !state.captionDraft.trim()) return;
   try {
     await apiPublishCaption(state.session.code, state.captionDraft.trim());
-    state.captionDraft = "";
+    state.captionDraft = '';
     await refreshCaptions(state);
   } catch (error) {
-    state.apiNotice = error instanceof Error ? error.message : "Unable to publish caption.";
+    state.apiNotice =
+      error instanceof Error ? error.message : 'Unable to publish caption.';
   }
 }
 
 export async function copyInvite(state: SessionState) {
   if (!state.session) return;
-  await navigator.clipboard?.writeText(`${location.origin}/#/?join=${state.session.code}`);
+  await navigator.clipboard?.writeText(
+    `${location.origin}/#/?join=${state.session.code}`
+  );
   state.copied = true;
   setTimeout(() => (state.copied = false), 1800);
 }
 
 export async function refreshAttendance(state: SessionState) {
   if (!state.session) return;
-  state.apiNotice = "";
+  state.apiNotice = '';
   try {
     const remote = await getParticipants(state.session.code);
     const participants: Participant[] = remote.map((p) => ({
       id: p.id,
       matric: p.matric_number,
       name: p.display_name,
-      verified: p.verification_status === "verified",
+      verified: p.verification_status === 'verified',
       joinedAt: new Date().toISOString(),
       heartbeats: p.heartbeat_count,
     }));
     state.session = { ...state.session, participants };
     persist(state);
   } catch (error) {
-    state.apiNotice = error instanceof Error ? error.message : "Unable to refresh attendance.";
+    state.apiNotice =
+      error instanceof Error ? error.message : 'Unable to refresh attendance.';
   }
 }
 
 export async function endSession(state: SessionState) {
   if (!state.session) return;
-  state.apiNotice = "";
+  state.apiNotice = '';
   try {
     await apiEndSession(state.session.code);
     state.session = { ...state.session, live: false };
     persist(state);
   } catch (error) {
-    state.apiNotice = error instanceof Error ? error.message : "Unable to end session.";
+    state.apiNotice =
+      error instanceof Error ? error.message : 'Unable to end session.';
   }
 }

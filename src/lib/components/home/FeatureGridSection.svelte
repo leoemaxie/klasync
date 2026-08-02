@@ -1,20 +1,20 @@
 <script lang="ts">
   const features = [
     {
-      num: "01",
-      title: "Accessibility First",
-      desc: "Live captions, digestible audio streams, and keyboard-navigable UI eliminate physical, sensory, and cognitive barriers in lecture halls."
+      num: '01',
+      title: 'Accessibility First',
+      desc: 'Live captions, digestible audio streams, and keyboard-navigable UI eliminate physical, sensory, and cognitive barriers in lecture halls.',
     },
     {
-      num: "02",
-      title: "Searchable Archive",
-      desc: "Lectures transform into structured summaries, real-time transcripts, and downloadable study materials that outlast the classroom session."
+      num: '02',
+      title: 'Searchable Archive',
+      desc: 'Lectures transform into structured summaries, real-time transcripts, and downloadable study materials that outlast the classroom session.',
     },
     {
-      num: "03",
-      title: "Fair Attendance",
-      desc: "Authenticated guest participation verifies presence against rosters seamlessly, ensuring fair compliance without forcing initial account creation."
-    }
+      num: '03',
+      title: 'Fair Attendance',
+      desc: 'Authenticated guest participation verifies presence against rosters seamlessly, ensuring fair compliance without forcing initial account creation.',
+    },
   ];
 </script>
 

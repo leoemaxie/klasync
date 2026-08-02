@@ -1,14 +1,14 @@
 <script lang="ts">
-  import LecturerFormPanel from "./LecturerFormPanel.svelte";
-  import RosterUploadPanel from "./RosterUploadPanel.svelte";
+  import LecturerFormPanel from './LecturerFormPanel.svelte';
+  import RosterUploadPanel from './RosterUploadPanel.svelte';
 
   let {
-    lecturerName = $bindable(""),
-    lecturerEmail = $bindable(""),
-    courseCode = $bindable(""),
-    courseTitle = $bindable(""),
-    rosterText = $bindable(""),
-    rosterNotice = "",
+    lecturerName = $bindable(''),
+    lecturerEmail = $bindable(''),
+    courseCode = $bindable(''),
+    courseTitle = $bindable(''),
+    rosterText = $bindable(''),
+    rosterNotice = '',
     onImportFile,
     onParseRoster,
   }: {

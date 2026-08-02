@@ -15,7 +15,11 @@
   align-items: center;
   padding: calc(var(--nav-height) + 80px) var(--card-padding) 80px;
   overflow: hidden;
-  background: radial-gradient(ellipse 80% 60% at 20% 60%, #1c0e05 0%, var(--color-walnut-shadow) 70%);
+  background: radial-gradient(
+    ellipse 80% 60% at 20% 60%,
+    #1c0e05 0%,
+    var(--color-walnut-shadow) 70%
+  );
 }
 
 .hero-content {
@@ -25,8 +29,9 @@
   max-width: 600px;
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 2;
   position: relative;
 }
@@ -71,8 +76,9 @@
   min-height: 300px;
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 1s 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 1s 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 1s 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero.visible .hero-visual,
@@ -109,15 +115,25 @@
 .bar {
   width: 6px;
   border-radius: 3px;
-  background: linear-gradient(to top, var(--color-ember-accent), rgba(220, 80, 0, 0.3));
+  background: linear-gradient(
+    to top,
+    var(--color-ember-accent),
+    rgba(220, 80, 0, 0.3)
+  );
   height: calc(var(--h) * 100%);
   animation: pulse 1.8s ease-in-out infinite alternate;
   animation-delay: var(--delay);
 }
 
 @keyframes pulse {
-  0%   { transform: scaleY(0.35); opacity: 0.5; }
-  100% { transform: scaleY(1);    opacity: 1;   }
+  0% {
+    transform: scaleY(0.35);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 .visual-label {
@@ -163,7 +179,7 @@
 }
 
 .feature-grid article::before {
-  content: "";
+  content: '';
   display: block;
   width: 24px;
   height: 1.5px;
@@ -267,7 +283,11 @@
   padding: var(--spacing-45);
   border: 1px dashed var(--color-cork-border);
   border-radius: var(--radius-cards);
-  background: radial-gradient(circle at center, rgba(56, 36, 22, 0.35) 0%, rgba(16, 9, 4, 0.8) 100%);
+  background: radial-gradient(
+    circle at center,
+    rgba(56, 36, 22, 0.35) 0%,
+    rgba(16, 9, 4, 0.8) 100%
+  );
   min-height: 480px;
   overflow: hidden;
   gap: var(--spacing-24);
@@ -291,8 +311,12 @@
 }
 
 @keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .visual-k-bg {
@@ -343,8 +367,12 @@
 }
 
 @keyframes blink {
-  0% { opacity: 0.3; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .caption-preview-card {
@@ -362,13 +390,19 @@
   gap: var(--spacing-14);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(220, 80, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    0 0 20px rgba(220, 80, 0, 0.08);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .caption-preview-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 28px rgba(220, 80, 0, 0.15);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(220, 80, 0, 0.15);
 }
 
 .header-tag-group {
@@ -392,12 +426,20 @@
   animation: miniPulse 0.8s ease-in-out infinite alternate;
 }
 
-.mini-equalizer .m-bar:nth-child(2) { animation-delay: 0.2s; }
-.mini-equalizer .m-bar:nth-child(3) { animation-delay: 0.4s; }
+.mini-equalizer .m-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.mini-equalizer .m-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes miniPulse {
-  0% { height: 30%; }
-  100% { height: 100%; }
+  0% {
+    height: 30%;
+  }
+  100% {
+    height: 100%;
+  }
 }
 
 .card-header {
@@ -440,8 +482,12 @@
 }
 
 @keyframes cursorBlink {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .preview-metrics {
@@ -632,4 +678,3 @@
     transform: rotate(360deg);
   }
 }
-

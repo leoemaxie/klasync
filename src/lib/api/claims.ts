@@ -1,5 +1,5 @@
-import { http } from "./http";
-import type { SuccessResponse } from "./types";
+import { http } from './http';
+import type { SuccessResponse } from './types';
 
 export type ClaimRequestResponse = {
   verification_id: string;
@@ -11,29 +11,43 @@ export type ClaimVerifyResponse = {
   status: string;
 };
 
-export function requestClaimVerification(participantId: string): Promise<ClaimRequestResponse> {
+export function requestClaimVerification(
+  participantId: string
+): Promise<ClaimRequestResponse> {
   return http<ClaimRequestResponse>('/students/claims/request-verification', {
     method: 'POST',
-    body: JSON.stringify({ participant_id: participantId })
+    body: JSON.stringify({ participant_id: participantId }),
   });
 }
 
-export function verifyClaimCode(verificationId: string, code: string): Promise<ClaimVerifyResponse> {
+export function verifyClaimCode(
+  verificationId: string,
+  code: string
+): Promise<ClaimVerifyResponse> {
   return http<ClaimVerifyResponse>('/students/claims/verify', {
     method: 'POST',
-    body: JSON.stringify({ verification_id: verificationId, code })
+    body: JSON.stringify({ verification_id: verificationId, code }),
   });
 }
 
-export function claimAttendance(shortCode: string, matricNumber: string): Promise<SuccessResponse> {
-  return http<SuccessResponse>(`/sessions/code/${encodeURIComponent(shortCode)}/claims`, {
-    method: 'POST',
-    body: JSON.stringify({ matric_number: matricNumber })
-  });
+export function claimAttendance(
+  shortCode: string,
+  matricNumber: string
+): Promise<SuccessResponse> {
+  return http<SuccessResponse>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/claims`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ matric_number: matricNumber }),
+    }
+  );
 }
 
 export function verifyClaim(claimId: string): Promise<ClaimVerifyResponse> {
-  return http<ClaimVerifyResponse>(`/claims/${encodeURIComponent(claimId)}/verify`, {
-    method: 'POST'
-  });
+  return http<ClaimVerifyResponse>(
+    `/claims/${encodeURIComponent(claimId)}/verify`,
+    {
+      method: 'POST',
+    }
+  );
 }
