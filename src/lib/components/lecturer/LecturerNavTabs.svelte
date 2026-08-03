@@ -71,12 +71,25 @@
         aria-pressed={activeTab === tab.key}
         onclick={() => selectTab(tab.key)}
       >
-        <Icon size={15} class="tab-icon" aria-hidden="true" />
+        <div class="tab-icon-wrapper">
+          <Icon size={16} class="tab-icon" aria-hidden="true" />
+          {#if tab.badge}
+            <span
+              class="tab-badge mobile-badge"
+              class:live-badge={tab.badge === 'LIVE'}
+            >
+              {tab.badge}
+            </span>
+          {/if}
+        </div>
         <span class="tab-label">{tab.label}</span>
         {#if tab.badge}
-          <span class="tab-badge" class:live-badge={tab.badge === 'LIVE'}
-            >{tab.badge}</span
+          <span
+            class="tab-badge desktop-badge"
+            class:live-badge={tab.badge === 'LIVE'}
           >
+            {tab.badge}
+          </span>
         {/if}
       </button>
     {/each}
@@ -91,6 +104,7 @@
     margin-bottom: var(--spacing-24);
     background: rgba(16, 9, 4, 0.85);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--color-cork-border);
     border-radius: 9999px;
     padding: 4px;
@@ -108,6 +122,12 @@
   }
   .tabs-scroll-track::-webkit-scrollbar {
     display: none;
+  }
+  .tab-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
   .tab-pill {
     display: inline-flex;
@@ -155,11 +175,22 @@
     background: rgba(255, 255, 255, 0.1);
     color: var(--color-warm-cream);
   }
+  .tab-pill.active .desktop-badge {
+    background: rgba(16, 9, 4, 0.15);
+    color: var(--color-walnut-shadow);
+  }
   .tab-badge.live-badge {
     background: var(--color-ember-accent);
     color: #fff;
     animation: blink 1.2s infinite alternate;
   }
+  .mobile-badge {
+    display: none;
+  }
+  .desktop-badge {
+    display: inline-flex;
+  }
+
   @keyframes blink {
     0% {
       opacity: 0.5;
@@ -172,25 +203,83 @@
   @media (max-width: 640px) {
     .mobile-native-tabs {
       position: fixed;
-      bottom: 12px;
+      bottom: calc(10px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
       top: auto;
-      left: 12px;
-      right: 12px;
+      left: 10px;
+      right: 10px;
       margin-bottom: 0;
-      border-radius: 20px;
-      padding: 6px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      border-radius: 18px;
+      padding: 5px;
+      background: rgba(18, 11, 5, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--color-cork-border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 237, 215, 0.08);
+      z-index: 90;
+    }
+    .tabs-scroll-track {
+      justify-content: space-around;
+      gap: 2px;
+      padding: 0;
+      width: 100%;
     }
     .tab-pill {
-      flex: 1;
+      flex: 1 1 0%;
+      min-width: 0;
       justify-content: center;
-      padding: 10px 10px;
-      font-size: 10px;
+      padding: 7px 2px 5px;
+      font-size: 9px;
       flex-direction: column;
       gap: 3px;
+      border-radius: 12px;
+    }
+    .tab-pill.active {
+      background: var(--color-bark-brown);
+      border-color: var(--color-cork-border);
+      color: var(--color-warm-cream);
+      box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 237, 215, 0.12);
+    }
+    :global(.tab-pill.active .tab-icon) {
+      color: var(--color-warm-cream);
     }
     .tab-label {
       font-size: 9px;
+      letter-spacing: 0.02em;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .desktop-badge {
+      display: none;
+    }
+    .mobile-badge {
+      display: inline-flex;
+      position: absolute;
+      top: -5px;
+      right: -9px;
+      font-size: 7.5px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 1px 4px;
+      min-width: 13px;
+      height: 13px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      background: var(--color-bark-brown);
+      color: var(--color-warm-cream);
+      border: 1px solid var(--color-cork-border);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+    .mobile-badge.live-badge {
+      background: var(--color-ember-accent);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 0 6px rgba(220, 80, 0, 0.6);
     }
   }
 </style>
