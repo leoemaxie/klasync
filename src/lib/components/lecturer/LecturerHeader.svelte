@@ -11,7 +11,7 @@
     {/if}
     {#if liveCode}
       <span class="live-status-pill"
-        ><span class="pulse-dot">●</span> SESSION LIVE ({liveCode})</span
+        ><span class="pulse-dot" aria-hidden="true">●</span> SESSION LIVE ({liveCode})</span
       >
     {/if}
   </div>
@@ -37,10 +37,10 @@
     flex-wrap: wrap;
   }
   .auth-status-badge {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #4ab772;
+    color: var(--color-warm-cream);
     background: rgba(74, 183, 114, 0.12);
     border: 1px solid #4ab772;
     padding: 3px 8px;
@@ -48,7 +48,7 @@
     font-weight: 700;
   }
   .live-status-pill {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--color-ember-accent);

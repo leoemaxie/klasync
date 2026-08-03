@@ -37,14 +37,19 @@
       onclick={() => (isFlipped = !isFlipped)}
       role="button"
       tabindex="0"
+      aria-label="Flashcard {currentIndex + 1} of {cards.length}. Click or press space to flip."
+      aria-pressed={isFlipped}
       onkeydown={(e) => e.key === ' ' && (isFlipped = !isFlipped)}
     >
-      <div class="card-face front">
+      <span class="sr-only" aria-live="polite">
+        {isFlipped ? 'Answer: ' + cards[currentIndex]?.answer : 'Question: ' + cards[currentIndex]?.prompt}
+      </span>
+      <div class="card-face front" aria-hidden={isFlipped}>
         <span class="card-label">QUESTION / PROMPT</span>
         <h3>{cards[currentIndex].prompt}</h3>
         <p class="hint">Click or press space to reveal answer</p>
       </div>
-      <div class="card-face back">
+      <div class="card-face back" aria-hidden={!isFlipped}>
         <span class="card-label">EXPLANATION / ANSWER</span>
         <p class="answer-text">{cards[currentIndex].answer}</p>
       </div>
@@ -79,7 +84,7 @@
     align-items: center;
   }
   .card-counter {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     color: var(--color-driftwood);
   }
@@ -100,7 +105,7 @@
     border-color: var(--color-warm-cream);
   }
   .card-label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     color: var(--color-ember-accent);
     margin-bottom: 8px;

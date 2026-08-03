@@ -48,6 +48,10 @@
   );
 </script>
 
+<svelte:head>
+  <title>Student Archive — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">STUDENT ARCHIVE / CLAIMED LECTURES</p>
@@ -57,9 +61,11 @@
     </p>
 
     <div class="join-card panel">
-      <label>
+      <label for="archive-search">
         Search archive
         <input
+          id="archive-search"
+          type="search"
           bind:value={searchQuery}
           placeholder="Search by course code or session title..."
         />
@@ -82,25 +88,29 @@
                 Claimed on {claim.date} · Verified Student Access
               </p>
 
-              <div class="tab-selector">
+              <div class="tab-selector" role="group" aria-label="Archive view options">
                 <button
                   type="button"
                   class={activeTab === 'transcript' ? 'primary' : 'outline'}
+                  aria-pressed={activeTab === 'transcript'}
                   onclick={() => (activeTab = 'transcript')}>Transcript</button
                 >
                 <button
                   type="button"
                   class={activeTab === 'chapters' ? 'primary' : 'outline'}
+                  aria-pressed={activeTab === 'chapters'}
                   onclick={() => (activeTab = 'chapters')}>AI Chapters</button
                 >
                 <button
                   type="button"
                   class={activeTab === 'flashcards' ? 'primary' : 'outline'}
+                  aria-pressed={activeTab === 'flashcards'}
                   onclick={() => (activeTab = 'flashcards')}>Flashcards</button
                 >
                 <button
                   type="button"
                   class={activeTab === 'audio' ? 'primary' : 'outline'}
+                  aria-pressed={activeTab === 'audio'}
                   onclick={() => (activeTab = 'audio')}>Audio Stream</button
                 >
               </div>

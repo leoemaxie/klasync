@@ -19,14 +19,16 @@
   <div class="transcript-header">
     <p class="eyebrow">LECTURE TRANSCRIPT READER</p>
     {#if transcript}
-      <div class="font-controls">
+      <div class="font-controls" role="group" aria-label="Font size controls">
         <button
           class="outline"
+          aria-label="Decrease font size"
           onclick={() => (fontSize = Math.max(14, fontSize - 2))}>A-</button
         >
         <span class="font-size-label">{fontSize}px</span>
         <button
           class="outline"
+          aria-label="Increase font size"
           onclick={() => (fontSize = Math.min(32, fontSize + 2))}>A+</button
         >
       </div>
@@ -34,13 +36,16 @@
   </div>
 
   {#if transcript}
+    <label for="transcript-filter" class="sr-only">Filter transcript keywords</label>
     <input
+      id="transcript-filter"
+      type="search"
       bind:value={filterTerm}
       placeholder="Filter transcript keywords..."
       class="transcript-search"
     />
 
-    <div class="transcript-content" style="font-size: {fontSize}px;">
+    <div class="transcript-content" style="font-size: {fontSize}px;" role="log" aria-label="Lecture transcript content">
       {#if lines.length > 0}
         {#each lines as line}
           <p class="transcript-line">{line}</p>

@@ -1,0 +1,20 @@
+{
+  "name": "Klasync",
+  "short_name": "Klasync",
+  "description": "Assistive lecture platform — live captions, fair attendance, lasting archive",
+  "theme_color": "#100904",
+  "background_color": "#100904",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}

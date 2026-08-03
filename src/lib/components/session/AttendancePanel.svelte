@@ -127,7 +127,7 @@
   }
 </script>
 
-<section class="attendance-container">
+<section class="attendance-container" aria-label="Live session attendance">
   <!-- Clean Header with Summary Stats -->
   <div class="panel-header">
     <div class="header-titles">
@@ -135,16 +135,16 @@
       <h2 class="panel-title">Session Roster</h2>
       <div class="summary-inline-pills">
         <span class="inline-pill total">
-          <Users size={12} /> {participants.length} Registered
+          <Users size={12} aria-hidden="true" /> {participants.length} Registered
         </span>
         <span class="inline-pill verified">
-          <ShieldCheck size={12} /> {verifiedCount} Verified ({matchRate}%)
+          <ShieldCheck size={12} aria-hidden="true" /> {verifiedCount} Verified ({matchRate}%)
         </span>
         <span class="inline-pill provisional">
-          <UserX size={12} /> {provisionalCount} Provisional
+          <UserX size={12} aria-hidden="true" /> {provisionalCount} Provisional
         </span>
         <span class="inline-pill pulses">
-          <Activity size={12} /> {totalHeartbeats} Pulses
+          <Activity size={12} aria-hidden="true" /> {totalHeartbeats} Pulses
         </span>
       </div>
     </div>
@@ -160,7 +160,7 @@
           {#if isExporting}
             <ButtonSpinner label="Exporting..." /> Exporting...
           {:else}
-            <Download size={13} /> Export CSV
+            <Download size={13} aria-hidden="true" /> Export CSV
           {/if}
         </button>
       {/if}
@@ -170,7 +170,7 @@
         onclick={handleRefresh}
         disabled={isRefreshing || isLoading}
       >
-        <RefreshCw size={13} class={isRefreshing ? 'spin-icon' : ''} />
+        <RefreshCw size={13} aria-hidden="true" class={isRefreshing ? 'spin-icon' : ''} />
         {#if isRefreshing}Refreshing...{:else}Refresh{/if}
       </button>
     </div>
@@ -179,10 +179,11 @@
   <!-- Single Streamlined Controls Bar -->
   <div class="controls-bar">
     <div class="search-wrap">
-      <Search size={14} class="search-icon" />
+      <Search size={14} aria-hidden="true" class="search-icon" />
       <input
         type="text"
         placeholder="Filter by student name or matric..."
+        aria-label="Filter by student name or matric"
         bind:value={searchQuery}
         class="search-input"
       />
@@ -193,16 +194,17 @@
           onclick={() => (searchQuery = '')}
           aria-label="Clear filter text"
         >
-          <X size={12} />
+          <X size={12} aria-hidden="true" />
         </button>
       {/if}
     </div>
 
-    <div class="filter-group">
+    <div class="filter-group" role="group" aria-label="Status filter">
       <button
         type="button"
         class="pill-tab"
         class:active={statusFilter === 'all'}
+        aria-pressed={statusFilter === 'all'}
         onclick={() => (statusFilter = 'all')}
       >
         All ({participants.length})
@@ -211,6 +213,7 @@
         type="button"
         class="pill-tab"
         class:active={statusFilter === 'verified'}
+        aria-pressed={statusFilter === 'verified'}
         onclick={() => (statusFilter = 'verified')}
       >
         Verified ({verifiedCount})
@@ -219,6 +222,7 @@
         type="button"
         class="pill-tab"
         class:active={statusFilter === 'provisional'}
+        aria-pressed={statusFilter === 'provisional'}
         onclick={() => (statusFilter = 'provisional')}
       >
         Provisional ({provisionalCount})
@@ -248,11 +252,11 @@
       <table class="attendance-table">
         <thead>
           <tr>
-            <th>STUDENT / PARTICIPANT</th>
-            <th>MATRIC NUMBER</th>
-            <th>ROSTER STATUS</th>
-            <th>PULSE</th>
-            <th>JOINED</th>
+            <th scope="col">STUDENT / PARTICIPANT</th>
+            <th scope="col">MATRIC NUMBER</th>
+            <th scope="col">ROSTER STATUS</th>
+            <th scope="col">PULSE</th>
+            <th scope="col">JOINED</th>
           </tr>
         </thead>
         <tbody>
@@ -270,22 +274,22 @@
               <td>
                 {#if participant.verified}
                   <span class="badge verified">
-                    <ShieldCheck size={12} /> Verified Match
+                    <ShieldCheck size={12} aria-hidden="true" /> Verified Match
                   </span>
                 {:else}
                   <span class="badge provisional">
-                    <UserX size={12} /> Provisional
+                    <UserX size={12} aria-hidden="true" /> Provisional
                   </span>
                 {/if}
               </td>
               <td>
                 <span class="pulse-tag">
-                  <span class="dot" class:active={participant.heartbeats > 0}></span>
+                  <span class="dot" class:active={participant.heartbeats > 0} aria-hidden="true"></span>
                   {participant.heartbeats} pulse{participant.heartbeats === 1 ? '' : 's'}
                 </span>
               </td>
               <td class="time-cell">
-                <Clock size={11} /> {formatJoinedTime(participant.joinedAt)}
+                <Clock size={11} aria-hidden="true" /> {formatJoinedTime(participant.joinedAt)}
               </td>
             </tr>
           {/each}

@@ -21,6 +21,7 @@
   import { SCREEN_TO_PATH, screenFromPath } from '$lib/router';
 
   const appState = createSessionState();
+  let isSpotlightOpen = $state(false);
 
   onMount(() => {
     const savedSession = localStorage.getItem('klasync-session');

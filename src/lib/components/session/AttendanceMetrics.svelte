@@ -18,7 +18,7 @@
 
 <div class="metrics-grid">
   <div class="metric-card">
-    <div class="metric-icon-box"><Users size={16} /></div>
+    <div class="metric-icon-box"><Users size={16} aria-hidden="true" /></div>
     <div class="metric-info">
       <span class="m-val">{total}</span>
       <span class="m-lbl">Total Joined</span>
@@ -26,7 +26,7 @@
   </div>
 
   <div class="metric-card verified-card">
-    <div class="metric-icon-box v-icon"><ShieldCheck size={16} /></div>
+    <div class="metric-icon-box v-icon"><ShieldCheck size={16} aria-hidden="true" /></div>
     <div class="metric-info">
       <div class="val-row">
         <span class="m-val v-val">{verified}</span>
@@ -37,7 +37,7 @@
   </div>
 
   <div class="metric-card provisional-card">
-    <div class="metric-icon-box p-icon"><UserX size={16} /></div>
+    <div class="metric-icon-box p-icon"><UserX size={16} aria-hidden="true" /></div>
     <div class="metric-info">
       <span class="m-val p-val">{provisional}</span>
       <span class="m-lbl">Provisional Guests</span>
@@ -45,7 +45,7 @@
   </div>
 
   <div class="metric-card pulses-card">
-    <div class="metric-icon-box pulse-icon"><Activity size={16} /></div>
+    <div class="metric-icon-box pulse-icon"><Activity size={16} aria-hidden="true" /></div>
     <div class="metric-info">
       <span class="m-val pulse-val">{pulses}</span>
       <span class="m-lbl">Active Check-in Pulses</span>
@@ -63,10 +63,10 @@
   .metric-info { display: flex; flex-direction: column; flex: 1; }
   .val-row { display: flex; align-items: center; justify-content: space-between; }
   .m-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--color-warm-cream); line-height: 1.1; }
-  .v-val { color: #4ab772; }
-  .p-val { color: #e5a93c; }
+  .v-val { color: var(--color-warm-cream); }
+  .p-val { color: var(--color-warm-cream); }
   .pulse-val { color: #38bdf8; }
-  .rate-badge { font-size: 9px; font-weight: 700; color: #4ab772; background: rgba(74, 183, 114, 0.15); padding: 1px 6px; border-radius: 4px; }
-  .m-lbl { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-warm-cream-dim); margin-top: 2px; }
+  .rate-badge { font-size: 11px; font-weight: 700; color: var(--color-warm-cream); background: rgba(74, 183, 114, 0.15); padding: 1px 6px; border-radius: 4px; }
+  .m-lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-warm-cream-dim); margin-top: 2px; }
   @media (max-width: 900px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
 </style>

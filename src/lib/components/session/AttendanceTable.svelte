@@ -30,11 +30,11 @@
   <table class="attendance-table">
     <thead>
       <tr>
-        <th>STUDENT / PARTICIPANT</th>
-        <th>MATRIC NUMBER</th>
-        <th>ROSTER STATUS</th>
-        <th>CHECK-INS</th>
-        <th>JOINED</th>
+        <th scope="col">STUDENT / PARTICIPANT</th>
+        <th scope="col">MATRIC NUMBER</th>
+        <th scope="col">ROSTER STATUS</th>
+        <th scope="col">CHECK-INS</th>
+        <th scope="col">JOINED</th>
       </tr>
     </thead>
     <tbody>
@@ -47,18 +47,18 @@
           <td><code class="matric-tag">{participant.matric}</code></td>
           <td>
             {#if participant.verified}
-              <span class="badge verified"><ShieldCheck size={12} /> VERIFIED MATCH</span>
+              <span class="badge verified"><ShieldCheck size={12} aria-hidden="true" /> VERIFIED MATCH</span>
             {:else}
-              <span class="badge provisional"><UserX size={12} /> PROVISIONAL GUEST</span>
+              <span class="badge provisional"><UserX size={12} aria-hidden="true" /> PROVISIONAL GUEST</span>
             {/if}
           </td>
           <td>
             <span class="pulse-tag">
-              <span class="dot" class:active={participant.heartbeats > 0}></span>
+              <span class="dot" class:active={participant.heartbeats > 0} aria-hidden="true"></span>
               {participant.heartbeats} pulse{participant.heartbeats === 1 ? "" : "s"}
             </span>
           </td>
-          <td class="time-cell"><Clock size={11} /> {formatJoinedTime(participant.joinedAt)}</td>
+          <td class="time-cell"><Clock size={11} aria-hidden="true" /> {formatJoinedTime(participant.joinedAt)}</td>
         </tr>
       {/each}
     </tbody>
@@ -69,7 +69,7 @@
 <style>
   .table-card { background: rgba(16, 9, 4, 0.6); border: 1px solid var(--color-cork-border); border-radius: 8px; overflow-x: auto; margin-bottom: 6px; }
   .attendance-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-  .attendance-table th { background: rgba(24, 14, 7, 0.9); color: var(--color-warm-cream-dim); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--color-cork-border); font-weight: 700; }
+  .attendance-table th { background: rgba(24, 14, 7, 0.9); color: var(--color-warm-cream-dim); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--color-cork-border); font-weight: 700; }
   .table-row { border-bottom: 1px solid rgba(64, 55, 46, 0.4); transition: background 0.15s ease; }
   .table-row:hover { background: rgba(56, 36, 22, 0.35); }
   .attendance-table td { padding: 12px 16px; vertical-align: middle; color: var(--color-warm-cream); }
@@ -78,9 +78,9 @@
   .avatar.verified-avatar { background: rgba(74, 183, 114, 0.15); border-color: #4ab772; color: #4ab772; }
   .student-name { font-size: 13px; font-weight: 600; color: var(--color-warm-cream); }
   .matric-tag { font-family: monospace; font-size: 12px; background: rgba(10, 5, 2, 0.8); border: 1px solid var(--color-cork-border); padding: 4px 8px; border-radius: 4px; color: var(--color-warm-cream); }
-  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.05em; }
-  .badge.verified { background: rgba(74, 183, 114, 0.15); color: #4ab772; border: 1px solid #4ab772; }
-  .badge.provisional { background: rgba(229, 169, 60, 0.15); color: #e5a93c; border: 1px solid #e5a93c; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.05em; }
+  .badge.verified { background: rgba(74, 183, 114, 0.15); color: var(--color-warm-cream); border: 1px solid #4ab772; }
+  .badge.provisional { background: rgba(229, 169, 60, 0.15); color: var(--color-warm-cream); border: 1px solid #e5a93c; }
   .pulse-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-warm-cream); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-driftwood); }
   .dot.active { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }

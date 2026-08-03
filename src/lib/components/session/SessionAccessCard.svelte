@@ -41,10 +41,10 @@
     <div class="card-section">
       <p class="section-label">DIRECT INVITE LINK</p>
       <div class="url-input-wrap">
-        <LinkIcon size={14} class="link-icon" />
-        <input readonly value={inviteUrl} class="url-input" />
+        <LinkIcon size={14} aria-hidden="true" class="link-icon" />
+        <input readonly value={inviteUrl} aria-label="Direct invite URL" class="url-input" />
         <button type="button" class="outline copy-link-btn" onclick={onCopyInvite}>
-          {#if copied}<Check size={13} class="success-icon" /> Copied{:else}<Copy size={13} /> Copy Link{/if}
+          {#if copied}<Check size={13} aria-hidden="true" class="success-icon" /> Copied{:else}<Copy size={13} aria-hidden="true" /> Copy Link{/if}
         </button>
       </div>
     </div>
@@ -63,7 +63,7 @@
 <style>
   .access-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--spacing-16); }
   .access-card { background: rgba(16, 9, 4, 0.6); border: 1px solid var(--color-cork-border); border-radius: 8px; padding: var(--spacing-18); display: flex; flex-direction: column; gap: var(--spacing-14); }
-  .section-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-driftwood); font-weight: 600; margin: 0 0 6px 0; }
+  .section-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-driftwood); font-weight: 600; margin: 0 0 6px 0; }
   .code-box { display: flex; align-items: center; gap: var(--spacing-12); flex-wrap: wrap; }
   .code-display { font-family: monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.18em; color: var(--color-warm-cream); background: rgba(10, 5, 2, 0.8); border: 1px solid var(--color-cork-border); padding: 8px 18px; border-radius: 6px; }
   .copy-code-btn { background: var(--color-bark-brown); border: 1px solid var(--color-cork-border); color: var(--color-warm-cream); padding: 8px 14px; border-radius: 6px; font-size: 11px; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }

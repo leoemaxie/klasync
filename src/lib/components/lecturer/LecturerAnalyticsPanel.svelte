@@ -129,7 +129,7 @@
           {#each anomalies as a}
             <div class="anomaly-row">
               <span class="anom-badge warning"
-                >⚠️ {a.anomaly_type.toUpperCase()}</span
+                ><span role="img" aria-label="Warning">⚠️</span> {a.anomaly_type.toUpperCase()}</span
               >
               <p><strong>{a.matric_number}</strong>: {a.description}</p>
               <small
@@ -182,11 +182,11 @@
     font-size: 12px;
   }
   .anom-badge {
-    font-size: 9px;
+    font-size: 11px;
     padding: 2px 6px;
     border-radius: 4px;
     font-weight: 700;
     background: rgba(220, 80, 0, 0.2);
-    color: var(--color-ember-accent);
+    color: var(--color-warm-cream);
   }
 </style>

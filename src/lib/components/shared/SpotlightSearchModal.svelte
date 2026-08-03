@@ -115,6 +115,7 @@
       class="spotlight-dialog panel"
       role="dialog"
       aria-modal="true"
+      tabindex="-1"
       aria-label="Spotlight Quick Search"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.key === 'Escape' && (isOpen = false)}
@@ -154,13 +155,14 @@
       <div class="spotlight-results">
         <p class="section-label">QUICK NAVIGATION &amp; ACTIONS</p>
         {#each filteredActions as item}
+          {@const Icon = item.icon}
           <button
             type="button"
             class="spotlight-item"
             onclick={() => executeAction(item)}
           >
             <div class="item-icon-wrap">
-              <svelte:component this={item.icon} size={16} />
+              <Icon size={16} />
             </div>
             <div class="item-text">
               <span class="item-title">{item.title}</span>
@@ -210,7 +212,7 @@
     padding: 16px 20px;
     border-bottom: 1px solid var(--color-cork-border);
   }
-  .search-icon {
+  :global(.search-icon) {
     color: var(--color-driftwood);
   }
   .spotlight-input {
@@ -304,7 +306,7 @@
     font-size: 12px;
     color: var(--color-driftwood);
   }
-  .item-arrow {
+  :global(.item-arrow) {
     color: var(--color-driftwood);
     opacity: 0.6;
   }

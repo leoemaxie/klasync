@@ -132,14 +132,14 @@ h3 {
 }
 
 .danger {
-  color: var(--color-ember-accent);
+  color: var(--color-error, #f0a030);
   border: 1px solid var(--color-cork-border);
   border-radius: var(--radius-buttons-outlined);
   padding: 9px var(--spacing-24);
 }
 
 .danger:hover {
-  border-color: var(--color-ember-accent);
+  border-color: var(--color-error, #f0a030);
 }
 
 .full {
@@ -155,7 +155,7 @@ h3 {
 }
 
 .error {
-  color: var(--color-ember-accent);
+  color: var(--color-error, #f0a030);
   font-size: var(--text-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;

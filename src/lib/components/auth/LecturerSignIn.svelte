@@ -50,6 +50,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Lecturer Sign In — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">LECTURER ACCESS / SIGN IN</p>
@@ -61,39 +65,45 @@
     <form class="join-card panel" onsubmit={handleLogin}>
       {#if appState?.authNotice}
         <p
+          role="alert"
           class="error"
-          style="border: 1px solid var(--color-ember-accent); padding: 8px 12px; border-radius: 4px; background: rgba(220, 80, 0, 0.1);"
+          style="border: 1px solid var(--color-error, #f0a030); padding: 8px 12px; border-radius: 4px; background: rgba(240, 160, 48, 0.08);"
         >
           <Lock
             size={14}
+            aria-hidden="true"
             style="vertical-align: middle; display: inline-block;"
           />
           {appState.authNotice}
         </p>
       {/if}
 
-      <label>
+      <label for="signin-email">
         Institutional Email
         <input
+          id="signin-email"
           type="email"
           bind:value={email}
           placeholder="dr.okeke@university.edu"
           required
+          autocomplete="email"
         />
       </label>
 
-      <label>
+      <label for="signin-password">
         Password
         <input
+          id="signin-password"
           type="password"
           bind:value={password}
           placeholder="••••••••••••"
           required
+          autocomplete="current-password"
         />
       </label>
 
       {#if errorMsg}
-        <p class="error">{errorMsg}</p>
+        <p class="error" role="alert">{errorMsg}</p>
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting}>

@@ -21,17 +21,24 @@
   <audio src={chunkUrl} preload="none"></audio>
 
   <div class="player-controls-row">
-    <button class="primary play-btn" onclick={() => (isPlaying = !isPlaying)}>
+    <button
+      class="primary play-btn"
+      onclick={() => (isPlaying = !isPlaying)}
+      aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+    >
       {isPlaying ? 'PAUSE' : 'PLAY AUDIO'}
     </button>
 
     <div class="progress-wrap">
+      <label for="playback-scrubber" class="sr-only">Playback position</label>
       <input
+        id="playback-scrubber"
         type="range"
         min="0"
         max="100"
         bind:value={progress}
         class="audio-scrubber"
+        aria-valuetext="{progress}% played"
       />
       <div class="time-stamps">
         <span>04:12</span>
@@ -39,17 +46,20 @@
       </div>
     </div>
 
-    <div class="speed-selector">
+    <div class="speed-selector" role="group" aria-label="Playback speed">
       <button
         class={playbackRate === '1.0x' ? 'outline active' : 'text'}
+        aria-pressed={playbackRate === '1.0x'}
         onclick={() => (playbackRate = '1.0x')}>1.0x</button
       >
       <button
         class={playbackRate === '1.25x' ? 'outline active' : 'text'}
+        aria-pressed={playbackRate === '1.25x'}
         onclick={() => (playbackRate = '1.25x')}>1.25x</button
       >
       <button
         class={playbackRate === '1.5x' ? 'outline active' : 'text'}
+        aria-pressed={playbackRate === '1.5x'}
         onclick={() => (playbackRate = '1.5x')}>1.5x</button
       >
     </div>
@@ -68,7 +78,7 @@
     align-items: center;
   }
   .player-format {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.1em;
     color: var(--color-driftwood);
   }

@@ -22,6 +22,10 @@
   let activeTab = $state<TabKey>('course');
 </script>
 
+<svelte:head>
+  <title>Lecturer Workspace — Klasync</title>
+</svelte:head>
+
 <div class="lecturer-workspace-wrap">
   <LecturerHeader
     currentUser={appState.currentUser}
@@ -35,7 +39,7 @@
     participantCount={appState.session?.participants.length || 0}
   />
 
-  <main class="workspace-body">
+  <div class="workspace-body">
     {#if activeTab === 'course'}
       <CourseSetupTab
         bind:lecturerName={appState.lecturerName}
@@ -82,7 +86,7 @@
         roster={appState.roster}
       />
     {/if}
-  </main>
+  </div>
 </div>
 
 <style>

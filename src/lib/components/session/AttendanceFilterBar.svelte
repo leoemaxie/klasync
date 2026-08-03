@@ -20,23 +20,23 @@
 
 <div class="controls-bar">
   <div class="search-wrap">
-    <Search size={14} class="search-icon" />
-    <input type="text" placeholder="Search student name or matric number..." bind:value={searchQuery} class="search-input" />
+    <Search size={14} aria-hidden="true" class="search-icon" />
+    <input type="text" placeholder="Search student name or matric number..." aria-label="Search student name or matric number" bind:value={searchQuery} class="search-input" />
     {#if searchQuery}
       <button type="button" class="clear-search-btn" onclick={() => (searchQuery = "")} aria-label="Clear search">
-        <X size={12} />
+        <X size={12} aria-hidden="true" />
       </button>
     {/if}
   </div>
 
-  <div class="filter-group">
-    <button type="button" class="pill-tab" class:active={statusFilter === "all"} onclick={() => (statusFilter = "all")}>
+  <div class="filter-group" role="group" aria-label="Status filter">
+    <button type="button" class="pill-tab" class:active={statusFilter === "all"} aria-pressed={statusFilter === "all"} onclick={() => (statusFilter = "all")}>
       All <span class="count-chip">{total}</span>
     </button>
-    <button type="button" class="pill-tab" class:active={statusFilter === "verified"} onclick={() => (statusFilter = "verified")}>
+    <button type="button" class="pill-tab" class:active={statusFilter === "verified"} aria-pressed={statusFilter === "verified"} onclick={() => (statusFilter = "verified")}>
       Verified <span class="count-chip">{verified}</span>
     </button>
-    <button type="button" class="pill-tab" class:active={statusFilter === "provisional"} onclick={() => (statusFilter = "provisional")}>
+    <button type="button" class="pill-tab" class:active={statusFilter === "provisional"} aria-pressed={statusFilter === "provisional"} onclick={() => (statusFilter = "provisional")}>
       Provisional <span class="count-chip">{provisional}</span>
     </button>
   </div>
@@ -60,8 +60,8 @@
   .filter-group { display: flex; align-items: center; gap: 6px; }
   .pill-tab { background: rgba(10, 5, 2, 0.4); border: 1px solid var(--color-cork-border); border-radius: 20px; color: var(--color-warm-cream-dim); font-size: 11px; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
   .pill-tab.active { background: var(--color-bark-brown); color: var(--color-warm-cream); border-color: var(--color-warm-cream-dim); font-weight: 600; }
-  .count-chip { font-size: 9px; font-weight: 700; background: rgba(255, 255, 255, 0.1); padding: 1px 6px; border-radius: 9999px; }
+  .count-chip { font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.1); padding: 1px 6px; border-radius: 9999px; }
   .sort-group { display: flex; align-items: center; gap: 6px; }
-  .sort-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-warm-cream-dim); }
+  .sort-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--color-warm-cream-dim); }
   .sort-select { background: rgba(10, 5, 2, 0.8); border: 1px solid var(--color-cork-border); border-radius: 6px; color: var(--color-warm-cream); font-size: 11px; padding: 6px 10px; cursor: pointer; }
 </style>

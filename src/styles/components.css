@@ -348,7 +348,7 @@
 }
 
 .visual-status-pill {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-warm-cream-dim);
@@ -446,7 +446,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--color-driftwood);
 }
@@ -454,7 +454,7 @@
 .live-tag {
   color: var(--color-ember-accent);
   font-weight: 700;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   border: 1px solid var(--color-ember-accent);
   background: rgba(220, 80, 0, 0.12);
@@ -493,7 +493,7 @@
 .preview-metrics {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--color-driftwood);
   border-top: 1px dashed var(--color-cork-border);
@@ -677,4 +677,10 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── Badge contrast fixes ────────────────────────────────── */
+/* Green & amber badge text on tinted backgrounds fail WCAG — switch to warm cream text */
+.heartbeat-count {
+  color: var(--color-warm-cream) !important;
 }

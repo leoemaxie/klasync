@@ -64,7 +64,9 @@
   }
 </script>
 
-<nav class="navbar app-drag-region" onkeydown={handleNavKeydown}>
+<svelte:window onkeydown={handleNavKeydown} />
+
+<nav class="navbar app-drag-region">
   <button class="brand app-no-drag" onclick={() => navigate('home')} aria-label="Klasync home">
     <svg class="brand-mark" aria-hidden="true" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
       <path d="M8 26 A18 18 0 0 1 40 26" fill="none" stroke="#dc5000" stroke-width="2.5" stroke-linecap="round"/>

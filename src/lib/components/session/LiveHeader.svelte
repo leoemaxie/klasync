@@ -14,11 +14,11 @@
   } = $props();
 </script>
 
-<section class="live-header-bar">
+<section class="live-header-bar" aria-label="Live session header">
   <div class="header-main">
     <div class="live-status-row">
       <span class="live-pill" class:connected={wsConnected}>
-        <span class="pulse-dot">●</span>
+        <span class="pulse-dot" aria-hidden="true">●</span>
         {wsConnected ? "LIVE STREAM ACTIVE" : "CAPTIONS CONNECTED"}
       </span>
       {#if joinedParticipant?.verified}

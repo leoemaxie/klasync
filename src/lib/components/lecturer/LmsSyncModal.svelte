@@ -16,6 +16,37 @@
   let isSyncing = $state(false);
   let syncNotice = $state('');
 
+  let modalEl = $state<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    if (isOpen && modalEl) {
+      const firstInput = modalEl.querySelector<HTMLElement>('input, button');
+      firstInput?.focus();
+    }
+  });
+
+  function handleModalKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      isOpen = false;
+      return;
+    }
+    if (e.key === 'Tab' && modalEl) {
+      const focusables = modalEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
   async function handleSync(e: SubmitEvent) {
     e.preventDefault();
     if (!externalCourseId.trim()) return;
@@ -38,16 +69,19 @@
 
 {#if isOpen}
   <div
+    bind:this={modalEl}
     class="modal-backdrop"
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
     aria-label="LMS Roster Sync Modal"
+    onkeydown={handleModalKeydown}
   >
     <div class="panel modal-card">
       <div class="modal-header">
         <p class="eyebrow">LMS ROSTER AUTOMATION</p>
         <button type="button" class="text" onclick={() => (isOpen = false)}>
-          <X size={14} style="vertical-align: middle; display: inline-block;" /> Close
+          <X size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Close
         </button>
       </div>
 
@@ -58,10 +92,11 @@
       </p>
 
       <form onsubmit={handleSync} class="lms-form">
-        <div class="lms-provider-selector">
+        <div class="lms-provider-selector" role="group" aria-label="LMS Provider Selection">
           <button
             type="button"
             class={lmsProvider === 'canvas' ? 'primary' : 'outline'}
+            aria-pressed={lmsProvider === 'canvas'}
             onclick={() => (lmsProvider = 'canvas')}
           >
             Canvas LMS
@@ -69,24 +104,27 @@
           <button
             type="button"
             class={lmsProvider === 'moodle' ? 'primary' : 'outline'}
+            aria-pressed={lmsProvider === 'moodle'}
             onclick={() => (lmsProvider = 'moodle')}
           >
             Moodle LMS
           </button>
         </div>
 
-        <label>
+        <label for="lms-course-id">
           Course Code / LMS External ID
           <input
+            id="lms-course-id"
             bind:value={externalCourseId}
             placeholder="e.g. 10492"
             required
           />
         </label>
 
-        <label>
+        <label for="lms-api-token">
           LMS Integration Token <span>(Optional)</span>
           <input
+            id="lms-api-token"
             type="password"
             bind:value={apiToken}
             placeholder="canvas_token_••••••••"
@@ -94,7 +132,7 @@
         </label>
 
         {#if syncNotice}
-          <p class="success">{syncNotice}</p>
+          <p class="success" role="status">{syncNotice}</p>
         {/if}
 
         <button

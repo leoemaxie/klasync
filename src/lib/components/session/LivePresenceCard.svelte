@@ -37,16 +37,17 @@
         {#if isCheckingIn}
           <ButtonSpinner label="Recording check-in..." /> Checking in...
         {:else}
-          <CheckCircle size={16} style="vertical-align: middle; display: inline-block;" /> I'm still here
+          <CheckCircle size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> I'm still here
         {/if}
       </button>
 
       <button
         type="button"
         class={isHandRaised ? "danger full" : "outline full"}
+        aria-pressed={isHandRaised}
         onclick={onToggleHandRaise}
       >
-        <Hand size={16} style="vertical-align: middle; display: inline-block;" />
+        <Hand size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block;" />
         {isHandRaised ? "Hand Raised (Click to Lower)" : "Raise Hand"}
       </button>
     </div>
@@ -57,10 +58,10 @@
   .presence-card { display: flex; flex-direction: column; gap: var(--spacing-14); }
   .eyebrow-bright { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: var(--color-warm-cream-dim); text-transform: uppercase; }
   .key-idea-block h3 { font-size: 16px; margin: 6px 0; color: var(--color-warm-cream); font-family: var(--font-display); }
-  .idea-hint { font-size: 12px; line-height: 1.5; color: rgba(255, 237, 215, 0.85); letter-spacing: 0.02em; text-transform: uppercase; font-size: 10px; }
+  .idea-hint { font-size: 10px; line-height: 1.5; color: rgba(255, 237, 215, 0.85); letter-spacing: 0.02em; text-transform: uppercase; }
   .divider { border: 0; border-top: 1px dashed var(--color-cork-border); margin: 4px 0; }
   .presence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .heartbeat-count { font-size: 11px; font-weight: 700; color: #4ab772; background: rgba(74, 183, 114, 0.15); border: 1px solid #4ab772; padding: 2px 10px; border-radius: 9999px; }
+  .heartbeat-count { font-size: 11px; font-weight: 700; color: var(--color-warm-cream); background: rgba(74, 183, 114, 0.15); border: 1px solid #4ab772; padding: 2px 10px; border-radius: 9999px; }
   .student-action-row { display: flex; flex-direction: column; gap: 10px; }
   @media (max-width: 640px) { .student-action-row { gap: 12px; } }
 </style>

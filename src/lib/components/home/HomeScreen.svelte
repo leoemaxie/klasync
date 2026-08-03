@@ -15,6 +15,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>Klasync — Every lecture, within reach</title>
+</svelte:head>
+
 <div class="home-page">
   <HeroSection bind:screen {visible} />
   <FeatureGridSection />

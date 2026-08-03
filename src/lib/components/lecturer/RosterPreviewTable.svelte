@@ -16,13 +16,14 @@
 {#if parsedStudents.length > 0}
   <div class="roster-preview-summary">
     <div class="summary-badge valid">
-      <Check size={12} style="vertical-align: middle; display: inline-block;" />
+      <Check size={12} aria-hidden="true" style="vertical-align: middle; display: inline-block;" />
       {validCount} Valid Student{validCount === 1 ? '' : 's'}
     </div>
     {#if invalidCount > 0}
       <div class="summary-badge invalid">
         <TriangleAlert
           size={12}
+          aria-hidden="true"
           style="vertical-align: middle; display: inline-block;"
         />
         {invalidCount} Header/Ignored Row{invalidCount === 1 ? '' : 's'}
@@ -32,7 +33,7 @@
   <div class="mapping-table-wrap">
     <table class="mapping-table">
       <thead>
-        <tr><th>Matric No.</th><th>Student Name</th><th>Status</th></tr>
+        <tr><th scope="col">Matric No.</th><th scope="col">Student Name</th><th scope="col">Status</th></tr>
       </thead>
       <tbody>
         {#each parsedStudents.slice(0, 5) as student}
@@ -59,7 +60,7 @@
     margin-block: 4px;
   }
   .summary-badge {
-    font-size: 10px;
+    font-size: 11px;
     padding: 3px 8px;
     border-radius: 4px;
     text-transform: uppercase;
@@ -67,7 +68,7 @@
   }
   .summary-badge.valid {
     background: rgba(74, 183, 114, 0.15);
-    color: #4ab772;
+    color: var(--color-warm-cream);
     border: 1px solid #4ab772;
   }
   .summary-badge.invalid {
@@ -90,7 +91,7 @@
   }
   .mapping-table th {
     color: var(--color-driftwood);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 6px 8px;
@@ -102,9 +103,9 @@
     color: var(--color-warm-cream);
   }
   .status-tag.match {
-    font-size: 9px;
+    font-size: 11px;
     text-transform: uppercase;
-    color: #4ab772;
+    color: var(--color-warm-cream);
   }
   .table-more-hint {
     font-size: 10px;

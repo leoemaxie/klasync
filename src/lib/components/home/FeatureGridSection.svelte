@@ -18,11 +18,12 @@
   ];
 </script>
 
-<section class="feature-grid">
+<section class="feature-grid" aria-labelledby="features-heading">
+  <h2 id="features-heading" class="sr-only">Platform features</h2>
   {#each features as feat}
     <article>
       <span class="feat-num">{feat.num}</span>
-      <h2>{feat.title}</h2>
+      <h3>{feat.title}</h3>
       <p>{feat.desc}</p>
     </article>
   {/each}

@@ -63,6 +63,7 @@
 <nav class="mobile-native-tabs" aria-label="Lecturer control room navigation">
   <div class="tabs-scroll-track">
     {#each tabs as tab}
+      {@const Icon = tab.icon}
       <button
         type="button"
         class="tab-pill"
@@ -70,7 +71,6 @@
         aria-pressed={activeTab === tab.key}
         onclick={() => selectTab(tab.key)}
       >
-        {@const Icon = tab.icon}
         <Icon size={15} class="tab-icon" aria-hidden="true" />
         <span class="tab-label">{tab.label}</span>
         {#if tab.badge}
@@ -144,7 +144,7 @@
       0 2px 12px rgba(255, 237, 215, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
-  .tab-pill.active .tab-icon {
+  :global(.tab-pill.active .tab-icon) {
     color: var(--color-walnut-shadow);
   }
   .tab-badge {

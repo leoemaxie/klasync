@@ -59,6 +59,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Create Student Account — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">STUDENT ACCOUNT / PERSISTENT ARCHIVE</p>
@@ -69,48 +73,54 @@
     </p>
 
     <form class="join-card panel" onsubmit={handleRegister}>
-      <label>
+      <label for="st-matric">
         Matric / Student ID
-        <input bind:value={matric} placeholder="MAT/2023/001" required />
+        <input id="st-matric" bind:value={matric} placeholder="MAT/2023/001" required />
       </label>
 
-      <label>
+      <label for="st-name">
         Full Name
-        <input bind:value={name} placeholder="Ada Okafor" required />
+        <input id="st-name" bind:value={name} placeholder="Ada Okafor" required autocomplete="name" />
       </label>
 
-      <label>
+      <label for="st-email">
         Email Address
         <input
+          id="st-email"
           type="email"
           bind:value={email}
           placeholder="ada@student.edu"
           required
+          autocomplete="email"
         />
       </label>
 
-      <label>
+      <label for="st-password">
         Password <span>(minimum 8 characters)</span>
         <input
+          id="st-password"
           type="password"
           bind:value={password}
           placeholder="••••••••••••"
           required
+          autocomplete="new-password"
         />
       </label>
 
-      <label>
+      <label for="st-confirm-password">
         Confirm Password
         <input
+          id="st-confirm-password"
           type="password"
           bind:value={confirmPassword}
           placeholder="••••••••••••"
           required
+          autocomplete="new-password"
         />
       </label>
 
       {#if errorMsg}
-        <p class="error">{errorMsg}</p>
+        <p class="error" role="alert">{errorMsg}</p>
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting}>

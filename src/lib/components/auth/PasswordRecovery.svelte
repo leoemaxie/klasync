@@ -51,6 +51,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Password Recovery — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">ACCOUNT RECOVERY / PASSWORD RESET</p>
@@ -67,10 +71,11 @@
 
     <form class="join-card panel" onsubmit={handleRequestReset}>
       {#if mode === 'request'}
-        <div class="role-selector">
+        <div class="role-selector" role="group" aria-label="Account type selection">
           <button
             type="button"
             class={role === 'lecturer' ? 'primary' : 'outline'}
+            aria-pressed={role === 'lecturer'}
             onclick={() => (role = 'lecturer')}
           >
             Lecturer
@@ -78,46 +83,52 @@
           <button
             type="button"
             class={role === 'student' ? 'primary' : 'outline'}
+            aria-pressed={role === 'student'}
             onclick={() => (role = 'student')}
           >
             Student
           </button>
         </div>
 
-        <label>
+        <label for="recover-email">
           Registered Email
           <input
+            id="recover-email"
             type="email"
             bind:value={email}
             placeholder="your.name@university.edu"
             required
+            autocomplete="email"
           />
         </label>
       {:else}
-        <label>
+        <label for="reset-token">
           Reset Token
           <input
+            id="reset-token"
             bind:value={resetToken}
             placeholder="Paste reset token..."
             required
           />
         </label>
-        <label>
+        <label for="new-password">
           New Password
           <input
+            id="new-password"
             type="password"
             bind:value={newPassword}
             placeholder="••••••••"
             required
+            autocomplete="new-password"
           />
         </label>
       {/if}
 
       {#if statusNotice}
-        <p class="success">{statusNotice}</p>
+        <p class="success" role="status">{statusNotice}</p>
       {/if}
       {#if errorMsg}
-        <p class="error">{errorMsg}</p>
+        <p class="error" role="alert">{errorMsg}</p>
       {/if}
 
       <button

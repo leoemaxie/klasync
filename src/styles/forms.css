@@ -43,21 +43,23 @@ textarea {
   background: transparent;
   color: var(--color-warm-cream);
   padding: var(--spacing-8) 2px;
-  font-size: 15px;
+  font-size: 16px;
   transition: border-color 0.2s ease;
   outline: none;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(255, 237, 215, 0.38);
+  color: rgba(255, 237, 215, 0.5);
   font-style: italic;
   opacity: 1;
 }
 
-input:focus,
-textarea:focus {
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
   border-bottom-color: var(--color-warm-cream);
+  box-shadow: 0 2px 0 0 var(--color-warm-cream);
 }
 
 input[type='file'] {
@@ -92,4 +94,15 @@ textarea:focus {
   gap: var(--spacing-24);
   max-width: 440px;
   margin-top: var(--spacing-41);
+}
+
+@media (max-width: 560px) {
+  .twocol {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Use dynamic viewport height for form wrappers ────────── */
+.join-wrap {
+  min-height: 100dvh;
 }

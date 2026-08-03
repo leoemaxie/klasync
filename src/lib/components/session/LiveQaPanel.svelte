@@ -105,6 +105,7 @@
       <input
         bind:value={newQuestionText}
         placeholder="Ask a quick question linked to live captions..."
+        aria-label="Ask a question linked to live captions"
         required
       />
       <button
@@ -124,7 +125,7 @@
   {#if isLoading}
     <SkeletonCard lines={2} label="Loading live Q&A feed..." />
   {:else if questions.length}
-    <div class="questions-list">
+    <div class="questions-list" role="region" aria-live="polite" aria-label="Live questions feed">
       {#each questions as q}
         <div class="question-item" class:resolved={q.is_resolved}>
           <div class="q-content">
@@ -138,6 +139,7 @@
                 · <strong class="success"
                   ><Check
                     size={12}
+                    aria-hidden="true"
                     style="vertical-align: middle; display: inline-block;"
                   /> Resolved</strong
                 >{/if}
@@ -150,12 +152,14 @@
               class="outline upvote-btn"
               onclick={() => handleUpvote(q.id)}
               disabled={activeUpvotingId === q.id}
+              aria-label="Upvote question. Current upvotes: {q.upvote_count}"
             >
               {#if activeUpvotingId === q.id}
                 <ButtonSpinner label="Upvoting..." />
               {:else}
                 <ChevronUp
                   size={14}
+                  aria-hidden="true"
                   style="vertical-align: middle; display: inline-block;"
                 />
                 {q.upvote_count}

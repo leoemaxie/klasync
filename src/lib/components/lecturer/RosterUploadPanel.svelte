@@ -56,7 +56,7 @@
       class="text-link-sync"
       onclick={() => (isLmsModalOpen = true)}
     >
-      <Link size={14} style="vertical-align: middle; display: inline-block;" /> Canvas
+      <Link size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Canvas
       / Moodle Sync
     </button>
   </div>
@@ -77,7 +77,7 @@
       (e.key === 'Enter' || e.key === ' ') && triggerFileInput()}
     aria-label="Upload class roster file"
   >
-    <div class="dropzone-icon"><FileText size={24} /></div>
+    <div class="dropzone-icon"><FileText size={24} aria-hidden="true" /></div>
     <p class="dropzone-title">Drag &amp; drop CSV or XLSX file</p>
     <p class="hint">
       Supports <code>.csv</code>, <code>.tsv</code>, or <code>.xlsx</code>
@@ -100,9 +100,10 @@
   </div>
 
   <div class="paste-section">
-    <label
+    <label for="roster-paste-input"
       >Or paste CSV rows: <code>matric_number, full_name</code>
       <textarea
+        id="roster-paste-input"
         bind:value={rosterText}
         rows="3"
         placeholder={"MAT/2023/001, Ada Okafor\nMAT/2023/002, Chinedu Obi"}
@@ -123,6 +124,7 @@
 
   {#if rosterNotice}
     <p
+      role={rosterNotice.toLowerCase().includes('error') || rosterNotice.toLowerCase().includes('unsupported') ? 'alert' : 'status'}
       class={rosterNotice.toLowerCase().includes('error') ||
       rosterNotice.toLowerCase().includes('unsupported')
         ? 'error'

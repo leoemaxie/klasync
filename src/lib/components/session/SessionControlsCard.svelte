@@ -28,28 +28,28 @@
 <div class="controls-card">
   <p class="section-label">LECTURER BROADCAST CONTROLS</p>
   <div class="action-buttons-grid">
-    <button type="button" class="control-btn pause-toggle" class:is-active-paused={isPaused} onclick={onPauseToggle} disabled={isTogglingPause}>
-      {#if isTogglingPause}<ButtonSpinner label="Updating status..." />{:else if isPaused}<Play size={16} /> Resume Lecture Room{:else}<Pause size={16} /> Pause Lecture Room{/if}
+    <button type="button" class="control-btn pause-toggle" class:is-active-paused={isPaused} aria-pressed={isPaused} onclick={onPauseToggle} disabled={isTogglingPause}>
+      {#if isTogglingPause}<ButtonSpinner label="Updating status..." />{:else if isPaused}<Play size={16} aria-hidden="true" /> Resume Lecture Room{:else}<Pause size={16} aria-hidden="true" /> Pause Lecture Room{/if}
     </button>
-    <button type="button" class="control-btn rec-toggle" class:is-active-rec={isRecording} onclick={onRecordingToggle} disabled={isTogglingRec}>
-      {#if isTogglingRec}<ButtonSpinner label="Updating recording..." />{:else if isRecording}<Circle size={13} fill="currentColor" /> Stop Recording{:else}<Mic size={16} /> Start Audio Recording{/if}
+    <button type="button" class="control-btn rec-toggle" class:is-active-rec={isRecording} aria-pressed={isRecording} onclick={onRecordingToggle} disabled={isTogglingRec}>
+      {#if isTogglingRec}<ButtonSpinner label="Updating recording..." />{:else if isRecording}<Circle size={13} fill="currentColor" aria-hidden="true" /> Stop Recording{:else}<Mic size={16} aria-hidden="true" /> Start Audio Recording{/if}
     </button>
   </div>
 </div>
 
 {#if actionError || apiNotice}
-  <div class="error-notice">{actionError || apiNotice}</div>
+  <div class="error-notice" role="alert">{actionError || apiNotice}</div>
 {/if}
 
 <div class="end-session-row">
   <button type="button" class="end-session-btn" onclick={onEndSession}>
-    <Power size={15} /> End Live Lecture Session
+    <Power size={15} aria-hidden="true" /> End Live Lecture Session
   </button>
 </div>
 
 <style>
   .controls-card { background: rgba(16, 9, 4, 0.6); border: 1px solid var(--color-cork-border); border-radius: 8px; padding: var(--spacing-18); }
-  .section-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-driftwood); font-weight: 600; margin: 0 0 6px 0; }
+  .section-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-driftwood); font-weight: 600; margin: 0 0 6px 0; }
   .action-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-14); margin-top: 8px; }
   .control-btn { background: rgba(56, 36, 22, 0.6); border: 1px solid var(--color-cork-border); border-radius: 6px; color: var(--color-warm-cream); padding: 12px 18px; font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .control-btn:hover:not(:disabled) { border-color: var(--color-warm-cream); background: var(--color-bark-brown); }

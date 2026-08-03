@@ -29,11 +29,12 @@
       <h2 class="card-title">Broadcast Caption Chunk</h2>
     </div>
     <span class="live-signal-badge">
-      <span class="pulse-dot">●</span> MIC ACTIVE
+      <span class="pulse-dot" aria-hidden="true">●</span> MIC ACTIVE
     </span>
   </div>
 
   <div class="input-block">
+    <label for="caption-input" class="sr-only">Broadcast caption chunk</label>
     <div class="textarea-wrap">
       <textarea
         id="caption-input"
@@ -56,14 +57,14 @@
       {#if isPublishing}
         <ButtonSpinner label="Broadcasting caption..." /> Publishing...
       {:else}
-        <Send size={14} /> Publish Caption Chunk (Enter ↵)
+        <Send size={14} aria-hidden="true" /> Publish Caption Chunk (Enter ↵)
       {/if}
     </button>
     <span class="hint-text">Press Enter to broadcast immediately to all connected students</span>
   </div>
 
   {#if apiNotice}
-    <div class="notice-box">{apiNotice}</div>
+    <div class="notice-box" role="alert">{apiNotice}</div>
   {/if}
 </div>
 
@@ -72,7 +73,7 @@
   .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .eyebrow { font-size: 10px; letter-spacing: 0.1em; color: var(--color-warm-cream-dim); font-weight: 700; margin: 0; }
   .card-title { font-size: 22px; font-weight: 500; color: var(--color-warm-cream); margin: 4px 0 0 0; font-family: var(--font-display); }
-  .live-signal-badge { font-size: 9px; font-weight: 700; color: #4ab772; background: rgba(74, 183, 114, 0.12); border: 1px solid rgba(74, 183, 114, 0.3); padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
+  .live-signal-badge { font-size: 11px; font-weight: 700; color: var(--color-warm-cream); background: rgba(74, 183, 114, 0.12); border: 1px solid rgba(74, 183, 114, 0.3); padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
   .pulse-dot { animation: blink 1s infinite alternate; }
   @keyframes blink { 0% { opacity: 0.3; } 100% { opacity: 1; } }
   .input-block { display: flex; flex-direction: column; gap: 6px; }

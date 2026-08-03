@@ -32,11 +32,11 @@
   <div class="header-actions">
     {#if sessionCode}
       <button type="button" class="outline action-btn" onclick={onExportCsv} disabled={isExporting || participantCount === 0}>
-        {#if isExporting}<ButtonSpinner label="Exporting..." /> Exporting...{:else}<Download size={13} /> Export CSV{/if}
+        {#if isExporting}<ButtonSpinner label="Exporting..." /> Exporting...{:else}<Download size={13} aria-hidden="true" /> Export CSV{/if}
       </button>
     {/if}
     <button type="button" class="outline action-btn" onclick={onRefresh} disabled={isRefreshing || isLoading}>
-      <RefreshCw size={13} class={isRefreshing ? "spin-icon" : ""} />
+      <RefreshCw size={13} aria-hidden="true" class={isRefreshing ? "spin-icon" : ""} />
       {#if isRefreshing}Refreshing...{:else}Refresh Attendance{/if}
     </button>
   </div>

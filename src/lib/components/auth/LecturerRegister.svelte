@@ -55,6 +55,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Create Lecturer Account — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">LECTURER WORKSPACE / ACCOUNT REGISTRATION</p>
@@ -65,43 +69,49 @@
     </p>
 
     <form class="join-card panel" onsubmit={handleRegister}>
-      <label>
+      <label for="reg-name">
         Full Name &amp; Title
-        <input bind:value={name} placeholder="Dr. Amara Okeke" required />
+        <input id="reg-name" bind:value={name} placeholder="Dr. Amara Okeke" required autocomplete="name" />
       </label>
 
-      <label>
+      <label for="reg-email">
         Institutional Email
         <input
+          id="reg-email"
           type="email"
           bind:value={email}
           placeholder="amara.okeke@university.edu"
           required
+          autocomplete="email"
         />
       </label>
 
-      <label>
+      <label for="reg-password">
         Password <span>(minimum 8 characters)</span>
         <input
+          id="reg-password"
           type="password"
           bind:value={password}
           placeholder="••••••••••••"
           required
+          autocomplete="new-password"
         />
       </label>
 
-      <label>
+      <label for="reg-confirm-password">
         Confirm Password
         <input
+          id="reg-confirm-password"
           type="password"
           bind:value={confirmPassword}
           placeholder="••••••••••••"
           required
+          autocomplete="new-password"
         />
       </label>
 
       {#if errorMsg}
-        <p class="error">{errorMsg}</p>
+        <p class="error" role="alert">{errorMsg}</p>
       {/if}
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
