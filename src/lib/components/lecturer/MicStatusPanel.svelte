@@ -1,5 +1,6 @@
 <script lang="ts">
   import AudioLevelMeter from './AudioLevelMeter.svelte';
+  import { triggerHaptic } from '$lib/native/haptics';
 
   let isUsingDeviceMic = $state(false);
   let audioLevel = $state(0);
@@ -8,14 +9,17 @@
   let animFrameId: number | null = null;
 
   async function enableDeviceMic() {
+    triggerHaptic('medium');
     micError = '';
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       isUsingDeviceMic = true;
+      triggerHaptic('success');
       startLevelMeter(stream);
     } catch {
       micError = 'Could not access browser microphone. Check permissions.';
       isUsingDeviceMic = false;
+      triggerHaptic('error');
     }
   }
 
@@ -38,6 +42,7 @@
   }
 
   function stopDeviceMic() {
+    triggerHaptic('warning');
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (animFrameId) cancelAnimationFrame(animFrameId);
     isUsingDeviceMic = false;
@@ -48,9 +53,9 @@
 <div class="panel mic-status-panel">
   <div class="mic-header">
     <p class="eyebrow">
-      <span class="eyebrow-accent">●</span> HARDWARE &amp; AUDIO INPUT
+      <span class="eyebrow-accent" aria-hidden="true">●</span> HARDWARE &amp; AUDIO INPUT
     </p>
-    <span class="status-badge" class:connected={isUsingDeviceMic}>
+    <span class="status-badge" class:connected={isUsingDeviceMic} aria-live="polite">
       {isUsingDeviceMic ? 'DEVICE MIC ACTIVE' : 'HARDWARE STANDBY'}
     </span>
   </div>
@@ -69,7 +74,7 @@
     </div>
   </div>
   <AudioLevelMeter level={audioLevel} isActive={isUsingDeviceMic} />
-  {#if micError}<p class="error">{micError}</p>{/if}
+  {#if micError}<p class="error" role="alert">{micError}</p>{/if}
   <div class="mic-actions">
     {#if !isUsingDeviceMic}
       <button type="button" class="outline full" onclick={enableDeviceMic}
@@ -96,7 +101,7 @@
     gap: 8px;
   }
   .status-badge {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     padding: 3px 8px;
     border-radius: 4px;
@@ -104,7 +109,7 @@
     color: var(--color-driftwood);
   }
   .status-badge.connected {
-    color: #4ab772;
+    color: var(--color-warm-cream);
     border-color: #4ab772;
     background: rgba(74, 183, 114, 0.1);
   }
@@ -121,7 +126,7 @@
     gap: 2px;
   }
   .stat-label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.08em;
     color: var(--color-driftwood);
   }
