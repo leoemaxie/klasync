@@ -52,6 +52,12 @@
       : []),
     { key: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]);
+  import { triggerHaptic } from '$lib/native/haptics';
+
+  function selectTab(key: TabKey) {
+    triggerHaptic('light');
+    activeTab = key;
+  }
 </script>
 
 <nav class="mobile-native-tabs" aria-label="Lecturer control room navigation">
@@ -61,9 +67,11 @@
         type="button"
         class="tab-pill"
         class:active={activeTab === tab.key}
-        onclick={() => (activeTab = tab.key)}
+        aria-pressed={activeTab === tab.key}
+        onclick={() => selectTab(tab.key)}
       >
-        <svelte:component this={tab.icon} size={15} class="tab-icon" />
+        {@const Icon = tab.icon}
+        <Icon size={15} class="tab-icon" aria-hidden="true" />
         <span class="tab-label">{tab.label}</span>
         {#if tab.badge}
           <span class="tab-badge" class:live-badge={tab.badge === 'LIVE'}

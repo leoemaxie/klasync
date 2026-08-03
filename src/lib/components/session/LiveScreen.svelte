@@ -44,18 +44,32 @@
   let dyslexicFont = $state(false);
   let lineHeight = $state(1.6);
 
+  import { onDestroy } from 'svelte';
+  import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
+  import { triggerHaptic } from '$lib/native/haptics';
+
   onMount(() => {
-    if (!session?.code) return;
-    return connectCaptionWebSocket(session.code, (cap) => {
-      wsConnected = true;
-      if (!captions.includes(cap.text)) {
-        captions = [...captions, cap.text];
-        captionIndex = captions.length - 1;
-      }
-    });
+    void requestWakeLock();
+
+    let wsCleanup: (() => void) | undefined;
+    if (session?.code) {
+      wsCleanup = connectCaptionWebSocket(session.code, (cap) => {
+        wsConnected = true;
+        if (!captions.includes(cap.text)) {
+          captions = [...captions, cap.text];
+          captionIndex = captions.length - 1;
+        }
+      });
+    }
+
+    return () => {
+      wsCleanup?.();
+      void releaseWakeLock();
+    };
   });
 
   async function handleToggleHandRaise() {
+    triggerHaptic(isHandRaised ? 'light' : 'medium');
     if (!session?.code || !joinedParticipant?.id) return;
     try {
       if (isHandRaised) {
@@ -71,6 +85,7 @@
   }
 
   async function handleCheckIn() {
+    triggerHaptic('success');
     isCheckingIn = true;
     try {
       onHeartbeat();
@@ -86,6 +101,7 @@
   }
 
   async function createAccount() {
+    triggerHaptic('success');
     isClaiming = true;
     try {
       if (session?.code && joinedParticipant?.matric) {
@@ -103,6 +119,10 @@
     }
   }
 </script>
+
+<svelte:head>
+  <title>{session?.title ? `${session.title} — Live · Klasync` : 'Live Session — Klasync'}</title>
+</svelte:head>
 
 <div class="live-workspace-wrap">
   <LiveHeader

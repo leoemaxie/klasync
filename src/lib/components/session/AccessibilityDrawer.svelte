@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Settings, X } from '@lucide/svelte';
+  import { triggerHaptic } from '$lib/native/haptics';
 
   let {
     fontSize = $bindable('18px'),
@@ -12,17 +13,33 @@
   } = $props();
 
   let drawerOpen = $state(false);
+
+  function toggleDrawer() {
+    triggerHaptic('light');
+    drawerOpen = !drawerOpen;
+  }
+
+  function setFontSize(val: string) {
+    triggerHaptic('light');
+    fontSize = val;
+  }
+
+  function toggleDyslexiaFont() {
+    triggerHaptic('medium');
+    dyslexicFont = !dyslexicFont;
+  }
 </script>
 
 <div class="accessibility-drawer-wrap">
   <button
     type="button"
     class="outline drawer-toggle-btn"
-    onclick={() => (drawerOpen = !drawerOpen)}
+    onclick={toggleDrawer}
     aria-expanded={drawerOpen}
   >
     <Settings
       size={14}
+      aria-hidden="true"
       style="vertical-align: middle; display: inline-block;"
     /> Accessibility Preferences
   </button>
@@ -35,32 +52,35 @@
     >
       <div class="drawer-header">
         <p class="eyebrow">ACCESSIBILITY &amp; READING DISPLAY</p>
-        <button type="button" class="text" onclick={() => (drawerOpen = false)}>
-          <X size={14} style="vertical-align: middle; display: inline-block;" /> Close
+        <button type="button" class="text" onclick={toggleDrawer}>
+          <X size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Close
         </button>
       </div>
 
       <div class="control-group">
-        <label for="font-size-select">Caption &amp; Body Font Scale</label>
-        <div class="button-group" id="font-size-select">
+        <p id="font-size-label" class="label" style="margin: 0 0 6px;">Caption &amp; Body Font Scale</p>
+        <div class="button-group" role="group" aria-labelledby="font-size-label">
           <button
             type="button"
             class={fontSize === '16px' ? 'primary' : 'outline'}
-            onclick={() => (fontSize = '16px')}
+            aria-pressed={fontSize === '16px'}
+            onclick={() => setFontSize('16px')}
           >
             Standard (16px)
           </button>
           <button
             type="button"
             class={fontSize === '20px' ? 'primary' : 'outline'}
-            onclick={() => (fontSize = '20px')}
+            aria-pressed={fontSize === '20px'}
+            onclick={() => setFontSize('20px')}
           >
             Large (20px)
           </button>
           <button
             type="button"
             class={fontSize === '24px' ? 'primary' : 'outline'}
-            onclick={() => (fontSize = '24px')}
+            aria-pressed={fontSize === '24px'}
+            onclick={() => setFontSize('24px')}
           >
             XL (24px)
           </button>
@@ -75,6 +95,7 @@
           min="1.3"
           max="2.2"
           step="0.1"
+          aria-valuetext="{lineHeight}x"
           bind:value={lineHeight}
         />
       </div>
@@ -89,7 +110,8 @@
         <button
           type="button"
           class={dyslexicFont ? 'primary' : 'outline'}
-          onclick={() => (dyslexicFont = !dyslexicFont)}
+          aria-pressed={dyslexicFont}
+          onclick={toggleDyslexiaFont}
         >
           {dyslexicFont ? 'ON' : 'OFF'}
         </button>

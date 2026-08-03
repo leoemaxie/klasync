@@ -4,6 +4,7 @@
   import Navbar from '$lib/components/shared/Navbar.svelte';
   import NotFoundScreen from '$lib/components/shared/NotFoundScreen.svelte';
   import OfflineStatusIndicator from '$lib/components/shared/OfflineStatusIndicator.svelte';
+  import SpotlightSearchModal from '$lib/components/shared/SpotlightSearchModal.svelte';
   import HomeScreen from '$lib/components/home/HomeScreen.svelte';
   import LecturerScreen from '$lib/components/lecturer/LecturerScreen.svelte';
   import JoinScreen from '$lib/components/session/JoinScreen.svelte';
@@ -122,7 +123,11 @@
 </script>
 
 <main>
-  <Navbar bind:screen={appState.screen} {appState} />
+  <Navbar
+    bind:screen={appState.screen}
+    {appState}
+    onOpenSpotlight={() => (isSpotlightOpen = true)}
+  />
   <OfflineStatusIndicator />
 
   {#if appState.screen === 'home'}
@@ -163,4 +168,10 @@
   {:else}
     <NotFoundScreen bind:screen={appState.screen} />
   {/if}
+
+  <SpotlightSearchModal
+    bind:isOpen={isSpotlightOpen}
+    bind:screen={appState.screen}
+    bind:sessionCode={appState.sessionCode}
+  />
 </main>

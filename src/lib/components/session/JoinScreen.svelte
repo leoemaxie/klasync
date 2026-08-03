@@ -23,22 +23,28 @@
   let isCheckingCode = $state(false);
   let isJoining = $state(false);
 
+  import { triggerHaptic } from '$lib/native/haptics';
+
   async function checkCode() {
     if (!sessionCode.trim() || sessionCode.trim().length < 4) return;
+    triggerHaptic('light');
     isCheckingCode = true;
     try {
       const info = await lookupSessionByCode(sessionCode.trim());
       sessionTitle = info.session.title;
       sessionStatus = info.session.status;
+      triggerHaptic('success');
     } catch {
       sessionTitle = '';
       sessionStatus = 'idle';
+      triggerHaptic('warning');
     } finally {
       isCheckingCode = false;
     }
   }
 
   async function handleJoin() {
+    triggerHaptic('medium');
     isJoining = true;
     try {
       await onJoinSession();
@@ -48,6 +54,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Join Session — Klasync</title>
+</svelte:head>
+
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">GUEST ACCESS / NO ACCOUNT REQUIRED</p>
@@ -56,9 +66,13 @@
       Real-time captions and verified attendance. No account required.
     </p>
     <div class="join-card panel">
-      <label>
+      <label for="session-code-input">
         Session short code
         <input
+          id="session-code-input"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
           bind:value={sessionCode}
           onblur={checkCode}
           placeholder="e.g. A4K9QZ"
@@ -80,18 +94,18 @@
         </div>
       {/if}
 
-      <label>
+      <label for="matric-input">
         Matric / Student ID
-        <input bind:value={matric} placeholder="MAT/2023/001" />
+        <input id="matric-input" type="text" bind:value={matric} placeholder="MAT/2023/001" />
       </label>
 
-      <label>
+      <label for="display-name-input">
         Full name <span>(optional if on roster)</span>
-        <input bind:value={displayName} placeholder="Ada Okafor" />
+        <input id="display-name-input" type="text" bind:value={displayName} placeholder="Ada Okafor" />
       </label>
 
       {#if joinError}
-        <p class="error">{joinError}</p>
+        <p class="error" role="alert">{joinError}</p>
       {/if}
 
       <button
