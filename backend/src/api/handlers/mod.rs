@@ -4,6 +4,7 @@ pub mod ai_study;
 pub mod batch_sync;
 pub mod attendance_scoring;
 pub mod audio;
+pub mod audio_stream;
 pub mod auth;
 pub mod caption_stream;
 pub mod captions;

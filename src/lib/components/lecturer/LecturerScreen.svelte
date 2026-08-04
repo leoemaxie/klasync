@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import LecturerHeader from './LecturerHeader.svelte';
   import LecturerNavTabs, { type TabKey } from './LecturerNavTabs.svelte';
   import CourseSetupTab from './CourseSetupTab.svelte';
@@ -8,10 +9,12 @@
   import CaptionControlPanel from '$lib/components/session/CaptionControlPanel.svelte';
   import AttendancePanel from '$lib/components/session/AttendancePanel.svelte';
   import type { SessionState } from '$lib/sessionState.svelte';
+  import { connectCaptionWebSocket } from '$lib/api/captions';
   import {
     copyInvite,
     endSession,
     importFile,
+    ingestCaption,
     parseRoster,
     publishCaption,
     refreshAttendance,
@@ -20,6 +23,27 @@
 
   let { appState }: { appState: SessionState } = $props();
   let activeTab = $state<TabKey>('course');
+
+  let wsCleanup: (() => void) | undefined;
+
+  $effect(() => {
+    const code = appState.session?.live ? appState.session.code : null;
+    if (code) {
+      wsCleanup?.();
+      wsCleanup = connectCaptionWebSocket(code, (cap) => {
+        if (cap.text) {
+          ingestCaption(appState, { text: cap.text, timestamp: cap.created_at });
+        }
+      });
+    } else {
+      wsCleanup?.();
+      wsCleanup = undefined;
+    }
+
+    return () => {
+      wsCleanup?.();
+    };
+  });
 </script>
 
 <svelte:head>
@@ -52,7 +76,10 @@
         onParseRoster={() => parseRoster(appState)}
       />
     {:else if activeTab === 'device'}
-      <DeviceSetupTab />
+      <DeviceSetupTab
+        sessionCode={appState.session?.code}
+        onCaptionIngested={(cap) => ingestCaption(appState, cap)}
+      />
     {:else if activeTab === 'session'}
       <SessionPanel
         session={appState.session}
@@ -68,6 +95,7 @@
     {:else if activeTab === 'live' && appState.session?.live}
       <CaptionControlPanel
         bind:captionDraft={appState.captionDraft}
+        captions={appState.captions}
         apiNotice={appState.apiNotice}
         onPublishCaption={() => publishCaption(appState)}
       />

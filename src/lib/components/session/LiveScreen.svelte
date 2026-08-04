@@ -59,9 +59,13 @@
     if (session?.code) {
       wsCleanup = connectCaptionWebSocket(session.code, (cap) => {
         wsConnected = true;
-        if (!captions.includes(cap.text)) {
-          captions = [...captions, cap.text];
-          captionIndex = captions.length - 1;
+        if (cap.text && cap.text.trim()) {
+          const text = cap.text.trim();
+          const filtered = captions.filter((c) => c !== 'WAITING FOR LIVE CAPTIONS.');
+          if (!filtered.includes(text)) {
+            captions = [...filtered, text];
+            captionIndex = captions.length - 1;
+          }
         }
       });
     }

@@ -193,6 +193,10 @@ pub fn router(state: AppState) -> Router {
             post(handlers::audio::upload),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/audio/ws",
+            get(handlers::audio_stream::connect),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/ai-jobs",
             get(handlers::jobs::list).post(handlers::jobs::create),
         )

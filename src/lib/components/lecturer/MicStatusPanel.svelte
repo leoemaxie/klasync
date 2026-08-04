@@ -1,12 +1,28 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import AudioLevelMeter from './AudioLevelMeter.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
+  import {
+    startMicrophoneAudioStream,
+    type AudioStreamer,
+    type IngestedCaption,
+  } from '$lib/api/audio';
+
+  let {
+    sessionCode = '',
+    onCaptionIngested,
+  }: {
+    sessionCode?: string;
+    onCaptionIngested?: (caption: IngestedCaption) => void;
+  } = $props();
 
   let isUsingDeviceMic = $state(false);
+  let isWsStreaming = $state(false);
   let audioLevel = $state(0);
   let micError = $state('');
   let stream: MediaStream | null = null;
   let animFrameId: number | null = null;
+  let streamer: AudioStreamer | null = null;
 
   async function enableDeviceMic() {
     triggerHaptic('medium');
@@ -16,9 +32,25 @@
       isUsingDeviceMic = true;
       triggerHaptic('success');
       startLevelMeter(stream);
+
+      if (sessionCode) {
+        streamer = startMicrophoneAudioStream(
+          sessionCode,
+          stream,
+          (caption) => {
+            onCaptionIngested?.(caption);
+          },
+          (err) => {
+            micError = `Streaming notice: ${err.message}`;
+            isWsStreaming = false;
+          }
+        );
+        isWsStreaming = true;
+      }
     } catch {
       micError = 'Could not access browser microphone. Check permissions.';
       isUsingDeviceMic = false;
+      isWsStreaming = false;
       triggerHaptic('error');
     }
   }
@@ -43,11 +75,20 @@
 
   function stopDeviceMic() {
     triggerHaptic('warning');
+    if (streamer) {
+      streamer.stop();
+      streamer = null;
+    }
     if (stream) stream.getTracks().forEach((t) => t.stop());
     if (animFrameId) cancelAnimationFrame(animFrameId);
     isUsingDeviceMic = false;
+    isWsStreaming = false;
     audioLevel = 0;
   }
+
+  onDestroy(() => {
+    stopDeviceMic();
+  });
 </script>
 
 <div class="panel mic-status-panel">
@@ -55,18 +96,30 @@
     <p class="eyebrow">
       <span class="eyebrow-accent" aria-hidden="true">●</span> DEVICE &amp; AUDIO
     </p>
-    <span class="status-badge" class:connected={isUsingDeviceMic} aria-live="polite">
-      {isUsingDeviceMic ? 'DEVICE MIC ACTIVE' : 'KLASNYC MIC STANDBY'}
+    <span
+      class="status-badge"
+      class:connected={isUsingDeviceMic}
+      class:streaming={isWsStreaming}
+      aria-live="polite"
+    >
+      {#if isWsStreaming}
+        AUDIO WS STREAMING
+      {:else if isUsingDeviceMic}
+        DEVICE MIC ACTIVE
+      {:else}
+        KLASYNC MIC STANDBY
+      {/if}
     </span>
   </div>
   <div class="mic-info-grid">
     <div class="mic-stat">
       <span class="stat-label">SOURCE</span><strong
-        >{isUsingDeviceMic ? 'WebAudio' : 'Klasync Mic'}</strong
+        >{isUsingDeviceMic ? 'WebAudio PCM' : 'Klasync Mic'}</strong
       >
     </div>
     <div class="mic-stat">
-      <span class="stat-label">SAMPLE RATE</span><strong>48 kHz · 16-bit</strong
+      <span class="stat-label">DESTINATION</span><strong
+        >{sessionCode && isWsStreaming ? 'WS /audio/ws' : 'Local Meter'}</strong
       >
     </div>
     <div class="mic-stat">
@@ -78,11 +131,11 @@
   <div class="mic-actions">
     {#if !isUsingDeviceMic}
       <button type="button" class="outline full" onclick={enableDeviceMic}
-        >Test &amp; Enable Microphone</button
+        >{sessionCode ? 'Start Live Audio Stream & Mic' : 'Test & Enable Microphone'}</button
       >
     {:else}
       <button type="button" class="danger full" onclick={stopDeviceMic}
-        >Stop Microphone</button
+        >Stop Microphone &amp; Stream</button
       >
     {/if}
   </div>

@@ -1,9 +1,18 @@
 <script lang="ts">
   import MicStatusPanel from './MicStatusPanel.svelte';
+  import type { IngestedCaption } from '$lib/api/audio';
+
+  let {
+    sessionCode = '',
+    onCaptionIngested,
+  }: {
+    sessionCode?: string;
+    onCaptionIngested?: (caption: IngestedCaption) => void;
+  } = $props();
 </script>
 
 <div class="device-setup-tab">
-  <MicStatusPanel />
+  <MicStatusPanel {sessionCode} {onCaptionIngested} />
   <div class="panel device-help-panel">
     <p class="eyebrow">AUDIO &amp; HARDWARE CONFIGURATION</p>
     <h3>Klasync Audio Pipeline</h3>

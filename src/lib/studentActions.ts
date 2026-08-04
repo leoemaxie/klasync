@@ -78,3 +78,17 @@ export async function refreshCaptions(state: SessionState) {
         : 'Unable to retrieve live captions.';
   }
 }
+
+export function ingestCaption(
+  state: SessionState,
+  caption: { text: string; speaker?: string; timestamp?: string }
+) {
+  if (!caption.text || !caption.text.trim()) return;
+  const text = caption.text.trim();
+  const current = state.captions.filter(c => c !== 'WAITING FOR LIVE CAPTIONS.');
+  if (!current.includes(text)) {
+    state.captions = [...current, text];
+    state.captionIndex = state.captions.length - 1;
+  }
+}
+
