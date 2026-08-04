@@ -1,5 +1,6 @@
 <script lang="ts">
   import MicStatusPanel from './MicStatusPanel.svelte';
+  import { Bluetooth } from '@lucide/svelte';
   import type { IngestedCaption } from '$lib/api/audio';
 
   let {
@@ -9,21 +10,31 @@
     sessionCode?: string;
     onCaptionIngested?: (caption: IngestedCaption) => void;
   } = $props();
+
+  function handlePairBluetooth() {
+    alert('Bluetooth Web API integration coming soon!');
+  }
 </script>
 
 <div class="device-setup-tab">
   <MicStatusPanel {sessionCode} {onCaptionIngested} />
-  <div class="panel device-help-panel">
-    <p class="eyebrow">AUDIO &amp; HARDWARE CONFIGURATION</p>
-    <h3>Klasync Audio Pipeline</h3>
+
+  <div class="panel bluetooth-panel">
+    <div class="bluetooth-header">
+      <div class="icon-circle">
+        <Bluetooth size={20} color="var(--color-ember-accent)" aria-hidden="true" />
+      </div>
+      <div class="header-text">
+        <p class="eyebrow">CONNECT KLASYNC MIC</p>
+      </div>
+    </div>
     <p class="hint">
-      Connect your Klasync microphone or enable browser
-      WebAudio for live caption streaming.
+      Pair your dedicated Klasync lapel microphone via Bluetooth for optimal studio audio quality, ultra-low latency, and enhanced noise suppression.
     </p>
-    <div class="pipeline-features">
-      <div class="feature-chip">✓ Automatic Gain Control</div>
-      <div class="feature-chip">✓ Noise Suppression</div>
-      <div class="feature-chip">✓ 16-bit 48kHz PCM</div>
+    <div class="bt-actions">
+      <button type="button" class="primary full" onclick={handlePairBluetooth}>
+        Pair New Device
+      </button>
     </div>
   </div>
 </div>
@@ -33,27 +44,35 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-24);
-    align-items: start;
+    align-items: stretch;
   }
-  .device-help-panel {
+  .bluetooth-panel {
     display: flex;
     flex-direction: column;
+    gap: var(--spacing-16);
+  }
+  .bluetooth-header {
+    display: flex;
+    align-items: center;
     gap: var(--spacing-12);
   }
-  .pipeline-features {
+  .icon-circle {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(220, 80, 0, 0.1);
+    border: 1px solid rgba(220, 80, 0, 0.2);
+    border-radius: 50%;
   }
-  .feature-chip {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--color-cork-border);
-    border-radius: 9999px;
-    color: var(--color-warm-cream);
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .bt-actions {
+    margin-top: auto;
   }
   @media (max-width: 900px) {
     .device-setup-tab {

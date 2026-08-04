@@ -43,7 +43,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-24);
-    align-items: start;
+    align-items: stretch;
   }
   @media (max-width: 900px) {
     .course-setup-tab {

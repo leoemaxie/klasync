@@ -141,7 +141,8 @@
   .roster-upload-panel {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-14);
+    gap: var(--spacing-8);
+    height: 100%;
   }
   .panel-header {
     display: flex;
@@ -149,6 +150,10 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-height: 24px;
+  }
+  .panel-header .eyebrow {
+    margin: 0;
   }
   .text-link-sync {
     background: transparent;

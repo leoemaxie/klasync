@@ -128,25 +128,21 @@
 </script>
 
 <section class="attendance-container" aria-label="Live session attendance">
-  <!-- Clean Header with Summary Stats -->
+  <!-- Clean Header with Summary Stats & Actions -->
   <div class="panel-header">
-    <div class="header-titles">
-      <p class="eyebrow">LIVE SESSION ATTENDANCE</p>
-      <h2 class="panel-title">Session Roster</h2>
-      <div class="summary-inline-pills">
-        <span class="inline-pill total">
-          <Users size={12} aria-hidden="true" /> {participants.length} Registered
-        </span>
-        <span class="inline-pill verified">
-          <ShieldCheck size={12} aria-hidden="true" /> {verifiedCount} Verified ({matchRate}%)
-        </span>
-        <span class="inline-pill provisional">
-          <UserX size={12} aria-hidden="true" /> {provisionalCount} Provisional
-        </span>
-        <span class="inline-pill pulses">
-          <Activity size={12} aria-hidden="true" /> {totalHeartbeats} Pulses
-        </span>
-      </div>
+    <div class="summary-inline-pills">
+      <span class="inline-pill total">
+        <Users size={14} aria-hidden="true" /> {participants.length} Registered
+      </span>
+      <span class="inline-pill verified">
+        <ShieldCheck size={14} aria-hidden="true" /> {verifiedCount} Verified ({matchRate}%)
+      </span>
+      <span class="inline-pill provisional">
+        <UserX size={14} aria-hidden="true" /> {provisionalCount} Provisional
+      </span>
+      <span class="inline-pill pulses">
+        <Activity size={14} aria-hidden="true" /> {totalHeartbeats} Pulses
+      </span>
     </div>
 
     <div class="header-actions">
@@ -160,7 +156,7 @@
           {#if isExporting}
             <ButtonSpinner label="Exporting..." /> Exporting...
           {:else}
-            <Download size={13} aria-hidden="true" /> Export CSV
+            <Download size={14} aria-hidden="true" /> Export CSV
           {/if}
         </button>
       {/if}
@@ -170,7 +166,7 @@
         onclick={handleRefresh}
         disabled={isRefreshing || isLoading}
       >
-        <RefreshCw size={13} aria-hidden="true" class={isRefreshing ? 'spin-icon' : ''} />
+        <RefreshCw size={14} aria-hidden="true" class={isRefreshing ? 'spin-icon' : ''} />
         {#if isRefreshing}Refreshing...{:else}Refresh{/if}
       </button>
     </div>
@@ -179,7 +175,7 @@
   <!-- Single Streamlined Controls Bar -->
   <div class="controls-bar">
     <div class="search-wrap">
-      <Search size={14} aria-hidden="true" class="search-icon" />
+      <Search size={15} aria-hidden="true" class="search-icon" />
       <input
         type="text"
         placeholder="Filter by student name or matric..."
@@ -194,7 +190,7 @@
           onclick={() => (searchQuery = '')}
           aria-label="Clear filter text"
         >
-          <X size={12} aria-hidden="true" />
+          <X size={14} aria-hidden="true" />
         </button>
       {/if}
     </div>
@@ -274,11 +270,11 @@
               <td>
                 {#if participant.verified}
                   <span class="badge verified">
-                    <ShieldCheck size={12} aria-hidden="true" /> Verified Match
+                    <ShieldCheck size={14} aria-hidden="true" /> Verified Match
                   </span>
                 {:else}
                   <span class="badge provisional">
-                    <UserX size={12} aria-hidden="true" /> Provisional
+                    <UserX size={14} aria-hidden="true" /> Provisional
                   </span>
                 {/if}
               </td>
@@ -289,7 +285,7 @@
                 </span>
               </td>
               <td class="time-cell">
-                <Clock size={11} aria-hidden="true" /> {formatJoinedTime(participant.joinedAt)}
+                <Clock size={13} aria-hidden="true" /> {formatJoinedTime(participant.joinedAt)}
               </td>
             </tr>
           {/each}
@@ -301,7 +297,7 @@
     </div>
   {:else if searchQuery || statusFilter !== 'all'}
     <div class="empty-state">
-      <Search size={24} class="empty-icon" />
+      <Search size={28} class="empty-icon" />
       <p class="empty-title">No matching participants</p>
       <p class="empty-desc">
         No students matched your search criteria.
@@ -319,7 +315,7 @@
     </div>
   {:else}
     <div class="empty-state">
-      <Users size={28} class="empty-icon" />
+      <Users size={32} class="empty-icon" />
       <p class="empty-title">No participants joined yet</p>
       <p class="empty-desc">
         Students joining live with code <strong>{sessionCode}</strong> will appear here automatically.
@@ -339,34 +335,10 @@
   .panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--spacing-14);
     flex-wrap: wrap;
     padding-bottom: 4px;
-  }
-
-  .header-titles {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .eyebrow {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--color-driftwood);
-    margin: 0;
-    line-height: 1;
-    font-weight: 600;
-  }
-
-  .panel-title {
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--color-warm-cream);
-    margin: 2px 0 6px 0;
-    font-family: var(--font-display);
-    line-height: 1.2;
   }
 
   .summary-inline-pills {
@@ -377,14 +349,14 @@
   }
 
   .inline-pill {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 500;
-    padding: 3px 8px;
+    padding: 5px 12px;
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    letter-spacing: 0.03em;
+    gap: 6px;
+    letter-spacing: 0.02em;
   }
 
   .inline-pill.total {
@@ -420,9 +392,10 @@
   .action-btn {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    padding: 6px 12px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -446,7 +419,7 @@
     background: rgba(16, 9, 4, 0.4);
     border: 1px solid var(--color-cork-border);
     border-radius: 6px;
-    padding: 8px 12px;
+    padding: 10px 14px;
   }
 
   .search-wrap {
@@ -454,25 +427,25 @@
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 200px;
-    max-width: 320px;
+    min-width: 220px;
+    max-width: 360px;
   }
 
   :global(.search-icon) {
     position: absolute;
-    left: 8px;
+    left: 10px;
     color: var(--color-driftwood);
     pointer-events: none;
   }
 
   .search-input {
     width: 100%;
-    padding: 6px 26px 6px 28px;
+    padding: 8px 30px 8px 32px;
     background: rgba(10, 5, 2, 0.6);
     border: 1px solid var(--color-cork-border);
     border-radius: 4px;
     color: var(--color-warm-cream);
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .search-input:focus {
@@ -482,7 +455,7 @@
 
   .clear-search-btn {
     position: absolute;
-    right: 6px;
+    right: 8px;
     background: none;
     border: none;
     color: var(--color-driftwood);
@@ -502,8 +475,8 @@
     border: 1px solid transparent;
     border-radius: 4px;
     color: var(--color-driftwood);
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 13px;
+    padding: 5px 12px;
     cursor: pointer;
     transition: all 0.15s ease;
   }
@@ -523,8 +496,8 @@
     border: 1px solid var(--color-cork-border);
     border-radius: 4px;
     color: var(--color-warm-cream);
-    font-size: 11px;
-    padding: 5px 8px;
+    font-size: 13px;
+    padding: 6px 12px;
     cursor: pointer;
   }
 
@@ -540,18 +513,18 @@
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .attendance-table th {
     background: rgba(24, 14, 7, 0.8);
     color: var(--color-driftwood);
-    font-size: 9px;
-    letter-spacing: 0.08em;
+    font-size: 11px;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    padding: 10px 14px;
+    padding: 11px 16px;
     border-bottom: 1px solid var(--color-cork-border);
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .table-row {
@@ -568,7 +541,7 @@
   }
 
   .attendance-table td {
-    padding: 10px 14px;
+    padding: 12px 16px;
     vertical-align: middle;
     color: var(--color-warm-cream);
   }
@@ -580,13 +553,13 @@
   }
 
   .avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 4px;
     background: rgba(56, 36, 22, 0.6);
     border: 1px solid var(--color-cork-border);
     color: var(--color-driftwood);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -601,27 +574,27 @@
   }
 
   .student-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
   }
 
   .matric-tag {
     font-family: monospace;
-    font-size: 11px;
+    font-size: 12px;
     background: rgba(10, 5, 2, 0.5);
     border: 1px solid var(--color-cork-border);
-    padding: 2px 6px;
+    padding: 3px 7px;
     border-radius: 3px;
   }
 
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 10px;
+    gap: 5px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 3px;
   }
 
@@ -641,7 +614,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-driftwood);
   }
 
@@ -658,13 +631,13 @@
   }
 
   .time-cell {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-driftwood);
     display: table-cell;
   }
 
   .footer-count {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-driftwood);
     text-align: right;
   }
@@ -687,22 +660,107 @@
   }
 
   .empty-title {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--color-warm-cream);
     margin: 0;
   }
 
   .empty-desc {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-driftwood);
     margin: 0;
   }
 
   .reset-btn {
-    font-size: 11px;
+    font-size: 12px;
     margin-top: 6px;
-    padding: 4px 12px;
+    padding: 6px 14px;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 640px) {
+    .panel-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .summary-inline-pills {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .inline-pill {
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    .header-actions {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+
+    .controls-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .search-wrap {
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .filter-group {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .pill-tab {
+      text-align: center;
+      padding: 6px 4px;
+      font-size: 12px;
+    }
+
+    .sort-group {
+      width: 100%;
+    }
+
+    .sort-select {
+      width: 100%;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+      padding: 10px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .student-cell {
+      gap: 8px;
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 10px;
+    }
   }
 </style>
 

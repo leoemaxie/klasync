@@ -110,18 +110,14 @@
       <Search size={14} aria-hidden="true" style="vertical-align: middle;" />
       <span class="spotlight-kbd">⌘K</span>
     </button>
-    <button class="nav-btn text" onclick={() => navigate('join')}>Join Session</button>
 
     {#if !appState?.currentUser || appState.currentUser.role === 'student'}
+      <button class="nav-btn text" onclick={() => navigate('join')}>Join Session</button>
       <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
     {/if}
 
     {#if appState?.currentUser}
-      {#if appState.currentUser.role === 'lecturer' || appState.currentUser.role === 'admin'}
-        <button class="nav-btn outline" onclick={() => navigate('lecturer')}>Lecturer Workspace</button>
-      {/if}
       <div class="user-pill" title={appState.currentUser.email}>
-        <span class="user-role-tag">{appState.currentUser.role}</span>
         <span class="user-name">{appState.currentUser.name || appState.currentUser.email}</span>
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
@@ -138,9 +134,8 @@
   .brand-name { font-family: var(--font-display); font-size: 17px; font-weight: 500; color: var(--color-warm-cream); }
   .mobile-toggle { display: none; background: transparent; border: 0; color: var(--color-warm-cream); cursor: pointer; padding: 8px; }
   .nav-actions { display: flex; align-items: center; gap: var(--spacing-18); }
-  .user-pill { display: flex; align-items: center; gap: 8px; background: rgba(56, 36, 22, 0.4); border: 1px solid var(--color-cork-border); padding: 4px 10px; border-radius: var(--radius-buttons-outlined); font-size: 11px; }
-  .user-role-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(220, 80, 0, 0.2); color: var(--color-ember-accent); padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-  .user-name { color: var(--color-warm-cream); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-pill { display: flex; align-items: center; gap: 8px; background: rgba(56, 36, 22, 0.4); border: 1px solid var(--color-cork-border); padding: 5px 12px; border-radius: var(--radius-buttons-outlined); font-size: 12px; }
+  .user-name { color: var(--color-warm-cream); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
   .search-trigger { display: flex; align-items: center; gap: 6px; }
   .spotlight-kbd { font-size: 10px; background: rgba(255, 237, 215, 0.1); border: 1px solid var(--color-cork-border); padding: 1px 5px; border-radius: 4px; color: var(--color-driftwood); font-weight: 600; }
   @media (max-width: 768px) {

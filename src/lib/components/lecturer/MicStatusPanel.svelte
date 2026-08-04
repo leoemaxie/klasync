@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import { Mic } from 'lucide-svelte';
   import AudioLevelMeter from './AudioLevelMeter.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
   import {
@@ -93,9 +94,14 @@
 
 <div class="panel mic-status-panel">
   <div class="mic-header">
-    <p class="eyebrow">
-      <span class="eyebrow-accent" aria-hidden="true">●</span> DEVICE &amp; AUDIO
-    </p>
+    <div class="header-left">
+      <div class="icon-circle">
+        <Mic size={20} color="var(--color-ember-accent)" aria-hidden="true" />
+      </div>
+      <div class="header-text">
+        <p class="eyebrow">DEVICE MIC</p>
+      </div>
+    </div>
     <span
       class="status-badge"
       class:connected={isUsingDeviceMic}
@@ -103,35 +109,24 @@
       aria-live="polite"
     >
       {#if isWsStreaming}
-        AUDIO WS STREAMING
+        AUDIO STREAMING
       {:else if isUsingDeviceMic}
         DEVICE MIC ACTIVE
       {:else}
-        KLASYNC MIC STANDBY
+        MIC STANDBY
       {/if}
     </span>
   </div>
-  <div class="mic-info-grid">
-    <div class="mic-stat">
-      <span class="stat-label">SOURCE</span><strong
-        >{isUsingDeviceMic ? 'WebAudio PCM' : 'Klasync Mic'}</strong
-      >
-    </div>
-    <div class="mic-stat">
-      <span class="stat-label">DESTINATION</span><strong
-        >{sessionCode && isWsStreaming ? 'WS /audio/ws' : 'Local Meter'}</strong
-      >
-    </div>
-    <div class="mic-stat">
-      <span class="stat-label">LATENCY</span><strong>&lt; 15 ms</strong>
-    </div>
+
+  <div class="meter-container">
+    <AudioLevelMeter level={audioLevel} isActive={isUsingDeviceMic} />
+    {#if micError}<p class="error" role="alert">{micError}</p>{/if}
   </div>
-  <AudioLevelMeter level={audioLevel} isActive={isUsingDeviceMic} />
-  {#if micError}<p class="error" role="alert">{micError}</p>{/if}
+  
   <div class="mic-actions">
     {#if !isUsingDeviceMic}
       <button type="button" class="outline full" onclick={enableDeviceMic}
-        >{sessionCode ? 'Start Live Audio Stream & Mic' : 'Test & Enable Microphone'}</button
+        >{sessionCode ? 'Start Live Audio Stream' : 'Test & Enable Microphone'}</button
       >
     {:else}
       <button type="button" class="danger full" onclick={stopDeviceMic}
@@ -153,6 +148,32 @@
     align-items: center;
     gap: 8px;
   }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-12);
+  }
+  .icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(220, 80, 0, 0.1);
+    border: 1px solid rgba(220, 80, 0, 0.2);
+    border-radius: 50%;
+  }
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-warm-cream);
+  }
   .status-badge {
     font-size: 11px;
     letter-spacing: 0.12em;
@@ -166,34 +187,14 @@
     border-color: #4ab772;
     background: rgba(74, 183, 114, 0.1);
   }
-  .mic-info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    border-block: 1px dashed var(--color-cork-border);
-    padding: 10px 0;
-  }
-  .mic-stat {
+  .meter-container {
+    margin-block: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-  }
-  .stat-label {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    color: var(--color-driftwood);
-  }
-  .mic-stat strong {
-    font-size: 11px;
-    color: var(--color-warm-cream);
+    gap: 8px;
   }
   .mic-actions {
     display: flex;
     gap: 8px;
-  }
-  @media (max-width: 600px) {
-    .mic-info-grid {
-      grid-template-columns: 1fr;
-    }
   }
 </style>

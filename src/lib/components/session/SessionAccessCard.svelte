@@ -44,7 +44,7 @@
         <LinkIcon size={14} aria-hidden="true" class="link-icon" />
         <input readonly value={inviteUrl} aria-label="Direct invite URL" class="url-input" />
         <button type="button" class="outline copy-link-btn" onclick={onCopyInvite}>
-          {#if copied}<Check size={13} aria-hidden="true" class="success-icon" /> Copied{:else}<Copy size={13} aria-hidden="true" /> Copy Link{/if}
+          {#if copied}<Check size={13} aria-hidden="true" class="success-icon" /> Copied{:else}<Copy size={13} aria-hidden="true" /> Copy{/if}
         </button>
       </div>
     </div>
