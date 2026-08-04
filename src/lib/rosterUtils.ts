@@ -1,5 +1,11 @@
 import type { SessionState } from './sessionState.svelte';
 import type { RosterStudent } from './types';
+import {
+  uploadRoster,
+  importRosterFile,
+  createCourse,
+  type ApiRosterStudent,
+} from './api';
 
 export function persist(state: SessionState) {
   if (state.session) {
@@ -69,14 +75,208 @@ export function parseRosterTextToStudents(rawText: string): RosterStudent[] {
   return students;
 }
 
-export function parseRoster(state: SessionState) {
+export async function parseRoster(state: SessionState) {
   const parsed = parseRosterTextToStudents(state.rosterText);
   state.roster = parsed;
   persist(state);
-  state.rosterNotice = `${parsed.length} student${parsed.length === 1 ? '' : 's'} prepared for verification.`;
+
+  const courseId = state.courseCode?.trim();
+  if (courseId && parsed.length > 0) {
+    try {
+      const apiStudents: ApiRosterStudent[] = parsed.map((s) => ({
+        matric_number: s.matric,
+        full_name: s.name,
+      }));
+
+      // Ensure course exists on backend API before posting roster
+      try {
+        await createCourse({
+          code: courseId,
+          title: state.courseTitle?.trim() || courseId,
+        });
+      } catch {
+        // Course may already exist on backend
+      }
+
+      const res = await uploadRoster(courseId, apiStudents);
+      state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
+    } catch {
+      state.rosterNotice = `✓ Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
+    }
+  } else {
+    state.rosterNotice = `✓ ${parsed.length} student${parsed.length === 1 ? '' : 's'} confirmed.`;
+  }
 }
 
-export function importFile(state: SessionState, eventOrFile: Event | File) {
+// Convert Excel column letters like 'A', 'B', 'AA' to 0-based column index
+function colLetterToNumber(colStr: string): number {
+  let num = 0;
+  for (let i = 0; i < colStr.length; i++) {
+    num = num * 26 + (colStr.charCodeAt(i) - 64);
+  }
+  return num - 1;
+}
+
+async function decompressDeflate(compressed: Uint8Array): Promise<Uint8Array> {
+  try {
+    const ds = new DecompressionStream('deflate-raw');
+    const writer = ds.writable.getWriter();
+    writer.write(compressed);
+    writer.close();
+    const res = new Response(ds.readable);
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  } catch {
+    const ds = new DecompressionStream('deflate');
+    const writer = ds.writable.getWriter();
+    writer.write(compressed);
+    writer.close();
+    const res = new Response(ds.readable);
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  }
+}
+
+async function extractZipEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, Uint8Array>> {
+  const bytes = new Uint8Array(arrayBuffer);
+  const view = new DataView(arrayBuffer);
+  const fileMap = new Map<string, Uint8Array>();
+  const decoder = new TextDecoder('utf-8');
+
+  let pos = 0;
+  while (pos < bytes.length - 30) {
+    const sig = view.getUint32(pos, true);
+    if (sig === 0x04034b50) {
+      const generalFlag = view.getUint16(pos + 6, true);
+      const compressionMethod = view.getUint16(pos + 8, true);
+      let compressedSize = view.getUint32(pos + 18, true);
+      const fileNameLength = view.getUint16(pos + 26, true);
+      const extraFieldLength = view.getUint16(pos + 28, true);
+      const filename = decoder.decode(bytes.subarray(pos + 30, pos + 30 + fileNameLength)).toLowerCase();
+      const dataOffset = pos + 30 + fileNameLength + extraFieldLength;
+
+      if (compressedSize === 0 && (generalFlag & 0x0008)) {
+        let nextPos = dataOffset;
+        while (nextPos < bytes.length - 4) {
+          const nextSig = view.getUint32(nextPos, true);
+          if (nextSig === 0x04034b50 || nextSig === 0x02014b50) {
+            break;
+          }
+          nextPos++;
+        }
+        compressedSize = nextPos - dataOffset;
+        if (compressedSize >= 16 && view.getUint32(nextPos - 16, true) === 0x08074b50) {
+          compressedSize -= 16;
+        }
+      }
+
+      if (filename) {
+        const compressedData = bytes.subarray(dataOffset, dataOffset + compressedSize);
+        let decompressed: Uint8Array;
+        if (compressionMethod === 0) {
+          decompressed = compressedData;
+        } else if (compressionMethod === 8) {
+          decompressed = await decompressDeflate(compressedData);
+        } else {
+          pos = dataOffset + compressedSize;
+          continue;
+        }
+        fileMap.set(filename, decompressed);
+      }
+
+      pos = dataOffset + compressedSize;
+    } else if (sig === 0x02014b50 || sig === 0x06054b50) {
+      break;
+    } else {
+      pos++;
+    }
+  }
+
+  return fileMap;
+}
+
+export async function parseXlsxToCsv(arrayBuffer: ArrayBuffer): Promise<string> {
+  const fileMap = await extractZipEntries(arrayBuffer);
+  const decoder = new TextDecoder('utf-8');
+
+  // Parse Shared Strings if present
+  const sharedStrings: string[] = [];
+  const sharedStringsBytes = fileMap.get('xl/sharedstrings.xml');
+  if (sharedStringsBytes) {
+    const xmlText = decoder.decode(sharedStringsBytes);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'application/xml');
+    const siElements = doc.querySelectorAll('si');
+    siElements.forEach((si) => {
+      const tElements = si.querySelectorAll('t');
+      if (tElements.length > 0) {
+        let str = '';
+        tElements.forEach((t) => (str += t.textContent || ''));
+        sharedStrings.push(str);
+      } else {
+        sharedStrings.push(si.textContent || '');
+      }
+    });
+  }
+
+  // Find primary worksheet XML
+  let sheetBytes: Uint8Array | undefined;
+  for (const [key, val] of fileMap.entries()) {
+    if (key.startsWith('xl/worksheets/sheet')) {
+      sheetBytes = val;
+      break;
+    }
+  }
+
+  if (!sheetBytes) {
+    throw new Error('No worksheet found in XLSX file.');
+  }
+
+  const sheetXml = decoder.decode(sheetBytes);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sheetXml, 'application/xml');
+  const rowElements = doc.querySelectorAll('row');
+
+  const rows: string[][] = [];
+
+  rowElements.forEach((rowEl) => {
+    const cellElements = rowEl.querySelectorAll('c');
+    const rowCells: string[] = [];
+
+    cellElements.forEach((cEl) => {
+      const cellRef = cEl.getAttribute('r') || '';
+      const colLetters = cellRef.replace(/[0-9]/g, '').toUpperCase();
+      const colIdx = colLetters ? colLetterToNumber(colLetters) : rowCells.length;
+
+      const type = cEl.getAttribute('t');
+      const vEl = cEl.querySelector('v');
+      let val = '';
+
+      if (type === 's' && vEl) {
+        const idx = parseInt(vEl.textContent || '0', 10);
+        val = sharedStrings[idx] ?? '';
+      } else if (type === 'inlineStr') {
+        const isEl = cEl.querySelector('is t') || cEl.querySelector('is');
+        val = isEl?.textContent || '';
+      } else if (vEl) {
+        val = vEl.textContent || '';
+      }
+
+      while (rowCells.length < colIdx) {
+        rowCells.push('');
+      }
+      rowCells[colIdx] = val.replace(/,/g, ' ').trim();
+    });
+
+    if (rowCells.some((c) => c.trim().length > 0)) {
+      rows.push(rowCells);
+    }
+  });
+
+  return rows.map((r) => r.join(', ')).join('\n');
+}
+
+export async function importFile(state: SessionState, eventOrFile: Event | File) {
   let file: File | undefined;
 
   if (eventOrFile instanceof File) {
@@ -99,22 +299,65 @@ export function importFile(state: SessionState, eventOrFile: Event | File) {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = () => {
+  const courseId = state.courseCode?.trim();
+
+  // Try backend file import if course code is specified
+  if (courseId) {
     try {
-      const content = String(reader.result ?? '');
-      state.rosterText = content.replace(/^\uFEFF/, '');
-      parseRoster(state);
-      state.rosterNotice = `Successfully imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'} from ${file.name}.`;
+      try {
+        await createCourse({
+          code: courseId,
+          title: state.courseTitle?.trim() || courseId,
+        });
+      } catch {}
+
+      const report = await importRosterFile(courseId, file);
+      if (report && typeof report.imported_count === 'number') {
+        state.rosterNotice = `✓ Imported ${report.imported_count} student${report.imported_count === 1 ? '' : 's'} via API.`;
+      }
     } catch {
-      state.rosterNotice =
-        'Error reading file contents. Ensure the file contains readable student records.';
+      // Fallback to client-side parsing if backend endpoint is unavailable
     }
-  };
+  }
 
-  reader.onerror = () => {
-    state.rosterNotice = 'Error loading file from disk.';
-  };
+  const reader = new FileReader();
 
-  reader.readAsText(file);
+  if (isXlsx) {
+    reader.onload = async () => {
+      try {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        const csvText = await parseXlsxToCsv(arrayBuffer);
+        state.rosterText = csvText;
+        await parseRoster(state);
+        if (!state.rosterNotice.startsWith('✓')) {
+          state.rosterNotice = `✓ Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'} from ${file.name}.`;
+        }
+      } catch (err) {
+        state.rosterNotice =
+          'Error reading Excel file. Please ensure it is a valid .xlsx spreadsheet.';
+      }
+    };
+    reader.onerror = () => {
+      state.rosterNotice = 'Error loading file from disk.';
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = async () => {
+      try {
+        const content = String(reader.result ?? '');
+        state.rosterText = content.replace(/^\uFEFF/, '');
+        await parseRoster(state);
+        if (!state.rosterNotice.startsWith('✓')) {
+          state.rosterNotice = `✓ Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'} from ${file.name}.`;
+        }
+      } catch {
+        state.rosterNotice =
+          'Error reading file contents. Ensure the file contains readable student records.';
+      }
+    };
+    reader.onerror = () => {
+      state.rosterNotice = 'Error loading file from disk.';
+    };
+    reader.readAsText(file);
+  }
 }

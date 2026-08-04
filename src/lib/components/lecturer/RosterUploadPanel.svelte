@@ -1,8 +1,9 @@
 <script lang="ts">
   import LmsSyncModal from './LmsSyncModal.svelte';
   import RosterPreviewTable from './RosterPreviewTable.svelte';
+  import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
   import { parseRosterTextToStudents } from '$lib/rosterUtils';
-  import { Link, FileText } from '@lucide/svelte';
+  import { Link, FileText, CheckCircle2 } from '@lucide/svelte';
 
   let {
     rosterText = $bindable(''),
@@ -13,12 +14,15 @@
     rosterText: string;
     rosterNotice?: string;
     onImportFile: (event: Event) => void;
-    onParseRoster: () => void;
+    onParseRoster: () => Promise<void> | void;
   } = $props();
 
   let isDragging = $state(false);
   let isLmsModalOpen = $state(false);
   let fileInputRef: HTMLInputElement | null = $state(null);
+
+  let isConfirming = $state(false);
+  let isConfirmed = $state(false);
 
   const parsedStudents = $derived(parseRosterTextToStudents(rosterText));
   let rawLinesCount = $derived(
@@ -27,6 +31,18 @@
       .map((l) => l.trim())
       .filter(Boolean).length
   );
+
+  async function handleConfirmRoster() {
+    if (parsedStudents.length === 0 || isConfirming) return;
+    isConfirming = true;
+    try {
+      await onParseRoster();
+      isConfirmed = true;
+      setTimeout(() => (isConfirmed = false), 3500);
+    } finally {
+      isConfirming = false;
+    }
+  }
 
   function handleDrop(e: DragEvent) {
     e.preventDefault();
@@ -115,11 +131,17 @@
 
   <button
     type="button"
-    class={parsedStudents.length > 0 ? 'primary full' : 'outline full'}
-    onclick={onParseRoster}
-    disabled={parsedStudents.length === 0}
+    class={isConfirmed ? 'success full' : parsedStudents.length > 0 ? 'primary full' : 'outline full'}
+    onclick={handleConfirmRoster}
+    disabled={parsedStudents.length === 0 || isConfirming}
   >
-    Confirm Roster ({parsedStudents.length})
+    {#if isConfirming}
+      <ButtonSpinner label="Saving..." /> Saving...
+    {:else if isConfirmed}
+      <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Confirmed ({parsedStudents.length})
+    {:else}
+      Confirm Roster ({parsedStudents.length})
+    {/if}
   </button>
 
   {#if rosterNotice}
@@ -190,5 +212,10 @@
   .paste-section textarea {
     width: 100%;
     margin-top: 6px;
+  }
+  button.success {
+    background: rgba(74, 183, 114, 0.2) !important;
+    border: 1px solid #4ab772 !important;
+    color: #4ab772 !important;
   }
 </style>

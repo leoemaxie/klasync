@@ -19,7 +19,7 @@
     rosterText: string;
     rosterNotice?: string;
     onImportFile: (event: Event) => void;
-    onParseRoster: () => void;
+    onParseRoster: () => Promise<void> | void;
   } = $props();
 </script>
 
