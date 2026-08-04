@@ -60,11 +60,8 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">GUEST ACCESS / NO ACCOUNT REQUIRED</p>
-    <h1>Enter room.</h1>
-    <p class="lede">
-      Real-time captions and verified attendance. No account required.
-    </p>
+    <p class="eyebrow">GUEST ACCESS</p>
+    <h1>Join Session</h1>
     <div class="join-card panel">
       <label for="session-code-input">
         Session short code

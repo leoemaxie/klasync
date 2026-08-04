@@ -61,12 +61,8 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">LECTURER WORKSPACE / ACCOUNT REGISTRATION</p>
-    <h1>Create your workspace.</h1>
-    <p class="lede">
-      Enable physical lecture accessibility for all your university courses in
-      seconds.
-    </p>
+    <p class="eyebrow">LECTURER ACCOUNT REGISTRATION</p>
+    <h1>Create Lecturer Account</h1>
 
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="reg-name">

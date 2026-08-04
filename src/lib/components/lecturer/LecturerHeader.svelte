@@ -15,10 +15,7 @@
       >
     {/if}
   </div>
-  <h1>Launch instant rooms.</h1>
-  <p class="lede">
-    Manage rosters, test audio, stream captions, and verify attendance.
-  </p>
+  <h1>Lecturer Control Room</h1>
 </header>
 
 <style>

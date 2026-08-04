@@ -65,12 +65,8 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">STUDENT ACCOUNT / PERSISTENT ARCHIVE</p>
-    <h1>Retain your learning.</h1>
-    <p class="lede">
-      An account unlocks your claimed lecture materials. Joining live lectures
-      remains account-free.
-    </p>
+    <p class="eyebrow">STUDENT ACCOUNT REGISTRATION</p>
+    <h1>Create Student Account</h1>
 
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="st-matric">

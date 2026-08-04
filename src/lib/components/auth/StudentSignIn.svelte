@@ -54,11 +54,8 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">STUDENT PERSISTENT ACCESS / SIGN IN</p>
-    <h1>Sign in.</h1>
-    <p class="lede">
-      Access claimed transcripts, flashcards, and notes.
-    </p>
+    <p class="eyebrow">STUDENT PERSISTENT ACCESS</p>
+    <h1>Student Sign In</h1>
 
     <form class="join-card panel" onsubmit={handleLogin}>
       {#if appState?.authNotice}

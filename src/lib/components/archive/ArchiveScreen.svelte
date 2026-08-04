@@ -55,10 +55,7 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <p class="eyebrow">STUDENT ARCHIVE / CLAIMED LECTURES</p>
-    <h1>Lecture Archive.</h1>
-    <p class="lede">
-      Transcripts, flashcards, and audio replays.
-    </p>
+    <h1>Lecture Archive</h1>
 
     <div class="join-card panel">
       <label for="archive-search">

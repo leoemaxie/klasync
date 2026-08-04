@@ -56,11 +56,8 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">LECTURER ACCESS / SIGN IN</p>
-    <h1>Sign in.</h1>
-    <p class="lede">
-      Stream live captions and manage class rosters.
-    </p>
+    <p class="eyebrow">LECTURER ACCESS</p>
+    <h1>Lecturer Sign In</h1>
 
     <form class="join-card panel" onsubmit={handleLogin}>
       {#if appState?.authNotice}
