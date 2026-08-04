@@ -6,19 +6,62 @@ export type ApiErrorPayload = {
   code?: string;
 };
 
-let accessToken: string | null = null;
+let accessToken: string | null =
+  typeof localStorage !== 'undefined'
+    ? localStorage.getItem('klasync_access_token')
+    : null;
+let refreshToken: string | null =
+  typeof localStorage !== 'undefined'
+    ? localStorage.getItem('klasync_refresh_token')
+    : null;
+
+export function setTokens(access: string | null, refresh?: string | null) {
+  accessToken = access;
+  if (typeof localStorage !== 'undefined') {
+    if (access) {
+      localStorage.setItem('klasync_access_token', access);
+    } else {
+      localStorage.removeItem('klasync_access_token');
+    }
+  }
+
+  if (refresh !== undefined) {
+    refreshToken = refresh;
+    if (typeof localStorage !== 'undefined') {
+      if (refresh) {
+        localStorage.setItem('klasync_refresh_token', refresh);
+      } else {
+        localStorage.removeItem('klasync_refresh_token');
+      }
+    }
+  }
+}
 
 export function setAccessToken(token: string | null) {
-  accessToken = token;
+  setTokens(token);
+}
+
+export function setRefreshToken(token: string | null) {
+  setTokens(accessToken, token);
 }
 
 export function getAccessToken(): string | null {
   return accessToken;
 }
 
+export function getRefreshToken(): string | null {
+  return refreshToken;
+}
+
 let isRefreshingPromise: Promise<boolean> | null = null;
 
 async function doRefreshToken(): Promise<boolean> {
+  const curRefreshToken = getRefreshToken();
+  if (!curRefreshToken) {
+    setTokens(null, null);
+    return false;
+  }
+
   try {
     const headers: Record<string, string> = {
       'content-type': 'application/json',
@@ -30,22 +73,24 @@ async function doRefreshToken(): Promise<boolean> {
       method: 'POST',
       credentials: 'include',
       headers,
+      body: JSON.stringify({ refresh_token: curRefreshToken }),
     });
     if (!res.ok) {
-      setAccessToken(null);
+      setTokens(null, null);
       return false;
     }
     const data = (await res.json().catch(() => ({}))) as {
       access_token?: string;
+      refresh_token?: string;
     };
     if (data.access_token) {
-      setAccessToken(data.access_token);
+      setTokens(data.access_token, data.refresh_token ?? curRefreshToken);
       return true;
     }
-    setAccessToken(null);
+    setTokens(null, null);
     return false;
   } catch {
-    setAccessToken(null);
+    setTokens(null, null);
     return false;
   } finally {
     isRefreshingPromise = null;

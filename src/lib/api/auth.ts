@@ -1,4 +1,4 @@
-import { http, setAccessToken } from './http';
+import { http, setTokens, getRefreshToken } from './http';
 import type { SuccessResponse } from './types';
 
 export type AuthUser = {
@@ -31,7 +31,7 @@ export async function loginLecturer(
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
-  setAccessToken(res.access_token);
+  setTokens(res.access_token, res.refresh_token ?? null);
 
   const user =
     res.user ??
@@ -53,7 +53,7 @@ export async function registerLecturer(data: {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  setAccessToken(res.access_token);
+  setTokens(res.access_token, res.refresh_token ?? null);
 
   const user =
     res.user ??
@@ -83,7 +83,7 @@ export async function loginStudent(
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
-  setAccessToken(res.access_token);
+  setTokens(res.access_token, res.refresh_token ?? null);
 
   const user =
     res.user ??
@@ -111,7 +111,7 @@ export async function registerStudent(data: {
       password: data.password,
     }),
   });
-  setAccessToken(res.access_token);
+  setTokens(res.access_token, res.refresh_token ?? null);
 
   const user =
     res.user ??
@@ -146,18 +146,20 @@ export async function completePasswordReset(
 }
 
 export async function refreshToken(token?: string): Promise<AuthResponse> {
+  const rToken = token || getRefreshToken() || '';
   const res = await http<AuthResponse>('/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refresh_token: token ?? '' }),
+    body: JSON.stringify({ refresh_token: rToken }),
   });
-  setAccessToken(res.access_token);
+  setTokens(res.access_token, res.refresh_token ?? rToken);
   return res;
 }
 
 export async function logout(token?: string): Promise<void> {
+  const rToken = token || getRefreshToken() || '';
   await http('/auth/logout', {
     method: 'POST',
-    body: JSON.stringify({ refresh_token: token ?? '' }),
-  });
-  setAccessToken(null);
+    body: JSON.stringify({ refresh_token: rToken }),
+  }).catch(() => {});
+  setTokens(null, null);
 }
