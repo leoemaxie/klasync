@@ -1,15 +1,18 @@
 <script lang="ts">
   import type { Participant, Session } from "$lib/types";
+  import type { AuthUser } from "$lib/api/auth";
 
   let {
     session,
     joinedParticipant,
     wsConnected = false,
+    currentUser = null,
     onLecturerView
   }: {
     session: Session | null;
     joinedParticipant: Participant | null;
     wsConnected?: boolean;
+    currentUser?: AuthUser | null;
     onLecturerView: () => void;
   } = $props();
 </script>
@@ -34,9 +37,11 @@
         : "Provisional attendance recorded. Verification pending."}
     </p>
   </div>
-  <button type="button" class="outline lecturer-switch-btn" onclick={onLecturerView}>
-    Lecturer View
-  </button>
+  {#if !currentUser || currentUser.role === 'lecturer' || currentUser.role === 'admin'}
+    <button type="button" class="outline lecturer-switch-btn" onclick={onLecturerView}>
+      Lecturer View
+    </button>
+  {/if}
 </section>
 
 <style>

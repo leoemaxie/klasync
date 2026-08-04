@@ -43,6 +43,9 @@
     triggerHaptic('medium');
     if (appState?.currentUser && (appState.currentUser.role === 'lecturer' || appState.currentUser.role === 'admin')) {
       navigate('lecturer');
+    } else if (appState?.currentUser && appState.currentUser.role === 'student') {
+      if (appState) appState.authNotice = 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.';
+      navigate('lecturer-login');
     } else {
       if (appState) appState.authNotice = 'Please sign in to access the Lecturer Workspace.';
       navigate('lecturer-login');
@@ -51,14 +54,28 @@
 
   function handleStudentArchive() {
     triggerHaptic('light');
-    if (appState?.currentUser) { navigate('archive'); }
-    else { if (appState) appState.authNotice = 'Please sign in to access your Student Archive.'; navigate('student-login'); }
+    if (appState?.currentUser && appState.currentUser.role === 'student') {
+      navigate('archive');
+    } else if (appState?.currentUser && (appState.currentUser.role === 'lecturer' || appState.currentUser.role === 'admin')) {
+      if (appState) appState.authNotice = 'Access restricted: Student Archive is only accessible to student accounts.';
+      navigate('student-login');
+    } else {
+      if (appState) appState.authNotice = 'Please sign in to access your Student Archive.';
+      navigate('student-login');
+    }
   }
 
   async function handleLogout() {
     triggerHaptic('warning');
     try { await logout(); } catch {}
-    if (appState) { appState.currentUser = null; appState.authNotice = ''; localStorage.removeItem('klasync-user'); }
+    if (appState) {
+      appState.currentUser = null;
+      appState.authNotice = '';
+      appState.lecturerName = '';
+      appState.lecturerEmail = '';
+      localStorage.removeItem('klasync-user');
+      localStorage.removeItem('klasync-lecturer');
+    }
     navigate('home');
     mobileMenuOpen = false;
   }
@@ -94,7 +111,10 @@
       <span class="spotlight-kbd">⌘K</span>
     </button>
     <button class="nav-btn text" onclick={() => navigate('join')}>Join Session</button>
-    <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
+
+    {#if !appState?.currentUser || appState.currentUser.role === 'student'}
+      <button class="nav-btn text" onclick={handleStudentArchive}>Student Archive</button>
+    {/if}
 
     {#if appState?.currentUser}
       {#if appState.currentUser.role === 'lecturer' || appState.currentUser.role === 'admin'}

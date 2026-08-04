@@ -15,6 +15,8 @@
   import LivePresenceCard from './LivePresenceCard.svelte';
   import LiveArchiveCta from './LiveArchiveCta.svelte';
 
+  import type { AuthUser } from '$lib/api/auth';
+
   let {
     session,
     joinedParticipant,
@@ -22,6 +24,7 @@
     captionIndex = 0,
     accountCreated = $bindable(false),
     screen = $bindable(),
+    currentUser = null,
     onNextCaption,
     onHeartbeat,
   }: {
@@ -31,6 +34,7 @@
     captionIndex: number;
     accountCreated: boolean;
     screen: Screen;
+    currentUser?: AuthUser | null;
     onNextCaption: () => void;
     onHeartbeat: () => void;
   } = $props();
@@ -129,6 +133,7 @@
     {session}
     {joinedParticipant}
     {wsConnected}
+    {currentUser}
     onLecturerView={() => (screen = 'lecturer')}
   />
   <AccessibilityDrawer bind:fontSize bind:dyslexicFont bind:lineHeight />

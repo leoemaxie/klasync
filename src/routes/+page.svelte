@@ -78,7 +78,9 @@
             appState.currentUser.role !== 'admin'))
       ) {
         appState.authNotice =
-          'Please sign in to access the Lecturer Workspace.';
+          appState.currentUser?.role === 'student'
+            ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
+            : 'Please sign in to access the Lecturer Workspace.';
         if (currentLoc !== '/lecturer-login') {
           void replace('/lecturer-login');
           return;
@@ -87,13 +89,60 @@
       }
 
       // Auth guard for student archive
-      if (matchedScreen === 'archive' && !appState.currentUser) {
-        appState.authNotice = 'Please sign in to access your Student Archive.';
+      if (
+        matchedScreen === 'archive' &&
+        (!appState.currentUser || appState.currentUser.role !== 'student')
+      ) {
+        appState.authNotice =
+          appState.currentUser?.role === 'lecturer' ||
+          appState.currentUser?.role === 'admin'
+            ? 'Access restricted: Student Archive is only accessible to student accounts.'
+            : 'Please sign in to access your Student Archive.';
         if (currentLoc !== '/student-login') {
           void replace('/student-login');
           return;
         }
         matchedScreen = 'student-login';
+      }
+
+      // Auth guard for lecturer auth pages when logged in
+      if (
+        matchedScreen === 'lecturer-login' ||
+        matchedScreen === 'lecturer-register'
+      ) {
+        if (
+          appState.currentUser?.role === 'lecturer' ||
+          appState.currentUser?.role === 'admin'
+        ) {
+          if (currentLoc !== '/lecturer') {
+            void replace('/lecturer');
+            return;
+          }
+          matchedScreen = 'lecturer';
+        } else if (appState.currentUser?.role === 'student') {
+          appState.authNotice =
+            'You are currently signed in with a student account. Please sign out first to access lecturer accounts.';
+        }
+      }
+
+      // Auth guard for student auth pages when logged in
+      if (
+        matchedScreen === 'student-login' ||
+        matchedScreen === 'student-register'
+      ) {
+        if (appState.currentUser?.role === 'student') {
+          if (currentLoc !== '/archive') {
+            void replace('/archive');
+            return;
+          }
+          matchedScreen = 'archive';
+        } else if (
+          appState.currentUser?.role === 'lecturer' ||
+          appState.currentUser?.role === 'admin'
+        ) {
+          appState.authNotice =
+            'You are currently signed in with a lecturer account. Please sign out first to access student accounts.';
+        }
       }
 
       if (appState.screen !== matchedScreen) {
@@ -161,6 +210,7 @@
       captionIndex={appState.captionIndex}
       bind:accountCreated={appState.accountCreated}
       bind:screen={appState.screen}
+      currentUser={appState.currentUser}
       onNextCaption={() => refreshCaptions(appState)}
       onHeartbeat={() => heartbeat(appState)}
     />
@@ -174,5 +224,6 @@
     bind:isOpen={isSpotlightOpen}
     bind:screen={appState.screen}
     bind:sessionCode={appState.sessionCode}
+    currentUser={appState.currentUser}
   />
 </main>

@@ -4,14 +4,18 @@
   import { triggerHaptic } from '$lib/native/haptics';
   import { Search, Radio, BookOpen, Users, Settings, X, ArrowRight } from '@lucide/svelte';
 
+  import type { AuthUser } from '$lib/api/auth';
+
   let {
     isOpen = $bindable(false),
     screen = $bindable(),
     sessionCode = $bindable(''),
+    currentUser = null,
   }: {
     isOpen: boolean;
     screen: Screen;
     sessionCode?: string;
+    currentUser?: AuthUser | null;
   } = $props();
 
   let searchQuery = $state('');
@@ -38,28 +42,36 @@
         isOpen = false;
       },
     },
-    {
-      id: 'lecturer',
-      title: 'Lecturer Control Room',
-      description: 'Course setup, roster management, and broadcasting',
-      icon: BookOpen,
-      category: 'Navigation',
-      action: () => {
-        screen = 'lecturer';
-        isOpen = false;
-      },
-    },
-    {
-      id: 'archive',
-      title: 'Student Archive & Materials',
-      description: 'Review saved lecture notes, slides, and transcripts',
-      icon: Users,
-      category: 'Navigation',
-      action: () => {
-        screen = 'archive';
-        isOpen = false;
-      },
-    },
+    ...(!currentUser || currentUser.role === 'lecturer' || currentUser.role === 'admin'
+      ? [
+          {
+            id: 'lecturer',
+            title: 'Lecturer Control Room',
+            description: 'Course setup, roster management, and broadcasting',
+            icon: BookOpen,
+            category: 'Navigation' as const,
+            action: () => {
+              screen = 'lecturer';
+              isOpen = false;
+            },
+          },
+        ]
+      : []),
+    ...(!currentUser || currentUser.role === 'student'
+      ? [
+          {
+            id: 'archive',
+            title: 'Student Archive & Materials',
+            description: 'Review saved lecture notes, slides, and transcripts',
+            icon: Users,
+            category: 'Navigation' as const,
+            action: () => {
+              screen = 'archive';
+              isOpen = false;
+            },
+          },
+        ]
+      : []),
   ]);
 
   const filteredActions = $derived(

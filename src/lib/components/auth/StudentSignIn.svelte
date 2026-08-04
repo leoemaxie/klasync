@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Screen } from '$lib/types';
-  import { loginStudent } from '$lib/api/auth';
+  import { loginStudent, logout } from '$lib/api/auth';
   import PublicVisualPanel from '$lib/components/shared/PublicVisualPanel.svelte';
   import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
   import type { SessionState } from '$lib/sessionState.svelte';
@@ -31,6 +31,11 @@
     errorMsg = '';
     try {
       const res = await loginStudent(email.trim(), password);
+      if (res.user && res.user.role !== 'student') {
+        await logout().catch(() => {});
+        errorMsg = 'This account is registered as a lecturer. Please sign in under Lecturer Sign In.';
+        return;
+      }
       if (appState) {
         appState.currentUser = res.user;
         appState.authNotice = '';
