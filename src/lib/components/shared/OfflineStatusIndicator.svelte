@@ -41,12 +41,12 @@
 {#if !isOnline}
   <div class="offline-banner offline" role="status" aria-live="polite">
     <span class="offline-dot">●</span>
-    <span>OFFLINE MODE ACTIVE · Queueing heartbeats &amp; local cache</span>
+    <span>OFFLINE MODE</span>
   </div>
 {:else if showReconnected}
   <div class="offline-banner online" role="status" aria-live="polite">
     <span class="online-dot">●</span>
-    <span>RECONNECTED · Syncing live data</span>
+    <span>RECONNECTED</span>
   </div>
 {/if}
 

@@ -6,16 +6,12 @@
 <header class="workspace-header">
   <div class="header-badge-row">
     <span class="eyebrow">LECTURER CONTROL ROOM</span>
-    {#if currentUser}
-      <span class="auth-status-badge">AUTHENTICATED LECTURER</span>
-    {/if}
     {#if liveCode}
       <span class="live-status-pill"
         ><span class="pulse-dot" aria-hidden="true">●</span> SESSION LIVE ({liveCode})</span
       >
     {/if}
   </div>
-  <h1>Lecturer Control Room</h1>
 </header>
 
 <style>
@@ -32,17 +28,6 @@
     align-items: center;
     gap: var(--spacing-12);
     flex-wrap: wrap;
-  }
-  .auth-status-badge {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-warm-cream);
-    background: rgba(74, 183, 114, 0.12);
-    border: 1px solid #4ab772;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-weight: 700;
   }
   .live-status-pill {
     font-size: 11px;

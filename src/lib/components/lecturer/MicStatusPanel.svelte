@@ -53,16 +53,16 @@
 <div class="panel mic-status-panel">
   <div class="mic-header">
     <p class="eyebrow">
-      <span class="eyebrow-accent" aria-hidden="true">●</span> HARDWARE &amp; AUDIO INPUT
+      <span class="eyebrow-accent" aria-hidden="true">●</span> DEVICE &amp; AUDIO
     </p>
     <span class="status-badge" class:connected={isUsingDeviceMic} aria-live="polite">
-      {isUsingDeviceMic ? 'DEVICE MIC ACTIVE' : 'HARDWARE STANDBY'}
+      {isUsingDeviceMic ? 'DEVICE MIC ACTIVE' : 'KLASNYC MIC STANDBY'}
     </span>
   </div>
   <div class="mic-info-grid">
     <div class="mic-stat">
       <span class="stat-label">SOURCE</span><strong
-        >{isUsingDeviceMic ? 'WebAudio API' : 'Klasync Hardware'}</strong
+        >{isUsingDeviceMic ? 'WebAudio' : 'Klasync Mic'}</strong
       >
     </div>
     <div class="mic-stat">

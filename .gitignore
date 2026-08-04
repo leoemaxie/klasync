@@ -15,3 +15,4 @@ vite.config.ts.timestamp-*
 target/
 DESIGN.md
 .vercel/
+.pnpm-store/
