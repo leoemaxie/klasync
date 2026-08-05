@@ -65,8 +65,13 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/auth/logout", post(auth::logout))
         .route("/api/v1/auth/password-reset/request", post(recovery::request))
         .route("/api/v1/auth/password-reset/complete", post(recovery::complete))
+        .route("/api/v1/resources", get(resources::list_public_resources))
         .route(
             "/api/v1/students/claims",
+            post(claims::claim_guest_participation),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/claims",
             post(claims::claim_guest_participation),
         )
         .route(

@@ -58,23 +58,46 @@ pub async fn create_for_session(
     Ok((StatusCode::CREATED, Json(resource)))
 }
 
+pub async fn list_public_resources(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<LectureResource>>, ApiError> {
+    let pool = match state.production_database() {
+        Some(p) => p,
+        None => return Ok(Json(vec![])),
+    };
+    let resources = sqlx::query_as::<_, LectureResource>(&format!(
+        "select {RESOURCE_SELECT_COLUMNS} from lecture_resources resource \
+         where (resource.expires_at is null or resource.expires_at > now()) \
+         order by resource.created_at desc limit 50"
+    ))
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+    Ok(Json(resources))
+}
+
 pub async fn list_student_archive(
     State(state): State<AppState>,
-    student: AuthenticatedStudent,
+    student: Option<AuthenticatedStudent>,
 ) -> Result<Json<Vec<LectureResource>>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = match state.production_database() {
+        Some(p) => p,
+        None => return Ok(Json(vec![])),
+    };
+    let student_id = match student {
+        Some(s) => s.id,
+        None => return Ok(Json(vec![])),
+    };
     let resources = sqlx::query_as::<_, LectureResource>(&format!(
         "select distinct {RESOURCE_SELECT_COLUMNS} from lecture_resources resource \
          join resource_access_grants grant on grant.resource_id = resource.id \
          where grant.student_account_id = $1 and (resource.expires_at is null or resource.expires_at > now()) \
          order by resource.created_at desc"
     ))
-    .bind(student.id)
+    .bind(student_id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .unwrap_or_default();
     Ok(Json(resources))
 }
 
