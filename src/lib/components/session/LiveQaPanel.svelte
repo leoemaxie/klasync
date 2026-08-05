@@ -202,6 +202,10 @@
   }
   .qa-submit-form input {
     flex: 1;
+    min-width: 0;
+  }
+  .qa-submit-form button {
+    white-space: nowrap;
   }
   .questions-list {
     display: flex;
@@ -236,5 +240,15 @@
   }
   .upvote-btn {
     padding: 4px 12px;
+  }
+
+  @media (max-width: 600px) {
+    .qa-submit-form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .qa-submit-form button {
+      width: 100%;
+    }
   }
 </style>

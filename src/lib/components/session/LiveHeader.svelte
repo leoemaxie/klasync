@@ -47,11 +47,6 @@
         : "Provisional attendance recorded. Verification pending."}
     </p>
   </div>
-  {#if !currentUser || currentUser.role === 'lecturer' || currentUser.role === 'admin'}
-    <button type="button" class="outline lecturer-switch-btn" onclick={onLecturerView}>
-      Lecturer View
-    </button>
-  {/if}
 </section>
 
 <style>

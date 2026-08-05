@@ -146,18 +146,24 @@
   }
   .button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-8);
   }
   .button-group button {
-    flex: 1;
+    flex: 1 1 90px;
+    min-width: 80px;
     font-size: 10px;
-    padding: 6px;
+    padding: 6px 8px;
+    white-space: nowrap;
+    text-align: center;
+    box-sizing: border-box;
   }
   .toggle-row {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
   }
   .toggle-title {
     font-size: 13px;
