@@ -188,9 +188,48 @@ export function startMicrophoneAudioStream(
     active = false;
   }
 
+  // WebSpeechRecognition fallback for real-time speech transcription
+  let recognition: any = null;
+  const SpeechRecognition =
+    typeof window !== 'undefined'
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+
+  if (SpeechRecognition) {
+    try {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            const transcript = event.results[i][0].transcript.trim();
+            if (transcript) {
+              onCaptionIngested?.({
+                text: transcript,
+                speaker: 'Lecturer Mic',
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
+        }
+      };
+
+      recognition.onerror = () => {};
+      recognition.start();
+    } catch {}
+  }
+
   return {
     stop: () => {
       active = false;
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch {}
+      }
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         try {
           mediaRecorder.stop();

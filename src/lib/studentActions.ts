@@ -3,6 +3,7 @@ import {
   joinSessionByCode,
   lookupSessionByCode,
   sendHeartbeat,
+  publishCaption as apiPublishCaption,
 } from './api';
 import { persist } from './rosterUtils';
 import type { SessionState } from './sessionState.svelte';
@@ -89,6 +90,12 @@ export function ingestCaption(
   if (!current.includes(text)) {
     state.captions = [...current, text];
     state.captionIndex = state.captions.length - 1;
+
+    // Broadcast caption to backend API & WebSocket subscribers
+    const activeCode = state.session?.code || state.sessionCode;
+    if (activeCode) {
+      void apiPublishCaption(activeCode, text).catch(() => {});
+    }
   }
 }
 

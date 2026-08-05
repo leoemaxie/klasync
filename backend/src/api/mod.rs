@@ -153,7 +153,15 @@ pub fn router(state: AppState) -> Router {
             post(handlers::live_controls::pause_captions),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/pause",
+            post(handlers::live_controls::pause_captions),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/captions/resume",
+            post(handlers::live_controls::resume_captions),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/resume",
             post(handlers::live_controls::resume_captions),
         )
         .route(

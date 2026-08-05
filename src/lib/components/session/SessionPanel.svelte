@@ -12,6 +12,7 @@
     type IngestedCaption,
   } from '$lib/api/audio';
   import { Radio } from '@lucide/svelte';
+import LiveQaPanel from './LiveQaPanel.svelte';
 
   let {
     session,
@@ -160,6 +161,7 @@
     <SessionTopHeader title={session.title} {isPaused} {isRecording} {audioLevel} />
     <SessionAccessCard code={session.code} {inviteUrl} {copied} {onCopyInvite} />
     <SessionControlsCard {isPaused} {isRecording} {isTogglingPause} {isTogglingRec} isEndingSession={isEndingSession || isEnding || isSaving} {actionError} {apiNotice} onPauseToggle={handlePauseToggle} onRecordingToggle={handleRecordingToggle} onEndSession={handleEndSession} />
+    <LiveQaPanel sessionCode={session.code} isLecturer={true} />
   {:else}
     <div class="start-session-card">
       <div class="start-header">
