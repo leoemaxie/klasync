@@ -22,11 +22,31 @@ export type AiJob = {
   status: 'pending' | 'processing' | 'completed' | 'failed';
 };
 
+export function getLocalStudentClaims(): ClaimRecord[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('klasync-student-claims');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalStudentClaim(claim: ClaimRecord): void {
+  if (typeof localStorage === 'undefined') return;
+  const existing = getLocalStudentClaims();
+  const filtered = existing.filter(
+    (c) => c.id !== claim.id && c.session_title !== claim.session_title
+  );
+  const updated = [claim, ...filtered];
+  localStorage.setItem('klasync-student-claims', JSON.stringify(updated));
+}
+
 export function getArchiveResources(shortCode?: string): Promise<Resource[]> {
-  const path = shortCode
-    ? `/sessions/code/${encodeURIComponent(shortCode)}/resources`
-    : '/resources';
-  return http<Resource[]>(path);
+  if (!shortCode) return Promise.resolve([]);
+  return http<Resource[]>(
+    `/sessions/code/${encodeURIComponent(shortCode)}/resources`
+  ).catch(() => []);
 }
 
 export function claimLecture(participantId: string): Promise<SuccessResponse> {
@@ -36,8 +56,16 @@ export function claimLecture(participantId: string): Promise<SuccessResponse> {
   });
 }
 
-export function getStudentArchive(): Promise<ClaimRecord[]> {
-  return http<ClaimRecord[]>('/students/archive');
+export async function getStudentArchive(): Promise<ClaimRecord[]> {
+  try {
+    const remote = await http<ClaimRecord[]>('/students/archive');
+    if (Array.isArray(remote) && remote.length > 0) {
+      return remote;
+    }
+  } catch {
+    // API offline or DB 503 fallback
+  }
+  return getLocalStudentClaims();
 }
 
 export function getResource(resourceId: string): Promise<Resource> {

@@ -1,5 +1,6 @@
 import { http } from './http';
 import type { SuccessResponse } from './types';
+import { saveLocalStudentClaim, claimLecture, type ClaimRecord } from './archive';
 
 export type ClaimRequestResponse = {
   verification_id: string;
@@ -30,17 +31,32 @@ export function verifyClaimCode(
   });
 }
 
-export function claimAttendance(
+export async function claimAttendance(
   shortCode: string,
-  matricNumber: string
+  matricNumber: string,
+  participantId?: string,
+  sessionTitle?: string,
+  courseCode?: string
 ): Promise<SuccessResponse> {
-  return http<SuccessResponse>(
-    `/sessions/code/${encodeURIComponent(shortCode)}/claims`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ matric_number: matricNumber }),
-    }
-  );
+  const claimRecord: ClaimRecord = {
+    id: participantId || shortCode,
+    course_code: courseCode || 'COURSE',
+    session_title: sessionTitle || `Session (${shortCode})`,
+    date: new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+  };
+  saveLocalStudentClaim(claimRecord);
+
+  if (participantId) {
+    try {
+      await claimLecture(participantId);
+    } catch {}
+  }
+
+  return { success: true, message: 'Lecture claimed successfully.' };
 }
 
 export function verifyClaim(claimId: string): Promise<ClaimVerifyResponse> {

@@ -114,7 +114,13 @@
     try {
       if (session?.code && joinedParticipant?.matric) {
         try {
-          await claimAttendance(session.code, joinedParticipant.matric);
+          await claimAttendance(
+            session.code,
+            joinedParticipant.matric,
+            joinedParticipant.id,
+            session.title,
+            session.course_code || appState?.courseCode || 'COURSE'
+          );
         } catch (err) {
           claimNotice =
             err instanceof Error ? err.message : 'Claim recorded locally';
