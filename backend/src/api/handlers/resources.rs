@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::{
     api::{error::ApiError, handlers::sessions::database_session_by_code},
     auth::guard::{AuthenticatedLecturer, AuthenticatedStudent, OptionalStudent},
-    models::{CreateLectureResourceRequest, LectureResource},
+    models::{CreateLectureResourceRequest, LectureResource, StudentArchiveItem},
     state::AppState,
 };
 
@@ -79,7 +79,7 @@ pub async fn list_public_resources(
 pub async fn list_student_archive(
     State(state): State<AppState>,
     OptionalStudent(student): OptionalStudent,
-) -> Result<Json<Vec<LectureResource>>, ApiError> {
+) -> Result<Json<Vec<StudentArchiveItem>>, ApiError> {
     let pool = match state.production_database() {
         Some(p) => p,
         None => return Ok(Json(vec![])),
@@ -88,17 +88,22 @@ pub async fn list_student_archive(
         Some(s) => s.id,
         None => return Ok(Json(vec![])),
     };
-    let resources = sqlx::query_as::<_, LectureResource>(&format!(
-        "select distinct {RESOURCE_SELECT_COLUMNS} from lecture_resources resource \
-         join resource_access_grants grant on grant.resource_id = resource.id \
-         where grant.student_account_id = $1 and (resource.expires_at is null or resource.expires_at > now()) \
-         order by resource.created_at desc"
-    ))
+    let items = sqlx::query_as::<_, StudentArchiveItem>(
+        "select distinct s.id, c.code as course_code, s.title as session_title, \
+         to_char(s.created_at, 'Mon DD, YYYY') as date \
+         from student_session_claims claim \
+         join session_participants p on p.id = claim.participant_id \
+         join lecture_sessions s on s.id = p.session_id \
+         join courses c on c.id = s.course_id \
+         where claim.student_account_id = $1 \
+         order by date desc"
+    )
     .bind(student_id)
     .fetch_all(pool)
     .await
     .unwrap_or_default();
-    Ok(Json(resources))
+
+    Ok(Json(items))
 }
 
 fn validate_resource(input: &CreateLectureResourceRequest) -> Result<(), ApiError> {

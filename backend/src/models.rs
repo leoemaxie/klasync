@@ -159,6 +159,14 @@ pub struct RosterImportReport {
     pub issues: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct StudentArchiveItem {
+    pub id: Uuid,
+    pub course_code: String,
+    pub session_title: String,
+    pub date: String,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AttendanceReviewDecision {

@@ -26,10 +26,34 @@ export function getLocalStudentClaims(): ClaimRecord[] {
   if (typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem('klasync-student-claims');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch {}
+
+  try {
+    const sessionRaw = localStorage.getItem('klasync-session');
+    if (sessionRaw) {
+      const session = JSON.parse(sessionRaw);
+      if (session?.code) {
+        return [
+          {
+            id: session.code,
+            course_code: session.course_code || localStorage.getItem('klasync-courseCode') || 'COURSE',
+            session_title: session.title || 'Live Lecture Session',
+            date: new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            }),
+          },
+        ];
+      }
+    }
+  } catch {}
+
+  return [];
 }
 
 export function saveLocalStudentClaim(claim: ClaimRecord): void {
@@ -63,7 +87,7 @@ export async function getStudentArchive(): Promise<ClaimRecord[]> {
       return remote;
     }
   } catch {
-    // API offline or DB 503 fallback
+    // API offline or DB fallback
   }
   return getLocalStudentClaims();
 }
