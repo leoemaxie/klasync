@@ -59,10 +59,10 @@
   <title>Create Lecturer Account — Klasync</title>
 </svelte:head>
 
-<section class="join-wrap">
+<section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
     <p class="eyebrow">LECTURER ACCOUNT REGISTRATION</p>
-    <h1>Create Lecturer Account</h1>
+    <h1 class="title-single-line">Create Lecturer Account</h1>
 
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="reg-name">
@@ -135,3 +135,67 @@
     subtitle="1-Click Session Codes · Roster Import · Accessible Higher Ed"
   />
 </section>
+
+<style>
+  :global(.join-wrap-auth) {
+    align-items: flex-start !important;
+  }
+
+  .join-left-content {
+    gap: 10px;
+  }
+
+  .join-card.panel {
+    padding: 26px 28px;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .title-single-line {
+    display: none;
+  }
+
+  .auth-footer-links {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-12);
+    margin-top: 14px;
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  @media (max-width: 900px) {
+    :global(.join-wrap-auth) {
+      align-items: stretch !important;
+    }
+
+    .join-left-content {
+      gap: 8px;
+    }
+
+    .join-card.panel {
+      padding: var(--spacing-31);
+    }
+
+    .eyebrow {
+      display: block;
+    }
+
+    .title-single-line {
+      display: block;
+      white-space: normal;
+      margin: 0 0 6px 0;
+    }
+
+    .auth-footer-links {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-12);
+      margin-top: var(--spacing-20);
+    }
+  }
+</style>
