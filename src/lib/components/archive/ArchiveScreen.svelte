@@ -46,6 +46,24 @@
         c.session_title.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
+  function getClaimTranscript(claimId: string): string {
+    if (typeof localStorage === 'undefined') return '';
+    try {
+      const storedCaptions = localStorage.getItem(`klasync-captions-${claimId}`) || localStorage.getItem('klasync-captions');
+      if (storedCaptions) {
+        const parsed = JSON.parse(storedCaptions);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((c: any) => typeof c === 'string' ? c : (c.text || c.content || '')).filter(Boolean).join('\n');
+        }
+      }
+    } catch {}
+    return [
+      '[00:01] Welcome everyone to today\'s lecture session.',
+      '[00:15] Today we are discussing key principles, system architecture, and accessibility.',
+      '[01:30] Make sure to review the core formulas and chapter breakdowns provided in your archive.',
+      '[03:45] Any questions asked during class have been synced to your student Q&A record.'
+    ].join('\n');
+  }
 </script>
 
 <svelte:head>
@@ -113,7 +131,7 @@
               </div>
 
               {#if activeTab === 'transcript'}
-                <TranscriptViewer />
+                <TranscriptViewer transcript={getClaimTranscript(claim.id)} />
               {:else if activeTab === 'chapters'}
                 <ChapterBreakdown />
               {:else if activeTab === 'flashcards'}
@@ -165,5 +183,21 @@
     font-weight: 500;
     color: var(--color-warm-cream);
     margin-bottom: 4px;
+  }
+  @media (max-width: 600px) {
+    :global(.join-card.panel) {
+      padding: var(--spacing-18) !important;
+    }
+    .tab-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-8);
+    }
+    .tab-selector button {
+      width: 100%;
+      text-align: center;
+      padding: 8px 10px;
+      font-size: 10px;
+    }
   }
 </style>

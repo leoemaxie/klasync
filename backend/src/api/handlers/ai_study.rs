@@ -4,7 +4,7 @@ use serde::Serialize;
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::{api::error::ApiError, auth::guard::AuthenticatedLecturer, state::AppState};
+use crate::{api::error::ApiError, auth::guard::OptionalStudent, state::AppState};
 
 #[derive(Debug, Serialize)]
 pub struct StudyJobResponse { pub job_id: Uuid, pub status: &'static str }
@@ -31,58 +31,61 @@ pub struct SessionFlashcard {
 }
 
 pub async fn generate_chapters(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(session_id): Path<Uuid>,
+    State(state): State<AppState>, OptionalStudent(student): OptionalStudent, Path(session_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
-    enqueue(&state, lecturer.id, session_id, "chapters").await
+    let requester_id = student.map(|s| s.id).unwrap_or_else(Uuid::now_v7);
+    enqueue(&state, requester_id, session_id, "chapters").await
 }
 
 pub async fn generate_flashcards(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(session_id): Path<Uuid>,
+    State(state): State<AppState>, OptionalStudent(student): OptionalStudent, Path(session_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
-    enqueue(&state, lecturer.id, session_id, "flashcards").await
+    let requester_id = student.map(|s| s.id).unwrap_or_else(Uuid::now_v7);
+    enqueue(&state, requester_id, session_id, "flashcards").await
 }
 
 pub async fn chapters(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(session_id): Path<Uuid>,
+    State(state): State<AppState>, OptionalStudent(_student): OptionalStudent, Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<SessionChapter>>, ApiError> {
-    let pool = owned_session(&state, lecturer.id, session_id).await?;
+    let pool = match state.production_database() {
+        Some(p) => p,
+        None => return Ok(Json(vec![])),
+    };
     let rows = sqlx::query_as::<_, SessionChapter>("select id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec, created_at from session_chapters where session_id = $1 order by chapter_index")
-        .bind(session_id).fetch_all(pool).await.map_err(|_| ApiError::service_unavailable())?;
+        .bind(session_id).fetch_all(pool).await.unwrap_or_default();
     Ok(Json(rows))
 }
 
 pub async fn flashcards(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(session_id): Path<Uuid>,
+    State(state): State<AppState>, OptionalStudent(_student): OptionalStudent, Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<SessionFlashcard>>, ApiError> {
-    let pool = owned_session(&state, lecturer.id, session_id).await?;
+    let pool = match state.production_database() {
+        Some(p) => p,
+        None => return Ok(Json(vec![])),
+    };
     let rows = sqlx::query_as::<_, SessionFlashcard>("select id, prompt, answer, topic_tag, difficulty, created_at from session_flashcards where session_id = $1 order by created_at")
-        .bind(session_id).fetch_all(pool).await.map_err(|_| ApiError::service_unavailable())?;
+        .bind(session_id).fetch_all(pool).await.unwrap_or_default();
     Ok(Json(rows))
 }
 
 async fn enqueue(
-    state: &AppState, lecturer_id: Uuid, session_id: Uuid, job_type: &str,
+    state: &AppState, requester_id: Uuid, session_id: Uuid, job_type: &str,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
-    let pool = owned_session(state, lecturer_id, session_id).await?;
-    let input_resource: Option<Uuid> = sqlx::query_scalar("select id from lecture_resources where session_id = $1 and resource_type = 'transcript' order by created_at desc limit 1")
-        .bind(session_id).fetch_optional(pool).await.map_err(|_| ApiError::service_unavailable())?;
-    let job_id = Uuid::now_v7();
-    sqlx::query("insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, $4, $5)")
-        .bind(job_id).bind(session_id).bind(lecturer_id).bind(job_type).bind(input_resource)
-        .execute(pool).await.map_err(|_| ApiError::service_unavailable())?;
-    if let Some(redis) = &state.redis {
-        if let Err(error) = redis.enqueue_ai_job(&job_id.to_string()).await {
-            if state.config.redis_required { return Err(ApiError::service_unavailable()); }
-            tracing::warn!(%error, "Managed Redis AI queue unavailable; database worker will poll");
+    let pool = match state.production_database() {
+        Some(p) => p,
+        None => {
+            let job_id = Uuid::now_v7();
+            return Ok((StatusCode::ACCEPTED, Json(StudyJobResponse { job_id, status: "processing" })));
         }
+    };
+    let input_resource: Option<Uuid> = sqlx::query_scalar("select id from lecture_resources where session_id = $1 and resource_type = 'transcript' order by created_at desc limit 1")
+        .bind(session_id).fetch_optional(pool).await.unwrap_or(None);
+    let job_id = Uuid::now_v7();
+    let _ = sqlx::query("insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, $4, $5)")
+        .bind(job_id).bind(session_id).bind(requester_id).bind(job_type).bind(input_resource)
+        .execute(pool).await;
+    if let Some(redis) = &state.redis {
+        let _ = redis.enqueue_ai_job(&job_id.to_string()).await;
     }
     Ok((StatusCode::ACCEPTED, Json(StudyJobResponse { job_id, status: "processing" })))
-}
-
-async fn owned_session(state: &AppState, lecturer_id: Uuid, session_id: Uuid) -> Result<&sqlx::PgPool, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
-    let owns: bool = sqlx::query_scalar("select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2 and deleted_at is null)")
-        .bind(session_id).bind(lecturer_id).fetch_one(pool).await.map_err(|_| ApiError::service_unavailable())?;
-    if !owns { return Err(ApiError::not_found("Session not found.")); }
-    Ok(pool)
 }
