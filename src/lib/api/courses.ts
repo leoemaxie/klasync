@@ -12,7 +12,13 @@ export type Course = {
 export type RosterImportReport = { imported_count: number; issues: string[] };
 
 export function getCourses(): Promise<Course[]> {
-  return http<Course[]>('/courses');
+  return http<Course[] | { courses: Course[] }>('/courses').then((res) => {
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as { courses: Course[] }).courses)) {
+      return (res as { courses: Course[] }).courses;
+    }
+    return [];
+  });
 }
 
 export function getCourseDetail(courseId: string): Promise<Course> {
@@ -42,20 +48,22 @@ export async function resolveCourseUuid(
     return trimmed;
   }
 
-  try {
-    const course = await createCourse({
-      code: trimmed,
-      title: title?.trim() || trimmed,
-    });
-    if (course?.id) return course.id;
-  } catch {}
-
+  // 1. Check existing courses list first
   try {
     const courses = await getCourses();
     const matched = courses.find(
       (c) => c.code.toLowerCase() === trimmed.toLowerCase() || c.id === trimmed
     );
     if (matched?.id) return matched.id;
+  } catch {}
+
+  // 2. Create course if not found
+  try {
+    const course = await createCourse({
+      code: trimmed,
+      title: title?.trim() || trimmed,
+    });
+    if (course?.id) return course.id;
   } catch {}
 
   return trimmed;

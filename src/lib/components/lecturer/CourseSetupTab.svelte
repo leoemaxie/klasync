@@ -17,6 +17,7 @@
     onSaveToCloud,
     onRemoveStudent,
     onClearRoster,
+    onReloadFromCloud,
   }: {
     lecturerName: string;
     lecturerEmail: string;
@@ -30,7 +31,18 @@
     onSaveToCloud?: () => Promise<void> | void;
     onRemoveStudent?: (matric: string) => void;
     onClearRoster?: () => void;
+    onReloadFromCloud?: () => Promise<void> | void;
   } = $props();
+
+  let lastCourseCode = $state('');
+
+  $effect(() => {
+    const trimmed = courseCode.trim();
+    if (trimmed && trimmed !== lastCourseCode && onReloadFromCloud) {
+      lastCourseCode = trimmed;
+      void onReloadFromCloud();
+    }
+  });
 </script>
 
 <div class="course-setup-tab">
@@ -55,6 +67,7 @@
     {courseCode}
     {onRemoveStudent}
     {onClearRoster}
+    {onReloadFromCloud}
   />
 </div>
 

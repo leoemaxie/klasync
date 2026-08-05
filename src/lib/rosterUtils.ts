@@ -28,12 +28,15 @@ export function persist(state: SessionState) {
   }
 }
 
-export async function loadCourseRosterFromApi(state: SessionState) {
+export async function loadCourseRosterFromApi(state: SessionState): Promise<boolean> {
   const courseId = state.courseCode?.trim();
-  if (!courseId) return;
+  if (!courseId) {
+    state.rosterNotice = 'Specify a Course Code to load roster from cloud.';
+    return false;
+  }
   try {
     const remoteStudents = await getCourseRoster(courseId);
-    if (remoteStudents && remoteStudents.length > 0) {
+    if (Array.isArray(remoteStudents)) {
       state.roster = remoteStudents.map((s) => ({
         matric: s.matric_number,
         name: s.full_name,
@@ -42,10 +45,16 @@ export async function loadCourseRosterFromApi(state: SessionState) {
         .map((s) => `${s.matric_number}, ${s.full_name}`)
         .join('\n');
       persist(state);
-      state.rosterNotice = `✓ Loaded ${remoteStudents.length} roster student${remoteStudents.length === 1 ? '' : 's'} from cloud.`;
+      state.rosterNotice =
+        remoteStudents.length > 0
+          ? `✓ Loaded ${remoteStudents.length} roster student${remoteStudents.length === 1 ? '' : 's'} from cloud.`
+          : 'Cloud roster for this course is currently empty.';
+      return true;
     }
-  } catch {
-    // Keep local state if API endpoint is offline
+    return false;
+  } catch (err) {
+    state.rosterNotice = `Cloud reload failed (${err instanceof Error ? err.message : 'API offline'}).`;
+    return false;
   }
 }
 

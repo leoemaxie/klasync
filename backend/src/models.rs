@@ -18,7 +18,7 @@ pub struct Course {
     pub title: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RosterStudent {
     pub matric_number: String,
     pub full_name: String,

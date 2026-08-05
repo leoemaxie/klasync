@@ -88,7 +88,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/courses", get(courses::list).post(courses::create))
         .route(
             "/api/v1/courses/{course_id}/roster",
-            post(courses::upload_roster),
+            get(courses::get_roster).post(courses::upload_roster),
         )
         .route(
             "/api/v1/courses/{course_id}/roster/import",

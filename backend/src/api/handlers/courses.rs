@@ -90,3 +90,33 @@ pub async fn upload_roster(
         .map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(input.students))
 }
+
+pub async fn get_roster(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(course_id): Path<Uuid>,
+) -> Result<Json<Vec<RosterStudent>>, ApiError> {
+    let pool = state.db_pool();
+    let owns_course: bool = sqlx::query_scalar(
+        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    )
+    .bind(course_id)
+    .bind(lecturer.id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+
+    if !owns_course {
+        return Err(ApiError::not_found("Course not found"));
+    }
+
+    let students = sqlx::query_as::<_, RosterStudent>(
+        "select matric_number, full_name, email from roster_students where course_id = $1 order by full_name asc",
+    )
+    .bind(course_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+
+    Ok(Json(students))
+}

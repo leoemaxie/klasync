@@ -7,6 +7,7 @@
     Trash2,
     CheckCircle2,
     FileSpreadsheet,
+    RefreshCw,
   } from '@lucide/svelte';
 
   let {
@@ -14,14 +15,27 @@
     courseCode = '',
     onRemoveStudent,
     onClearRoster,
+    onReloadFromCloud,
   }: {
     roster: RosterStudent[];
     courseCode?: string;
     onRemoveStudent?: (matric: string) => void;
     onClearRoster?: () => void;
+    onReloadFromCloud?: () => Promise<void> | void;
   } = $props();
 
   let searchQuery = $state('');
+  let isReloading = $state(false);
+
+  async function handleReload() {
+    if (!onReloadFromCloud) return;
+    isReloading = true;
+    try {
+      await onReloadFromCloud();
+    } finally {
+      isReloading = false;
+    }
+  }
 
   let filteredRoster = $derived(
     roster.filter((s) => {
@@ -68,6 +82,18 @@
         <CheckCircle2 size={13} />
         {roster.length} {roster.length === 1 ? 'Student' : 'Students'} Enrolled
       </span>
+      {#if onReloadFromCloud}
+        <button
+          type="button"
+          class="outline-btn small"
+          onclick={handleReload}
+          disabled={isReloading}
+          title="Reload roster from cloud API"
+        >
+          <RefreshCw size={13} class={isReloading ? 'spin' : ''} />
+          {isReloading ? 'Syncing...' : 'Reload Cloud'}
+        </button>
+      {/if}
       {#if roster.length > 0}
         <button
           type="button"
@@ -433,5 +459,13 @@
     font-size: 12px;
     margin: 0;
     line-height: 1.5;
+  }
+  :global(.spin) {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    100% {
+      transform: rotate(360deg);
+    }
   }
 </style>
