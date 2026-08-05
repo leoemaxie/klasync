@@ -120,7 +120,7 @@
 
       <div class="auth-footer-links">
         <a
-          href="#/lecturer-login"
+          href="#/auth/lecturer/login"
           class="text-link"
           onclick={() => (screen = 'lecturer-login')}
         >

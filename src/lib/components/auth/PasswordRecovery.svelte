@@ -157,7 +157,7 @@
         </button>
         ·
         <a
-          href={role === 'lecturer' ? '#/lecturer-login' : '#/student-login'}
+          href={role === 'lecturer' ? '#/auth/lecturer/login' : '#/auth/student/login'}
           class="text-link"
           onclick={() =>
             (screen = role === 'lecturer' ? 'lecturer-login' : 'student-login')}

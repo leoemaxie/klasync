@@ -96,6 +96,7 @@ export async function refreshAttendance(state: SessionState) {
 export async function endSession(state: SessionState) {
   if (!state.session) return;
   state.apiNotice = '';
+  state.isSaving = true;
   try {
     await apiEndSession(state.session.code);
     state.session = { ...state.session, live: false };
@@ -103,5 +104,7 @@ export async function endSession(state: SessionState) {
   } catch (error) {
     state.apiNotice =
       error instanceof Error ? error.message : 'Unable to end session.';
+  } finally {
+    state.isSaving = false;
   }
 }

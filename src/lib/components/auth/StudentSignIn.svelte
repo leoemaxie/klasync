@@ -116,14 +116,14 @@
 
       <div class="auth-footer-links">
         <a
-          href="#/student-register"
+          href="#/auth/student/register"
           class="text-link"
           onclick={() => (screen = 'student-register')}
         >
           Create student account
         </a>
         <a
-          href="#/recover-password"
+          href="#/auth/recover-password"
           class="text-link"
           onclick={() => (screen = 'recover-password')}
         >

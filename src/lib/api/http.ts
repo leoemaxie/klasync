@@ -63,16 +63,12 @@ async function doRefreshToken(): Promise<boolean> {
   }
 
   try {
-    const headers: Record<string, string> = {
-      'content-type': 'application/json',
-    };
-    if (accessToken) {
-      headers['authorization'] = `Bearer ${accessToken}`;
-    }
     const res = await fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
-      headers,
+      headers: {
+        'content-type': 'application/json',
+      },
       body: JSON.stringify({ refresh_token: curRefreshToken }),
     });
     if (!res.ok) {
@@ -101,28 +97,30 @@ export async function http<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'content-type': 'application/json',
-    ...((init.headers as Record<string, string>) ?? {}),
-  };
-  if (accessToken) {
-    headers['authorization'] = `Bearer ${accessToken}`;
-  }
+  const isAuthEndpoint =
+    path.startsWith('/auth/') &&
+    !path.startsWith('/auth/lecturers/me') &&
+    !path.startsWith('/auth/students/me');
 
-  const requestInit: RequestInit = {
+  const makeHeaders = () => {
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      ...((init.headers as Record<string, string>) ?? {}),
+    };
+    const token = getAccessToken();
+    if (token && !isAuthEndpoint) {
+      headers['authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
+  const options: RequestInit = {
     credentials: 'include',
     ...init,
-    headers,
+    headers: makeHeaders(),
   };
 
-  let response = await fetch(`${API_BASE}${path}`, requestInit);
-
-  const isAuthEndpoint =
-    path.startsWith('/auth/refresh') ||
-    path.startsWith('/auth/lecturers/login') ||
-    path.startsWith('/auth/lecturers/register') ||
-    path.startsWith('/auth/students/login') ||
-    path.startsWith('/auth/students/register');
+  let response = await fetch(`${API_BASE}${path}`, options);
 
   if (response.status === 401 && !isAuthEndpoint) {
     if (!isRefreshingPromise) {
@@ -130,12 +128,12 @@ export async function http<T>(
     }
     const refreshed = await isRefreshingPromise;
     if (refreshed) {
-      if (accessToken) {
-        headers['authorization'] = `Bearer ${accessToken}`;
-      } else {
-        delete headers['authorization'];
-      }
-      response = await fetch(`${API_BASE}${path}`, { ...requestInit, headers });
+      const retryOptions: RequestInit = {
+        ...init,
+        credentials: 'include',
+        headers: makeHeaders(),
+      };
+      response = await fetch(`${API_BASE}${path}`, retryOptions);
     }
   }
 
