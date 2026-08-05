@@ -29,12 +29,45 @@ export function createCourse(input: {
   });
 }
 
-export function uploadRoster(
-  courseId: string,
+const UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+export async function resolveCourseUuid(
+  codeOrId: string,
+  title?: string
+): Promise<string> {
+  const trimmed = codeOrId.trim();
+  if (!trimmed) return trimmed;
+  if (UUID_REGEX.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const course = await createCourse({
+      code: trimmed,
+      title: title?.trim() || trimmed,
+    });
+    if (course?.id) return course.id;
+  } catch {}
+
+  try {
+    const courses = await getCourses();
+    const matched = courses.find(
+      (c) => c.code.toLowerCase() === trimmed.toLowerCase() || c.id === trimmed
+    );
+    if (matched?.id) return matched.id;
+  } catch {}
+
+  return trimmed;
+}
+
+export async function uploadRoster(
+  courseIdOrCode: string,
   students: ApiRosterStudent[]
 ): Promise<CountResponse> {
+  const targetId = await resolveCourseUuid(courseIdOrCode);
   return http<CountResponse>(
-    `/courses/${encodeURIComponent(courseId)}/roster`,
+    `/courses/${encodeURIComponent(targetId)}/roster`,
     {
       method: 'POST',
       body: JSON.stringify({ students }),
@@ -43,15 +76,16 @@ export function uploadRoster(
 }
 
 export async function importRosterFile(
-  courseId: string,
+  courseIdOrCode: string,
   file: File
 ): Promise<RosterImportReport> {
+  const targetId = await resolveCourseUuid(courseIdOrCode);
   const formData = new FormData();
   formData.append('file', file);
   const apiBase =
     import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
   const response = await fetch(
-    `${apiBase}/courses/${encodeURIComponent(courseId)}/roster/import`,
+    `${apiBase}/courses/${encodeURIComponent(targetId)}/roster/import`,
     {
       method: 'POST',
       body: formData,
@@ -64,6 +98,21 @@ export async function importRosterFile(
     );
   }
   return response.json() as Promise<RosterImportReport>;
+}
+
+export async function getCourseRoster(
+  courseIdOrCode: string
+): Promise<ApiRosterStudent[]> {
+  const targetId = await resolveCourseUuid(courseIdOrCode);
+  return http<ApiRosterStudent[] | { students: ApiRosterStudent[] }>(
+    `/courses/${encodeURIComponent(targetId)}/roster`
+  ).then((res) => {
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as { students: ApiRosterStudent[] }).students)) {
+      return (res as { students: ApiRosterStudent[] }).students;
+    }
+    return [];
+  });
 }
 
 export const uploadCourseRoster = uploadRoster;

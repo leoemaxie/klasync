@@ -3,18 +3,20 @@
   import RosterPreviewTable from './RosterPreviewTable.svelte';
   import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
   import { parseRosterTextToStudents } from '$lib/rosterUtils';
-  import { Link, FileText, CheckCircle2 } from '@lucide/svelte';
+  import { Link, FileText, CheckCircle2, CloudUpload } from 'lucide-svelte';
 
   let {
     rosterText = $bindable(''),
     rosterNotice = '',
     onImportFile,
     onParseRoster,
+    onSaveToCloud,
   }: {
     rosterText: string;
     rosterNotice?: string;
     onImportFile: (event: Event) => void;
     onParseRoster: () => Promise<void> | void;
+    onSaveToCloud?: () => Promise<void> | void;
   } = $props();
 
   let isDragging = $state(false);
@@ -23,6 +25,8 @@
 
   let isConfirming = $state(false);
   let isConfirmed = $state(false);
+  let isSavingCloud = $state(false);
+  let isSavedCloud = $state(false);
 
   const parsedStudents = $derived(parseRosterTextToStudents(rosterText));
   let rawLinesCount = $derived(
@@ -33,14 +37,32 @@
   );
 
   async function handleConfirmRoster() {
-    if (parsedStudents.length === 0 || isConfirming) return;
+    if (parsedStudents.length === 0 || isConfirming || isSavingCloud) return;
     isConfirming = true;
     try {
       await onParseRoster();
       isConfirmed = true;
-      setTimeout(() => (isConfirmed = false), 3500);
+      setTimeout(() => {
+        isConfirmed = false;
+      }, 4000);
+    } catch {
     } finally {
       isConfirming = false;
+    }
+  }
+
+  async function handleSaveToCloud() {
+    if (parsedStudents.length === 0 || isConfirming || isSavingCloud) return;
+    isSavingCloud = true;
+    try {
+      await onSaveToCloud?.();
+      isSavedCloud = true;
+      setTimeout(() => {
+        isSavedCloud = false;
+      }, 4000);
+    } catch {
+    } finally {
+      isSavingCloud = false;
     }
   }
 
@@ -129,20 +151,37 @@
 
   <RosterPreviewTable {parsedStudents} {rawLinesCount} />
 
-  <button
-    type="button"
-    class={isConfirmed ? 'success full' : parsedStudents.length > 0 ? 'primary full' : 'outline full'}
-    onclick={handleConfirmRoster}
-    disabled={parsedStudents.length === 0 || isConfirming}
-  >
-    {#if isConfirming}
-      <ButtonSpinner label="Saving..." /> Saving...
-    {:else if isConfirmed}
-      <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Confirmed ({parsedStudents.length})
-    {:else}
-      Confirm Roster ({parsedStudents.length})
-    {/if}
-  </button>
+  <div class="roster-actions-grid">
+    <button
+      type="button"
+      class={isConfirmed ? 'success' : parsedStudents.length > 0 ? 'primary' : 'outline'}
+      onclick={handleConfirmRoster}
+      disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
+    >
+      {#if isConfirming}
+        <ButtonSpinner label="Saving..." /> Saving...
+      {:else if isConfirmed}
+        <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Confirmed ({parsedStudents.length})
+      {:else}
+        Confirm Roster ({parsedStudents.length})
+      {/if}
+    </button>
+
+    <button
+      type="button"
+      class={isSavedCloud ? 'success' : 'outline'}
+      onclick={handleSaveToCloud}
+      disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
+    >
+      {#if isSavingCloud}
+        <ButtonSpinner label="Saving to cloud..." /> Save to Cloud
+      {:else if isSavedCloud}
+        <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Synced to Cloud
+      {:else}
+        <CloudUpload size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Save to Cloud
+      {/if}
+    </button>
+  </div>
 
   {#if rosterNotice}
     <p
@@ -213,9 +252,35 @@
     width: 100%;
     margin-top: 6px;
   }
+  .roster-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (max-width: 600px) {
+    .roster-actions-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   button.success {
     background: rgba(74, 183, 114, 0.2) !important;
     border: 1px solid #4ab772 !important;
     color: #4ab772 !important;
+  }
+  button.saving {
+    background: rgba(220, 80, 0, 0.15) !important;
+    border: 1px solid var(--color-ember-accent) !important;
+    color: var(--color-warm-cream) !important;
+  }
+  :global(.spin-icon) {
+    animation: btn-rotate 0.8s linear infinite;
+  }
+  @keyframes btn-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

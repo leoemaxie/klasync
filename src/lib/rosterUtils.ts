@@ -3,6 +3,7 @@ import type { RosterStudent } from './types';
 import {
   uploadRoster,
   importRosterFile,
+  getCourseRoster,
   createCourse,
   type ApiRosterStudent,
 } from './api';
@@ -12,9 +13,77 @@ export function persist(state: SessionState) {
     localStorage.setItem('klasync-session', JSON.stringify(state.session));
   }
   localStorage.setItem('klasync-roster', JSON.stringify(state.roster));
+  if (state.rosterText) {
+    localStorage.setItem('klasync-rosterText', state.rosterText);
+  }
   localStorage.setItem('klasync-lecturer', state.lecturerName);
+  if (state.courseCode) {
+    localStorage.setItem('klasync-courseCode', state.courseCode);
+  }
+  if (state.courseTitle) {
+    localStorage.setItem('klasync-courseTitle', state.courseTitle);
+  }
   if (state.currentUser) {
     localStorage.setItem('klasync-user', JSON.stringify(state.currentUser));
+  }
+}
+
+export async function loadCourseRosterFromApi(state: SessionState) {
+  const courseId = state.courseCode?.trim();
+  if (!courseId) return;
+  try {
+    const remoteStudents = await getCourseRoster(courseId);
+    if (remoteStudents && remoteStudents.length > 0) {
+      state.roster = remoteStudents.map((s) => ({
+        matric: s.matric_number,
+        name: s.full_name,
+      }));
+      state.rosterText = remoteStudents
+        .map((s) => `${s.matric_number}, ${s.full_name}`)
+        .join('\n');
+      persist(state);
+      state.rosterNotice = `✓ Loaded ${remoteStudents.length} roster student${remoteStudents.length === 1 ? '' : 's'} from cloud.`;
+    }
+  } catch {
+    // Keep local state if API endpoint is offline
+  }
+}
+
+export async function saveToCloudRoster(state: SessionState): Promise<void> {
+  const parsed = parseRosterTextToStudents(state.rosterText);
+  if (parsed.length === 0) {
+    state.rosterNotice = 'No student records to save. Add student rows first.';
+    return;
+  }
+
+  const courseId = state.courseCode?.trim();
+  if (!courseId) {
+    state.rosterNotice = 'Course Code is required to save roster to cloud.';
+    return;
+  }
+
+  state.roster = parsed;
+  persist(state);
+
+  const apiStudents: ApiRosterStudent[] = parsed.map((s) => ({
+    matric_number: s.matric,
+    full_name: s.name,
+  }));
+
+  try {
+    try {
+      await createCourse({
+        code: courseId,
+        title: state.courseTitle?.trim() || courseId,
+      });
+    } catch {
+      // Course may already exist on cloud API
+    }
+
+    const res = await uploadRoster(courseId, apiStudents);
+    state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
+  } catch (err) {
+    state.rosterNotice = `Cloud sync failed (${err instanceof Error ? err.message : 'API offline'}). Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
   }
 }
 
@@ -103,9 +172,19 @@ export async function parseRoster(state: SessionState) {
     } catch {
       state.rosterNotice = `✓ Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
     }
-  } else {
-    state.rosterNotice = `✓ ${parsed.length} student${parsed.length === 1 ? '' : 's'} confirmed.`;
   }
+}
+
+export function removeStudentFromRoster(state: SessionState, matric: string) {
+  state.roster = state.roster.filter((s) => s.matric !== matric);
+  persist(state);
+}
+
+export function clearRoster(state: SessionState) {
+  state.roster = [];
+  state.rosterText = '';
+  state.rosterNotice = 'Roster cleared.';
+  persist(state);
 }
 
 // Convert Excel column letters like 'A', 'B', 'AA' to 0-based column index

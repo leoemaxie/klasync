@@ -15,14 +15,23 @@
     endSession,
     importFile,
     ingestCaption,
+    loadCourseRosterFromApi,
     parseRoster,
     publishCaption,
     refreshAttendance,
+    saveToCloudRoster,
     startSession,
   } from '$lib/sessionActions';
+  import { removeStudentFromRoster, clearRoster } from '$lib/rosterUtils';
 
   let { appState }: { appState: SessionState } = $props();
   let activeTab = $state<TabKey>('course');
+
+  onMount(() => {
+    if (appState.courseCode) {
+      void loadCourseRosterFromApi(appState);
+    }
+  });
 
   let wsCleanup: (() => void) | undefined;
 
@@ -71,9 +80,13 @@
         bind:courseCode={appState.courseCode}
         bind:courseTitle={appState.courseTitle}
         bind:rosterText={appState.rosterText}
+        roster={appState.roster}
         rosterNotice={appState.rosterNotice}
         onImportFile={(e) => importFile(appState, e)}
         onParseRoster={() => parseRoster(appState)}
+        onSaveToCloud={() => saveToCloudRoster(appState)}
+        onRemoveStudent={(matric) => removeStudentFromRoster(appState, matric)}
+        onClearRoster={() => clearRoster(appState)}
       />
     {:else if activeTab === 'device'}
       <DeviceSetupTab
@@ -85,12 +98,14 @@
         session={appState.session}
         apiNotice={appState.apiNotice}
         isSaving={appState.isSaving}
+        isEndingSession={appState.isSaving}
         copied={appState.copied}
         lecturerName={appState.lecturerName}
         lecturerEmail={appState.lecturerEmail}
         onCopyInvite={() => copyInvite(appState)}
         onEndSession={() => endSession(appState)}
         onStartSession={() => startSession(appState)}
+        onCaptionIngested={(cap) => ingestCaption(appState, cap)}
       />
     {:else if activeTab === 'live' && appState.session?.live}
       <CaptionControlPanel

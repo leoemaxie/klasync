@@ -19,6 +19,7 @@
   import { heartbeat, joinSession, refreshCaptions } from '$lib/sessionActions';
   import { location, push, replace } from 'svelte-spa-router';
   import { SCREEN_TO_PATH, screenFromPath } from '$lib/router';
+  import { enforceAuthGuard } from '$lib/authGuard';
 
   const appState = createSessionState();
   let isSpotlightOpen = $state(false);
@@ -26,8 +27,11 @@
   onMount(() => {
     const savedSession = localStorage.getItem('klasync-session');
     const savedRoster = localStorage.getItem('klasync-roster');
+    const savedRosterText = localStorage.getItem('klasync-rosterText');
     const savedLecturer = localStorage.getItem('klasync-lecturer');
     const savedUser = localStorage.getItem('klasync-user');
+    const savedCourseCode = localStorage.getItem('klasync-courseCode');
+    const savedCourseTitle = localStorage.getItem('klasync-courseTitle');
 
     if (savedSession) {
       try {
@@ -39,7 +43,14 @@
         appState.roster = JSON.parse(savedRoster);
       } catch {}
     }
+    if (savedRosterText) {
+      appState.rosterText = savedRosterText;
+    } else if (appState.roster.length > 0) {
+      appState.rosterText = appState.roster.map((s) => `${s.matric}, ${s.name}`).join('\n');
+    }
     if (savedLecturer) appState.lecturerName = savedLecturer;
+    if (savedCourseCode) appState.courseCode = savedCourseCode;
+    if (savedCourseTitle) appState.courseTitle = savedCourseTitle;
 
     if (savedUser) {
       try {
@@ -59,92 +70,15 @@
       ) ||
       new URLSearchParams(window.location.hash.split('?')[1] || '').get('code');
     const inviteCode = searchJoin || hashJoin;
-
     if (inviteCode) {
       appState.sessionCode = inviteCode.toUpperCase();
       appState.screen = 'join';
-      void replace('/join'); // Use replace here to not bloat history
+      void replace('/join');
     }
 
     const unsubLoc = location.subscribe(($loc) => {
       const currentLoc = $loc || '/';
-      let matchedScreen = screenFromPath(currentLoc);
-
-      // Auth guard for lecturer workspace
-      if (
-        matchedScreen === 'lecturer' &&
-        (!appState.currentUser ||
-          (appState.currentUser.role !== 'lecturer' &&
-            appState.currentUser.role !== 'admin'))
-      ) {
-        appState.authNotice =
-          appState.currentUser?.role === 'student'
-            ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
-            : 'Please sign in to access the Lecturer Workspace.';
-        if (currentLoc !== '/lecturer-login') {
-          void replace('/lecturer-login');
-          return;
-        }
-        matchedScreen = 'lecturer-login';
-      }
-
-      // Auth guard for student archive
-      if (
-        matchedScreen === 'archive' &&
-        (!appState.currentUser || appState.currentUser.role !== 'student')
-      ) {
-        appState.authNotice =
-          appState.currentUser?.role === 'lecturer' ||
-          appState.currentUser?.role === 'admin'
-            ? 'Access restricted: Student Archive is only accessible to student accounts.'
-            : 'Please sign in to access your Student Archive.';
-        if (currentLoc !== '/student-login') {
-          void replace('/student-login');
-          return;
-        }
-        matchedScreen = 'student-login';
-      }
-
-      // Auth guard for lecturer auth pages when logged in
-      if (
-        matchedScreen === 'lecturer-login' ||
-        matchedScreen === 'lecturer-register'
-      ) {
-        if (
-          appState.currentUser?.role === 'lecturer' ||
-          appState.currentUser?.role === 'admin'
-        ) {
-          if (currentLoc !== '/lecturer') {
-            void replace('/lecturer');
-            return;
-          }
-          matchedScreen = 'lecturer';
-        } else if (appState.currentUser?.role === 'student') {
-          appState.authNotice =
-            'You are currently signed in with a student account. Please sign out first to access lecturer accounts.';
-        }
-      }
-
-      // Auth guard for student auth pages when logged in
-      if (
-        matchedScreen === 'student-login' ||
-        matchedScreen === 'student-register'
-      ) {
-        if (appState.currentUser?.role === 'student') {
-          if (currentLoc !== '/archive') {
-            void replace('/archive');
-            return;
-          }
-          matchedScreen = 'archive';
-        } else if (
-          appState.currentUser?.role === 'lecturer' ||
-          appState.currentUser?.role === 'admin'
-        ) {
-          appState.authNotice =
-            'You are currently signed in with a lecturer account. Please sign out first to access student accounts.';
-        }
-      }
-
+      const matchedScreen = enforceAuthGuard(currentLoc, appState);
       if (appState.screen !== matchedScreen) {
         appState.screen = matchedScreen;
       }
