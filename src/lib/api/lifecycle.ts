@@ -30,8 +30,10 @@ export function updateSessionLifecycle(
   );
 }
 
-export function pauseSession(shortCode: string): Promise<LifecycleView> {
-  return http<LifecycleView>(
+import type { LiveControlState } from './liveControls';
+
+export function pauseSession(shortCode: string): Promise<LiveControlState> {
+  return http<LiveControlState>(
     `/sessions/code/${encodeURIComponent(shortCode)}/pause`,
     {
       method: 'POST',
@@ -39,8 +41,8 @@ export function pauseSession(shortCode: string): Promise<LifecycleView> {
   );
 }
 
-export function resumeSession(shortCode: string): Promise<LifecycleView> {
-  return http<LifecycleView>(
+export function resumeSession(shortCode: string): Promise<LiveControlState> {
+  return http<LiveControlState>(
     `/sessions/code/${encodeURIComponent(shortCode)}/resume`,
     {
       method: 'POST',

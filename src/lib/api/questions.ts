@@ -13,11 +13,13 @@ export async function fetchSessionQuestions(
   sessionCode: string
 ): Promise<Question[]> {
   try {
-    return await apiRequest<Question[]>(
+    const res = await apiRequest<Question[]>(
       `/sessions/code/${encodeURIComponent(sessionCode)}/questions`
     );
+    if (Array.isArray(res)) return res;
+    return [];
   } catch {
-    // Return local mock fallback if API is in offline mode
+    // Local fallback if offline
     return [
       {
         id: 'q-1',
@@ -25,14 +27,6 @@ export async function fetchSessionQuestions(
           'Does layout shift directly degrade accessibility compliance?',
         upvote_count: 5,
         is_resolved: false,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 'q-2',
-        question_text:
-          'What is the target latency for real-time speech-to-text?',
-        upvote_count: 3,
-        is_resolved: true,
         created_at: new Date().toISOString(),
       },
     ];
@@ -45,42 +39,73 @@ export async function submitQuestion(
   participantId?: string,
   captionId?: string
 ): Promise<Question> {
-  return await apiRequest<Question>(
-    `/sessions/code/${encodeURIComponent(sessionCode)}/questions`,
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        participant_id: participantId,
-        caption_id: captionId,
-        question_text: questionText,
-      }),
-    }
-  ).catch(() => ({
-    id: `q-local-${Date.now()}`,
-    question_text: questionText,
-    upvote_count: 1,
-    is_resolved: false,
-    created_at: new Date().toISOString(),
-    caption_id: captionId,
-  }));
+  const text = questionText.trim();
+  try {
+    const res = await apiRequest<any>(
+      `/sessions/code/${encodeURIComponent(sessionCode)}/questions`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          participant_id: participantId,
+          caption_id: captionId,
+          question_text: text,
+        }),
+      }
+    );
+
+    return {
+      id: res?.id ? String(res.id) : `q-${Date.now()}`,
+      question_text: res?.question_text ?? text,
+      upvote_count: typeof res?.upvote_count === 'number' ? res.upvote_count : 0,
+      is_resolved: Boolean(res?.is_resolved),
+      created_at: res?.created_at ?? new Date().toISOString(),
+      caption_id: res?.caption_id ?? captionId,
+    };
+  } catch {
+    return {
+      id: `q-local-${Date.now()}`,
+      question_text: text,
+      upvote_count: 1,
+      is_resolved: false,
+      created_at: new Date().toISOString(),
+      caption_id: captionId,
+    };
+  }
 }
 
 export async function upvoteQuestion(
   sessionCode: string,
   questionId: string
 ): Promise<{ new_upvote_count: number }> {
-  return await apiRequest<{ new_upvote_count: number }>(
-    `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/upvote`,
-    { method: 'POST' }
-  ).catch(() => ({ new_upvote_count: Math.floor(Math.random() * 10) + 1 }));
+  try {
+    const res = await apiRequest<any>(
+      `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/upvote`,
+      { method: 'POST' }
+    );
+    return {
+      new_upvote_count:
+        typeof res?.new_upvote_count === 'number'
+          ? res.new_upvote_count
+          : typeof res?.upvote_count === 'number'
+            ? res.upvote_count
+            : 1,
+    };
+  } catch {
+    return { new_upvote_count: 1 };
+  }
 }
 
 export async function resolveQuestion(
   sessionCode: string,
   questionId: string
 ): Promise<{ is_resolved: boolean }> {
-  return await apiRequest<{ is_resolved: boolean }>(
-    `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/resolve`,
-    { method: 'POST' }
-  ).catch(() => ({ is_resolved: true }));
+  try {
+    const res = await apiRequest<any>(
+      `/sessions/code/${encodeURIComponent(sessionCode)}/questions/${encodeURIComponent(questionId)}/resolve`,
+      { method: 'POST' }
+    );
+    return { is_resolved: res?.is_resolved ?? true };
+  } catch {
+    return { is_resolved: true };
+  }
 }
