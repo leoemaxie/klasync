@@ -2,13 +2,13 @@ use axum::{extract::State, http::StatusCode, Json};
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError, auth::guard::AuthenticatedStudent,
+    api::error::ApiError, auth::guard::{AuthenticatedStudent, OptionalStudent},
     models::ClaimGuestParticipationRequest, state::AppState,
 };
 
 pub async fn claim_guest_participation(
     State(state): State<AppState>,
-    student: Option<AuthenticatedStudent>,
+    OptionalStudent(student): OptionalStudent,
     Json(input): Json<ClaimGuestParticipationRequest>,
 ) -> Result<StatusCode, ApiError> {
     let pool = match state.production_database() {

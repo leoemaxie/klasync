@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::{
     api::{error::ApiError, handlers::sessions::database_session_by_code},
-    auth::guard::{AuthenticatedLecturer, AuthenticatedStudent},
+    auth::guard::{AuthenticatedLecturer, AuthenticatedStudent, OptionalStudent},
     models::{CreateLectureResourceRequest, LectureResource},
     state::AppState,
 };
@@ -78,7 +78,7 @@ pub async fn list_public_resources(
 
 pub async fn list_student_archive(
     State(state): State<AppState>,
-    student: Option<AuthenticatedStudent>,
+    OptionalStudent(student): OptionalStudent,
 ) -> Result<Json<Vec<LectureResource>>, ApiError> {
     let pool = match state.production_database() {
         Some(p) => p,
