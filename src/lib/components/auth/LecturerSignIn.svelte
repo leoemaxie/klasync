@@ -159,9 +159,7 @@
   }
 
   .title-single-line {
-    white-space: nowrap;
-    font-size: clamp(26px, 3.2vw, 38px);
-    margin: 0 0 2px 0;
+    display: none;
   }
 
   .auth-footer-links {
@@ -181,7 +179,7 @@
     }
 
     .join-left-content {
-      gap: var(--spacing-18);
+      gap: 8px;
     }
 
     .join-card.panel {
@@ -193,8 +191,9 @@
     }
 
     .title-single-line {
+      display: block;
       white-space: normal;
-      margin-bottom: var(--spacing-18);
+      margin: 0 0 6px 0;
     }
 
     .auth-footer-links {
