@@ -3,7 +3,7 @@
   import RosterPreviewTable from './RosterPreviewTable.svelte';
   import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
   import { parseRosterTextToStudents } from '$lib/rosterUtils';
-  import { Link, FileText, CheckCircle2, CloudUpload } from 'lucide-svelte';
+  import { Link, FileText, CheckCircle2, CloudUpload } from '@lucide/svelte';
 
   let {
     rosterText = $bindable(''),
@@ -154,7 +154,7 @@
   <div class="roster-actions-grid">
     <button
       type="button"
-      class={isConfirmed ? 'success' : parsedStudents.length > 0 ? 'primary' : 'outline'}
+      class={isConfirming ? 'saving' : isConfirmed ? 'success' : parsedStudents.length > 0 ? 'primary' : 'outline'}
       onclick={handleConfirmRoster}
       disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
     >
@@ -169,7 +169,7 @@
 
     <button
       type="button"
-      class={isSavedCloud ? 'success' : 'outline'}
+      class={isSavingCloud ? 'saving' : isSavedCloud ? 'success' : 'outline'}
       onclick={handleSaveToCloud}
       disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
     >

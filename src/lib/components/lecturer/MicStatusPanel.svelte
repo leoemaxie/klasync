@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { Mic } from 'lucide-svelte';
+  import { Mic } from '@lucide/svelte';
   import AudioLevelMeter from './AudioLevelMeter.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
   import {
@@ -167,12 +167,6 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-  }
-  .panel-title {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--color-warm-cream);
   }
   .status-badge {
     font-size: 11px;

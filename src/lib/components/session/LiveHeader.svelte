@@ -68,5 +68,5 @@
   @keyframes blink { 0% { opacity: 0.3; } 100% { opacity: 1; } }
   .live-title { font-size: 26px; font-weight: 700; margin: 4px 0; color: var(--color-warm-cream); font-family: var(--font-display); }
   .live-subtitle { font-size: 13px; color: var(--color-warm-cream-dim); }
-  @media (max-width: 640px) { .live-header-bar { flex-direction: column; align-items: stretch; gap: 12px; } .lecturer-switch-btn { width: 100%; text-align: center; } }
+  @media (max-width: 640px) { .live-header-bar { flex-direction: column; align-items: stretch; gap: 12px; } }
 </style>
