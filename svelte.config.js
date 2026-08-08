@@ -2,8 +2,13 @@ import vercelAdapter from '@sveltejs/adapter-vercel';
 import staticAdapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+const isVercel = Boolean(process.env.VERCEL);
+const isTauri = Object.keys(process.env).some((key) => key.startsWith('TAURI_'));
 const isStatic = Boolean(
-  process.env.TAURI_ENV || process.env.BUILD_TARGET === 'static'
+  process.env.TAURI_ENV ||
+  process.env.BUILD_TARGET === 'static' ||
+  isTauri ||
+  !isVercel
 );
 
 /** @type {import('@sveltejs/kit').Config} */
