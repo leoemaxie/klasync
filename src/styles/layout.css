@@ -75,3 +75,11 @@
       var(--spacing-45);
   }
 }
+
+@media (max-width: 600px) {
+  .page-head,
+  .join-wrap,
+  .live-top {
+    padding: calc(var(--nav-height) + 20px) 16px var(--spacing-28);
+  }
+}

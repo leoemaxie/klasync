@@ -595,6 +595,12 @@
   }
 }
 
+@media (max-width: 600px) {
+  .panel {
+    padding: var(--spacing-18);
+  }
+}
+
 /* ── Accessibility & Screen Reader Utilities ─────────────── */
 .sr-only {
   position: absolute;

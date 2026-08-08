@@ -65,6 +65,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
   }
   .chapter-count {
     font-size: 11px;
@@ -104,5 +106,13 @@
     font-size: 13px;
     color: var(--color-warm-cream-dim);
     line-height: 1.5;
+  }
+  @media (max-width: 480px) {
+    .chapter-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-8);
+      padding: var(--spacing-12);
+    }
   }
 </style>

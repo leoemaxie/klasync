@@ -66,11 +66,14 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-14);
+    padding: var(--spacing-18);
   }
   .transcript-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
   }
   .font-controls {
     display: flex;
@@ -107,5 +110,10 @@
   .empty-text {
     font-size: 13px;
     color: var(--color-driftwood);
+  }
+  @media (max-width: 480px) {
+    .transcript-viewer {
+      padding: var(--spacing-14);
+    }
   }
 </style>
