@@ -93,12 +93,22 @@
 
       <label for="matric-input">
         Matric / Student ID
-        <input id="matric-input" type="text" bind:value={matric} placeholder="MAT/2023/001" />
+        <input
+          id="matric-input"
+          type="text"
+          bind:value={matric}
+          placeholder="MAT/2023/001"
+        />
       </label>
 
       <label for="display-name-input">
         Full name <span>(optional if on roster)</span>
-        <input id="display-name-input" type="text" bind:value={displayName} placeholder="Ada Okafor" />
+        <input
+          id="display-name-input"
+          type="text"
+          bind:value={displayName}
+          placeholder="Ada Okafor"
+        />
       </label>
 
       {#if joinError}
@@ -118,9 +128,7 @@
           Join lecture
         {/if}
       </button>
-      <p class="hint">
-        Matric number verified against course roster.
-      </p>
+      <p class="hint">Matric number verified against course roster.</p>
     </div>
   </div>
 

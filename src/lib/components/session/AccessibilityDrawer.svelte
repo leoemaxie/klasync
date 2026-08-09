@@ -53,13 +53,23 @@
       <div class="drawer-header">
         <p class="eyebrow">ACCESSIBILITY &amp; READING DISPLAY</p>
         <button type="button" class="text" onclick={toggleDrawer}>
-          <X size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Close
+          <X
+            size={14}
+            aria-hidden="true"
+            style="vertical-align: middle; display: inline-block;"
+          /> Close
         </button>
       </div>
 
       <div class="control-group">
-        <p id="font-size-label" class="label" style="margin: 0 0 6px;">Caption &amp; Body Font Scale</p>
-        <div class="button-group" role="group" aria-labelledby="font-size-label">
+        <p id="font-size-label" class="label" style="margin: 0 0 6px;">
+          Caption &amp; Body Font Scale
+        </p>
+        <div
+          class="button-group"
+          role="group"
+          aria-labelledby="font-size-label"
+        >
           <button
             type="button"
             class={fontSize === '16px' ? 'primary' : 'outline'}

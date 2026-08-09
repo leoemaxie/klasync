@@ -16,7 +16,11 @@
 {#if parsedStudents.length > 0}
   <div class="roster-preview-summary">
     <div class="summary-badge valid">
-      <Check size={12} aria-hidden="true" style="vertical-align: middle; display: inline-block;" />
+      <Check
+        size={12}
+        aria-hidden="true"
+        style="vertical-align: middle; display: inline-block;"
+      />
       {validCount} Valid Student{validCount === 1 ? '' : 's'}
     </div>
     {#if invalidCount > 0}
@@ -33,7 +37,11 @@
   <div class="mapping-table-wrap">
     <table class="mapping-table">
       <thead>
-        <tr><th scope="col">Matric No.</th><th scope="col">Student Name</th><th scope="col">Status</th></tr>
+        <tr
+          ><th scope="col">Matric No.</th><th scope="col">Student Name</th><th
+            scope="col">Status</th
+          ></tr
+        >
       </thead>
       <tbody>
         {#each parsedStudents.slice(0, 5) as student}

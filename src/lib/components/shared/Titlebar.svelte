@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { platform } from '$lib/native/platform';
-  import { minimizeWindow, toggleMaximizeWindow, closeWindow } from '$lib/native/window';
+  import {
+    minimizeWindow,
+    toggleMaximizeWindow,
+    closeWindow,
+  } from '$lib/native/window';
 
   let isTauri = $state(false);
   let isMac = $state(false);
@@ -16,14 +20,43 @@
   <div class="tauri-titlebar app-drag-region">
     <div class="titlebar-title">KLASYNC</div>
     <div class="titlebar-controls app-no-drag">
-      <button class="titlebar-btn" onclick={minimizeWindow} aria-label="Minimize">
-        <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+      <button
+        class="titlebar-btn"
+        onclick={minimizeWindow}
+        aria-label="Minimize"
+      >
+        <svg width="10" height="1" viewBox="0 0 10 1"
+          ><rect width="10" height="1" fill="currentColor" /></svg
+        >
       </button>
-      <button class="titlebar-btn" onclick={toggleMaximizeWindow} aria-label="Maximize">
-        <svg width="10" height="10" viewBox="0 0 10 10"><rect width="9" height="9" x="0.5" y="0.5" fill="none" stroke="currentColor"/></svg>
+      <button
+        class="titlebar-btn"
+        onclick={toggleMaximizeWindow}
+        aria-label="Maximize"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10"
+          ><rect
+            width="9"
+            height="9"
+            x="0.5"
+            y="0.5"
+            fill="none"
+            stroke="currentColor"
+          /></svg
+        >
       </button>
-      <button class="titlebar-btn close" onclick={closeWindow} aria-label="Close">
-        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" stroke-width="1.2"/></svg>
+      <button
+        class="titlebar-btn close"
+        onclick={closeWindow}
+        aria-label="Close"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10"
+          ><path
+            d="M1,1 L9,9 M9,1 L1,9"
+            stroke="currentColor"
+            stroke-width="1.2"
+          /></svg
+        >
       </button>
     </div>
   </div>

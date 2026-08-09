@@ -36,7 +36,9 @@
   </div>
 
   {#if transcript}
-    <label for="transcript-filter" class="sr-only">Filter transcript keywords</label>
+    <label for="transcript-filter" class="sr-only"
+      >Filter transcript keywords</label
+    >
     <input
       id="transcript-filter"
       type="search"
@@ -45,7 +47,12 @@
       class="transcript-search"
     />
 
-    <div class="transcript-content" style="font-size: {fontSize}px;" role="log" aria-label="Lecture transcript content">
+    <div
+      class="transcript-content"
+      style="font-size: {fontSize}px;"
+      role="log"
+      aria-label="Lecture transcript content"
+    >
       {#if lines.length > 0}
         {#each lines as line}
           <p class="transcript-line">{line}</p>

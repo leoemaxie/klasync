@@ -71,7 +71,11 @@
 
     <form class="join-card panel" onsubmit={handleRequestReset}>
       {#if mode === 'request'}
-        <div class="role-selector" role="group" aria-label="Account type selection">
+        <div
+          class="role-selector"
+          role="group"
+          aria-label="Account type selection"
+        >
           <button
             type="button"
             class={role === 'lecturer' ? 'primary' : 'outline'}
@@ -156,7 +160,9 @@
             : 'Need to request a token?'}
         </button>
         <a
-          href={role === 'lecturer' ? '#/auth/lecturer/login' : '#/auth/student/login'}
+          href={role === 'lecturer'
+            ? '#/auth/lecturer/login'
+            : '#/auth/student/login'}
           class="text-link"
           onclick={() =>
             (screen = role === 'lecturer' ? 'lecturer-login' : 'student-login')}

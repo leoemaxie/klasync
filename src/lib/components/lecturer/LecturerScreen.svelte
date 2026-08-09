@@ -41,7 +41,10 @@
       wsCleanup?.();
       wsCleanup = connectCaptionWebSocket(code, (cap) => {
         if (cap.text) {
-          ingestCaption(appState, { text: cap.text, timestamp: cap.created_at });
+          ingestCaption(appState, {
+            text: cap.text,
+            timestamp: cap.created_at,
+          });
         }
       });
     } else {

@@ -51,7 +51,10 @@
     if (roster.length === 0) return;
     const header = 'matric_number,full_name\n';
     const rows = roster
-      .map((s) => `"${s.matric.replace(/"/g, '""')}","${s.name.replace(/"/g, '""')}"`)
+      .map(
+        (s) =>
+          `"${s.matric.replace(/"/g, '""')}","${s.name.replace(/"/g, '""')}"`
+      )
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -72,7 +75,9 @@
       <div>
         <p class="eyebrow">COURSE ROSTER &amp; ENROLLED STUDENTS</p>
         <h3 class="panel-title">
-          {courseCode ? `Enrolled Students for ${courseCode}` : 'Enrolled Course Roster'}
+          {courseCode
+            ? `Enrolled Students for ${courseCode}`
+            : 'Enrolled Course Roster'}
         </h3>
       </div>
     </div>
@@ -80,7 +85,8 @@
     <div class="header-actions">
       <span class="count-badge">
         <CheckCircle2 size={13} />
-        {roster.length} {roster.length === 1 ? 'Student' : 'Students'} Enrolled
+        {roster.length}
+        {roster.length === 1 ? 'Student' : 'Students'} Enrolled
       </span>
       {#if onReloadFromCloud}
         <button
@@ -150,7 +156,9 @@
             <th scope="col">Matric Number</th>
             <th scope="col">Student Name</th>
             <th scope="col">Roster Verification</th>
-            {#if onRemoveStudent}<th scope="col" style="text-align: right;">Action</th>{/if}
+            {#if onRemoveStudent}<th scope="col" style="text-align: right;"
+                >Action</th
+              >{/if}
           </tr>
         </thead>
         <tbody>
@@ -162,9 +170,7 @@
               </td>
               <td class="name-cell">{student.name}</td>
               <td>
-                <span class="status-pill verified">
-                  Verified Match
-                </span>
+                <span class="status-pill verified"> Verified Match </span>
               </td>
               {#if onRemoveStudent}
                 <td class="action-cell">
@@ -196,7 +202,8 @@
       </div>
       <h4>No Students Enrolled Yet</h4>
       <p class="hint">
-        Import a <code>.csv</code> or <code>.xlsx</code> file, or paste CSV rows in the panel above to populate the enrolled student list for this course.
+        Import a <code>.csv</code> or <code>.xlsx</code> file, or paste CSV rows in
+        the panel above to populate the enrolled student list for this course.
       </p>
     </div>
   {/if}

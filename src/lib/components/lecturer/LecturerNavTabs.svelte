@@ -214,7 +214,9 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--color-cork-border);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 237, 215, 0.08);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(255, 237, 215, 0.08);
       z-index: 90;
     }
     .tabs-scroll-track {

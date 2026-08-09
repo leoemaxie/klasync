@@ -125,7 +125,12 @@
   {#if isLoading}
     <SkeletonCard lines={2} label="Loading live Q&A feed..." />
   {:else if questions.length}
-    <div class="questions-list" role="region" aria-live="polite" aria-label="Live questions feed">
+    <div
+      class="questions-list"
+      role="region"
+      aria-live="polite"
+      aria-label="Live questions feed"
+    >
       {#each questions as q}
         <div class="question-item" class:resolved={q.is_resolved}>
           <div class="q-content">

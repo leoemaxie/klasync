@@ -71,12 +71,23 @@
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="st-matric">
         Matric / Student ID
-        <input id="st-matric" bind:value={matric} placeholder="MAT/2023/001" required />
+        <input
+          id="st-matric"
+          bind:value={matric}
+          placeholder="MAT/2023/001"
+          required
+        />
       </label>
 
       <label for="st-name">
         Full Name
-        <input id="st-name" bind:value={name} placeholder="Ada Okafor" required autocomplete="name" />
+        <input
+          id="st-name"
+          bind:value={name}
+          placeholder="Ada Okafor"
+          required
+          autocomplete="name"
+        />
       </label>
 
       <label for="st-email">

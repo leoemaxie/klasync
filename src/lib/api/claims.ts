@@ -1,6 +1,10 @@
 import { http } from './http';
 import type { SuccessResponse } from './types';
-import { saveLocalStudentClaim, claimLecture, type ClaimRecord } from './archive';
+import {
+  saveLocalStudentClaim,
+  claimLecture,
+  type ClaimRecord,
+} from './archive';
 
 export type ClaimRequestResponse = {
   verification_id: string;

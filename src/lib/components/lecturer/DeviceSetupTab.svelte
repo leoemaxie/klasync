@@ -22,14 +22,19 @@
   <div class="panel bluetooth-panel">
     <div class="bluetooth-header">
       <div class="icon-circle">
-        <Bluetooth size={20} color="var(--color-ember-accent)" aria-hidden="true" />
+        <Bluetooth
+          size={20}
+          color="var(--color-ember-accent)"
+          aria-hidden="true"
+        />
       </div>
       <div class="header-text">
         <p class="eyebrow">CONNECT KLASYNC MIC</p>
       </div>
     </div>
     <p class="hint">
-      Pair your dedicated Klasync lapel microphone via Bluetooth for optimal studio audio quality, ultra-low latency, and enhanced noise suppression.
+      Pair your dedicated Klasync lapel microphone via Bluetooth for optimal
+      studio audio quality, ultra-low latency, and enhanced noise suppression.
     </p>
     <div class="bt-actions">
       <button type="button" class="primary full" onclick={handlePairBluetooth}>

@@ -11,10 +11,11 @@
   function handleContextMenu(e: MouseEvent) {
     const target = e.target as HTMLElement | null;
     if (!target) return;
-    const isEditable = target.tagName === 'INPUT' || 
-                      target.tagName === 'TEXTAREA' || 
-                      target.isContentEditable || 
-                      target.closest('.selectable-text');
+    const isEditable =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      target.closest('.selectable-text');
     if (!isEditable) {
       e.preventDefault();
     }
@@ -23,7 +24,9 @@
   function handleKeyDown(e: KeyboardEvent) {
     // ESC key closes popups / modals
     if (e.key === 'Escape') {
-      const activeModal = document.querySelector('.modal-backdrop, [role="dialog"]') as HTMLElement | null;
+      const activeModal = document.querySelector(
+        '.modal-backdrop, [role="dialog"]'
+      ) as HTMLElement | null;
       if (activeModal) {
         activeModal.click();
       }

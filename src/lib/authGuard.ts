@@ -21,7 +21,11 @@ export function clearAllClientStorage() {
   } catch {}
 
   try {
-    if (typeof indexedDB !== 'undefined' && 'databases' in indexedDB && typeof indexedDB.databases === 'function') {
+    if (
+      typeof indexedDB !== 'undefined' &&
+      'databases' in indexedDB &&
+      typeof indexedDB.databases === 'function'
+    ) {
       indexedDB
         .databases()
         .then((dbs) => {
@@ -62,7 +66,8 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
     const isLecturer =
       hasToken &&
       state.currentUser &&
-      (state.currentUser.role === 'lecturer' || state.currentUser.role === 'admin');
+      (state.currentUser.role === 'lecturer' ||
+        state.currentUser.role === 'admin');
 
     if (!isLecturer) {
       if (!hasToken || !state.currentUser) {
@@ -70,9 +75,10 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
         setTokens(null, null);
         state.currentUser = null;
       }
-      state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to access this page.'
-        : 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.';
+      state.authNotice =
+        !hasToken || !state.currentUser
+          ? 'Please sign in to access this page.'
+          : 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.';
       const target = SCREEN_TO_PATH['lecturer-login'];
       if (currentLoc !== target) void replace(target);
       return 'lecturer-login';
@@ -87,9 +93,7 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
 
   if (isArchiveWorkspace) {
     const isStudent =
-      hasToken &&
-      state.currentUser &&
-      state.currentUser.role === 'student';
+      hasToken && state.currentUser && state.currentUser.role === 'student';
 
     if (!isStudent) {
       if (!hasToken || !state.currentUser) {
@@ -97,9 +101,10 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
         setTokens(null, null);
         state.currentUser = null;
       }
-      state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to access this page.'
-        : 'Access restricted: Student Archive is only accessible to student accounts.';
+      state.authNotice =
+        !hasToken || !state.currentUser
+          ? 'Please sign in to access this page.'
+          : 'Access restricted: Student Archive is only accessible to student accounts.';
       const target = SCREEN_TO_PATH['student-login'];
       if (currentLoc !== target) void replace(target);
       return 'student-login';
@@ -111,7 +116,8 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
   if (isAuthRoute && hasToken && state.currentUser) {
     if (
       (matched === 'lecturer-login' || matched === 'lecturer-register') &&
-      (state.currentUser.role === 'lecturer' || state.currentUser.role === 'admin')
+      (state.currentUser.role === 'lecturer' ||
+        state.currentUser.role === 'admin')
     ) {
       const target = SCREEN_TO_PATH['lecturer'];
       if (currentLoc !== target) void replace(target);

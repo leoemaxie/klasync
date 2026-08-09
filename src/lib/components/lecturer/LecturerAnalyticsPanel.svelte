@@ -129,7 +129,8 @@
           {#each anomalies as a}
             <div class="anomaly-row">
               <span class="anom-badge warning"
-                ><span role="img" aria-label="Warning">⚠️</span> {a.anomaly_type.toUpperCase()}</span
+                ><span role="img" aria-label="Warning">⚠️</span>
+                {a.anomaly_type.toUpperCase()}</span
               >
               <p><strong>{a.matric_number}</strong>: {a.description}</p>
               <small

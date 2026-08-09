@@ -56,7 +56,8 @@ export async function submitQuestion(
     return {
       id: res?.id ? String(res.id) : `q-${Date.now()}`,
       question_text: res?.question_text ?? text,
-      upvote_count: typeof res?.upvote_count === 'number' ? res.upvote_count : 0,
+      upvote_count:
+        typeof res?.upvote_count === 'number' ? res.upvote_count : 0,
       is_resolved: Boolean(res?.is_resolved),
       created_at: res?.created_at ?? new Date().toISOString(),
       caption_id: res?.caption_id ?? captionId,

@@ -6,7 +6,7 @@
     captionDraft = $bindable(''),
     apiNotice = '',
     isPublishing = false,
-    onPublishCaption
+    onPublishCaption,
   }: {
     captionDraft: string;
     apiNotice?: string;
@@ -42,8 +42,7 @@
         placeholder="Type or speak a caption chunk for students..."
         rows={3}
         onkeydown={handleKeyDown}
-        class="caption-textarea"
-      ></textarea>
+        class="caption-textarea"></textarea>
     </div>
   </div>
 
@@ -60,7 +59,9 @@
         <Send size={14} aria-hidden="true" /> Publish Caption Chunk (Enter ↵)
       {/if}
     </button>
-    <span class="hint-text">Press Enter to broadcast immediately to all connected students</span>
+    <span class="hint-text"
+      >Press Enter to broadcast immediately to all connected students</span
+    >
   </div>
 
   {#if apiNotice}
@@ -69,18 +70,98 @@
 </div>
 
 <style>
-  .transmitter-card { display: flex; flex-direction: column; gap: var(--spacing-16); }
-  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .eyebrow { font-size: 10px; letter-spacing: 0.1em; color: var(--color-warm-cream-dim); font-weight: 700; margin: 0; }
-  .card-title { font-size: 22px; font-weight: 500; color: var(--color-warm-cream); margin: 4px 0 0 0; font-family: var(--font-display); }
-  .live-signal-badge { font-size: 11px; font-weight: 700; color: var(--color-warm-cream); background: rgba(74, 183, 114, 0.12); border: 1px solid rgba(74, 183, 114, 0.3); padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
-  .pulse-dot { animation: blink 1s infinite alternate; }
-  @keyframes blink { 0% { opacity: 0.3; } 100% { opacity: 1; } }
-  .input-block { display: flex; flex-direction: column; gap: 6px; }
-  .caption-textarea { width: 100%; padding: 12px 14px; background: rgba(10, 5, 2, 0.8); border: 1px solid var(--color-cork-border); border-radius: 8px; color: var(--color-warm-cream); font-size: 14px; line-height: 1.5; resize: vertical; }
-  .caption-textarea:focus { outline: none; border-color: var(--color-warm-cream); }
-  .action-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .publish-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 12px; }
-  .hint-text { font-size: 11px; color: var(--color-driftwood); }
-  .notice-box { font-size: 12px; color: var(--color-ember-accent); background: rgba(220, 80, 0, 0.1); border: 1px solid var(--color-cork-border); padding: 10px 14px; border-radius: 6px; }
+  .transmitter-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-16);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--color-warm-cream-dim);
+    font-weight: 700;
+    margin: 0;
+  }
+  .card-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--color-warm-cream);
+    margin: 4px 0 0 0;
+    font-family: var(--font-display);
+  }
+  .live-signal-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-warm-cream);
+    background: rgba(74, 183, 114, 0.12);
+    border: 1px solid rgba(74, 183, 114, 0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pulse-dot {
+    animation: blink 1s infinite alternate;
+  }
+  @keyframes blink {
+    0% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  .input-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .caption-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(10, 5, 2, 0.8);
+    border: 1px solid var(--color-cork-border);
+    border-radius: 8px;
+    color: var(--color-warm-cream);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .caption-textarea:focus {
+    outline: none;
+    border-color: var(--color-warm-cream);
+  }
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .publish-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+  .hint-text {
+    font-size: 11px;
+    color: var(--color-driftwood);
+  }
+  .notice-box {
+    font-size: 12px;
+    color: var(--color-ember-accent);
+    background: rgba(220, 80, 0, 0.1);
+    border: 1px solid var(--color-cork-border);
+    padding: 10px 14px;
+    border-radius: 6px;
+  }
 </style>

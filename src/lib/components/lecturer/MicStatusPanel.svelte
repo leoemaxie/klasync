@@ -122,11 +122,13 @@
     <AudioLevelMeter level={audioLevel} isActive={isUsingDeviceMic} />
     {#if micError}<p class="error" role="alert">{micError}</p>{/if}
   </div>
-  
+
   <div class="mic-actions">
     {#if !isUsingDeviceMic}
       <button type="button" class="outline full" onclick={enableDeviceMic}
-        >{sessionCode ? 'Start Live Audio Stream' : 'Test & Enable Microphone'}</button
+        >{sessionCode
+          ? 'Start Live Audio Stream'
+          : 'Test & Enable Microphone'}</button
       >
     {:else}
       <button type="button" class="danger full" onclick={stopDeviceMic}

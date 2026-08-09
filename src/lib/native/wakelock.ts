@@ -19,9 +19,11 @@ export async function requestWakeLock(): Promise<boolean> {
   }
 
   try {
-    const nav = navigator as unknown as { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } };
+    const nav = navigator as unknown as {
+      wakeLock: { request: (type: string) => Promise<WakeLockSentinel> };
+    };
     wakeLockSentinel = await nav.wakeLock.request('screen');
-    
+
     wakeLockSentinel.addEventListener?.('release', () => {
       wakeLockSentinel = null;
     });
@@ -49,7 +51,11 @@ export async function releaseWakeLock(): Promise<void> {
 // Re-acquire wake lock if tab loses and regains visibility while in live lecture
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && isRequested && !wakeLockSentinel) {
+    if (
+      document.visibilityState === 'visible' &&
+      isRequested &&
+      !wakeLockSentinel
+    ) {
       void requestWakeLock();
     }
   });

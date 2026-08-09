@@ -94,8 +94,11 @@
       class="text-link-sync"
       onclick={() => (isLmsModalOpen = true)}
     >
-      <Link size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Canvas
-      / Moodle Sync
+      <Link
+        size={14}
+        aria-hidden="true"
+        style="vertical-align: middle; display: inline-block;"
+      /> Canvas / Moodle Sync
     </button>
   </div>
 
@@ -144,7 +147,7 @@
         id="roster-paste-input"
         bind:value={rosterText}
         rows="3"
-        placeholder={"MAT/2023/001, Ada Okafor\nMAT/2023/002, Chinedu Obi"}
+        placeholder={'MAT/2023/001, Ada Okafor\nMAT/2023/002, Chinedu Obi'}
       ></textarea>
     </label>
   </div>
@@ -154,14 +157,24 @@
   <div class="roster-actions-grid">
     <button
       type="button"
-      class={isConfirming ? 'saving' : isConfirmed ? 'success' : parsedStudents.length > 0 ? 'primary' : 'outline'}
+      class={isConfirming
+        ? 'saving'
+        : isConfirmed
+          ? 'success'
+          : parsedStudents.length > 0
+            ? 'primary'
+            : 'outline'}
       onclick={handleConfirmRoster}
       disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
     >
       {#if isConfirming}
         <ButtonSpinner label="Saving..." /> Saving...
       {:else if isConfirmed}
-        <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Confirmed ({parsedStudents.length})
+        <CheckCircle2
+          size={16}
+          aria-hidden="true"
+          style="vertical-align: middle; display: inline-block; margin-right: 4px;"
+        /> Confirmed ({parsedStudents.length})
       {:else}
         Confirm Roster ({parsedStudents.length})
       {/if}
@@ -176,16 +189,27 @@
       {#if isSavingCloud}
         <ButtonSpinner label="Saving to cloud..." /> Save to Cloud
       {:else if isSavedCloud}
-        <CheckCircle2 size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Synced to Cloud
+        <CheckCircle2
+          size={16}
+          aria-hidden="true"
+          style="vertical-align: middle; display: inline-block; margin-right: 4px;"
+        /> Synced to Cloud
       {:else}
-        <CloudUpload size={16} aria-hidden="true" style="vertical-align: middle; display: inline-block; margin-right: 4px;" /> Save to Cloud
+        <CloudUpload
+          size={16}
+          aria-hidden="true"
+          style="vertical-align: middle; display: inline-block; margin-right: 4px;"
+        /> Save to Cloud
       {/if}
     </button>
   </div>
 
   {#if rosterNotice}
     <p
-      role={rosterNotice.toLowerCase().includes('error') || rosterNotice.toLowerCase().includes('unsupported') ? 'alert' : 'status'}
+      role={rosterNotice.toLowerCase().includes('error') ||
+      rosterNotice.toLowerCase().includes('unsupported')
+        ? 'alert'
+        : 'status'}
       class={rosterNotice.toLowerCase().includes('error') ||
       rosterNotice.toLowerCase().includes('unsupported')
         ? 'error'

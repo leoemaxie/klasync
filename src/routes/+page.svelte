@@ -46,7 +46,9 @@
     if (savedRosterText) {
       appState.rosterText = savedRosterText;
     } else if (appState.roster.length > 0) {
-      appState.rosterText = appState.roster.map((s) => `${s.matric}, ${s.name}`).join('\n');
+      appState.rosterText = appState.roster
+        .map((s) => `${s.matric}, ${s.name}`)
+        .join('\n');
     }
     if (savedLecturer) appState.lecturerName = savedLecturer;
     if (savedCourseCode) appState.courseCode = savedCourseCode;

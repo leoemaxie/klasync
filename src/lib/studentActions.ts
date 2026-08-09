@@ -86,7 +86,9 @@ export function ingestCaption(
 ) {
   if (!caption.text || !caption.text.trim()) return;
   const text = caption.text.trim();
-  const current = state.captions.filter(c => c !== 'WAITING FOR LIVE CAPTIONS.');
+  const current = state.captions.filter(
+    (c) => c !== 'WAITING FOR LIVE CAPTIONS.'
+  );
   if (!current.includes(text)) {
     state.captions = [...current, text];
     state.captionIndex = state.captions.length - 1;
@@ -98,4 +100,3 @@ export function ingestCaption(
     }
   }
 }
-

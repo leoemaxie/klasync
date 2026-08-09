@@ -192,7 +192,8 @@ export function startMicrophoneAudioStream(
   let recognition: any = null;
   const SpeechRecognition =
     typeof window !== 'undefined'
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      ? (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition
       : null;
 
   if (SpeechRecognition) {
@@ -240,4 +241,3 @@ export function startMicrophoneAudioStream(
     isStreaming: () => active && wsClient.readyState === WebSocket.OPEN,
   };
 }
-

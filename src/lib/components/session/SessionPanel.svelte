@@ -12,7 +12,7 @@
     type IngestedCaption,
   } from '$lib/api/audio';
   import { Radio } from '@lucide/svelte';
-import LiveQaPanel from './LiveQaPanel.svelte';
+  import LiveQaPanel from './LiveQaPanel.svelte';
 
   let {
     session,
@@ -53,7 +53,9 @@ import LiveQaPanel from './LiveQaPanel.svelte';
   let animFrameId: number | null = null;
 
   const inviteUrl = $derived(
-    session?.code ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}` : ''
+    session?.code
+      ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}`
+      : ''
   );
 
   function startLevelMeter(stream: MediaStream) {
@@ -100,21 +102,34 @@ import LiveQaPanel from './LiveQaPanel.svelte';
 
   async function handlePauseToggle() {
     if (!session?.code) return;
-    actionError = ''; isTogglingPause = true;
+    actionError = '';
+    isTogglingPause = true;
     try {
-      if (isPaused) { await resumeSession(session.code); isPaused = false; }
-      else { await pauseSession(session.code); isPaused = true; }
-    } catch (err) { actionError = err instanceof Error ? err.message : 'Failed to toggle session state'; }
-    finally { isTogglingPause = false; }
+      if (isPaused) {
+        await resumeSession(session.code);
+        isPaused = false;
+      } else {
+        await pauseSession(session.code);
+        isPaused = true;
+      }
+    } catch (err) {
+      actionError =
+        err instanceof Error ? err.message : 'Failed to toggle session state';
+    } finally {
+      isTogglingPause = false;
+    }
   }
 
   async function handleRecordingToggle() {
     if (!session?.code) return;
-    actionError = ''; isTogglingRec = true;
+    actionError = '';
+    isTogglingRec = true;
     try {
       if (!isRecording) {
         try {
-          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
           startLevelMeter(mediaStream);
           streamer = startMicrophoneAudioStream(
             session.code,
@@ -127,7 +142,8 @@ import LiveQaPanel from './LiveQaPanel.svelte';
             }
           );
         } catch {
-          actionError = 'Could not access browser microphone. Check device permissions.';
+          actionError =
+            'Could not access browser microphone. Check device permissions.';
           return;
         }
         await toggleRecording(session.code, true);
@@ -137,8 +153,12 @@ import LiveQaPanel from './LiveQaPanel.svelte';
         await toggleRecording(session.code, false);
         isRecording = false;
       }
-    } catch (err) { actionError = err instanceof Error ? err.message : 'Failed to toggle recording'; }
-    finally { isTogglingRec = false; }
+    } catch (err) {
+      actionError =
+        err instanceof Error ? err.message : 'Failed to toggle recording';
+    } finally {
+      isTogglingRec = false;
+    }
   }
 
   async function handleEndSession() {
@@ -158,37 +178,127 @@ import LiveQaPanel from './LiveQaPanel.svelte';
 
 <div class="session-dashboard">
   {#if session?.live}
-    <SessionTopHeader title={session.title} {isPaused} {isRecording} {audioLevel} />
-    <SessionAccessCard code={session.code} {inviteUrl} {copied} {onCopyInvite} />
-    <SessionControlsCard {isPaused} {isRecording} {isTogglingPause} {isTogglingRec} isEndingSession={isEndingSession || isEnding || isSaving} {actionError} {apiNotice} onPauseToggle={handlePauseToggle} onRecordingToggle={handleRecordingToggle} onEndSession={handleEndSession} />
+    <SessionTopHeader
+      title={session.title}
+      {isPaused}
+      {isRecording}
+      {audioLevel}
+    />
+    <SessionAccessCard
+      code={session.code}
+      {inviteUrl}
+      {copied}
+      {onCopyInvite}
+    />
+    <SessionControlsCard
+      {isPaused}
+      {isRecording}
+      {isTogglingPause}
+      {isTogglingRec}
+      isEndingSession={isEndingSession || isEnding || isSaving}
+      {actionError}
+      {apiNotice}
+      onPauseToggle={handlePauseToggle}
+      onRecordingToggle={handleRecordingToggle}
+      onEndSession={handleEndSession}
+    />
     <LiveQaPanel sessionCode={session.code} isLecturer={true} />
   {:else}
     <div class="start-session-card">
       <div class="start-header">
         <p class="eyebrow">READY TO BROADCAST</p>
         <h2 class="start-title">Start Live Lecture Session</h2>
-        <p class="start-desc">Generate access code, invite link, and QR code for student entry.</p>
+        <p class="start-desc">
+          Generate access code, invite link, and QR code for student entry.
+        </p>
       </div>
       <div class="lecturer-summary-box">
-        <div class="summary-item"><span class="sum-label">LECTURER:</span><span class="sum-val">{lecturerName || 'Not Set'}</span></div>
-        <div class="summary-item"><span class="sum-label">EMAIL:</span><span class="sum-val">{lecturerEmail || 'Not Set'}</span></div>
+        <div class="summary-item">
+          <span class="sum-label">LECTURER:</span><span class="sum-val"
+            >{lecturerName || 'Not Set'}</span
+          >
+        </div>
+        <div class="summary-item">
+          <span class="sum-label">EMAIL:</span><span class="sum-val"
+            >{lecturerEmail || 'Not Set'}</span
+          >
+        </div>
       </div>
       {#if apiNotice}<p class="error-notice">{apiNotice}</p>{/if}
-      <button type="button" class="primary start-btn" onclick={onStartSession} disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}>
-        {#if isSaving}<ButtonSpinner label="Initializing live lecture room..." /> Initializing Live Room...{:else}<Radio size={16} /> Start Live Session Now{/if}
+      <button
+        type="button"
+        class="primary start-btn"
+        onclick={onStartSession}
+        disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}
+      >
+        {#if isSaving}<ButtonSpinner
+            label="Initializing live lecture room..."
+          /> Initializing Live Room...{:else}<Radio size={16} /> Start Live Session
+          Now{/if}
       </button>
     </div>
   {/if}
 </div>
 
 <style>
-  .session-dashboard { display: flex; flex-direction: column; gap: var(--spacing-16); }
-  .start-session-card { background: rgba(16, 9, 4, 0.6); border: 1px solid var(--color-cork-border); border-radius: 8px; padding: var(--spacing-28); display: flex; flex-direction: column; gap: var(--spacing-18); }
-  .start-title { font-size: 24px; font-weight: 500; color: var(--color-warm-cream); margin: 4px 0 8px 0; font-family: var(--font-display); }
-  .start-desc { font-size: 13px; color: var(--color-driftwood); margin: 0; }
-  .lecturer-summary-box { display: flex; gap: var(--spacing-20); background: rgba(10, 5, 2, 0.6); border: 1px solid var(--color-cork-border); padding: 12px 16px; border-radius: 6px; flex-wrap: wrap; }
-  .summary-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-  .sum-label { color: var(--color-driftwood); font-size: 10px; letter-spacing: 0.08em; font-weight: 600; }
-  .sum-val { color: var(--color-warm-cream); font-weight: 500; }
-  .start-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; font-size: 13px; align-self: flex-start; }
+  .session-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-16);
+  }
+  .start-session-card {
+    background: rgba(16, 9, 4, 0.6);
+    border: 1px solid var(--color-cork-border);
+    border-radius: 8px;
+    padding: var(--spacing-28);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-18);
+  }
+  .start-title {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--color-warm-cream);
+    margin: 4px 0 8px 0;
+    font-family: var(--font-display);
+  }
+  .start-desc {
+    font-size: 13px;
+    color: var(--color-driftwood);
+    margin: 0;
+  }
+  .lecturer-summary-box {
+    display: flex;
+    gap: var(--spacing-20);
+    background: rgba(10, 5, 2, 0.6);
+    border: 1px solid var(--color-cork-border);
+    padding: 12px 16px;
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .sum-label {
+    color: var(--color-driftwood);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .sum-val {
+    color: var(--color-warm-cream);
+    font-weight: 500;
+  }
+  .start-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 13px;
+    align-self: flex-start;
+  }
 </style>

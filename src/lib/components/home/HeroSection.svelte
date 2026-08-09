@@ -44,7 +44,8 @@
     </h1>
 
     <p class="lede">
-      Live captions, searchable transcripts, and AI notes for physical lectures. Instant guest access.
+      Live captions, searchable transcripts, and AI notes for physical lectures.
+      Instant guest access.
     </p>
 
     <div class="actions">

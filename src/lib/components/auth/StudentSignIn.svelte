@@ -33,7 +33,8 @@
       const res = await loginStudent(email.trim(), password);
       if (res.user && res.user.role !== 'student') {
         await logout().catch(() => {});
-        errorMsg = 'This account is registered as a lecturer. Please sign in under Lecturer Sign In.';
+        errorMsg =
+          'This account is registered as a lecturer. Please sign in under Lecturer Sign In.';
         return;
       }
       if (appState) {

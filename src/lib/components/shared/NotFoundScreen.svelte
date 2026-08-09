@@ -34,12 +34,15 @@
         </div>
         <h1 class="card-title">Room or Route Not Found</h1>
         <p class="card-desc">
-          The lecture session code, invite link, or requested resource does not exist or has expired.
+          The lecture session code, invite link, or requested resource does not
+          exist or has expired.
         </p>
       </div>
 
       <form class="retry-code-box" onsubmit={handleRetryJoin}>
-        <label for="nf-retry-input" class="retry-label">Have a session code?</label>
+        <label for="nf-retry-input" class="retry-label"
+          >Have a session code?</label
+        >
         <div class="retry-input-row">
           <div class="search-input-wrap">
             <Search size={15} class="input-icon" />
@@ -132,7 +135,8 @@
           <strong>Hosting a Lecture?</strong>
         </div>
         <p class="hint">
-          Sign in to your lecturer account to initialize a new live room and invite students.
+          Sign in to your lecturer account to initialize a new live room and
+          invite students.
         </p>
       </div>
     </div>
@@ -141,7 +145,8 @@
 
 <style>
   .not-found-container {
-    padding: calc(var(--nav-height) + 40px) var(--card-padding) var(--spacing-68);
+    padding: calc(var(--nav-height) + 40px) var(--card-padding)
+      var(--spacing-68);
     display: flex;
     justify-content: center;
     align-items: center;

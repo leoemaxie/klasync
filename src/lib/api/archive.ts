@@ -40,7 +40,10 @@ export function getLocalStudentClaims(): ClaimRecord[] {
         return [
           {
             id: session.code,
-            course_code: session.course_code || localStorage.getItem('klasync-courseCode') || 'COURSE',
+            course_code:
+              session.course_code ||
+              localStorage.getItem('klasync-courseCode') ||
+              'COURSE',
             session_title: session.title || 'Live Lecture Session',
             date: new Date().toLocaleDateString('en-US', {
               month: 'short',

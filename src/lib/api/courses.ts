@@ -116,7 +116,10 @@ export async function getCourseRoster(
     `/courses/${encodeURIComponent(targetId)}/roster`
   ).then((res) => {
     if (Array.isArray(res)) return res;
-    if (res && Array.isArray((res as { students: ApiRosterStudent[] }).students)) {
+    if (
+      res &&
+      Array.isArray((res as { students: ApiRosterStudent[] }).students)
+    ) {
       return (res as { students: ApiRosterStudent[] }).students;
     }
     return [];

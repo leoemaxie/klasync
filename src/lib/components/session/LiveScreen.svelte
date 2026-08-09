@@ -61,7 +61,9 @@
         wsConnected = true;
         if (cap.text && cap.text.trim()) {
           const text = cap.text.trim();
-          const filtered = captions.filter((c) => c !== 'WAITING FOR LIVE CAPTIONS.');
+          const filtered = captions.filter(
+            (c) => c !== 'WAITING FOR LIVE CAPTIONS.'
+          );
           if (!filtered.includes(text)) {
             captions = [...filtered, text];
             captionIndex = captions.length - 1;
@@ -135,7 +137,11 @@
 </script>
 
 <svelte:head>
-  <title>{session?.title ? `${session.title} — Live · Klasync` : 'Live Session — Klasync'}</title>
+  <title
+    >{session?.title
+      ? `${session.title} — Live · Klasync`
+      : 'Live Session — Klasync'}</title
+  >
 </svelte:head>
 
 <div class="live-workspace-wrap">

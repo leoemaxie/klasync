@@ -81,7 +81,11 @@
       <div class="modal-header">
         <p class="eyebrow">LMS ROSTER AUTOMATION</p>
         <button type="button" class="text" onclick={() => (isOpen = false)}>
-          <X size={14} aria-hidden="true" style="vertical-align: middle; display: inline-block;" /> Close
+          <X
+            size={14}
+            aria-hidden="true"
+            style="vertical-align: middle; display: inline-block;"
+          /> Close
         </button>
       </div>
 
@@ -92,7 +96,11 @@
       </p>
 
       <form onsubmit={handleSync} class="lms-form">
-        <div class="lms-provider-selector" role="group" aria-label="LMS Provider Selection">
+        <div
+          class="lms-provider-selector"
+          role="group"
+          aria-label="LMS Provider Selection"
+        >
           <button
             type="button"
             class={lmsProvider === 'canvas' ? 'primary' : 'outline'}

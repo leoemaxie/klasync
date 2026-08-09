@@ -34,7 +34,12 @@
   {#if isLoading}
     <SkeletonCard lines={3} label="Generating AI chapter breakdown..." />
   {:else if chapters.length}
-    <div class="chapters-list" role="region" aria-live="polite" aria-label="AI lecture chapters">
+    <div
+      class="chapters-list"
+      role="region"
+      aria-live="polite"
+      aria-label="AI lecture chapters"
+    >
       {#each chapters as ch}
         <div class="chapter-card">
           <div class="chapter-time-badge">

@@ -28,7 +28,9 @@ export function persist(state: SessionState) {
   }
 }
 
-export async function loadCourseRosterFromApi(state: SessionState): Promise<boolean> {
+export async function loadCourseRosterFromApi(
+  state: SessionState
+): Promise<boolean> {
   const courseId = state.courseCode?.trim();
   if (!courseId) {
     state.rosterNotice = 'Specify a Course Code to load roster from cloud.';
@@ -225,7 +227,9 @@ async function decompressDeflate(compressed: Uint8Array): Promise<Uint8Array> {
   }
 }
 
-async function extractZipEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, Uint8Array>> {
+async function extractZipEntries(
+  arrayBuffer: ArrayBuffer
+): Promise<Map<string, Uint8Array>> {
   const bytes = new Uint8Array(arrayBuffer);
   const view = new DataView(arrayBuffer);
   const fileMap = new Map<string, Uint8Array>();
@@ -240,10 +244,12 @@ async function extractZipEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, 
       let compressedSize = view.getUint32(pos + 18, true);
       const fileNameLength = view.getUint16(pos + 26, true);
       const extraFieldLength = view.getUint16(pos + 28, true);
-      const filename = decoder.decode(bytes.subarray(pos + 30, pos + 30 + fileNameLength)).toLowerCase();
+      const filename = decoder
+        .decode(bytes.subarray(pos + 30, pos + 30 + fileNameLength))
+        .toLowerCase();
       const dataOffset = pos + 30 + fileNameLength + extraFieldLength;
 
-      if (compressedSize === 0 && (generalFlag & 0x0008)) {
+      if (compressedSize === 0 && generalFlag & 0x0008) {
         let nextPos = dataOffset;
         while (nextPos < bytes.length - 4) {
           const nextSig = view.getUint32(nextPos, true);
@@ -253,13 +259,19 @@ async function extractZipEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, 
           nextPos++;
         }
         compressedSize = nextPos - dataOffset;
-        if (compressedSize >= 16 && view.getUint32(nextPos - 16, true) === 0x08074b50) {
+        if (
+          compressedSize >= 16 &&
+          view.getUint32(nextPos - 16, true) === 0x08074b50
+        ) {
           compressedSize -= 16;
         }
       }
 
       if (filename) {
-        const compressedData = bytes.subarray(dataOffset, dataOffset + compressedSize);
+        const compressedData = bytes.subarray(
+          dataOffset,
+          dataOffset + compressedSize
+        );
         let decompressed: Uint8Array;
         if (compressionMethod === 0) {
           decompressed = compressedData;
@@ -283,7 +295,9 @@ async function extractZipEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, 
   return fileMap;
 }
 
-export async function parseXlsxToCsv(arrayBuffer: ArrayBuffer): Promise<string> {
+export async function parseXlsxToCsv(
+  arrayBuffer: ArrayBuffer
+): Promise<string> {
   const fileMap = await extractZipEntries(arrayBuffer);
   const decoder = new TextDecoder('utf-8');
 
@@ -334,7 +348,9 @@ export async function parseXlsxToCsv(arrayBuffer: ArrayBuffer): Promise<string> 
     cellElements.forEach((cEl) => {
       const cellRef = cEl.getAttribute('r') || '';
       const colLetters = cellRef.replace(/[0-9]/g, '').toUpperCase();
-      const colIdx = colLetters ? colLetterToNumber(colLetters) : rowCells.length;
+      const colIdx = colLetters
+        ? colLetterToNumber(colLetters)
+        : rowCells.length;
 
       const type = cEl.getAttribute('t');
       const vEl = cEl.querySelector('v');
@@ -364,7 +380,10 @@ export async function parseXlsxToCsv(arrayBuffer: ArrayBuffer): Promise<string> 
   return rows.map((r) => r.join(', ')).join('\n');
 }
 
-export async function importFile(state: SessionState, eventOrFile: Event | File) {
+export async function importFile(
+  state: SessionState,
+  eventOrFile: Event | File
+) {
   let file: File | undefined;
 
   if (eventOrFile instanceof File) {

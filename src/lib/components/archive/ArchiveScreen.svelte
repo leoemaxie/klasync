@@ -49,19 +49,26 @@
   function getClaimTranscript(claimId: string): string {
     if (typeof localStorage === 'undefined') return '';
     try {
-      const storedCaptions = localStorage.getItem(`klasync-captions-${claimId}`) || localStorage.getItem('klasync-captions');
+      const storedCaptions =
+        localStorage.getItem(`klasync-captions-${claimId}`) ||
+        localStorage.getItem('klasync-captions');
       if (storedCaptions) {
         const parsed = JSON.parse(storedCaptions);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c: any) => typeof c === 'string' ? c : (c.text || c.content || '')).filter(Boolean).join('\n');
+          return parsed
+            .map((c: any) =>
+              typeof c === 'string' ? c : c.text || c.content || ''
+            )
+            .filter(Boolean)
+            .join('\n');
         }
       }
     } catch {}
     return [
-      '[00:01] Welcome everyone to today\'s lecture session.',
+      "[00:01] Welcome everyone to today's lecture session.",
       '[00:15] Today we are discussing key principles, system architecture, and accessibility.',
       '[01:30] Make sure to review the core formulas and chapter breakdowns provided in your archive.',
-      '[03:45] Any questions asked during class have been synced to your student Q&A record.'
+      '[03:45] Any questions asked during class have been synced to your student Q&A record.',
     ].join('\n');
   }
 </script>
@@ -103,7 +110,11 @@
                 Claimed on {claim.date} · Verified Student Access
               </p>
 
-              <div class="tab-selector" role="group" aria-label="Archive view options">
+              <div
+                class="tab-selector"
+                role="group"
+                aria-label="Archive view options"
+              >
                 <button
                   type="button"
                   class={activeTab === 'transcript' ? 'primary' : 'outline'}

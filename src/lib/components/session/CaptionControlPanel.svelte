@@ -28,10 +28,19 @@
 </script>
 
 <section class="caption-control-wrap">
-  <CaptionTransmitterCard bind:captionDraft {apiNotice} {isPublishing} onPublishCaption={handlePublish} />
+  <CaptionTransmitterCard
+    bind:captionDraft
+    {apiNotice}
+    {isPublishing}
+    onPublishCaption={handlePublish}
+  />
   <CaptionHistoryCard {captions} />
 </section>
 
 <style>
-  .caption-control-wrap { display: flex; flex-direction: column; gap: var(--spacing-16); }
+  .caption-control-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-16);
+  }
 </style>

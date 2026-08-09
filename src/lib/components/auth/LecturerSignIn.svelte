@@ -31,9 +31,14 @@
     errorMsg = '';
     try {
       const res = await loginLecturer(email.trim(), password);
-      if (res.user && res.user.role !== 'lecturer' && res.user.role !== 'admin') {
+      if (
+        res.user &&
+        res.user.role !== 'lecturer' &&
+        res.user.role !== 'admin'
+      ) {
         await logout().catch(() => {});
-        errorMsg = 'This account is registered as a student. Please sign in under Student Sign In.';
+        errorMsg =
+          'This account is registered as a student. Please sign in under Student Sign In.';
         return;
       }
       if (appState) {

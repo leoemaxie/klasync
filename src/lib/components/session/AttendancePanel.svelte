@@ -58,8 +58,7 @@
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase().trim();
         return (
-          p.name.toLowerCase().includes(q) ||
-          p.matric.toLowerCase().includes(q)
+          p.name.toLowerCase().includes(q) || p.matric.toLowerCase().includes(q)
         );
       })
       .sort((a, b) => {
@@ -132,16 +131,20 @@
   <div class="panel-header">
     <div class="summary-inline-pills">
       <span class="inline-pill total">
-        <Users size={14} aria-hidden="true" /> {participants.length} Registered
+        <Users size={14} aria-hidden="true" />
+        {participants.length} Registered
       </span>
       <span class="inline-pill verified">
-        <ShieldCheck size={14} aria-hidden="true" /> {verifiedCount} Verified ({matchRate}%)
+        <ShieldCheck size={14} aria-hidden="true" />
+        {verifiedCount} Verified ({matchRate}%)
       </span>
       <span class="inline-pill provisional">
-        <UserX size={14} aria-hidden="true" /> {provisionalCount} Provisional
+        <UserX size={14} aria-hidden="true" />
+        {provisionalCount} Provisional
       </span>
       <span class="inline-pill pulses">
-        <Activity size={14} aria-hidden="true" /> {totalHeartbeats} Pulses
+        <Activity size={14} aria-hidden="true" />
+        {totalHeartbeats} Pulses
       </span>
     </div>
 
@@ -166,7 +169,11 @@
         onclick={handleRefresh}
         disabled={isRefreshing || isLoading}
       >
-        <RefreshCw size={14} aria-hidden="true" class={isRefreshing ? 'spin-icon' : ''} />
+        <RefreshCw
+          size={14}
+          aria-hidden="true"
+          class={isRefreshing ? 'spin-icon' : ''}
+        />
         {#if isRefreshing}Refreshing...{:else}Refresh{/if}
       </button>
     </div>
@@ -226,7 +233,11 @@
     </div>
 
     <div class="sort-group">
-      <select bind:value={sortBy} class="sort-select" aria-label="Sort attendance list">
+      <select
+        bind:value={sortBy}
+        class="sort-select"
+        aria-label="Sort attendance list"
+      >
         <option value="joined">Latest Joined</option>
         <option value="name">Name (A-Z)</option>
         <option value="heartbeats">Check-in Pulses</option>
@@ -259,7 +270,10 @@
           {#each filteredParticipants as participant (participant.id || participant.matric)}
             <tr class="table-row">
               <td class="student-cell">
-                <div class="avatar" class:verified-avatar={participant.verified}>
+                <div
+                  class="avatar"
+                  class:verified-avatar={participant.verified}
+                >
                   {getInitials(participant.name)}
                 </div>
                 <span class="student-name">{participant.name}</span>
@@ -280,12 +294,19 @@
               </td>
               <td>
                 <span class="pulse-tag">
-                  <span class="dot" class:active={participant.heartbeats > 0} aria-hidden="true"></span>
-                  {participant.heartbeats} pulse{participant.heartbeats === 1 ? '' : 's'}
+                  <span
+                    class="dot"
+                    class:active={participant.heartbeats > 0}
+                    aria-hidden="true"
+                  ></span>
+                  {participant.heartbeats} pulse{participant.heartbeats === 1
+                    ? ''
+                    : 's'}
                 </span>
               </td>
               <td class="time-cell">
-                <Clock size={13} aria-hidden="true" /> {formatJoinedTime(participant.joinedAt)}
+                <Clock size={13} aria-hidden="true" />
+                {formatJoinedTime(participant.joinedAt)}
               </td>
             </tr>
           {/each}
@@ -293,15 +314,16 @@
       </table>
     </div>
     <div class="footer-count">
-      Showing {filteredParticipants.length} of {participants.length} record{participants.length === 1 ? '' : 's'}
+      Showing {filteredParticipants.length} of {participants.length} record{participants.length ===
+      1
+        ? ''
+        : 's'}
     </div>
   {:else if searchQuery || statusFilter !== 'all'}
     <div class="empty-state">
       <Search size={28} class="empty-icon" />
       <p class="empty-title">No matching participants</p>
-      <p class="empty-desc">
-        No students matched your search criteria.
-      </p>
+      <p class="empty-desc">No students matched your search criteria.</p>
       <button
         type="button"
         class="outline reset-btn"
@@ -318,7 +340,8 @@
       <Users size={32} class="empty-icon" />
       <p class="empty-title">No participants joined yet</p>
       <p class="empty-desc">
-        Students joining live with code <strong>{sessionCode}</strong> will appear here automatically.
+        Students joining live with code <strong>{sessionCode}</strong> will appear
+        here automatically.
       </p>
     </div>
   {/if}
@@ -405,8 +428,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Controls Bar */
@@ -763,4 +790,3 @@
     }
   }
 </style>
-

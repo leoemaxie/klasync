@@ -67,7 +67,13 @@
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="reg-name">
         Full Name &amp; Title
-        <input id="reg-name" bind:value={name} placeholder="Dr. Amara Okeke" required autocomplete="name" />
+        <input
+          id="reg-name"
+          bind:value={name}
+          placeholder="Dr. Amara Okeke"
+          required
+          autocomplete="name"
+        />
       </label>
 
       <label for="reg-email">

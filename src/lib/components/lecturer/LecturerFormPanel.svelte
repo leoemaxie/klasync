@@ -55,7 +55,8 @@
     <div class="info-text">
       <strong>Lecturer Profiles</strong>
       <p class="hint">
-        Your name, email, and course code identify you as the verified session host on student join screens and exported roster logs.
+        Your name, email, and course code identify you as the verified session
+        host on student join screens and exported roster logs.
       </p>
     </div>
   </div>

@@ -2,7 +2,15 @@
   import { onMount } from 'svelte';
   import type { Screen } from '$lib/types';
   import { triggerHaptic } from '$lib/native/haptics';
-  import { Search, Radio, BookOpen, Users, Settings, X, ArrowRight } from '@lucide/svelte';
+  import {
+    Search,
+    Radio,
+    BookOpen,
+    Users,
+    Settings,
+    X,
+    ArrowRight,
+  } from '@lucide/svelte';
 
   import type { AuthUser } from '$lib/api/auth';
 
@@ -34,7 +42,8 @@
     {
       id: 'join',
       title: 'Join Live Lecture Session',
-      description: 'Enter guest short-code & student ID to access live captions',
+      description:
+        'Enter guest short-code & student ID to access live captions',
       icon: Radio,
       category: 'Navigation',
       action: () => {
@@ -42,7 +51,9 @@
         isOpen = false;
       },
     },
-    ...(!currentUser || currentUser.role === 'lecturer' || currentUser.role === 'admin'
+    ...(!currentUser ||
+    currentUser.role === 'lecturer' ||
+    currentUser.role === 'admin'
       ? [
           {
             id: 'lecturer',
@@ -157,7 +168,11 @@
 
       {#if searchQuery.trim().length >= 4 && searchQuery.trim().length <= 8}
         <div class="quick-code-option">
-          <button type="button" class="quick-code-btn" onclick={handleQuickJoinSubmit}>
+          <button
+            type="button"
+            class="quick-code-btn"
+            onclick={handleQuickJoinSubmit}
+          >
             <span>Join room <strong>{searchQuery.toUpperCase()}</strong></span>
             <ArrowRight size={14} />
           </button>
@@ -292,7 +307,9 @@
     color: var(--color-warm-cream);
     text-align: left;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .spotlight-item:hover {
     background: rgba(56, 36, 22, 0.6);
