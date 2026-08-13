@@ -56,9 +56,7 @@ pub async fn update(
     {
         return Err(ApiError::bad_request("Timezone is required"));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
     let view = sqlx::query_as::<_, LifecycleView>(
@@ -69,7 +67,10 @@ pub async fn update(
     .bind(input.timezone.map(|value| value.trim().to_owned()))
     .bind(session.id)
     .fetch_one(pool).await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to update lecture session lifecycle");
+        ApiError::service_unavailable()
+    })?;
     audit::record_session_event(
         pool,
         session.id,
@@ -109,14 +110,15 @@ pub async fn remove(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
     let result = sqlx::query("update lecture_sessions set deleted_at = now() where id = $1 and status = 'ended' and deleted_at is null")
         .bind(session.id).execute(pool).await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to delete session");
+            ApiError::service_unavailable()
+        })?;
     if result.rows_affected() == 0 {
         return Err(ApiError::conflict(
             "Sessions must be ended before they can be deleted",
@@ -142,9 +144,7 @@ async fn transition(
     short_code: &str,
     action: &str,
 ) -> Result<LifecycleView, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, short_code).await?;
     ensure_owner(pool, session.id, lecturer_id).await?;
     let (query, event) = match action {
@@ -162,7 +162,10 @@ async fn transition(
         .bind(session.id)
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?
+        .map_err(|error| {
+            tracing::error!(%error, %action, "Failed to transition session lifecycle");
+            ApiError::service_unavailable()
+        })?
         .ok_or_else(|| {
             ApiError::conflict("Session cannot be transitioned from its current status")
         })?;
@@ -192,9 +195,13 @@ async fn ensure_owner(
     .bind(lecturer_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to check session ownership in lifecycle");
+        ApiError::service_unavailable()
+    })?;
     if !owns {
         return Err(ApiError::not_found("Session not found"));
     }
     Ok(())
 }
+

@@ -165,6 +165,14 @@ impl RedisStore {
         Ok(pubsub)
     }
 
+    pub async fn listen_pattern_captions(&self) -> Result<redis::aio::PubSub, RedisError> {
+        let pattern = format!("{}:captions:*", self.prefix);
+        let mut pubsub = self.client.get_async_pubsub().await?;
+        pubsub.psubscribe(pattern).await?;
+        Ok(pubsub)
+    }
+
+
     pub async fn enqueue_ai_job(&self, job_id: &str) -> Result<(), RedisError> {
         let stream = self.key("ai-jobs", "stream");
         let mut manager = self.manager.clone();

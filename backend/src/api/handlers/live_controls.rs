@@ -39,9 +39,7 @@ pub async fn update(
             return Err(ApiError::bad_request("Invalid late join policy specified"));
         }
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
     let current = sqlx::query_as::<_, LiveControlState>(
@@ -61,7 +59,10 @@ pub async fn update(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to update session live controls");
+        ApiError::service_unavailable()
+    })?;
     audit::record_session_event(
         pool,
         session.id,
@@ -158,9 +159,7 @@ pub async fn participant_action(
             "Invalid participant moderation action",
         ));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
     let query = if action == "mute" {
@@ -173,7 +172,10 @@ pub async fn participant_action(
         .bind(session.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, %action, "Failed to perform participant action");
+            ApiError::service_unavailable()
+        })?;
     if result.rows_affected() == 0 {
         return Err(ApiError::not_found("Participant not found"));
     }
@@ -205,9 +207,7 @@ pub async fn moderate_caption(
     {
         return Err(ApiError::bad_request("Caption text cannot be empty"));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
     let result = sqlx::query(
@@ -221,7 +221,10 @@ pub async fn moderate_caption(
     .bind(session.id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to moderate caption chunk");
+        ApiError::service_unavailable()
+    })?;
     if result.rows_affected() == 0 {
         return Err(ApiError::not_found("Caption not found"));
     }
@@ -258,9 +261,13 @@ async fn ensure_owner(
     .bind(lecturer_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to check session ownership in live controls");
+        ApiError::service_unavailable()
+    })?;
     if !owns {
         return Err(ApiError::not_found("Session not found"));
     }
     Ok(())
 }
+

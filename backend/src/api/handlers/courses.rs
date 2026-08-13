@@ -41,7 +41,10 @@ pub async fn list(
     .bind(lecturer.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to list lecturer courses");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(courses))
 }
 
@@ -55,7 +58,10 @@ pub async fn upload_roster(
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to start transaction for roster upload");
+            ApiError::service_unavailable()
+        })?;
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -63,7 +69,10 @@ pub async fn upload_roster(
     .bind(lecturer.id)
     .fetch_one(&mut *transaction)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to check course ownership in upload_roster");
+        ApiError::service_unavailable()
+    })?;
     if !owns_course {
         return Err(ApiError::not_found("Course not found"));
     }
@@ -71,7 +80,10 @@ pub async fn upload_roster(
         .bind(course_id)
         .execute(&mut *transaction)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to delete old roster students");
+            ApiError::service_unavailable()
+        })?;
     for student in &input.students {
         sqlx::query(
             "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
@@ -87,7 +99,10 @@ pub async fn upload_roster(
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to commit roster upload transaction");
+            ApiError::service_unavailable()
+        })?;
     Ok(Json(input.students))
 }
 
@@ -104,7 +119,10 @@ pub async fn get_roster(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to check course ownership in get_roster");
+        ApiError::service_unavailable()
+    })?;
 
     if !owns_course {
         return Err(ApiError::not_found("Course not found"));
@@ -116,7 +134,11 @@ pub async fn get_roster(
     .bind(course_id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to query roster students");
+        ApiError::service_unavailable()
+    })?;
 
     Ok(Json(students))
 }
+
