@@ -7,10 +7,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::{
-    api::{
-        error::ApiError,
-        handlers::sessions::database_session_by_code,
-    },
+    api::{error::ApiError, handlers::sessions::database_session_by_code},
     auth::guard::AuthenticatedLecturer,
     models::{CaptionChunk, PublishCaptionRequest, SessionStatus},
     state::AppState,
@@ -47,7 +44,9 @@ pub async fn publish(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     if !matches!(session.status, SessionStatus::Live) {
-        return Err(ApiError::conflict("Captions can only be published to live sessions"));
+        return Err(ApiError::conflict(
+            "Captions can only be published to live sessions",
+        ));
     }
     let captions_paused: bool = sqlx::query_scalar(
         "select coalesce((select captions_paused from session_live_controls where session_id = $1), false)",
@@ -56,7 +55,9 @@ pub async fn publish(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    if captions_paused { return Err(ApiError::conflict("Captions are paused")); }
+    if captions_paused {
+        return Err(ApiError::conflict("Captions are paused"));
+    }
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
     )
@@ -80,10 +81,12 @@ pub async fn publish(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    let payload = serde_json::to_string(&caption)
-        .map_err(|_| ApiError::service_unavailable())?;
+    let payload = serde_json::to_string(&caption).map_err(|_| ApiError::service_unavailable())?;
     if let Some(redis) = &state.redis {
-        if let Err(error) = redis.publish_caption(&session.id.to_string(), &payload).await {
+        if let Err(error) = redis
+            .publish_caption(&session.id.to_string(), &payload)
+            .await
+        {
             tracing::warn!(%error, "Redis caption publish failed; using local broadcast");
             state.captions.publish(caption.clone()).await;
         }

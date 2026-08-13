@@ -3,7 +3,6 @@
 /// Provides transport-agnostic email sending via the `EmailSender` trait,
 /// with pluggable backends (Resend API, unconfigured stub). All outgoing emails
 /// are rendered through branded templates defined in the `templates` submodule.
-
 pub mod escape;
 pub mod layout;
 pub mod templates;
@@ -56,7 +55,11 @@ pub struct ResendEmailSender {
 
 impl ResendEmailSender {
     pub fn new(api_key: String, from: String) -> Self {
-        Self { client: Client::new(), api_key, from }
+        Self {
+            client: Client::new(),
+            api_key,
+            from,
+        }
     }
 }
 
@@ -72,7 +75,8 @@ struct ResendPayload<'a> {
 #[async_trait]
 impl EmailSender for ResendEmailSender {
     async fn send(&self, message: EmailMessage) -> Result<(), EmailError> {
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.resend.com/emails")
             .header(header::AUTHORIZATION, format!("Bearer {}", self.api_key))
             .header(header::USER_AGENT, "klasync-api/0.1")
@@ -87,12 +91,16 @@ impl EmailSender for ResendEmailSender {
             .send()
             .await?;
         if response.status() != StatusCode::OK && response.status() != StatusCode::CREATED {
-            return Err(EmailError::Rejected(response.text().await.unwrap_or_default()));
+            return Err(EmailError::Rejected(
+                response.text().await.unwrap_or_default(),
+            ));
         }
         Ok(())
     }
 
-    fn provider_name(&self) -> &'static str { "resend" }
+    fn provider_name(&self) -> &'static str {
+        "resend"
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -103,8 +111,12 @@ pub struct UnconfiguredEmailSender;
 
 #[async_trait]
 impl EmailSender for UnconfiguredEmailSender {
-    async fn send(&self, _: EmailMessage) -> Result<(), EmailError> { Err(EmailError::Unavailable) }
-    fn provider_name(&self) -> &'static str { "unconfigured" }
+    async fn send(&self, _: EmailMessage) -> Result<(), EmailError> {
+        Err(EmailError::Unavailable)
+    }
+    fn provider_name(&self) -> &'static str {
+        "unconfigured"
+    }
 }
 
 // ---------------------------------------------------------------------------

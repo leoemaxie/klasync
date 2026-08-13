@@ -1,4 +1,7 @@
-use axum::{extract::{Path, State}, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use serde::Serialize;
 
 use crate::{
@@ -18,7 +21,9 @@ pub async fn reconcile(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Json<ReconciliationResult>, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -28,7 +33,9 @@ pub async fn reconcile(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    if !owns_session { return Err(ApiError::not_found("Session not found")); }
+    if !owns_session {
+        return Err(ApiError::not_found("Session not found"));
+    }
 
     let scored: i64 = sqlx::query_scalar(
         "with duration as (
@@ -61,5 +68,8 @@ pub async fn reconcile(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    Ok(Json(ReconciliationResult { participants_scored: scored, duplicate_participants_flagged: flagged }))
+    Ok(Json(ReconciliationResult {
+        participants_scored: scored,
+        duplicate_participants_flagged: flagged,
+    }))
 }

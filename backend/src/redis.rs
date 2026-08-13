@@ -58,19 +58,23 @@ impl RedisStore {
             client.get_connection_manager_with_config(manager_config),
         )
         .await
-        .map_err(|_| RedisError::from((
-            redis::ErrorKind::Io,
-            "managed Redis connection manager initialization timed out",
-        )))??;
+        .map_err(|_| {
+            RedisError::from((
+                redis::ErrorKind::Io,
+                "managed Redis connection manager initialization timed out",
+            ))
+        })??;
         let _: String = tokio::time::timeout(
             command_timeout,
             redis::cmd("PING").query_async(&mut manager),
         )
         .await
-        .map_err(|_| RedisError::from((
-            redis::ErrorKind::Io,
-            "managed Redis readiness PING timed out",
-        )))??;
+        .map_err(|_| {
+            RedisError::from((
+                redis::ErrorKind::Io,
+                "managed Redis readiness PING timed out",
+            ))
+        })??;
         Ok(Self {
             client,
             manager,
@@ -85,9 +89,12 @@ impl RedisStore {
 
     pub async fn ping(&self) -> Result<(), RedisError> {
         let mut manager = self.manager.clone();
-        tokio::time::timeout(self.command_timeout, redis::cmd("PING").query_async::<String>(&mut manager))
-            .await
-            .map_err(|_| RedisError::from((redis::ErrorKind::Io, "Redis command timed out")))??;
+        tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("PING").query_async::<String>(&mut manager),
+        )
+        .await
+        .map_err(|_| RedisError::from((redis::ErrorKind::Io, "Redis command timed out")))??;
         Ok(())
     }
 
@@ -107,7 +114,10 @@ impl RedisStore {
         let mut manager = self.manager.clone();
         let current: u32 = tokio::time::timeout(
             self.command_timeout,
-            script.key(key).arg(window_seconds).invoke_async(&mut manager),
+            script
+                .key(key)
+                .arg(window_seconds)
+                .invoke_async(&mut manager),
         )
         .await
         .map_err(|_| RedisError::from((redis::ErrorKind::Io, "Redis command timed out")))??;
@@ -146,7 +156,10 @@ impl RedisStore {
         Ok(())
     }
 
-    pub async fn subscribe_captions(&self, session_id: &str) -> Result<redis::aio::PubSub, RedisError> {
+    pub async fn subscribe_captions(
+        &self,
+        session_id: &str,
+    ) -> Result<redis::aio::PubSub, RedisError> {
         let mut pubsub = self.client.get_async_pubsub().await?;
         pubsub.subscribe(self.caption_channel(session_id)).await?;
         Ok(pubsub)
@@ -159,8 +172,12 @@ impl RedisStore {
             self.command_timeout,
             redis::cmd("XADD")
                 .arg(stream)
-                .arg("MAXLEN").arg("~").arg(10000)
-                .arg("*").arg("job_id").arg(job_id)
+                .arg("MAXLEN")
+                .arg("~")
+                .arg(10000)
+                .arg("*")
+                .arg("job_id")
+                .arg(job_id)
                 .query_async::<String>(&mut manager),
         )
         .await
@@ -172,8 +189,13 @@ impl RedisStore {
         let stream = self.key("ai-jobs", "stream");
         let mut manager = self.manager.clone();
         let result: redis::RedisResult<String> = redis::cmd("XGROUP")
-            .arg("CREATE").arg(stream).arg("ai-workers").arg("$").arg("MKSTREAM")
-            .query_async(&mut manager).await;
+            .arg("CREATE")
+            .arg(stream)
+            .arg("ai-workers")
+            .arg("$")
+            .arg("MKSTREAM")
+            .query_async(&mut manager)
+            .await;
         match result {
             Ok(_) => Ok(()),
             Err(error) if error.to_string().contains("BUSYGROUP") => Ok(()),
@@ -181,9 +203,15 @@ impl RedisStore {
         }
     }
 
-    pub async fn read_ai_job(&self, consumer: &str) -> Result<Option<(String, String)>, RedisError> {
+    pub async fn read_ai_job(
+        &self,
+        consumer: &str,
+    ) -> Result<Option<(String, String)>, RedisError> {
         let stream = self.key("ai-jobs", "stream");
-        let options = StreamReadOptions::default().group("ai-workers", consumer).count(1).block(1000);
+        let options = StreamReadOptions::default()
+            .group("ai-workers", consumer)
+            .count(1)
+            .block(1000);
         let mut manager = self.manager.clone();
         let reply: StreamReadReply = manager.xread_options(&[stream], &[">"], &options).await?;
         for key in reply.keys {
@@ -201,24 +229,54 @@ impl RedisStore {
     pub async fn acknowledge_ai_job(&self, message_id: &str) -> Result<(), RedisError> {
         let stream = self.key("ai-jobs", "stream");
         let mut manager = self.manager.clone();
-        manager.xack::<_, _, _, ()>(stream, "ai-workers", &[message_id]).await
+        manager
+            .xack::<_, _, _, ()>(stream, "ai-workers", &[message_id])
+            .await
     }
 
-    pub async fn try_lock(&self, scope: &str, identity: &str, ttl_seconds: u64) -> Result<Option<RedisLock>, RedisError> {
+    pub async fn try_lock(
+        &self,
+        scope: &str,
+        identity: &str,
+        ttl_seconds: u64,
+    ) -> Result<Option<RedisLock>, RedisError> {
         let key = self.key("lock", &format!("{scope}:{identity}"));
         let token = Uuid::now_v7().to_string();
         let script = Script::new("if redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', ARGV[2]) then return 1 else return 0 end");
         let mut manager = self.manager.clone();
-        let acquired: i32 = script.key(&key).arg(&token).arg(ttl_seconds).invoke_async(&mut manager).await?;
-        if acquired == 1 { Ok(Some(RedisLock { store: self.clone(), key, token })) } else { Ok(None) }
+        let acquired: i32 = script
+            .key(&key)
+            .arg(&token)
+            .arg(ttl_seconds)
+            .invoke_async(&mut manager)
+            .await?;
+        if acquired == 1 {
+            Ok(Some(RedisLock {
+                store: self.clone(),
+                key,
+                token,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
-    pub async fn reserve_idempotency(&self, scope: &str, identity: &str, ttl_seconds: u64) -> Result<bool, RedisError> {
+    pub async fn reserve_idempotency(
+        &self,
+        scope: &str,
+        identity: &str,
+        ttl_seconds: u64,
+    ) -> Result<bool, RedisError> {
         let key = self.key("idempotency", &format!("{scope}:{identity}"));
         let mut manager = self.manager.clone();
         let result: Option<String> = redis::cmd("SET")
-            .arg(key).arg("1").arg("NX").arg("EX").arg(ttl_seconds)
-            .query_async(&mut manager).await?;
+            .arg(key)
+            .arg("1")
+            .arg("NX")
+            .arg("EX")
+            .arg(ttl_seconds)
+            .query_async(&mut manager)
+            .await?;
         Ok(result.is_some())
     }
 }
@@ -227,7 +285,11 @@ impl RedisLock {
     pub async fn release(self) -> Result<(), RedisError> {
         let script = Script::new("if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end");
         let mut manager = self.store.manager.clone();
-        let _: i32 = script.key(self.key).arg(self.token).invoke_async(&mut manager).await?;
+        let _: i32 = script
+            .key(self.key)
+            .arg(self.token)
+            .invoke_async(&mut manager)
+            .await?;
         Ok(())
     }
 }

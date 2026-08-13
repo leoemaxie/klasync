@@ -3,7 +3,6 @@
 /// Each template is a plain Rust struct that implements `EmailTemplate`,
 /// producing subject, plaintext body, and branded HTML content without
 /// any external template engine dependency.
-
 pub mod claim_confirm;
 pub mod claim_verify;
 pub mod password_reset;

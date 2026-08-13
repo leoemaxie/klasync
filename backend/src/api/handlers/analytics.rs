@@ -1,4 +1,7 @@
-use axum::{extract::{Path, State}, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::FromRow;
@@ -27,9 +30,13 @@ pub struct AttendanceAnomaly {
 }
 
 pub async fn course_summary(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(course_id): Path<Uuid>,
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(course_id): Path<Uuid>,
 ) -> Result<Json<CourseAttendanceSummary>, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     ensure_course_owner(pool, course_id, lecturer.id).await?;
     let summary = sqlx::query_as::<_, CourseAttendanceSummary>(
         "select $1 as course_id,
@@ -47,20 +54,44 @@ pub async fn course_summary(
 }
 
 pub async fn session_anomalies(
-    State(state): State<AppState>, lecturer: AuthenticatedLecturer, Path(session_id): Path<Uuid>,
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<AttendanceAnomaly>>, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
-    let owns: bool = sqlx::query_scalar("select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)")
-        .bind(session_id).bind(lecturer.id).fetch_one(pool).await.map_err(|_| ApiError::service_unavailable())?;
-    if !owns { return Err(ApiError::not_found("Session not found.")); }
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
+    let owns: bool = sqlx::query_scalar(
+        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    )
+    .bind(session_id)
+    .bind(lecturer.id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    if !owns {
+        return Err(ApiError::not_found("Session not found."));
+    }
     let anomalies = sqlx::query_as::<_, AttendanceAnomaly>("select id, matric_number, anomaly_type, description, severity, logged_at from attendance_audit_logs where session_id = $1 order by logged_at desc")
         .bind(session_id).fetch_all(pool).await.map_err(|_| ApiError::service_unavailable())?;
     Ok(Json(anomalies))
 }
 
-async fn ensure_course_owner(pool: &sqlx::PgPool, course_id: Uuid, lecturer_id: Uuid) -> Result<(), ApiError> {
-    let owns: bool = sqlx::query_scalar("select exists(select 1 from courses where id = $1 and lecturer_id = $2)")
-        .bind(course_id).bind(lecturer_id).fetch_one(pool).await.map_err(|_| ApiError::service_unavailable())?;
-    if !owns { return Err(ApiError::not_found("Course not found.")); }
+async fn ensure_course_owner(
+    pool: &sqlx::PgPool,
+    course_id: Uuid,
+    lecturer_id: Uuid,
+) -> Result<(), ApiError> {
+    let owns: bool = sqlx::query_scalar(
+        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    )
+    .bind(course_id)
+    .bind(lecturer_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    if !owns {
+        return Err(ApiError::not_found("Course not found."));
+    }
     Ok(())
 }

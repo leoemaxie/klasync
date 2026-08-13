@@ -1,5 +1,8 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, State},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path, State,
+    },
     response::Response,
 };
 use futures_util::{SinkExt, StreamExt};
@@ -15,7 +18,9 @@ pub async fn connect(
     Path(short_code): Path<String>,
     websocket: WebSocketUpgrade,
 ) -> Result<Response, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let receiver = state.captions.subscribe(session.id).await;
     let redis_stream = match &state.redis {
@@ -31,7 +36,10 @@ pub async fn connect(
     }))
 }
 
-async fn stream_local(socket: WebSocket, mut captions: tokio::sync::broadcast::Receiver<CaptionChunk>) {
+async fn stream_local(
+    socket: WebSocket,
+    mut captions: tokio::sync::broadcast::Receiver<CaptionChunk>,
+) {
     let (mut sender, mut receiver) = socket.split();
     loop {
         tokio::select! {

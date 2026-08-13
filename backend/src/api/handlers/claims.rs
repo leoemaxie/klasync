@@ -2,8 +2,10 @@ use axum::{extract::State, http::StatusCode, Json};
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError, auth::guard::{AuthenticatedStudent, OptionalStudent},
-    models::ClaimGuestParticipationRequest, state::AppState,
+    api::error::ApiError,
+    auth::guard::{AuthenticatedStudent, OptionalStudent},
+    models::ClaimGuestParticipationRequest,
+    state::AppState,
 };
 
 pub async fn claim_guest_participation(

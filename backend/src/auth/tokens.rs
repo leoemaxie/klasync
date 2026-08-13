@@ -56,7 +56,9 @@ pub fn validate_access_token(
             token,
             &DecodingKey::from_secret(secret.as_bytes()),
             &Validation::default(),
-        ) { return Ok(data.claims); }
+        ) {
+            return Ok(data.claims);
+        }
     }
     Err(jsonwebtoken::errors::ErrorKind::InvalidToken.into())
 }

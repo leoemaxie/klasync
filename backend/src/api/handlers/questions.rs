@@ -1,4 +1,8 @@
-use axum::{extract::{Path, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -49,7 +53,9 @@ pub async fn submit(
 ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
     let text = input.question_text.trim();
     if text.is_empty() || text.len() > 2000 {
-        return Err(ApiError::bad_request("Please enter a question under 2,000 characters."));
+        return Err(ApiError::bad_request(
+            "Please enter a question under 2,000 characters.",
+        ));
     }
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &code).await?;
@@ -70,14 +76,17 @@ pub async fn submit(
         .execute(pool).await
         .map_err(|_| ApiError::service_unavailable())?;
 
-    Ok((StatusCode::CREATED, Json(serde_json::json!({
-        "id": id,
-        "question_text": text,
-        "upvote_count": 0,
-        "is_resolved": false,
-        "created_at": created_at,
-        "caption_id": input.caption_id
-    }))))
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": id,
+            "question_text": text,
+            "upvote_count": 0,
+            "is_resolved": false,
+            "created_at": created_at,
+            "caption_id": input.caption_id
+        })),
+    ))
 }
 
 pub async fn upvote(
@@ -89,8 +98,12 @@ pub async fn upvote(
     let count: Option<i32> = sqlx::query_scalar("update session_questions set upvote_count = upvote_count + 1 where id = $1 and session_code = upper($2) returning upvote_count")
         .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
         .map_err(|_| ApiError::service_unavailable())?;
-    let Some(count) = count else { return Err(ApiError::not_found("Question not found.")); };
-    Ok(Json(serde_json::json!({"id": question_id, "new_upvote_count": count, "upvote_count": count})))
+    let Some(count) = count else {
+        return Err(ApiError::not_found("Question not found."));
+    };
+    Ok(Json(
+        serde_json::json!({"id": question_id, "new_upvote_count": count, "upvote_count": count}),
+    ))
 }
 
 pub async fn resolve(
@@ -100,13 +113,24 @@ pub async fn resolve(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &code).await?;
-    let owns: bool = sqlx::query_scalar("select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)")
-        .bind(session.id).bind(lecturer.id).fetch_one(pool).await
-        .map_err(|_| ApiError::service_unavailable())?;
-    if !owns { return Err(ApiError::not_found("Session not found.")); }
+    let owns: bool = sqlx::query_scalar(
+        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    )
+    .bind(session.id)
+    .bind(lecturer.id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| ApiError::service_unavailable())?;
+    if !owns {
+        return Err(ApiError::not_found("Session not found."));
+    }
     let resolved: Option<bool> = sqlx::query_scalar("update session_questions set is_resolved = true where id = $1 and session_code = upper($2) returning is_resolved")
         .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
         .map_err(|_| ApiError::service_unavailable())?;
-    let Some(resolved) = resolved else { return Err(ApiError::not_found("Question not found.")); };
-    Ok(Json(serde_json::json!({"id": question_id, "is_resolved": resolved})))
+    let Some(resolved) = resolved else {
+        return Err(ApiError::not_found("Question not found."));
+    };
+    Ok(Json(
+        serde_json::json!({"id": question_id, "is_resolved": resolved}),
+    ))
 }

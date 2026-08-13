@@ -80,13 +80,12 @@ pub async fn get_by_code(
 ) -> Result<Json<SessionDetail>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let course =
-        sqlx::query_as("select id, lecturer_id, code, title from courses where id = $1")
-            .bind(session.course_id)
-            .fetch_optional(pool)
-            .await
-            .map_err(|_| ApiError::service_unavailable())?
-            .ok_or_else(|| ApiError::not_found("Course not found"))?;
+    let course = sqlx::query_as("select id, lecturer_id, code, title from courses where id = $1")
+        .bind(session.course_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|_| ApiError::service_unavailable())?
+        .ok_or_else(|| ApiError::not_found("Course not found"))?;
     let participant_count: i64 =
         sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
             .bind(session.id)

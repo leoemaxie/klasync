@@ -68,8 +68,8 @@ pub fn parse_opaque_token(value: &str) -> Result<(Uuid, &str), ApiError> {
     let (session_id, secret) = value
         .split_once('.')
         .ok_or_else(|| ApiError::unauthorized("Invalid or expired refresh token"))?;
-    let session_id =
-        Uuid::parse_str(session_id).map_err(|_| ApiError::unauthorized("Invalid or expired refresh token"))?;
+    let session_id = Uuid::parse_str(session_id)
+        .map_err(|_| ApiError::unauthorized("Invalid or expired refresh token"))?;
     if secret.is_empty() {
         return Err(ApiError::unauthorized("Invalid or expired refresh token"));
     }

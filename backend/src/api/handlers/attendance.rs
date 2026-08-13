@@ -9,7 +9,9 @@ use uuid::Uuid;
 use crate::{
     api::error::ApiError,
     auth::guard::AuthenticatedLecturer,
-    models::{AttendanceReviewDecision, ReviewAttendanceRequest, SessionParticipant, VerificationStatus},
+    models::{
+        AttendanceReviewDecision, ReviewAttendanceRequest, SessionParticipant, VerificationStatus,
+    },
     state::AppState,
 };
 
@@ -73,14 +75,24 @@ pub async fn export_csv(
     .map_err(|_| ApiError::service_unavailable())?;
     let mut writer = csv::Writer::from_writer(Vec::new());
     writer
-        .write_record(["matric_number", "display_name", "verification_status", "joined_at", "last_seen_at", "heartbeat_count"])
+        .write_record([
+            "matric_number",
+            "display_name",
+            "verification_status",
+            "joined_at",
+            "last_seen_at",
+            "heartbeat_count",
+        ])
         .map_err(|_| ApiError::service_unavailable())?;
     for row in rows {
         writer
             .write_record([
                 row.matric_number,
                 row.display_name,
-                serde_json::to_string(&row.verification_status).unwrap_or_default().trim_matches('"').to_owned(),
+                serde_json::to_string(&row.verification_status)
+                    .unwrap_or_default()
+                    .trim_matches('"')
+                    .to_owned(),
                 row.joined_at.to_rfc3339(),
                 row.last_seen_at.to_rfc3339(),
                 row.heartbeat_count.to_string(),
@@ -93,7 +105,10 @@ pub async fn export_csv(
     Ok((
         [
             (header::CONTENT_TYPE, "text/csv; charset=utf-8"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=klasync-attendance.csv"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=klasync-attendance.csv",
+            ),
         ],
         body,
     )

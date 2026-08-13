@@ -49,9 +49,19 @@ impl AppConfig {
             jwt_secret: env::var("JWT_SECRET").ok(),
             jwt_secrets: {
                 let mut secrets = Vec::new();
-                if let Ok(current) = env::var("JWT_SECRET") { if !current.is_empty() { secrets.push(current); } }
+                if let Ok(current) = env::var("JWT_SECRET") {
+                    if !current.is_empty() {
+                        secrets.push(current);
+                    }
+                }
                 if let Ok(previous) = env::var("JWT_PREVIOUS_SECRETS") {
-                    secrets.extend(previous.split(',').map(str::trim).filter(|value| !value.is_empty()).map(ToOwned::to_owned));
+                    secrets.extend(
+                        previous
+                            .split(',')
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
+                            .map(ToOwned::to_owned),
+                    );
                 }
                 secrets
             },
@@ -77,16 +87,34 @@ impl AppConfig {
                         .collect()
                 })
                 .unwrap_or_else(|| vec!["http://localhost:5173".to_owned()]),
-            resend_api_key: env::var("RESEND_API_KEY").ok().filter(|value| !value.is_empty()),
-            resend_from: env::var("RESEND_FROM").ok().filter(|value| !value.is_empty()),
-            r2_account_id: env::var("R2_ACCOUNT_ID").ok().filter(|value| !value.is_empty()),
-            r2_access_key_id: env::var("R2_ACCESS_KEY_ID").ok().filter(|value| !value.is_empty()),
-            r2_secret_access_key: env::var("R2_SECRET_ACCESS_KEY").ok().filter(|value| !value.is_empty()),
+            resend_api_key: env::var("RESEND_API_KEY")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            resend_from: env::var("RESEND_FROM")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            r2_account_id: env::var("R2_ACCOUNT_ID")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            r2_access_key_id: env::var("R2_ACCESS_KEY_ID")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            r2_secret_access_key: env::var("R2_SECRET_ACCESS_KEY")
+                .ok()
+                .filter(|value| !value.is_empty()),
             r2_bucket: env::var("R2_BUCKET").ok().filter(|value| !value.is_empty()),
-            r2_endpoint: env::var("R2_ENDPOINT").ok().filter(|value| !value.is_empty()),
-            ai_gateway_url: env::var("AI_GATEWAY_URL").ok().filter(|value| !value.is_empty()),
-            ai_gateway_api_key: env::var("AI_GATEWAY_API_KEY").ok().filter(|value| !value.is_empty()),
-            openrouter_api_key: env::var("OPENROUTER_API_KEY").ok().filter(|value| !value.is_empty()),
+            r2_endpoint: env::var("R2_ENDPOINT")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            ai_gateway_url: env::var("AI_GATEWAY_URL")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            ai_gateway_api_key: env::var("AI_GATEWAY_API_KEY")
+                .ok()
+                .filter(|value| !value.is_empty()),
+            openrouter_api_key: env::var("OPENROUTER_API_KEY")
+                .ok()
+                .filter(|value| !value.is_empty()),
             openrouter_base_url: env::var("OPENROUTER_BASE_URL")
                 .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_owned())
                 .trim_end_matches('/')
@@ -121,9 +149,13 @@ impl AppConfig {
                 .trim_end_matches(':')
                 .to_owned(),
             redis_connect_timeout_ms: env::var("REDIS_CONNECT_TIMEOUT_MS")
-                .ok().and_then(|value| value.parse().ok()).unwrap_or(10_000),
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(10_000),
             redis_command_timeout_ms: env::var("REDIS_COMMAND_TIMEOUT_MS")
-                .ok().and_then(|value| value.parse().ok()).unwrap_or(5_000),
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(5_000),
             redis_required: true,
         }
     }

@@ -7,8 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -34,7 +33,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = klasync_backend::api::router(state);
 
-    tracing::info!("KLASYNC Standalone Cloud Backend listening on http://{}", addr);
+    tracing::info!(
+        "KLASYNC Standalone Cloud Backend listening on http://{}",
+        addr
+    );
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;

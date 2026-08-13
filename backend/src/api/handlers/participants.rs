@@ -6,10 +6,7 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::{
-        error::ApiError,
-        handlers::sessions::database_session_by_code,
-    },
+    api::{error::ApiError, handlers::sessions::database_session_by_code},
     auth::guard::AuthenticatedLecturer,
     models::{
         AttendanceSummary, JoinSessionRequest, SessionParticipant, SessionStatus,
@@ -28,7 +25,9 @@ pub async fn join(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     if !matches!(session.status, SessionStatus::Live) {
-        return Err(ApiError::conflict("This lecture session is not currently active"));
+        return Err(ApiError::conflict(
+            "This lecture session is not currently active",
+        ));
     }
     let roster_name: Option<String> = sqlx::query_scalar(
         "select full_name from roster_students where course_id = $1 and lower(matric_number) = lower($2)",
@@ -61,13 +60,11 @@ pub async fn join(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    sqlx::query(
-        "insert into attendance_events (participant_id, event_type) values ($1, 'joined')",
-    )
-    .bind(participant.id)
-    .execute(pool)
-    .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    sqlx::query("insert into attendance_events (participant_id, event_type) values ($1, 'joined')")
+        .bind(participant.id)
+        .execute(pool)
+        .await
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok((StatusCode::CREATED, Json(participant)))
 }
 

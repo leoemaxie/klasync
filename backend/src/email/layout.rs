@@ -1,5 +1,4 @@
 /// Shared branded HTML email layout for all KLASYNC transactional emails.
-
 use super::escape::escape_html;
 
 /// Wraps inner template HTML content in the full branded document shell.

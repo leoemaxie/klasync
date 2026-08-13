@@ -1,4 +1,8 @@
-use axum::{extract::{Multipart, Path, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Multipart, Path, State},
+    http::StatusCode,
+    Json,
+};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -21,7 +25,9 @@ pub async fn upload(
     Path(short_code): Path<String>,
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<AudioIngestionResponse>), ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -31,9 +37,13 @@ pub async fn upload(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    if !owns_session { return Err(ApiError::not_found("Session not found")); }
+    if !owns_session {
+        return Err(ApiError::not_found("Session not found"));
+    }
 
-    let field = multipart.next_field().await
+    let field = multipart
+        .next_field()
+        .await
         .map_err(|_| ApiError::bad_request("Invalid upload payload"))?
         .ok_or_else(|| ApiError::bad_request("Audio file is required"))?;
     let file_name = field.file_name().unwrap_or("lecture-audio.wav").to_owned();
@@ -41,11 +51,23 @@ pub async fn upload(
     if !content_type.starts_with("audio/") {
         return Err(ApiError::bad_request("Uploaded file must be an audio file"));
     }
-    let bytes = field.bytes().await.map_err(|_| ApiError::bad_request("Failed to read uploaded audio file"))?;
-    if bytes.is_empty() { return Err(ApiError::bad_request("Audio file cannot be empty")); }
-    if bytes.len() > 250 * 1024 * 1024 { return Err(ApiError::bad_request("Audio file exceeds maximum allowed size (250MB)")); }
+    let bytes = field
+        .bytes()
+        .await
+        .map_err(|_| ApiError::bad_request("Failed to read uploaded audio file"))?;
+    if bytes.is_empty() {
+        return Err(ApiError::bad_request("Audio file cannot be empty"));
+    }
+    if bytes.len() > 250 * 1024 * 1024 {
+        return Err(ApiError::bad_request(
+            "Audio file exceeds maximum allowed size (250MB)",
+        ));
+    }
 
-    let stored = state.storage.put(&file_name, bytes.to_vec()).await
+    let stored = state
+        .storage
+        .put(&file_name, bytes.to_vec())
+        .await
         .map_err(|_| ApiError::service_unavailable())?;
     let resource_id = Uuid::now_v7();
     sqlx::query(
@@ -72,5 +94,12 @@ pub async fn upload(
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    Ok((StatusCode::ACCEPTED, Json(AudioIngestionResponse { resource_id, ai_job_id, status: "queued" })))
+    Ok((
+        StatusCode::ACCEPTED,
+        Json(AudioIngestionResponse {
+            resource_id,
+            ai_job_id,
+            status: "queued",
+        }),
+    ))
 }

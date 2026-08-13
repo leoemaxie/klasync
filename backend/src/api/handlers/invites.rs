@@ -35,8 +35,7 @@ pub async fn qr_svg(
     }
 
     let payload = format!("/?invite={}", session.invite_token);
-    let code =
-        QrCode::new(payload).map_err(|_| ApiError::service_unavailable())?;
+    let code = QrCode::new(payload).map_err(|_| ApiError::service_unavailable())?;
     let svg = code
         .render::<svg::Color>()
         .min_dimensions(512, 512)
@@ -57,7 +56,8 @@ pub async fn resolve(
     let pool = state
         .production_database()
         .ok_or_else(|| ApiError::service_unavailable())?;
-    let token = uuid::Uuid::parse_str(&token).map_err(|_| ApiError::not_found("Invite link not found or expired"))?;
+    let token = uuid::Uuid::parse_str(&token)
+        .map_err(|_| ApiError::not_found("Invite link not found or expired"))?;
     let session = sqlx::query_as::<_, LectureSession>(
         "select session.id, session.course_id, session.title, session.short_code, session.invite_token, session.status, session.started_at \
          from session_invites invite join lecture_sessions session on session.id = invite.session_id \

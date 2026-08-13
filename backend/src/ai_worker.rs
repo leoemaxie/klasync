@@ -9,10 +9,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
-    ai::AiWorkItem,
-    api::error::ApiError,
-    auth::guard::AuthenticatedLecturer,
-    state::AppState,
+    ai::AiWorkItem, api::error::ApiError, auth::guard::AuthenticatedLecturer, state::AppState,
 };
 
 const MAX_ATTEMPTS: i32 = 3;
@@ -47,7 +44,9 @@ pub async fn process_job(
     lecturer_id: Uuid,
 ) -> Result<ExecutionResponse, ApiError> {
     if let Some(redis) = &state.redis {
-        let lock = redis.try_lock("ai-job", &job_id.to_string(), 300).await
+        let lock = redis
+            .try_lock("ai-job", &job_id.to_string(), 300)
+            .await
             .map_err(|_| ApiError::service_unavailable())?
             .ok_or_else(|| ApiError::conflict("This AI job is already being processed."))?;
         let result = process_job_unlocked(state, job_id, lecturer_id).await;
@@ -164,10 +163,19 @@ async fn execute_claimed_job(
         .await
         .map_err(|_| ApiError::service_unavailable())?;
     let usage = output.metadata.get("usage");
-    let model = output.metadata.get("model").and_then(|value| value.as_str());
-    let input_tokens = usage.and_then(|value| value.get("input_tokens")).and_then(|value| value.as_i64());
-    let output_tokens = usage.and_then(|value| value.get("output_tokens")).and_then(|value| value.as_i64());
-    let cost_usd = usage.and_then(|value| value.get("cost")).and_then(|value| value.as_f64());
+    let model = output
+        .metadata
+        .get("model")
+        .and_then(|value| value.as_str());
+    let input_tokens = usage
+        .and_then(|value| value.get("input_tokens"))
+        .and_then(|value| value.as_i64());
+    let output_tokens = usage
+        .and_then(|value| value.get("output_tokens"))
+        .and_then(|value| value.as_i64());
+    let cost_usd = usage
+        .and_then(|value| value.get("cost"))
+        .and_then(|value| value.as_f64());
     sqlx::query(
         "update ai_jobs set provider = $2, model = $3, input_tokens = $4, output_tokens = $5, cost_usd = $6 where id = $1",
     )
@@ -180,8 +188,8 @@ async fn execute_claimed_job(
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    let content = serde_json::to_string(&output.content)
-        .map_err(|_| ApiError::service_unavailable())?;
+    let content =
+        serde_json::to_string(&output.content).map_err(|_| ApiError::service_unavailable())?;
     persist_study_rows(pool, job.session_id, &job.job_type, &output.content).await?;
     let resource_type = output_type(&job.job_type);
     let output_id = Uuid::now_v7();
@@ -212,7 +220,9 @@ pub async fn run_loop(state: AppState) {
             if !redis_group_ready {
                 match redis.ensure_ai_consumer_group().await {
                     Ok(()) => redis_group_ready = true,
-                    Err(error) => tracing::warn!(%error, "Unable to initialize AI Redis consumer group"),
+                    Err(error) => {
+                        tracing::warn!(%error, "Unable to initialize AI Redis consumer group")
+                    }
                 }
             }
             if redis_group_ready {
@@ -221,8 +231,16 @@ pub async fn run_loop(state: AppState) {
                         if let Ok(job_id) = Uuid::parse_str(&job_id) {
                             let pool = state.production_database();
                             if let Some(pool) = pool {
-                                if let Ok(Some(lecturer_id)) = sqlx::query_scalar::<_, Uuid>("select requested_by from ai_jobs where id = $1").bind(job_id).fetch_optional(pool).await {
-                                    if let Err(error) = process_job(&state, job_id, lecturer_id).await {
+                                if let Ok(Some(lecturer_id)) = sqlx::query_scalar::<_, Uuid>(
+                                    "select requested_by from ai_jobs where id = $1",
+                                )
+                                .bind(job_id)
+                                .fetch_optional(pool)
+                                .await
+                                {
+                                    if let Err(error) =
+                                        process_job(&state, job_id, lecturer_id).await
+                                    {
                                         tracing::warn!(%job_id, error = %error, "AI Redis stream job failed");
                                     }
                                 }
@@ -232,18 +250,24 @@ pub async fn run_loop(state: AppState) {
                         continue;
                     }
                     Ok(None) => {}
-                    Err(error) => tracing::warn!(%error, "Unable to read AI Redis stream; using database queue"),
+                    Err(error) => {
+                        tracing::warn!(%error, "Unable to read AI Redis stream; using database queue")
+                    }
                 }
             }
         }
-        let Some(pool) = state.production_database() else { continue; };
+        let Some(pool) = state.production_database() else {
+            continue;
+        };
         let candidate = sqlx::query_as::<_, (Uuid, Uuid)>(
             "select id, requested_by from ai_jobs where status = 'queued' and attempts < $1 order by created_at asc limit 1",
         )
         .bind(MAX_ATTEMPTS)
         .fetch_optional(pool)
         .await;
-        let Ok(Some((job_id, lecturer_id))) = candidate else { continue; };
+        let Ok(Some((job_id, lecturer_id))) = candidate else {
+            continue;
+        };
         if let Err(error) = process_job(&state, job_id, lecturer_id).await {
             tracing::warn!(%job_id, error = %error, "AI job processing failed");
         }
@@ -266,7 +290,9 @@ async fn persist_study_rows(
     job_type: &str,
     content: &serde_json::Value,
 ) -> Result<(), ApiError> {
-    let Some(text) = content.get("text").and_then(|value| value.as_str()) else { return Ok(()); };
+    let Some(text) = content.get("text").and_then(|value| value.as_str()) else {
+        return Ok(());
+    };
     if job_type == "chapters" {
         if let Ok(chapters) = serde_json::from_str::<Vec<ChapterPayload>>(text) {
             for (index, chapter) in chapters.into_iter().enumerate() {
@@ -289,13 +315,19 @@ async fn persist_study_rows(
 
 #[derive(serde::Deserialize)]
 struct ChapterPayload {
-    chapter_index: Option<i32>, title: String, summary: String,
-    start_timestamp_sec: Option<i32>, end_timestamp_sec: Option<i32>,
+    chapter_index: Option<i32>,
+    title: String,
+    summary: String,
+    start_timestamp_sec: Option<i32>,
+    end_timestamp_sec: Option<i32>,
 }
 
 #[derive(serde::Deserialize)]
 struct FlashcardPayload {
-    prompt: String, answer: String, topic_tag: Option<String>, difficulty: Option<String>,
+    prompt: String,
+    answer: String,
+    topic_tag: Option<String>,
+    difficulty: Option<String>,
 }
 
 pub async fn dispatch(

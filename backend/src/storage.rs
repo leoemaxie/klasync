@@ -45,7 +45,8 @@ impl R2ObjectStore {
         access_key_id: String,
         secret_access_key: String,
     ) -> Self {
-        let credentials = Credentials::new(access_key_id, secret_access_key, None, None, "klasync-r2");
+        let credentials =
+            Credentials::new(access_key_id, secret_access_key, None, None, "klasync-r2");
         let configuration = aws_sdk_s3::config::Builder::new()
             .behavior_version(aws_sdk_s3::config::BehaviorVersion::latest())
             .region(Region::new("auto"))
@@ -53,7 +54,10 @@ impl R2ObjectStore {
             .credentials_provider(credentials)
             .force_path_style(true)
             .build();
-        Self { client: S3Client::from_conf(configuration), bucket }
+        Self {
+            client: S3Client::from_conf(configuration),
+            bucket,
+        }
     }
 
     fn object_key(file_name: &str) -> String {
@@ -87,14 +91,19 @@ impl StorageAdapter for R2ObjectStore {
         if key.is_empty() || key.contains("..") {
             return Err(StorageError::InvalidKey);
         }
-        let object = self.client
+        let object = self
+            .client
             .get_object()
             .bucket(&self.bucket)
             .key(key)
             .send()
             .await
             .map_err(|error| StorageError::Backend(error.to_string()))?;
-        let body = object.body.collect().await.map_err(|error| StorageError::Backend(error.to_string()))?;
+        let body = object
+            .body
+            .collect()
+            .await
+            .map_err(|error| StorageError::Backend(error.to_string()))?;
         Ok(body.into_bytes().to_vec())
     }
 
@@ -112,7 +121,9 @@ impl StorageAdapter for R2ObjectStore {
         Ok(())
     }
 
-    fn provider_name(&self) -> &'static str { "cloudflare-r2" }
+    fn provider_name(&self) -> &'static str {
+        "cloudflare-r2"
+    }
 }
 
 pub struct UnconfiguredStorageAdapter;
@@ -120,27 +131,43 @@ pub struct UnconfiguredStorageAdapter;
 #[async_trait]
 impl StorageAdapter for UnconfiguredStorageAdapter {
     async fn put(&self, _: &str, _: Vec<u8>) -> Result<StoredObject, StorageError> {
-        Err(StorageError::Backend("object storage is not configured".to_owned()))
+        Err(StorageError::Backend(
+            "object storage is not configured".to_owned(),
+        ))
     }
 
     async fn get(&self, _: &str) -> Result<Vec<u8>, StorageError> {
-        Err(StorageError::Backend("object storage is not configured".to_owned()))
+        Err(StorageError::Backend(
+            "object storage is not configured".to_owned(),
+        ))
     }
 
     async fn delete(&self, _: &str) -> Result<(), StorageError> {
-        Err(StorageError::Backend("object storage is not configured".to_owned()))
+        Err(StorageError::Backend(
+            "object storage is not configured".to_owned(),
+        ))
     }
 
-    fn provider_name(&self) -> &'static str { "unconfigured" }
+    fn provider_name(&self) -> &'static str {
+        "unconfigured"
+    }
 }
 
 pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
     if config.r2_ready() {
         return Arc::new(R2ObjectStore::new(
-            config.resolved_r2_endpoint().expect("validated R2 endpoint"),
+            config
+                .resolved_r2_endpoint()
+                .expect("validated R2 endpoint"),
             config.r2_bucket.clone().expect("validated R2 bucket"),
-            config.r2_access_key_id.clone().expect("validated R2 access key"),
-            config.r2_secret_access_key.clone().expect("validated R2 secret key"),
+            config
+                .r2_access_key_id
+                .clone()
+                .expect("validated R2 access key"),
+            config
+                .r2_secret_access_key
+                .clone()
+                .expect("validated R2 secret key"),
         ));
     }
     Arc::new(UnconfiguredStorageAdapter)

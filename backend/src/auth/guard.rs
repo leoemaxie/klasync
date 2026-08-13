@@ -46,7 +46,9 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
             .ok_or_else(|| ApiError::unauthorized("Authorization header must use Bearer scheme"))?;
         let claims = tokens::validate_access_token(&state.config, token)
             .map_err(|_| ApiError::unauthorized("Invalid or expired access token"))?;
-        let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+        let pool = state
+            .production_database()
+            .ok_or_else(|| ApiError::service_unavailable())?;
         let active: bool = sqlx::query_scalar(
             "select exists(select 1 from auth_sessions where id = $1 and account_id = $2 and account_role = $3 and revoked_at is null and expires_at > now())",
         )
@@ -56,7 +58,9 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
         .fetch_one(pool)
         .await
         .map_err(|_| ApiError::service_unavailable())?;
-        if !active { return Err(ApiError::unauthorized("Invalid refresh token")); }
+        if !active {
+            return Err(ApiError::unauthorized("Invalid refresh token"));
+        }
         Ok(Self {
             id: claims.sub,
             role: claims.role,

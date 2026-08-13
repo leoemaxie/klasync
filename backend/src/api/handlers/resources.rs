@@ -96,7 +96,7 @@ pub async fn list_student_archive(
          join lecture_sessions s on s.id = p.session_id \
          join courses c on c.id = s.course_id \
          where claim.student_account_id = $1 \
-         order by date desc"
+         order by date desc",
     )
     .bind(student_id)
     .fetch_all(pool)
@@ -119,7 +119,9 @@ fn validate_resource(input: &CreateLectureResourceRequest) -> Result<(), ApiErro
         return Err(ApiError::bad_request("Invalid resource type"));
     }
     if input.storage_key.is_none() && input.content.is_none() {
-        return Err(ApiError::bad_request("Either storage key or resource content must be provided"));
+        return Err(ApiError::bad_request(
+            "Either storage key or resource content must be provided",
+        ));
     }
     Ok(())
 }
@@ -137,7 +139,9 @@ pub async fn download_for_student(
     student: AuthenticatedStudent,
     Path(resource_id): Path<Uuid>,
 ) -> Result<Response, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let resource = sqlx::query_as::<_, DownloadableResource>(
         "select r.storage_key, r.content, r.content_type, r.original_filename
          from lecture_resources r join resource_access_grants g on g.resource_id = r.id
@@ -157,7 +161,9 @@ pub async fn download_for_lecturer(
     lecturer: AuthenticatedLecturer,
     Path((short_code, resource_id)): Path<(String, Uuid)>,
 ) -> Result<Response, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let resource = sqlx::query_as::<_, DownloadableResource>(
         "select r.storage_key, r.content, r.content_type, r.original_filename
          from lecture_resources r join lecture_sessions s on s.id = r.session_id
@@ -173,19 +179,35 @@ pub async fn download_for_lecturer(
     response_from_resource(&state, resource).await
 }
 
-async fn response_from_resource(state: &AppState, resource: DownloadableResource) -> Result<Response, ApiError> {
+async fn response_from_resource(
+    state: &AppState,
+    resource: DownloadableResource,
+) -> Result<Response, ApiError> {
     let bytes = if let Some(key) = resource.storage_key {
-        state.storage.get(&key).await.map_err(|_| ApiError::service_unavailable())?
+        state
+            .storage
+            .get(&key)
+            .await
+            .map_err(|_| ApiError::service_unavailable())?
     } else {
         resource.content.unwrap_or_default().into_bytes()
     };
-    let content_type = resource.content_type.unwrap_or_else(|| "application/octet-stream".to_owned());
-    let filename = resource.original_filename.unwrap_or_else(|| "klasync-resource.bin".to_owned())
-        .replace('\"', "_").replace('\r', "_").replace('\n', "_");
+    let content_type = resource
+        .content_type
+        .unwrap_or_else(|| "application/octet-stream".to_owned());
+    let filename = resource
+        .original_filename
+        .unwrap_or_else(|| "klasync-resource.bin".to_owned())
+        .replace('\"', "_")
+        .replace('\r', "_")
+        .replace('\n', "_");
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, content_type)
-        .header(header::CONTENT_DISPOSITION, format!("attachment; filename=\"{filename}\""))
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{filename}\""),
+        )
         .body(Body::from(bytes))
         .map_err(|_| ApiError::service_unavailable())
 }

@@ -8,10 +8,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use tower_http::{
-    cors::CorsLayer,
-    trace::TraceLayer,
-};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::state::AppState;
 use handlers::{
@@ -29,7 +26,13 @@ pub fn router(state: AppState) -> Router {
 
     let cors = CorsLayer::new()
         .allow_origin(origins)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_credentials(true);
 
@@ -37,20 +40,62 @@ pub fn router(state: AppState) -> Router {
         .route("/", get(health::health))
         .route("/health", get(health::health))
         .route("/health/ready", get(handlers::readiness::ready))
-        .route("/api/v1/sessions/{code}/questions", get(handlers::questions::list).post(handlers::questions::submit))
-        .route("/api/v1/sessions/{code}/questions/{question_id}/upvote", post(handlers::questions::upvote))
-        .route("/api/v1/sessions/{code}/questions/{question_id}/resolve", post(handlers::questions::resolve))
-        .route("/api/v1/sessions/code/{code}/questions", get(handlers::questions::list).post(handlers::questions::submit))
-        .route("/api/v1/sessions/code/{code}/questions/{question_id}/upvote", post(handlers::questions::upvote))
-        .route("/api/v1/sessions/code/{code}/questions/{question_id}/resolve", post(handlers::questions::resolve))
-        .route("/api/v1/archive/sessions/{session_id}/ai/generate-chapters", post(handlers::ai_study::generate_chapters))
-        .route("/api/v1/archive/sessions/{session_id}/chapters", get(handlers::ai_study::chapters))
-        .route("/api/v1/archive/sessions/{session_id}/ai/generate-flashcards", post(handlers::ai_study::generate_flashcards))
-        .route("/api/v1/archive/sessions/{session_id}/flashcards", get(handlers::ai_study::flashcards))
-        .route("/api/v1/analytics/courses/{course_id}/attendance-summary", get(handlers::analytics::course_summary))
-        .route("/api/v1/analytics/sessions/{session_id}/anomalies", get(handlers::analytics::session_anomalies))
-        .route("/api/v1/courses/{course_id}/lms-sync/canvas", post(handlers::lms_sync::canvas))
-        .route("/api/v1/sessions/batch-sync", post(handlers::batch_sync::sync))
+        .route(
+            "/api/v1/sessions/{code}/questions",
+            get(handlers::questions::list).post(handlers::questions::submit),
+        )
+        .route(
+            "/api/v1/sessions/{code}/questions/{question_id}/upvote",
+            post(handlers::questions::upvote),
+        )
+        .route(
+            "/api/v1/sessions/{code}/questions/{question_id}/resolve",
+            post(handlers::questions::resolve),
+        )
+        .route(
+            "/api/v1/sessions/code/{code}/questions",
+            get(handlers::questions::list).post(handlers::questions::submit),
+        )
+        .route(
+            "/api/v1/sessions/code/{code}/questions/{question_id}/upvote",
+            post(handlers::questions::upvote),
+        )
+        .route(
+            "/api/v1/sessions/code/{code}/questions/{question_id}/resolve",
+            post(handlers::questions::resolve),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/ai/generate-chapters",
+            post(handlers::ai_study::generate_chapters),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/chapters",
+            get(handlers::ai_study::chapters),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/ai/generate-flashcards",
+            post(handlers::ai_study::generate_flashcards),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/flashcards",
+            get(handlers::ai_study::flashcards),
+        )
+        .route(
+            "/api/v1/analytics/courses/{course_id}/attendance-summary",
+            get(handlers::analytics::course_summary),
+        )
+        .route(
+            "/api/v1/analytics/sessions/{session_id}/anomalies",
+            get(handlers::analytics::session_anomalies),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/lms-sync/canvas",
+            post(handlers::lms_sync::canvas),
+        )
+        .route(
+            "/api/v1/sessions/batch-sync",
+            post(handlers::batch_sync::sync),
+        )
         .route(
             "/api/v1/auth/lecturers/register",
             post(auth::register_lecturer),
@@ -63,8 +108,14 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/auth/students/login", post(auth::login_student))
         .route("/api/v1/auth/refresh", post(auth::refresh))
         .route("/api/v1/auth/logout", post(auth::logout))
-        .route("/api/v1/auth/password-reset/request", post(recovery::request))
-        .route("/api/v1/auth/password-reset/complete", post(recovery::complete))
+        .route(
+            "/api/v1/auth/password-reset/request",
+            post(recovery::request),
+        )
+        .route(
+            "/api/v1/auth/password-reset/complete",
+            post(recovery::complete),
+        )
         .route("/api/v1/resources", get(resources::list_public_resources))
         .route(
             "/api/v1/students/claims",
@@ -236,7 +287,10 @@ pub fn router(state: AppState) -> Router {
         .fallback(not_found::not_found)
         .layer(cors)
         .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
-        .layer(middleware::from_fn_with_state(state.clone(), crate::security::rate_limit))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            crate::security::rate_limit,
+        ))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

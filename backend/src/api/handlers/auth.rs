@@ -162,7 +162,9 @@ async fn login(
 
 fn validate_password(password: &str) -> Result<(), ApiError> {
     if password.len() < 8 {
-        return Err(ApiError::bad_request("Password must be at least 8 characters long"));
+        return Err(ApiError::bad_request(
+            "Password must be at least 8 characters long",
+        ));
     }
     Ok(())
 }

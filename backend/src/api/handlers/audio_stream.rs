@@ -1,9 +1,12 @@
-use std::time::Duration;
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, State},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path, State,
+    },
     response::Response,
 };
 use futures_util::StreamExt;
+use std::time::Duration;
 use tokio::time::interval;
 use uuid::Uuid;
 
@@ -19,7 +22,9 @@ pub async fn connect(
     Path(short_code): Path<String>,
     websocket: WebSocketUpgrade,
 ) -> Result<Response, ApiError> {
-    let pool = state.production_database().ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state
+        .production_database()
+        .ok_or_else(|| ApiError::service_unavailable())?;
     let session = database_session_by_code(pool, &short_code).await?;
 
     Ok(websocket.on_upgrade(move |socket| handle_socket(socket, state, session.id)))
@@ -54,13 +59,13 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
                 if chunk_buffer.is_empty() {
                     continue;
                 }
-                
+
                 // Prepare the payload: header + accumulated chunks
                 let mut payload = header_bytes.clone();
                 payload.append(&mut chunk_buffer); // This clears chunk_buffer
-                
+
                 let state_clone = state.clone();
-                
+
                 tokio::spawn(async move {
                     let input = crate::ai::transcription_input(&payload, "webm", Some("en"));
                     let work = AiWorkItem {
@@ -69,7 +74,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
                         job_type: "transcribe".to_owned(),
                         input,
                     };
-                    
+
                     if let Ok(result) = state_clone.ai.execute(work).await {
                         if let Some(text) = result.content.get("text").and_then(|v| v.as_str()) {
                             if !text.trim().is_empty() {
@@ -80,7 +85,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
                                     created_at: chrono::Utc::now(),
                                 };
                                 let _ = state_clone.captions.publish(caption.clone()).await;
-                                
+
                                 // Also broadcast via redis if configured
                                 if let Some(redis) = &state_clone.redis {
                                     if let Ok(payload) = serde_json::to_string(&caption) {

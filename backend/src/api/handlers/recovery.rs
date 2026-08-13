@@ -10,7 +10,7 @@ use crate::{
         passwords,
         service::{parse_opaque_token, require_database},
     },
-    email::{EmailMessage, templates::password_reset::PasswordResetTemplate},
+    email::{templates::password_reset::PasswordResetTemplate, EmailMessage},
     state::AppState,
 };
 
@@ -59,13 +59,18 @@ pub async fn request(
     .map_err(|_| ApiError::service_unavailable())?;
     let token = format!("{token_id}.{secret}");
     let reset_url = format!("{}/reset-password?token={token}", config.public_app_url);
-    let template = PasswordResetTemplate { reset_url, expires_minutes: 30 };
-    state.mailer.send(EmailMessage::from_template(
-        input.email.trim(),
-        format!("password-reset-{token}"),
-        &template,
-        &config.public_app_url,
-    ))
+    let template = PasswordResetTemplate {
+        reset_url,
+        expires_minutes: 30,
+    };
+    state
+        .mailer
+        .send(EmailMessage::from_template(
+            input.email.trim(),
+            format!("password-reset-{token}"),
+            &template,
+            &config.public_app_url,
+        ))
         .await
         .map_err(|_| ApiError::service_unavailable())?;
     Ok(StatusCode::ACCEPTED)
@@ -76,7 +81,9 @@ pub async fn complete(
     Json(input): Json<CompletePasswordResetInput>,
 ) -> Result<StatusCode, ApiError> {
     if input.new_password.len() < 12 {
-        return Err(ApiError::bad_request("Password must be at least 12 characters long"));
+        return Err(ApiError::bad_request(
+            "Password must be at least 12 characters long",
+        ));
     }
     let config = state.config.clone();
     let pool = require_database(state.production_database(), &config)?;
@@ -92,24 +99,38 @@ pub async fn complete(
     let valid_hash = passwords::verify_async(secret.to_owned(), record.token_hash.clone()).await;
     let valid_token = record.used_at.is_none() && record.expires_at > Utc::now();
     if !valid_hash || !valid_token {
-        return Err(ApiError::unauthorized("Invalid or expired password reset token"));
+        return Err(ApiError::unauthorized(
+            "Invalid or expired password reset token",
+        ));
     }
     let password_hash = passwords::hash_async(input.new_password.clone())
         .await
         .map_err(|_| ApiError::service_unavailable())?;
-    let mut transaction = pool.begin().await.map_err(|_| ApiError::service_unavailable())?;
+    let mut transaction = pool
+        .begin()
+        .await
+        .map_err(|_| ApiError::service_unavailable())?;
     let update = match record.account_role {
         AccountRole::Lecturer => "update lecturers set password_hash = $1 where id = $2",
         AccountRole::Student => "update student_accounts set password_hash = $1 where id = $2",
     };
-    sqlx::query(update).bind(password_hash).bind(record.account_id).execute(&mut *transaction).await
+    sqlx::query(update)
+        .bind(password_hash)
+        .bind(record.account_id)
+        .execute(&mut *transaction)
+        .await
         .map_err(|_| ApiError::service_unavailable())?;
     sqlx::query("update password_reset_tokens set used_at = now() where id = $1")
-        .bind(token_id).execute(&mut *transaction).await
+        .bind(token_id)
+        .execute(&mut *transaction)
+        .await
         .map_err(|_| ApiError::service_unavailable())?;
     sqlx::query("update auth_sessions set revoked_at = now() where account_id = $1 and account_role = $2 and revoked_at is null")
         .bind(record.account_id).bind(record.account_role).execute(&mut *transaction).await
         .map_err(|_| ApiError::service_unavailable())?;
-    transaction.commit().await.map_err(|_| ApiError::service_unavailable())?;
+    transaction
+        .commit()
+        .await
+        .map_err(|_| ApiError::service_unavailable())?;
     Ok(StatusCode::NO_CONTENT)
 }
