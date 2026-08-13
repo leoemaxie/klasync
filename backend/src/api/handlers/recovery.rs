@@ -8,7 +8,7 @@ use crate::{
     auth::{
         contracts::{AccountRole, CompletePasswordResetInput, PasswordResetRequest},
         passwords,
-        service::{parse_opaque_token, require_database},
+        service::{generate_refresh_secret, parse_opaque_token, require_database},
     },
     email::{templates::password_reset::PasswordResetTemplate, EmailMessage},
     state::AppState,
@@ -42,7 +42,7 @@ pub async fn request(
         return Ok(StatusCode::ACCEPTED);
     };
     let token_id = Uuid::now_v7();
-    let secret = Uuid::now_v7().simple().to_string();
+    let secret = generate_refresh_secret();
     let token_hash = passwords::hash_async(secret.clone())
         .await
         .map_err(|_| ApiError::service_unavailable())?;

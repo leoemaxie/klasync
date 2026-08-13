@@ -19,6 +19,16 @@ pub fn parse(file_name: &str, bytes: &[u8]) -> Result<ParsedRoster, String> {
     }
 }
 
+pub async fn parse_async(file_name: String, bytes: Vec<u8>) -> Result<ParsedRoster, String> {
+    tokio::task::spawn_blocking(move || parse(&file_name, &bytes))
+        .await
+        .map_err(|join_err| {
+            tracing::error!(%join_err, "Roster parsing task panicked");
+            "Internal server error during roster parsing".to_owned()
+        })?
+}
+
+
 fn parse_csv(bytes: &[u8]) -> Result<ParsedRoster, String> {
     let mut reader = csv::ReaderBuilder::new().flexible(true).from_reader(bytes);
     let headers = reader

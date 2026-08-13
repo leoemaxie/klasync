@@ -34,11 +34,16 @@ pub async fn rate_limit(State(state): State<AppState>, request: Request, next: N
     let Some((scope, limit, window)) = policy(path) else {
         return next.run(request).await;
     };
-    let identity = request
+    let raw_header = request
         .headers()
         .get("x-forwarded-for")
-        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.to_str().ok());
+    let identity_str = raw_header
+        .and_then(|header| header.rsplit(',').next())
+        .map(str::trim)
+        .filter(|ip| !ip.is_empty())
         .unwrap_or("anonymous");
+    let identity = identity_str;
     if let Some(redis) = &state.redis {
         match redis
             .consume_rate_limit(scope, identity, limit, window.as_secs())

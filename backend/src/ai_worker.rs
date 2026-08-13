@@ -207,6 +207,12 @@ async fn execute_claimed_job(
     Ok(output_id)
 }
 
+#[derive(Debug, FromRow)]
+struct JobCandidate {
+    id: Uuid,
+    requested_by: Uuid,
+}
+
 /// Polls the durable queue so a deployment can process jobs without requiring
 /// a lecturer to dispatch each one manually. Claiming remains atomic inside
 /// `process_job`, so multiple instances may run this loop safely.
@@ -257,22 +263,24 @@ pub async fn run_loop(state: AppState) {
             }
         }
         let Some(pool) = state.production_database() else {
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             continue;
         };
-        let candidate = sqlx::query_as::<_, (Uuid, Uuid)>(
+        let candidate = sqlx::query_as::<_, JobCandidate>(
             "select id, requested_by from ai_jobs where status = 'queued' and attempts < $1 order by created_at asc limit 1",
         )
         .bind(MAX_ATTEMPTS)
         .fetch_optional(pool)
         .await;
-        let Ok(Some((job_id, lecturer_id))) = candidate else {
+        let Ok(Some(job)) = candidate else {
             continue;
         };
-        if let Err(error) = process_job(&state, job_id, lecturer_id).await {
-            tracing::warn!(%job_id, error = %error, "AI job processing failed");
+        if let Err(error) = process_job(&state, job.id, job.requested_by).await {
+            tracing::warn!(job_id = %job.id, error = %error, "AI job processing failed");
         }
     }
 }
+
 
 fn output_type(job_type: &str) -> &'static str {
     match job_type {

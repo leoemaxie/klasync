@@ -148,8 +148,9 @@ pub fn router(state: AppState) -> Router {
         )
         .route(
             "/api/v1/courses/{course_id}/roster/import",
-            post(rosters::import_file),
+            post(rosters::import_file).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
+
         .route("/api/v1/sessions", post(sessions::create))
         .route("/api/v1/invites/{token}", get(invites::resolve))
         .route(
@@ -246,7 +247,7 @@ pub fn router(state: AppState) -> Router {
         )
         .route(
             "/api/v1/sessions/code/{short_code}/resources/{resource_type}/upload",
-            post(handlers::uploads::upload),
+            post(handlers::uploads::upload).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         .route(
             "/api/v1/sessions/code/{short_code}/resources/{resource_id}/download",
@@ -254,8 +255,9 @@ pub fn router(state: AppState) -> Router {
         )
         .route(
             "/api/v1/sessions/code/{short_code}/audio/upload",
-            post(handlers::audio::upload),
+            post(handlers::audio::upload).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
+
         .route(
             "/api/v1/sessions/code/{short_code}/audio/ws",
             get(handlers::audio_stream::connect),
@@ -285,8 +287,8 @@ pub fn router(state: AppState) -> Router {
             post(handlers::presence::heartbeat),
         )
         .fallback(not_found::not_found)
+        .layer(DefaultBodyLimit::max(1 * 1024 * 1024))
         .layer(cors)
-        .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             crate::security::rate_limit,

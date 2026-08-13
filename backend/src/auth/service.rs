@@ -20,17 +20,25 @@ pub fn require_database<'a>(
     pool.ok_or_else(|| ApiError::service_unavailable())
 }
 
+use rand::{rngs::OsRng, RngCore};
+use subtle::ConstantTimeEq;
+
 pub fn generate_refresh_secret() -> String {
     let mut bytes = [0u8; 32];
-    bytes[..16].copy_from_slice(Uuid::new_v4().as_bytes());
-    bytes[16..].copy_from_slice(Uuid::new_v4().as_bytes());
+    OsRng.fill_bytes(&mut bytes);
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
 }
 
 pub fn hash_token_secret(secret: &str) -> String {
     let mut hasher = Sha256::new();
+    hasher.update(b"klasync-token-v1:");
     hasher.update(secret.as_bytes());
     format!("{:x}", hasher.finalize())
+}
+
+pub fn verify_token_hash(candidate_secret: &str, stored_hash: &str) -> bool {
+    let candidate_hash = hash_token_secret(candidate_secret);
+    bool::from(candidate_hash.as_bytes().ct_eq(stored_hash.as_bytes()))
 }
 
 pub async fn issue_tokens(

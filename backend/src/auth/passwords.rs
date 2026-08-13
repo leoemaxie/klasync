@@ -31,5 +31,8 @@ pub async fn hash_async(value: String) -> Result<String, argon2::password_hash::
 pub async fn verify_async(value: String, hash_str: String) -> bool {
     tokio::task::spawn_blocking(move || verify(&value, &hash_str))
         .await
-        .unwrap_or(false)
+        .unwrap_or_else(|error| {
+            tracing::error!(%error, "password verification blocking task panicked");
+            false
+        })
 }

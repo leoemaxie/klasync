@@ -224,7 +224,7 @@ impl OpenRouterAdapter {
         let content = payload
             .choices
             .first()
-            .map(|choice| choice.message.content.clone())
+            .and_then(|choice| choice.message.content.clone())
             .unwrap_or_default();
         Ok(AiWorkResult {
             content: serde_json::json!({"text": content}),
@@ -269,11 +269,17 @@ impl OpenRouterAdapter {
                 .and_then(|usage| usage.cost)
                 .unwrap_or(0.0),
         );
+        let content = payload
+            .choices
+            .first()
+            .and_then(|c| c.message.content.clone())
+            .unwrap_or_default();
         Ok(AiWorkResult {
-            content: serde_json::json!({"text": payload.choices.first().map(|c| c.message.content.clone()).unwrap_or_default()}),
+            content: serde_json::json!({"text": content}),
             metadata: serde_json::json!({"model": model, "usage": payload.usage}),
         })
     }
+
 
     async fn transcribe(&self, work: &AiWorkItem) -> Result<AiWorkResult, AiAdapterError> {
         let data = work
@@ -352,31 +358,42 @@ impl AiAdapter for UnconfiguredAiAdapter {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(default)]
 struct ChatResponse {
+    #[serde(default)]
     choices: Vec<ChatChoice>,
     usage: Option<Usage>,
 }
-#[derive(Debug, Deserialize, Serialize)]
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(default)]
 struct ChatChoice {
     message: ChatMessage,
 }
-#[derive(Debug, Deserialize, Serialize)]
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(default)]
 struct ChatMessage {
-    content: String,
+    content: Option<String>,
 }
-#[derive(Debug, Clone, Deserialize, Serialize)]
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[serde(default)]
 struct Usage {
     cost: Option<f64>,
     total_tokens: Option<u64>,
     input_tokens: Option<u64>,
     output_tokens: Option<u64>,
 }
-#[derive(Debug, Deserialize, Serialize)]
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(default)]
 struct TranscriptionResponse {
     text: String,
     usage: Option<Usage>,
 }
+
 
 pub fn adapter_from_config(config: &AppConfig) -> SharedAiAdapter {
     OpenRouterAdapter::from_config(config)

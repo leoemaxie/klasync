@@ -15,7 +15,7 @@ pub async fn record_session_event(
     actor_role: Option<&str>,
     event: AuditEvent<'_>,
 ) {
-    let _ = sqlx::query(
+    if let Err(error) = sqlx::query(
         "insert into session_audit_events (session_id, actor_id, actor_role, event_type, metadata) values ($1, $2, $3::account_role, $4, $5)",
     )
     .bind(session_id)
@@ -24,5 +24,14 @@ pub async fn record_session_event(
     .bind(event.event_type)
     .bind(event.metadata)
     .execute(pool)
-    .await;
+    .await
+    {
+        tracing::error!(
+            %error,
+            %session_id,
+            event_type = %event.event_type,
+            "Failed to record session audit event"
+        );
+    }
+
 }

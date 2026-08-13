@@ -11,7 +11,7 @@ use crate::{
             RegisterStudentInput,
         },
         passwords,
-        service::{hash_token_secret, issue_tokens, parse_opaque_token, require_database},
+        service::{hash_token_secret, issue_tokens, parse_opaque_token, require_database, verify_token_hash},
     },
     state::AppState,
 };
@@ -107,7 +107,7 @@ pub async fn refresh(
     .await
     .map_err(|_| ApiError::service_unavailable())?
     .ok_or_else(|| ApiError::unauthorized("Invalid or expired refresh token"))?;
-    let valid_hash = hash_token_secret(secret) == session.refresh_token_hash;
+    let valid_hash = verify_token_hash(secret, &session.refresh_token_hash);
     let valid_session = session.revoked_at.is_none() && session.expires_at > Utc::now();
     if !valid_hash || !valid_session {
         return Err(ApiError::unauthorized("Invalid or expired refresh token"));

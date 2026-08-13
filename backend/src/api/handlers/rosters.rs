@@ -29,8 +29,10 @@ pub async fn import_file(
         .bytes()
         .await
         .map_err(|_| ApiError::bad_request("Failed to read roster file"))?;
-    let parsed = roster_file::parse(&file_name, &bytes)
+    let parsed = roster_file::parse_async(file_name, bytes.to_vec())
+        .await
         .map_err(|_| ApiError::bad_request("Invalid or unsupported roster file format"))?;
+
     let report = RosterImportReport {
         imported_count: parsed.students.len(),
         issues: parsed.issues,

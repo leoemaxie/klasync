@@ -61,10 +61,7 @@ pub async fn create_for_session(
 pub async fn list_public_resources(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<LectureResource>>, ApiError> {
-    let pool = match state.production_database() {
-        Some(p) => p,
-        None => return Ok(Json(vec![])),
-    };
+    let pool = state.db_pool();
     let resources = sqlx::query_as::<_, LectureResource>(&format!(
         "select {RESOURCE_SELECT_COLUMNS} from lecture_resources resource \
          where (resource.expires_at is null or resource.expires_at > now()) \
@@ -72,9 +69,13 @@ pub async fn list_public_resources(
     ))
     .fetch_all(pool)
     .await
-    .unwrap_or_default();
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to list public resources");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(resources))
 }
+
 
 pub async fn list_student_archive(
     State(state): State<AppState>,
@@ -198,9 +199,10 @@ async fn response_from_resource(
     let filename = resource
         .original_filename
         .unwrap_or_else(|| "klasync-resource.bin".to_owned())
-        .replace('\"', "_")
-        .replace('\r', "_")
-        .replace('\n', "_");
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .collect::<String>();
+
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, content_type)
