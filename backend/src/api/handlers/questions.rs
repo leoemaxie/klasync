@@ -42,7 +42,10 @@ pub async fn list(
     .bind(&session.short_code)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to list questions");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(questions))
 }
 
@@ -74,7 +77,10 @@ pub async fn submit(
     sqlx::query("insert into session_questions (id, session_code, participant_id, caption_id, question_text) values ($1, upper($2), $3, $4, $5)")
         .bind(id).bind(&session.short_code).bind(input.participant_id).bind(input.caption_id).bind(text)
         .execute(pool).await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to submit question");
+            ApiError::service_unavailable()
+        })?;
 
     Ok((
         StatusCode::CREATED,
@@ -97,7 +103,10 @@ pub async fn upvote(
     let session = database_session_by_code(pool, &code).await?;
     let count: Option<i32> = sqlx::query_scalar("update session_questions set upvote_count = upvote_count + 1 where id = $1 and session_code = upper($2) returning upvote_count")
         .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to upvote question");
+            ApiError::service_unavailable()
+        })?;
     let Some(count) = count else {
         return Err(ApiError::not_found("Question not found."));
     };
@@ -120,13 +129,19 @@ pub async fn resolve(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to check session ownership for resolving question");
+        ApiError::service_unavailable()
+    })?;
     if !owns {
         return Err(ApiError::not_found("Session not found."));
     }
     let resolved: Option<bool> = sqlx::query_scalar("update session_questions set is_resolved = true where id = $1 and session_code = upper($2) returning is_resolved")
         .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to resolve question");
+            ApiError::service_unavailable()
+        })?;
     let Some(resolved) = resolved else {
         return Err(ApiError::not_found("Question not found."));
     };
@@ -134,3 +149,4 @@ pub async fn resolve(
         serde_json::json!({"id": question_id, "is_resolved": resolved}),
     ))
 }
+

@@ -124,8 +124,9 @@ pub struct AttendanceSummary {
     pub participant_count: usize,
     pub verified_count: usize,
     pub provisional_count: usize,
-    pub total_heartbeats: u32,
+    pub total_heartbeats: u64,
 }
+
 
 #[derive(Deserialize)]
 pub struct ClaimGuestParticipationRequest {

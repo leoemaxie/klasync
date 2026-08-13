@@ -16,6 +16,8 @@ pub enum StorageError {
     Backend(String),
     #[error("object key is invalid")]
     InvalidKey,
+    #[error("object storage is not configured")]
+    Unconfigured,
 }
 
 pub struct StoredObject {
@@ -131,27 +133,22 @@ pub struct UnconfiguredStorageAdapter;
 #[async_trait]
 impl StorageAdapter for UnconfiguredStorageAdapter {
     async fn put(&self, _: &str, _: Vec<u8>) -> Result<StoredObject, StorageError> {
-        Err(StorageError::Backend(
-            "object storage is not configured".to_owned(),
-        ))
+        Err(StorageError::Unconfigured)
     }
 
     async fn get(&self, _: &str) -> Result<Vec<u8>, StorageError> {
-        Err(StorageError::Backend(
-            "object storage is not configured".to_owned(),
-        ))
+        Err(StorageError::Unconfigured)
     }
 
     async fn delete(&self, _: &str) -> Result<(), StorageError> {
-        Err(StorageError::Backend(
-            "object storage is not configured".to_owned(),
-        ))
+        Err(StorageError::Unconfigured)
     }
 
     fn provider_name(&self) -> &'static str {
         "unconfigured"
     }
 }
+
 
 pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
     if config.r2_ready() {

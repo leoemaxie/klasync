@@ -81,10 +81,7 @@ pub async fn list_student_archive(
     State(state): State<AppState>,
     OptionalStudent(student): OptionalStudent,
 ) -> Result<Json<Vec<StudentArchiveItem>>, ApiError> {
-    let pool = match state.production_database() {
-        Some(p) => p,
-        None => return Ok(Json(vec![])),
-    };
+    let pool = state.db_pool();
     let student_id = match student {
         Some(s) => s.id,
         None => return Ok(Json(vec![])),
@@ -102,10 +99,14 @@ pub async fn list_student_archive(
     .bind(student_id)
     .fetch_all(pool)
     .await
-    .unwrap_or_default();
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to list student archive");
+        ApiError::service_unavailable()
+    })?;
 
     Ok(Json(items))
 }
+
 
 fn validate_resource(input: &CreateLectureResourceRequest) -> Result<(), ApiError> {
     let allowed = [

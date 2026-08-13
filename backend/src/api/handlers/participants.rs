@@ -36,7 +36,10 @@ pub async fn join(
     .bind(input.matric_number.trim())
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to query roster student for join");
+        ApiError::service_unavailable()
+    })?;
     let status = if roster_name.is_some() {
         VerificationStatus::Verified
     } else {
@@ -59,12 +62,18 @@ pub async fn join(
     .bind(status)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to insert/update session participant on join");
+        ApiError::service_unavailable()
+    })?;
     sqlx::query("insert into attendance_events (participant_id, event_type) values ($1, 'joined')")
         .bind(participant.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to insert attendance event 'joined'");
+            ApiError::service_unavailable()
+        })?;
     Ok((StatusCode::CREATED, Json(participant)))
 }
 
@@ -81,7 +90,10 @@ pub async fn list_for_session(
     .bind(session.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to list session participants");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(participants))
 }
 
@@ -98,7 +110,10 @@ pub async fn heartbeat(
     .bind(participant_id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to record participant heartbeat");
+        ApiError::service_unavailable()
+    })?
     .ok_or_else(|| ApiError::conflict("Participant record not found or session is no longer active"))?;
     sqlx::query(
         "insert into attendance_events (participant_id, event_type) values ($1, 'heartbeat')",
@@ -106,9 +121,13 @@ pub async fn heartbeat(
     .bind(participant.id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to record heartbeat attendance event");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(participant))
 }
+
 
 pub async fn attendance_summary(
     State(state): State<AppState>,
@@ -123,15 +142,19 @@ pub async fn attendance_summary(
     .bind(session.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to query attendance summary");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(AttendanceSummary {
         session_id: session.id,
         participant_count: participant_count as usize,
         verified_count: verified_count as usize,
         provisional_count: provisional_count as usize,
-        total_heartbeats: total_heartbeats as u32,
+        total_heartbeats: total_heartbeats.max(0) as u64,
     }))
 }
+
 
 async fn owned_session(
     pool: &sqlx::PgPool,
@@ -146,9 +169,13 @@ async fn owned_session(
     .bind(lecturer_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to verify session ownership");
+        ApiError::service_unavailable()
+    })?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
     Ok(session)
 }
+

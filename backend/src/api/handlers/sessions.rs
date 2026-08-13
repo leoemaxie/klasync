@@ -118,16 +118,23 @@ pub async fn end(
     Ok(Json(session))
 }
 
-pub async fn database_session_by_code(
-    pool: &PgPool,
+pub async fn database_session_by_code<'e, E>(
+    executor: E,
     short_code: &str,
-) -> Result<LectureSession, ApiError> {
+) -> Result<LectureSession, ApiError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
     sqlx::query_as::<_, LectureSession>(&format!(
         "select {SESSION_COLUMNS} from lecture_sessions where short_code = upper($1)"
     ))
     .bind(short_code)
-    .fetch_optional(pool)
+    .fetch_optional(executor)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .map_err(|error| {
+        tracing::error!(%error, "database_session_by_code failed");
+        ApiError::service_unavailable()
+    })?
     .ok_or_else(|| ApiError::not_found("Session not found"))
 }
+

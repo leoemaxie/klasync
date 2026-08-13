@@ -244,16 +244,19 @@ pub async fn run_loop(state: AppState) {
                                 .fetch_optional(pool)
                                 .await
                                 {
-                                    if let Err(error) =
-                                        process_job(&state, job_id, lecturer_id).await
-                                    {
-                                        tracing::warn!(%job_id, error = %error, "AI Redis stream job failed");
+                                    match process_job(&state, job_id, lecturer_id).await {
+                                        Ok(_) => {
+                                            let _ = redis.acknowledge_ai_job(&message_id).await;
+                                        }
+                                        Err(error) => {
+                                            tracing::warn!(%job_id, error = %error, "AI Redis stream job failed");
+                                        }
                                     }
                                 }
                             }
                         }
-                        let _ = redis.acknowledge_ai_job(&message_id).await;
                         continue;
+
                     }
                     Ok(None) => {}
                     Err(error) => {

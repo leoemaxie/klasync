@@ -56,7 +56,16 @@ pub async fn upload(
         .storage
         .put(&file_name, bytes.to_vec())
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| match error {
+            crate::storage::StorageError::Unconfigured => {
+                ApiError::bad_request("File storage service is not configured on this deployment")
+            }
+            _ => {
+                tracing::error!(%error, "Object storage put operation failed");
+                ApiError::service_unavailable()
+            }
+        })?;
+
     let resource = sqlx::query_as::<_, LectureResource>(&format!(
         "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) \
          values ($1, $2, $3, $4, $5, $6, $7) returning {RESOURCE_COLUMNS}"
