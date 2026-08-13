@@ -1,27 +1,19 @@
 use base64::Engine;
 use chrono::{Duration, Utc};
+use rand::{rngs::OsRng, RngCore};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
+use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use super::{
     contracts::{AccountRole, AuthTokens},
     tokens,
 };
-use crate::{api::error::ApiError, config::AppConfig};
-
-pub fn require_database<'a>(
-    pool: Option<&'a PgPool>,
-    config: &AppConfig,
-) -> Result<&'a PgPool, ApiError> {
-    if !config.production_auth_ready() {
-        return Err(ApiError::service_unavailable());
-    }
-    pool.ok_or_else(|| ApiError::service_unavailable())
-}
-
-use rand::{rngs::OsRng, RngCore};
-use subtle::ConstantTimeEq;
+use crate::{
+    api::error::{ApiError, LogApiError},
+    config::AppConfig,
+};
 
 pub fn generate_refresh_secret() -> String {
     let mut bytes = [0u8; 32];
@@ -49,7 +41,7 @@ pub async fn issue_tokens(
 ) -> Result<AuthTokens, ApiError> {
     let session_id = Uuid::now_v7();
     let access_token = tokens::issue_access_token(config, account_id, role, session_id)
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to sign access token")?;
     let secret = generate_refresh_secret();
     let refresh_hash = hash_token_secret(&secret);
     let expires_at = Utc::now() + Duration::days(config.refresh_token_days);
@@ -63,7 +55,7 @@ pub async fn issue_tokens(
     .bind(expires_at)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to record auth session in database")?;
 
     Ok(tokens::token_response(
         access_token,
@@ -71,6 +63,7 @@ pub async fn issue_tokens(
         config,
     ))
 }
+
 
 pub fn parse_opaque_token(value: &str) -> Result<(Uuid, &str), ApiError> {
     let (session_id, secret) = value

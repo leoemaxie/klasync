@@ -22,11 +22,15 @@ pub fn verify(value: &str, hash: &str) -> bool {
 }
 
 pub async fn hash_async(value: String) -> Result<String, argon2::password_hash::Error> {
-    tokio::task::spawn_blocking(move || hash(&value))
-        .await
-        .map_err(|_| argon2::password_hash::Error::Password)
-        .and_then(|res| res)
+    match tokio::task::spawn_blocking(move || hash(&value)).await {
+        Ok(res) => res,
+        Err(join_err) => {
+            tracing::error!(%join_err, "password hashing blocking task panicked");
+            Err(argon2::password_hash::Error::Password)
+        }
+    }
 }
+
 
 pub async fn verify_async(value: String, hash_str: String) -> bool {
     tokio::task::spawn_blocking(move || verify(&value, &hash_str))

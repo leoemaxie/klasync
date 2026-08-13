@@ -59,8 +59,9 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
         .log_internal_error("Failed to check active auth session")?;
 
         if !active {
-            return Err(ApiError::unauthorized("Invalid refresh token"));
+            return Err(ApiError::unauthorized("Invalid or expired access token"));
         }
+
         Ok(Self {
             id: claims.sub,
             role: claims.role,

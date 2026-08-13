@@ -11,8 +11,8 @@ pub struct Claims {
     pub sub: Uuid,
     pub role: AccountRole,
     pub sid: Uuid,
-    pub exp: usize,
-    pub iat: usize,
+    pub exp: i64,
+    pub iat: i64,
 }
 
 pub fn issue_access_token(
@@ -32,8 +32,8 @@ pub fn issue_access_token(
         sub: account_id,
         role,
         sid: session_id,
-        iat: now.timestamp() as usize,
-        exp: (now + Duration::minutes(config.access_token_minutes)).timestamp() as usize,
+        iat: now.timestamp(),
+        exp: (now + Duration::minutes(config.access_token_minutes)).timestamp(),
     };
     encode(
         &Header::default(),
@@ -46,22 +46,32 @@ pub fn validate_access_token(
     config: &AppConfig,
     token: &str,
 ) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let secrets: Vec<&str> = if config.jwt_secrets.is_empty() {
-        config.jwt_secret.as_deref().into_iter().collect()
-    } else {
-        config.jwt_secrets.iter().map(String::as_str).collect()
-    };
-    for secret in secrets {
-        if let Ok(data) = decode::<Claims>(
+    let check_secret = |secret: &str| {
+        decode::<Claims>(
             token,
             &DecodingKey::from_secret(secret.as_bytes()),
             &Validation::default(),
-        ) {
-            return Ok(data.claims);
+        )
+        .map(|data| data.claims)
+    };
+
+    if !config.jwt_secrets.is_empty() {
+        for secret in &config.jwt_secrets {
+            if let Ok(claims) = check_secret(secret) {
+                return Ok(claims);
+            }
+        }
+    } else if let Some(secret) = &config.jwt_secret {
+        if !secret.is_empty() {
+            if let Ok(claims) = check_secret(secret) {
+                return Ok(claims);
+            }
         }
     }
+
     Err(jsonwebtoken::errors::ErrorKind::InvalidToken.into())
 }
+
 
 pub fn token_response(
     access_token: String,
