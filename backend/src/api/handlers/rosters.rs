@@ -6,8 +6,11 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError, auth::guard::AuthenticatedLecturer, models::RosterImportReport,
-    roster_file, state::AppState,
+    api::error::{ApiError, LogApiError},
+    auth::guard::AuthenticatedLecturer,
+    models::RosterImportReport,
+    roster_file,
+    state::AppState,
 };
 
 pub async fn import_file(
@@ -41,13 +44,11 @@ pub async fn import_file(
         return Ok((StatusCode::UNPROCESSABLE_ENTITY, Json(report)));
     }
 
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to start transaction for roster import")?;
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -55,7 +56,7 @@ pub async fn import_file(
     .bind(lecturer.id)
     .fetch_one(&mut *transaction)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify course ownership in import_file")?;
     if !owns_course {
         return Err(ApiError::not_found("Course not found"));
     }
@@ -63,7 +64,7 @@ pub async fn import_file(
         .bind(course_id)
         .execute(&mut *transaction)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to delete previous roster students")?;
     for student in parsed.students {
         sqlx::query(
             "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
@@ -79,6 +80,7 @@ pub async fn import_file(
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to commit roster import transaction")?;
     Ok((StatusCode::OK, Json(report)))
 }
+

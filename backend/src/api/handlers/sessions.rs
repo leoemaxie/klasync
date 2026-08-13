@@ -8,7 +8,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError,
+    api::error::{ApiError, LogApiError},
     auth::guard::AuthenticatedLecturer,
     models::{CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus},
     state::AppState,
@@ -30,7 +30,7 @@ pub async fn create(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify course ownership in session create")?;
     if !owns_course {
         return Err(ApiError::not_found("Course not found"));
     }
@@ -61,7 +61,7 @@ pub async fn create(
     .bind(lecturer.id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to insert session invite")?;
 
     let join_url = format!("/?join={code}");
     Ok((
@@ -84,14 +84,14 @@ pub async fn get_by_code(
         .bind(session.course_id)
         .fetch_optional(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?
+        .log_internal_error("Failed to query course for session detail")?
         .ok_or_else(|| ApiError::not_found("Course not found"))?;
     let participant_count: i64 =
         sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
             .bind(session.id)
             .fetch_one(pool)
             .await
-            .map_err(|_| ApiError::service_unavailable())?;
+            .log_internal_error("Failed to count session participants")?;
     Ok(Json(SessionDetail {
         session,
         course,
@@ -113,10 +113,11 @@ pub async fn end(
     .bind(lecturer.id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to end lecture session")?
     .ok_or_else(|| ApiError::not_found("Session not found"))?;
     Ok(Json(session))
 }
+
 
 pub async fn database_session_by_code<'e, E>(
     executor: E,

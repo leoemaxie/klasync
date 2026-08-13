@@ -7,8 +7,12 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::AuthenticatedLecturer,
+
     models::{CaptionChunk, PublishCaptionRequest, SessionStatus},
     state::AppState,
 };
@@ -115,7 +119,7 @@ pub async fn publish(
         ApiError::service_unavailable()
     })?;
 
-    let payload = serde_json::to_string(&caption).map_err(|_| ApiError::service_unavailable())?;
+    let payload = serde_json::to_string(&caption).log_internal_error("Failed to serialize caption payload")?;
     if let Some(redis) = &state.redis {
         if let Err(error) = redis
             .publish_caption(&session.id.to_string(), &payload)
@@ -129,4 +133,5 @@ pub async fn publish(
     }
     Ok((StatusCode::CREATED, Json(caption)))
 }
+
 

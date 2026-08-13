@@ -6,7 +6,10 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::AuthenticatedLecturer,
     models::LectureResource,
     state::AppState,
@@ -37,9 +40,7 @@ pub async fn upload(
         .bytes()
         .await
         .map_err(|_| ApiError::bad_request("Failed to read uploaded file"))?;
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -48,7 +49,7 @@ pub async fn upload(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership in upload")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
@@ -60,7 +61,6 @@ pub async fn upload(
             tracing::error!(%error, "Object storage put operation failed");
             ApiError::service_unavailable()
         })?;
-
 
     let resource = sqlx::query_as::<_, LectureResource>(&format!(
         "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) \
@@ -75,6 +75,7 @@ pub async fn upload(
     .bind(stored.bytes as i64)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to insert uploaded lecture resource")?;
     Ok((StatusCode::CREATED, Json(resource)))
 }
+

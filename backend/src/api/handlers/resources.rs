@@ -9,7 +9,10 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::{AuthenticatedLecturer, AuthenticatedStudent, OptionalStudent},
     models::{CreateLectureResourceRequest, LectureResource, StudentArchiveItem},
     state::AppState,
@@ -26,9 +29,7 @@ pub async fn create_for_session(
     Json(input): Json<CreateLectureResourceRequest>,
 ) -> Result<(StatusCode, Json<LectureResource>), ApiError> {
     validate_resource(&input)?;
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -37,7 +38,7 @@ pub async fn create_for_session(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership in create_for_session")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
@@ -54,7 +55,7 @@ pub async fn create_for_session(
     .bind(input.expires_at)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to insert lecture resource")?;
     Ok((StatusCode::CREATED, Json(resource)))
 }
 
@@ -69,13 +70,9 @@ pub async fn list_public_resources(
     ))
     .fetch_all(pool)
     .await
-    .map_err(|error| {
-        tracing::error!(%error, "Failed to list public resources");
-        ApiError::service_unavailable()
-    })?;
+    .log_internal_error("Failed to list public resources")?;
     Ok(Json(resources))
 }
-
 
 pub async fn list_student_archive(
     State(state): State<AppState>,
@@ -99,14 +96,10 @@ pub async fn list_student_archive(
     .bind(student_id)
     .fetch_all(pool)
     .await
-    .map_err(|error| {
-        tracing::error!(%error, "Failed to list student archive");
-        ApiError::service_unavailable()
-    })?;
+    .log_internal_error("Failed to list student archive")?;
 
     Ok(Json(items))
 }
-
 
 fn validate_resource(input: &CreateLectureResourceRequest) -> Result<(), ApiError> {
     let allowed = [
@@ -141,9 +134,7 @@ pub async fn download_for_student(
     student: AuthenticatedStudent,
     Path(resource_id): Path<Uuid>,
 ) -> Result<Response, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let resource = sqlx::query_as::<_, DownloadableResource>(
         "select r.storage_key, r.content, r.content_type, r.original_filename
          from lecture_resources r join resource_access_grants g on g.resource_id = r.id
@@ -153,7 +144,7 @@ pub async fn download_for_student(
     .bind(student.id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to query downloadable resource for student")?
     .ok_or_else(|| ApiError::not_found("Resource not found"))?;
     response_from_resource(&state, resource).await
 }
@@ -163,9 +154,7 @@ pub async fn download_for_lecturer(
     lecturer: AuthenticatedLecturer,
     Path((short_code, resource_id)): Path<(String, Uuid)>,
 ) -> Result<Response, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let resource = sqlx::query_as::<_, DownloadableResource>(
         "select r.storage_key, r.content, r.content_type, r.original_filename
          from lecture_resources r join lecture_sessions s on s.id = r.session_id
@@ -176,7 +165,7 @@ pub async fn download_for_lecturer(
     .bind(lecturer.id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to query downloadable resource for lecturer")?
     .ok_or_else(|| ApiError::not_found("Resource not found"))?;
     response_from_resource(&state, resource).await
 }
@@ -190,7 +179,7 @@ async fn response_from_resource(
             .storage
             .get(&key)
             .await
-            .map_err(|_| ApiError::service_unavailable())?
+            .log_internal_error("Failed to retrieve resource bytes from storage")?
     } else {
         resource.content.unwrap_or_default().into_bytes()
     };
@@ -212,5 +201,6 @@ async fn response_from_resource(
             format!("attachment; filename=\"{filename}\""),
         )
         .body(Body::from(bytes))
-        .map_err(|_| ApiError::service_unavailable())
+        .log_internal_error("Failed to build HTTP response for resource download")
 }
+
