@@ -3,9 +3,13 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     state::AppState,
 };
+
 
 #[derive(Debug, Deserialize)]
 pub struct BatchSyncRequest {
@@ -42,14 +46,12 @@ pub async fn sync(
     if input.captions.len() > 500 || input.presence_heartbeats.len() > 1000 {
         return Err(ApiError::bad_request("The offline batch is too large."));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &input.session_code).await?;
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to start transaction for batch sync")?;
     let mut processed_captions = 0_i64;
     for caption in input.captions {
         let text = caption.text.trim();
@@ -58,20 +60,20 @@ pub async fn sync(
         }
         sqlx::query("insert into caption_chunks (id, session_id, sequence_number, text, created_at) values ($1, $2, (select coalesce(max(sequence_number), 0) + 1 from caption_chunks where session_id = $2), $3, $4)")
             .bind(uuid::Uuid::now_v7()).bind(session.id).bind(text).bind(caption.timestamp).execute(&mut *transaction).await
-            .map_err(|_| ApiError::service_unavailable())?;
+            .log_internal_error("Failed to insert offline caption chunk in batch sync")?;
         processed_captions += 1;
     }
     let mut processed_heartbeats = 0_i64;
     for heartbeat in input.presence_heartbeats {
         let updated = sqlx::query("update session_participants set last_seen_at = greatest(last_seen_at, $3), heartbeat_count = heartbeat_count + 1 where session_id = $1 and lower(matric_number) = lower($2) and removed_at is null")
             .bind(session.id).bind(heartbeat.matric.trim()).bind(heartbeat.timestamp).execute(&mut *transaction).await
-            .map_err(|_| ApiError::service_unavailable())?;
+            .log_internal_error("Failed to update participant heartbeat in batch sync")?;
         processed_heartbeats += updated.rows_affected() as i64;
     }
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to commit batch sync transaction")?;
     Ok((
         StatusCode::OK,
         Json(BatchSyncResponse {

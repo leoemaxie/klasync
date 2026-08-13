@@ -8,7 +8,11 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{api::error::ApiError, auth::guard::AuthenticatedLecturer, state::AppState};
+use crate::{
+    api::error::{ApiError, LogApiError},
+    auth::guard::AuthenticatedLecturer,
+    state::AppState,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct CanvasSyncRequest {
@@ -46,9 +50,7 @@ pub async fn canvas(
             "Canvas must use a secure HTTPS endpoint.",
         ));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let owns: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -56,7 +58,7 @@ pub async fn canvas(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify course ownership in canvas sync")?;
     if !owns {
         return Err(ApiError::not_found("Course not found."));
     }
@@ -69,7 +71,7 @@ pub async fn canvas(
         .bearer_auth(input.access_token.trim())
         .send()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to send request to Canvas LMS API")?;
     if !response.status().is_success() {
         return Err(ApiError::bad_request(
             "Canvas did not accept the synchronization request.",
@@ -82,7 +84,7 @@ pub async fn canvas(
     let mut transaction = pool
         .begin()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to start transaction for LMS sync")?;
     let mut new_entries = 0_i64;
     for row in rows.iter() {
         let user = row.get("user").cloned().unwrap_or_default();
@@ -102,7 +104,7 @@ pub async fn canvas(
         let email = user.get("email").and_then(|v| v.as_str());
         let inserted = sqlx::query("insert into roster_students (id, course_id, matric_number, full_name, email) values ($1, $2, $3, $4, $5) on conflict (course_id, matric_number) do update set full_name = excluded.full_name, email = excluded.email")
             .bind(Uuid::now_v7()).bind(course_id).bind(matric).bind(name).bind(email).execute(&mut *transaction).await
-            .map_err(|_| ApiError::service_unavailable())?;
+            .log_internal_error("Failed to insert synced Canvas roster student")?;
         if inserted.rows_affected() > 0 {
             new_entries += 1;
         }
@@ -110,11 +112,11 @@ pub async fn canvas(
     let synced_at = Utc::now();
     sqlx::query("insert into lms_course_sync (id, course_id, lms_provider, external_course_id, api_endpoint, last_synced_at) values ($1, $2, 'canvas', $3, $4, $5) on conflict (course_id, lms_provider) do update set external_course_id = excluded.external_course_id, api_endpoint = excluded.api_endpoint, last_synced_at = excluded.last_synced_at")
         .bind(Uuid::now_v7()).bind(course_id).bind(input.course_id).bind(base).bind(synced_at).execute(&mut *transaction).await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to record LMS course sync metadata")?;
     transaction
         .commit()
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to commit LMS course sync transaction")?;
     Ok((
         StatusCode::OK,
         Json(CanvasSyncResponse {
@@ -124,3 +126,4 @@ pub async fn canvas(
         }),
     ))
 }
+
