@@ -172,7 +172,6 @@ impl RedisStore {
         Ok(pubsub)
     }
 
-
     pub async fn enqueue_ai_job(&self, job_id: &str) -> Result<(), RedisError> {
         let stream = self.key("ai-jobs", "stream");
         let mut manager = self.manager.clone();

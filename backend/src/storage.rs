@@ -81,29 +81,25 @@ impl R2ObjectStore {
 }
 
 fn content_type_from_name(file_name: &str) -> &'static str {
-    let lower = file_name.to_ascii_lowercase();
-    if lower.ends_with(".mp3") {
-        "audio/mpeg"
-    } else if lower.ends_with(".wav") {
-        "audio/wav"
-    } else if lower.ends_with(".m4a") || lower.ends_with(".aac") {
-        "audio/mp4"
-    } else if lower.ends_with(".ogg") || lower.ends_with(".opus") {
-        "audio/ogg"
-    } else if lower.ends_with(".pdf") {
-        "application/pdf"
-    } else if lower.ends_with(".txt") {
-        "text/plain"
-    } else if lower.ends_with(".json") {
-        "application/json"
-    } else if lower.ends_with(".png") {
-        "image/png"
-    } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
-        "image/jpeg"
-    } else if lower.ends_with(".svg") {
-        "image/svg+xml"
-    } else {
-        "application/octet-stream"
+    let ext = Path::new(file_name)
+        .extension()
+        .and_then(|ext| ext.to_str());
+
+    match ext {
+        Some(ext) => match ext.to_ascii_lowercase().as_str() {
+            "mp3" => "audio/mpeg",
+            "wav" => "audio/wav",
+            "m4a" | "aac" => "audio/mp4",
+            "ogg" | "opus" => "audio/ogg",
+            "pdf" => "application/pdf",
+            "txt" => "text/plain",
+            "json" => "application/json",
+            "png" => "image/png",
+            "jpg" | "jpeg" => "image/jpeg",
+            "svg" => "image/svg+xml",
+            _ => "application/octet-stream",
+        },
+        None => "application/octet-stream",
     }
 }
 
@@ -125,8 +121,6 @@ impl StorageAdapter for R2ObjectStore {
             .map_err(|error| StorageError::Backend(error.to_string()))?;
         Ok(StoredObject { key, bytes })
     }
-
-
 
     async fn get(&self, key: &str) -> Result<Vec<u8>, StorageError> {
         if key.is_empty() || key.contains("..") {
@@ -188,7 +182,6 @@ impl StorageAdapter for UnconfiguredStorageAdapter {
     }
 }
 
-
 pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
     if config.r2_ready() {
         return Arc::new(R2ObjectStore::new(
@@ -207,4 +200,21 @@ pub fn adapter_from_config(config: &AppConfig) -> SharedStorageAdapter {
         ));
     }
     Arc::new(UnconfiguredStorageAdapter)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_content_type_from_name() {
+        assert_eq!(content_type_from_name("audio.mp3"), "audio/mpeg");
+        assert_eq!(content_type_from_name("DOCUMENT.PDF"), "application/pdf");
+        assert_eq!(content_type_from_name("photo.JPEG"), "image/jpeg");
+        assert_eq!(
+            content_type_from_name("archive.tar.gz"),
+            "application/octet-stream"
+        );
+        assert_eq!(content_type_from_name("no_ext"), "application/octet-stream");
+    }
 }

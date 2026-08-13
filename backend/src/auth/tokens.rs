@@ -72,7 +72,6 @@ pub fn validate_access_token(
     Err(jsonwebtoken::errors::ErrorKind::InvalidToken.into())
 }
 
-
 pub fn token_response(
     access_token: String,
     refresh_token: String,

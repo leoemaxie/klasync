@@ -28,7 +28,6 @@ pub async fn connect(
     Ok(websocket.on_upgrade(move |socket| handle_socket(socket, state, session.id)))
 }
 
-
 async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
     let (_, mut receiver) = socket.split();
     let mut header_bytes = Vec::new();

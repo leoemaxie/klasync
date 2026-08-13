@@ -10,7 +10,6 @@ use crate::{
     state::AppState,
 };
 
-
 #[derive(Debug, Deserialize)]
 pub struct BatchSyncRequest {
     pub session_code: String,

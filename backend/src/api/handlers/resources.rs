@@ -190,7 +190,13 @@ async fn response_from_resource(
         .original_filename
         .unwrap_or_else(|| "klasync-resource.bin".to_owned())
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>();
 
     Response::builder()
@@ -203,4 +209,3 @@ async fn response_from_resource(
         .body(Body::from(bytes))
         .log_internal_error("Failed to build HTTP response for resource download")
 }
-

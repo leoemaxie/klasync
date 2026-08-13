@@ -55,13 +55,10 @@ pub async fn upload_roster(
     Json(input): Json<UploadRosterRequest>,
 ) -> Result<Json<Vec<RosterStudent>>, ApiError> {
     let pool = state.db_pool();
-    let mut transaction = pool
-        .begin()
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to start transaction for roster upload");
-            ApiError::service_unavailable()
-        })?;
+    let mut transaction = pool.begin().await.map_err(|error| {
+        tracing::error!(%error, "Failed to start transaction for roster upload");
+        ApiError::service_unavailable()
+    })?;
     let owns_course: bool = sqlx::query_scalar(
         "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
     )
@@ -96,13 +93,10 @@ pub async fn upload_roster(
         .await
         .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;
     }
-    transaction
-        .commit()
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to commit roster upload transaction");
-            ApiError::service_unavailable()
-        })?;
+    transaction.commit().await.map_err(|error| {
+        tracing::error!(%error, "Failed to commit roster upload transaction");
+        ApiError::service_unavailable()
+    })?;
     Ok(Json(input.students))
 }
 
@@ -141,4 +135,3 @@ pub async fn get_roster(
 
     Ok(Json(students))
 }
-

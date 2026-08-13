@@ -95,4 +95,3 @@ async fn ensure_course_owner(
     }
     Ok(())
 }
-

@@ -33,5 +33,4 @@ pub async fn record_session_event(
             "Failed to record session audit event"
         );
     }
-
 }

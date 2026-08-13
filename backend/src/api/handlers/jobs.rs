@@ -88,4 +88,3 @@ pub async fn list(
     .log_internal_error("Failed to list AI jobs for session")?;
     Ok(Json(jobs))
 }
-

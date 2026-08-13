@@ -280,7 +280,6 @@ impl OpenRouterAdapter {
         })
     }
 
-
     async fn transcribe(&self, work: &AiWorkItem) -> Result<AiWorkResult, AiAdapterError> {
         let data = work
             .input
@@ -393,7 +392,6 @@ struct TranscriptionResponse {
     text: String,
     usage: Option<Usage>,
 }
-
 
 pub fn adapter_from_config(config: &AppConfig) -> SharedAiAdapter {
     OpenRouterAdapter::from_config(config)

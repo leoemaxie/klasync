@@ -28,7 +28,6 @@ pub async fn parse_async(file_name: String, bytes: Vec<u8>) -> Result<ParsedRost
         })?
 }
 
-
 fn parse_csv(bytes: &[u8]) -> Result<ParsedRoster, String> {
     let mut reader = csv::ReaderBuilder::new().flexible(true).from_reader(bytes);
     let headers = reader

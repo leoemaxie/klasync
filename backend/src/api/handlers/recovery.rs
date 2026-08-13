@@ -60,7 +60,10 @@ pub async fn request(
     .await
     .log_internal_error("Failed to insert password reset token")?;
     let token = format!("{token_id}.{secret}");
-    let reset_url = format!("{}/reset-password?token={token}", state.config.public_app_url);
+    let reset_url = format!(
+        "{}/reset-password?token={token}",
+        state.config.public_app_url
+    );
     let template = PasswordResetTemplate {
         reset_url,
         expires_minutes: 30,
@@ -138,4 +141,3 @@ pub async fn complete(
         .log_internal_error("Failed to commit password reset transaction")?;
     Ok(StatusCode::NO_CONTENT)
 }
-

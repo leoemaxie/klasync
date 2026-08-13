@@ -83,4 +83,3 @@ pub async fn import_file(
         .log_internal_error("Failed to commit roster import transaction")?;
     Ok((StatusCode::OK, Json(report)))
 }
-

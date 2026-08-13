@@ -126,4 +126,3 @@ pub async fn canvas(
         }),
     ))
 }
-

@@ -149,4 +149,3 @@ pub async fn resolve(
         serde_json::json!({"id": question_id, "is_resolved": resolved}),
     ))
 }
-

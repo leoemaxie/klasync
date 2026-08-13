@@ -64,7 +64,6 @@ pub async fn issue_tokens(
     ))
 }
 
-
 pub fn parse_opaque_token(value: &str) -> Result<(Uuid, &str), ApiError> {
     let (session_id, secret) = value
         .split_once('.')

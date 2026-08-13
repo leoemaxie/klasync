@@ -128,7 +128,6 @@ pub async fn heartbeat(
     Ok(Json(participant))
 }
 
-
 pub async fn attendance_summary(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
@@ -155,7 +154,6 @@ pub async fn attendance_summary(
     }))
 }
 
-
 async fn owned_session(
     pool: &sqlx::PgPool,
     code: &str,
@@ -178,4 +176,3 @@ async fn owned_session(
     }
     Ok(session)
 }
-

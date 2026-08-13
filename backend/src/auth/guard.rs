@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 use crate::{
     api::error::{ApiError, LogApiError},
-
     auth::{contracts::AccountRole, tokens},
     state::AppState,
 };

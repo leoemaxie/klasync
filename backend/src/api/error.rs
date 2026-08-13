@@ -83,4 +83,3 @@ impl<T, E: std::fmt::Display> LogApiError<T> for Result<T, E> {
         })
     }
 }
-

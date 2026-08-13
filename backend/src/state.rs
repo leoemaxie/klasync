@@ -43,10 +43,7 @@ impl AppState {
         let storage = storage::adapter_from_config(&config);
         let mailer = email::sender_from_config(&config);
         let ai = ai::adapter_from_config(&config);
-        let redis = RedisStore::connect(&config)
-            .await
-            .map(Arc::new)
-            .map(Some)?;
+        let redis = RedisStore::connect(&config).await.map(Arc::new).map(Some)?;
         Ok(Self {
             database,
             config: Arc::new(config),
@@ -66,4 +63,3 @@ impl AppState {
         &self.database
     }
 }
-

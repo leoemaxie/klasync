@@ -124,7 +124,13 @@ pub async fn refresh(
         .await
         .log_internal_error("Failed to revoke session on refresh")?;
     Ok(Json(
-        issue_tokens(pool, &state.config, session.account_id, session.account_role).await?,
+        issue_tokens(
+            pool,
+            &state.config,
+            session.account_id,
+            session.account_role,
+        )
+        .await?,
     ))
 }
 
@@ -169,7 +175,6 @@ async fn login(
     }
     issue_tokens(pool, &state.config, account.id, role).await
 }
-
 
 fn validate_password(password: &str) -> Result<(), ApiError> {
     if password.len() < 8 {

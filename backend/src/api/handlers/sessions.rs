@@ -118,7 +118,6 @@ pub async fn end(
     Ok(Json(session))
 }
 
-
 pub async fn database_session_by_code<'e, E>(
     executor: E,
     short_code: &str,
@@ -138,4 +137,3 @@ where
     })?
     .ok_or_else(|| ApiError::not_found("Session not found"))
 }
-

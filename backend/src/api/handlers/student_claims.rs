@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 use crate::{
     api::error::{ApiError, LogApiError},
-
     audit::{self, AuditEvent},
     auth::{guard::AuthenticatedStudent, passwords},
     email::{
@@ -76,7 +75,8 @@ pub async fn request(
     .ok_or_else(|| ApiError::conflict("Participant has already been claimed or does not exist"))?;
     validate_university_email(&context.email)?;
     let code = format!("{:06}", Uuid::new_v4().as_u128() % 1_000_000);
-    let code_hash = passwords::hash(&code).log_internal_error("Failed to hash verification code")?;
+    let code_hash =
+        passwords::hash(&code).log_internal_error("Failed to hash verification code")?;
     let expires_at = Utc::now() + Duration::minutes(10);
     sqlx::query("delete from student_claim_verifications where student_account_id = $1 and participant_id = $2 and consumed_at is null")
         .bind(student.id).bind(input.participant_id).execute(pool).await

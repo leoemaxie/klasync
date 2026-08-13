@@ -39,4 +39,3 @@ impl CaptionHub {
         let _ = sender.send(caption);
     }
 }
-

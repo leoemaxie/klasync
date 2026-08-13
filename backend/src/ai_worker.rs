@@ -256,7 +256,6 @@ pub async fn run_loop(state: AppState) {
                             }
                         }
                         continue;
-
                     }
                     Ok(None) => {}
                     Err(error) => {
@@ -283,7 +282,6 @@ pub async fn run_loop(state: AppState) {
         }
     }
 }
-
 
 fn output_type(job_type: &str) -> &'static str {
     match job_type {

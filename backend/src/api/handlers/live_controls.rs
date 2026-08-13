@@ -270,4 +270,3 @@ async fn ensure_owner(
     }
     Ok(())
 }
-

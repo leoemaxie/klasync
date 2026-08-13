@@ -150,7 +150,6 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/courses/{course_id}/roster/import",
             post(rosters::import_file).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
-
         .route("/api/v1/sessions", post(sessions::create))
         .route("/api/v1/invites/{token}", get(invites::resolve))
         .route(
@@ -257,7 +256,6 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/sessions/code/{short_code}/audio/upload",
             post(handlers::audio::upload).layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
-
         .route(
             "/api/v1/sessions/code/{short_code}/audio/ws",
             get(handlers::audio_stream::connect),

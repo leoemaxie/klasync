@@ -56,4 +56,3 @@ pub async fn claim_guest_participation(
     }
     Ok(StatusCode::OK)
 }
-

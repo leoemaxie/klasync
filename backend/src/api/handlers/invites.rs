@@ -98,4 +98,3 @@ pub async fn revoke(
     }
     Ok(axum::http::StatusCode::NO_CONTENT)
 }
-

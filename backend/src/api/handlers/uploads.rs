@@ -78,4 +78,3 @@ pub async fn upload(
     .log_internal_error("Failed to insert uploaded lecture resource")?;
     Ok((StatusCode::CREATED, Json(resource)))
 }
-

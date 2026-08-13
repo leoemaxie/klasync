@@ -127,7 +127,6 @@ pub struct AttendanceSummary {
     pub total_heartbeats: u64,
 }
 
-
 #[derive(Deserialize)]
 pub struct ClaimGuestParticipationRequest {
     pub participant_id: Uuid,
