@@ -68,7 +68,10 @@ pub async fn upload(
         .storage
         .put(&file_name, bytes.to_vec())
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .map_err(|error| {
+            tracing::error!(%error, "Audio file storage put failed");
+            ApiError::service_unavailable()
+        })?;
     let resource_id = Uuid::now_v7();
     sqlx::query(
         "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) values ($1, $2, 'audio', $3, $4, $5, $6)",
@@ -81,7 +84,10 @@ pub async fn upload(
     .bind(stored.bytes as i64)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to insert audio lecture resource into database");
+        ApiError::service_unavailable()
+    })?;
 
     let ai_job_id = Uuid::now_v7();
     sqlx::query(
@@ -93,7 +99,11 @@ pub async fn upload(
     .bind(resource_id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to insert transcribe AI job into database");
+        ApiError::service_unavailable()
+    })?;
+
     Ok((
         StatusCode::ACCEPTED,
         Json(AudioIngestionResponse {

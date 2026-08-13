@@ -66,10 +66,44 @@ impl R2ObjectStore {
         let extension = Path::new(file_name)
             .extension()
             .and_then(|value| value.to_str())
-            .filter(|value| !value.is_empty())
-            .map(|value| format!(".{value}"))
+            .map(|ext| {
+                ext.chars()
+                    .filter(|c| c.is_ascii_alphanumeric())
+                    .take(10)
+                    .collect::<String>()
+                    .to_lowercase()
+            })
+            .filter(|ext| !ext.is_empty())
+            .map(|ext| format!(".{ext}"))
             .unwrap_or_default();
         format!("uploads/{}{}", uuid::Uuid::now_v7(), extension)
+    }
+}
+
+fn content_type_from_name(file_name: &str) -> &'static str {
+    let lower = file_name.to_ascii_lowercase();
+    if lower.ends_with(".mp3") {
+        "audio/mpeg"
+    } else if lower.ends_with(".wav") {
+        "audio/wav"
+    } else if lower.ends_with(".m4a") || lower.ends_with(".aac") {
+        "audio/mp4"
+    } else if lower.ends_with(".ogg") || lower.ends_with(".opus") {
+        "audio/ogg"
+    } else if lower.ends_with(".pdf") {
+        "application/pdf"
+    } else if lower.ends_with(".txt") {
+        "text/plain"
+    } else if lower.ends_with(".json") {
+        "application/json"
+    } else if lower.ends_with(".png") {
+        "image/png"
+    } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if lower.ends_with(".svg") {
+        "image/svg+xml"
+    } else {
+        "application/octet-stream"
     }
 }
 
@@ -78,16 +112,21 @@ impl StorageAdapter for R2ObjectStore {
     async fn put(&self, file_name: &str, data: Vec<u8>) -> Result<StoredObject, StorageError> {
         let key = Self::object_key(file_name);
         let bytes = data.len();
+        let content_type = content_type_from_name(file_name);
+
         self.client
             .put_object()
             .bucket(&self.bucket)
             .key(&key)
+            .content_type(content_type)
             .body(ByteStream::from(data))
             .send()
             .await
             .map_err(|error| StorageError::Backend(error.to_string()))?;
         Ok(StoredObject { key, bytes })
     }
+
+
 
     async fn get(&self, key: &str) -> Result<Vec<u8>, StorageError> {
         if key.is_empty() || key.contains("..") {
