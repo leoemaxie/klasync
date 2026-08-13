@@ -7,7 +7,11 @@ use serde::Serialize;
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::{api::error::ApiError, auth::guard::AuthenticatedLecturer, state::AppState};
+use crate::{
+    api::error::{ApiError, LogApiError},
+    auth::guard::AuthenticatedLecturer,
+    state::AppState,
+};
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct CourseAttendanceSummary {
@@ -34,9 +38,7 @@ pub async fn course_summary(
     lecturer: AuthenticatedLecturer,
     Path(course_id): Path<Uuid>,
 ) -> Result<Json<CourseAttendanceSummary>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     ensure_course_owner(pool, course_id, lecturer.id).await?;
     let summary = sqlx::query_as::<_, CourseAttendanceSummary>(
         "select $1 as course_id,
@@ -49,7 +51,7 @@ pub async fn course_summary(
          where s.course_id = $1 and s.deleted_at is null",
     )
     .bind(course_id).fetch_one(pool).await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to query course attendance summary")?;
     Ok(Json(summary))
 }
 
@@ -58,9 +60,7 @@ pub async fn session_anomalies(
     lecturer: AuthenticatedLecturer,
     Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<AttendanceAnomaly>>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let owns: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
     )
@@ -68,12 +68,12 @@ pub async fn session_anomalies(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership for anomalies")?;
     if !owns {
         return Err(ApiError::not_found("Session not found."));
     }
     let anomalies = sqlx::query_as::<_, AttendanceAnomaly>("select id, matric_number, anomaly_type, description, severity, logged_at from attendance_audit_logs where session_id = $1 order by logged_at desc")
-        .bind(session_id).fetch_all(pool).await.map_err(|_| ApiError::service_unavailable())?;
+        .bind(session_id).fetch_all(pool).await.log_internal_error("Failed to query attendance anomalies")?;
     Ok(Json(anomalies))
 }
 
@@ -89,9 +89,10 @@ async fn ensure_course_owner(
     .bind(lecturer_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify course ownership in analytics")?;
     if !owns {
         return Err(ApiError::not_found("Course not found."));
     }
     Ok(())
 }
+

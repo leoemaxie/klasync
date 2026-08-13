@@ -7,7 +7,10 @@ use axum::{
 use qrcode::{render::svg, QrCode};
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::AuthenticatedLecturer,
     models::{Course, InviteResolution, LectureSession},
     state::AppState,
@@ -18,9 +21,7 @@ pub async fn qr_svg(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Response, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -29,13 +30,13 @@ pub async fn qr_svg(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership for QR SVG")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
 
     let payload = format!("/?invite={}", session.invite_token);
-    let code = QrCode::new(payload).map_err(|_| ApiError::service_unavailable())?;
+    let code = QrCode::new(payload).log_internal_error("Failed to generate QR code SVG")?;
     let svg = code
         .render::<svg::Color>()
         .min_dimensions(512, 512)
@@ -53,9 +54,7 @@ pub async fn resolve(
     State(state): State<AppState>,
     Path(token): Path<String>,
 ) -> Result<Json<InviteResolution>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let token = uuid::Uuid::parse_str(&token)
         .map_err(|_| ApiError::not_found("Invite link not found or expired"))?;
     let session = sqlx::query_as::<_, LectureSession>(
@@ -66,7 +65,7 @@ pub async fn resolve(
     .bind(token)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to resolve invite token")?
     .ok_or_else(|| ApiError::not_found("Invite link not found or expired"))?;
     let course = sqlx::query_as::<_, Course>(
         "select id, lecturer_id, code, title from courses where id = $1",
@@ -74,7 +73,7 @@ pub async fn resolve(
     .bind(session.course_id)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to query course for resolved invite")?
     .ok_or_else(|| ApiError::not_found("Course not found"))?;
     Ok(Json(InviteResolution { session, course }))
 }
@@ -84,9 +83,7 @@ pub async fn revoke(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<axum::http::StatusCode, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let result = sqlx::query(
         "update session_invites invite set revoked_at = now() from lecture_sessions session \
          where invite.session_id = session.id and invite.short_code = upper($1) and session.lecturer_id = $2 and invite.revoked_at is null",
@@ -95,9 +92,10 @@ pub async fn revoke(
     .bind(lecturer.id)
     .execute(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to revoke session invite")?;
     if result.rows_affected() == 0 {
         return Err(ApiError::not_found("Invite link not found or expired"));
     }
     Ok(axum::http::StatusCode::NO_CONTENT)
 }
+

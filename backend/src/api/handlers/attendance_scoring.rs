@@ -5,7 +5,10 @@ use axum::{
 use serde::Serialize;
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::AuthenticatedLecturer,
     state::AppState,
 };
@@ -21,9 +24,7 @@ pub async fn reconcile(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Json<ReconciliationResult>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -32,7 +33,7 @@ pub async fn reconcile(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership in reconcile")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
@@ -53,7 +54,7 @@ pub async fn reconcile(
     .bind(session.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to score attendance")?;
 
     let flagged: i64 = sqlx::query_scalar(
         "with duplicates as (
@@ -67,9 +68,10 @@ pub async fn reconcile(
     .bind(session.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to flag duplicate participants in reconcile")?;
     Ok(Json(ReconciliationResult {
         participants_scored: scored,
         duplicate_participants_flagged: flagged,
     }))
 }
+

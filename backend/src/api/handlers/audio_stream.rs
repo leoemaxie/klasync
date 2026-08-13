@@ -22,13 +22,12 @@ pub async fn connect(
     Path(short_code): Path<String>,
     websocket: WebSocketUpgrade,
 ) -> Result<Response, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
 
     Ok(websocket.on_upgrade(move |socket| handle_socket(socket, state, session.id)))
 }
+
 
 async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
     let (_, mut receiver) = socket.split();

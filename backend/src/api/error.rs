@@ -69,3 +69,18 @@ impl std::fmt::Display for ApiError {
 }
 
 impl std::error::Error for ApiError {}
+
+pub trait LogApiError<T> {
+    fn log_internal_error(self, context_message: &'static str) -> Result<T, ApiError>;
+}
+
+impl<T, E: std::fmt::Display> LogApiError<T> for Result<T, E> {
+    #[inline]
+    fn log_internal_error(self, context_message: &'static str) -> Result<T, ApiError> {
+        self.map_err(|error| {
+            tracing::error!(%error, "{context_message}");
+            ApiError::service_unavailable()
+        })
+    }
+}
+

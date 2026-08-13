@@ -5,7 +5,8 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError,
+    api::error::{ApiError, LogApiError},
+
     auth::{contracts::AccountRole, tokens},
     state::AppState,
 };
@@ -46,9 +47,7 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
             .ok_or_else(|| ApiError::unauthorized("Authorization header must use Bearer scheme"))?;
         let claims = tokens::validate_access_token(&state.config, token)
             .map_err(|_| ApiError::unauthorized("Invalid or expired access token"))?;
-        let pool = state
-            .production_database()
-            .ok_or_else(|| ApiError::service_unavailable())?;
+        let pool = state.db_pool();
         let active: bool = sqlx::query_scalar(
             "select exists(select 1 from auth_sessions where id = $1 and account_id = $2 and account_role = $3 and revoked_at is null and expires_at > now())",
         )
@@ -57,7 +56,8 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
         .bind(claims.role)
         .fetch_one(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to check active auth session")?;
+
         if !active {
             return Err(ApiError::unauthorized("Invalid refresh token"));
         }

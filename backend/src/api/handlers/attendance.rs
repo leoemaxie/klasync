@@ -7,7 +7,7 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::error::ApiError,
+    api::error::{ApiError, LogApiError},
     auth::guard::AuthenticatedLecturer,
     models::{
         AttendanceReviewDecision, ReviewAttendanceRequest, SessionParticipant, VerificationStatus,
@@ -23,9 +23,7 @@ pub async fn review(
     Path((short_code, participant_id)): Path<(String, Uuid)>,
     Json(input): Json<ReviewAttendanceRequest>,
 ) -> Result<Json<SessionParticipant>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let (status, event) = match input.decision {
         AttendanceReviewDecision::Flagged => (VerificationStatus::Provisional, "flagged"),
         AttendanceReviewDecision::Approved => (VerificationStatus::Verified, "approved"),
@@ -43,7 +41,7 @@ pub async fn review(
     .bind(short_code)
     .fetch_optional(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?
+    .log_internal_error("Failed to update participant verification status")?
     .ok_or_else(|| ApiError::not_found("Participant not found"))?;
     sqlx::query("insert into attendance_events (participant_id, event_type, metadata) values ($1, $2, jsonb_build_object('reviewed_by', $3))")
         .bind(participant.id)
@@ -51,7 +49,7 @@ pub async fn review(
         .bind(lecturer.id)
         .execute(pool)
         .await
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to record attendance review event")?;
     Ok(Json(participant))
 }
 
@@ -60,9 +58,7 @@ pub async fn export_csv(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Response, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let rows = sqlx::query_as::<_, SessionParticipant>(&format!(
         "select participant.{PARTICIPANT_COLUMNS} from session_participants participant \
          join lecture_sessions session on session.id = participant.session_id \
@@ -72,7 +68,7 @@ pub async fn export_csv(
     .bind(lecturer.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to query session participants for CSV export")?;
     let mut writer = csv::Writer::from_writer(Vec::new());
     writer
         .write_record([
@@ -83,7 +79,7 @@ pub async fn export_csv(
             "last_seen_at",
             "heartbeat_count",
         ])
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to write CSV headers")?;
     for row in rows {
         writer
             .write_record([
@@ -97,11 +93,11 @@ pub async fn export_csv(
                 row.last_seen_at.to_rfc3339(),
                 row.heartbeat_count.to_string(),
             ])
-            .map_err(|_| ApiError::service_unavailable())?;
+            .log_internal_error("Failed to write CSV record row")?;
     }
     let body = writer
         .into_inner()
-        .map_err(|_| ApiError::service_unavailable())?;
+        .log_internal_error("Failed to flush CSV export bytes")?;
     Ok((
         [
             (header::CONTENT_TYPE, "text/csv; charset=utf-8"),
@@ -114,3 +110,4 @@ pub async fn export_csv(
     )
         .into_response())
 }
+

@@ -6,7 +6,10 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    api::{error::ApiError, handlers::sessions::database_session_by_code},
+    api::{
+        error::{ApiError, LogApiError},
+        handlers::sessions::database_session_by_code,
+    },
     auth::guard::AuthenticatedLecturer,
     models::{AiJob, CreateAiJobRequest},
     state::AppState,
@@ -32,9 +35,7 @@ pub async fn create(
     {
         return Err(ApiError::bad_request("Invalid AI job type specified"));
     }
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -43,7 +44,7 @@ pub async fn create(
     .bind(lecturer.id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to verify session ownership in create AI job")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
@@ -57,10 +58,11 @@ pub async fn create(
     .bind(input.input_resource_id)
     .fetch_one(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to insert AI job record")?;
     if let Some(redis) = &state.redis {
         if let Err(error) = redis.enqueue_ai_job(&job.id.to_string()).await {
             if state.config.redis_required {
+                tracing::error!(%error, "Managed Redis AI queue enqueue failed");
                 return Err(ApiError::service_unavailable());
             }
             tracing::warn!(%error, "Managed Redis AI queue unavailable; database worker will poll");
@@ -74,9 +76,7 @@ pub async fn list(
     lecturer: AuthenticatedLecturer,
     Path(short_code): Path<String>,
 ) -> Result<Json<Vec<AiJob>>, ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let jobs = sqlx::query_as::<_, AiJob>(&format!(
         "select {JOB_COLUMNS} from ai_jobs where session_id = $1 and requested_by = $2 order by created_at desc"
@@ -85,6 +85,7 @@ pub async fn list(
     .bind(lecturer.id)
     .fetch_all(pool)
     .await
-    .map_err(|_| ApiError::service_unavailable())?;
+    .log_internal_error("Failed to list AI jobs for session")?;
     Ok(Json(jobs))
 }
+
