@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into resource_access_grants (resource_id, student_account_id) select resource.id, $2 from lecture_resources resource join session_participants participant on participant.session_id = resource.session_id where participant.id = $1 on conflict (resource_id, student_account_id) do nothing",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c60cac6447ae53dc8fdaaf23dc4c99a7b3dbbe96f5e2b2a8182e062447d4a6c5"
+}

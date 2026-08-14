@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update auth_sessions set revoked_at = now() where account_id = $1 and account_role = $2 and revoked_at is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "account_role",
+            "kind": {
+              "Enum": [
+                "lecturer",
+                "student"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b2653b1ff9be101d73d56cb0b22fbdfd5aea35cd4e4bd2aa6d7bbdb328acf0d0"
+}

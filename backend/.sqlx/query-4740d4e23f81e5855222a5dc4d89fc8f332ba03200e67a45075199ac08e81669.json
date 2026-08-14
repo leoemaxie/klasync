@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update lecture_sessions set deleted_at = now() where id = $1 and status = 'ended' and deleted_at is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4740d4e23f81e5855222a5dc4d89fc8f332ba03200e67a45075199ac08e81669"
+}

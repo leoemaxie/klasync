@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into password_reset_tokens (id, account_id, account_role, token_hash, expires_at) values ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "account_role",
+            "kind": {
+              "Enum": [
+                "lecturer",
+                "student"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "31339818a4a32f6d93301cdea402b6f69900475ba284bcbbc9d3087331901358"
+}

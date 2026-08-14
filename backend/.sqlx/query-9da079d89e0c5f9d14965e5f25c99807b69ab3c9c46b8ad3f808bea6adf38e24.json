@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_invites invite set revoked_at = now() from lecture_sessions session\n         where invite.session_id = session.id and invite.short_code = upper($1) and session.lecturer_id = $2 and invite.revoked_at is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9da079d89e0c5f9d14965e5f25c99807b69ab3c9c46b8ad3f808bea6adf38e24"
+}

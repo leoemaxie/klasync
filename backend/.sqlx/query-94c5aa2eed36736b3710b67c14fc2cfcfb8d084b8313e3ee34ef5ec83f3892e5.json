@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into attendance_events (participant_id, event_type) values ($1, 'joined')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "94c5aa2eed36736b3710b67c14fc2cfcfb8d084b8313e3ee34ef5ec83f3892e5"
+}

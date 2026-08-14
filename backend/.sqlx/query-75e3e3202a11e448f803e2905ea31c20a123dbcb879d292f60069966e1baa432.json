@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update lecture_sessions set archived_at = now() where id = $1 and status = 'ended' and archived_at is null and deleted_at is null returning id, title, status::text as \"status!\", scheduled_start_at, timezone, archived_at, deleted_at, reopen_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "scheduled_start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "timezone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "reopen_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      true,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "75e3e3202a11e448f803e2905ea31c20a123dbcb879d292f60069966e1baa432"
+}

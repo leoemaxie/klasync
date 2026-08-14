@@ -3,7 +3,6 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
 use uuid::Uuid;
 
 use crate::{
@@ -108,7 +107,7 @@ pub async fn publish(
         caption_id,
         session.id,
         text,
-        Utc::now()
+        chrono::Utc::now()
     )
     .fetch_one(&mut *tx)
     .await

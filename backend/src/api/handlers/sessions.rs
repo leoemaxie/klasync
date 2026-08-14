@@ -3,7 +3,6 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
 use uuid::Uuid;
 
 use crate::{
@@ -44,7 +43,7 @@ pub async fn create(
         &code,
         invite_token,
         SessionStatus::Live as SessionStatus,
-        Utc::now(),
+        chrono::Utc::now(),
         lecturer.id
     )
     .fetch_one(pool)

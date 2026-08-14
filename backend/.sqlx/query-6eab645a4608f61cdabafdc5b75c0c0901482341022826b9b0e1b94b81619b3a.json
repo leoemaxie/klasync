@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into courses (id, lecturer_id, code, title, academic_session, semester, is_active)\n           values ($1, $2, $3, $4, $5, $6, true)\n           returning id, lecturer_id, code, title, academic_session, semester, is_active",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "lecturer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "academic_session",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "semester",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6eab645a4608f61cdabafdc5b75c0c0901482341022826b9b0e1b94b81619b3a"
+}

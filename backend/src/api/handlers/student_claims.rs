@@ -178,7 +178,7 @@ pub async fn verify(
     let enrollment_id = Uuid::now_v7();
     let _ = sqlx::query!(
         r#"insert into student_course_enrollments (id, student_account_id, course_id, enrollment_type)
-           select $1, $2, s.course_id, 'claimed'
+           select $1::uuid, $2::uuid, s.course_id, 'claimed'
            from lecture_sessions s
            where s.id = $3
            on conflict (student_account_id, course_id) do nothing"#,

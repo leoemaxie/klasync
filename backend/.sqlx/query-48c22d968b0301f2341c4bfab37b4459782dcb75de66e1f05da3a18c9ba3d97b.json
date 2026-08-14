@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select participant.id, participant.session_id, participant.matric_number, participant.display_name, participant.verification_status as \"verification_status: VerificationStatus\", participant.joined_at, participant.last_seen_at, participant.heartbeat_count\n         from session_participants participant\n         join lecture_sessions session on session.id = participant.session_id\n         where session.short_code = upper($1) and session.lecturer_id = $2 order by participant.joined_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "matric_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "verification_status: VerificationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "joined_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_seen_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "heartbeat_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "48c22d968b0301f2341c4bfab37b4459782dcb75de66e1f05da3a18c9ba3d97b"
+}

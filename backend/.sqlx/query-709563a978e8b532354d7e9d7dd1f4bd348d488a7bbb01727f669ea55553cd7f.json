@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "with duration as (\n           select greatest(60, extract(epoch from (coalesce(ended_at, now()) - started_at))) as seconds\n           from lecture_sessions where id = $1\n         ), updated as (\n           update session_participants p\n           set attendance_score = least(100.0, greatest(0.0,\n             (p.heartbeat_count::numeric / greatest(1.0, (duration.seconds / 30.0))) * 100.0\n           ))\n           from duration where p.session_id = $1\n           returning 1\n         ) select count(*) as \"count!\" from updated",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "709563a978e8b532354d7e9d7dd1f4bd348d488a7bbb01727f669ea55553cd7f"
+}

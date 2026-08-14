@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_questions set upvote_count = upvote_count + 1 where id = $1 and session_code = upper($2) returning upvote_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "upvote_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "65e092f0409287fbfc4e51985edd263bef53cb83525daadfcb51e4fbd86f62a7"
+}

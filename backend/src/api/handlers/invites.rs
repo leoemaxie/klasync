@@ -59,7 +59,7 @@ pub async fn resolve(
         .map_err(|_| ApiError::not_found("Invite link not found or expired"))?;
     let session = sqlx::query_as!(
         LectureSession,
-        r#"select session.id, session.course_id, session.title, session.short_code, session.invite_token, session.status as "status: SessionStatus", session.started_at
+        r#"select session.id as "id!", session.course_id as "course_id!", session.title as "title!", session.short_code as "short_code!", session.invite_token as "invite_token!", session.status as "status!: SessionStatus", session.started_at as "started_at!"
          from session_invites invite join lecture_sessions session on session.id = invite.session_id
          where invite.token = $1 and invite.revoked_at is null and (invite.expires_at is null or invite.expires_at > now())"#,
         token

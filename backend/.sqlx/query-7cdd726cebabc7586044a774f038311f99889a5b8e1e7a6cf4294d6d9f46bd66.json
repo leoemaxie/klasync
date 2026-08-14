@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "with duplicates as (\n           select matric_number from session_participants where session_id = $1 group by matric_number having count(*) > 1\n         ), flagged as (\n           update session_participants p set duplicate_flag = true\n           from duplicates d where p.session_id = $1 and p.matric_number = d.matric_number\n           returning 1\n         ) select count(*) as \"count!\" from flagged",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "7cdd726cebabc7586044a774f038311f99889a5b8e1e7a6cf4294d6d9f46bd66"
+}

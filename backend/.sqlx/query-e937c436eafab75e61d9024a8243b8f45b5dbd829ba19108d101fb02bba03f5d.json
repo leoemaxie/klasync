@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into attendance_events (participant_id, event_type, metadata) values ($1, $2, jsonb_build_object('reviewed_by', $3::uuid))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e937c436eafab75e61d9024a8243b8f45b5dbd829ba19108d101fb02bba03f5d"
+}

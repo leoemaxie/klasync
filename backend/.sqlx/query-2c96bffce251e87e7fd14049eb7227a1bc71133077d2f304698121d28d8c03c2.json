@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select requested_by from ai_jobs where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "requested_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2c96bffce251e87e7fd14049eb7227a1bc71133077d2f304698121d28d8c03c2"
+}

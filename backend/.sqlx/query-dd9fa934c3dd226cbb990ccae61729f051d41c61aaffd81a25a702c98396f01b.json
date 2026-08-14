@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_questions set is_resolved = true where id = $1 and session_code = upper($2) returning is_resolved",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_resolved",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "dd9fa934c3dd226cbb990ccae61729f051d41c61aaffd81a25a702c98396f01b"
+}

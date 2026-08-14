@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select exists(select 1 from ai_jobs j join lecture_sessions s on s.id = j.session_id where j.id = $1 and j.requested_by = $2 and s.short_code = upper($3) and s.lecturer_id = $2) as \"exists!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "112ab90fafe029c3df5d97fbbfe6fe8bffa4641cb11e4b14297f090f2e8275b3"
+}

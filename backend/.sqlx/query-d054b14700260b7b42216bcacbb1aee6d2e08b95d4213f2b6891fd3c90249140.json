@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update ai_jobs set provider = $2, model = $3, input_tokens = $4, output_tokens = $5, cost_usd = ($6::float8)::numeric where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d054b14700260b7b42216bcacbb1aee6d2e08b95d4213f2b6891fd3c90249140"
+}

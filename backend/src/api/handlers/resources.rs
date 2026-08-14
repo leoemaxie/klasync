@@ -92,7 +92,7 @@ pub async fn list_student_archive(
           c.academic_session as "academic_session!",
           c.semester as "semester!",
           s.title as "session_title!",
-          to_char(s.created_at, 'Mon DD, YYYY') as "date!"
+          to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') as "date!"
          from student_session_claims claim
          join session_participants p on p.id = claim.participant_id
          join lecture_sessions s on s.id = p.session_id

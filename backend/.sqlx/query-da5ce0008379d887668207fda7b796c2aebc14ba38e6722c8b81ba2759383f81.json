@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into session_audit_events (session_id, actor_id, actor_role, event_type, metadata) values ($1, $2, $3::account_role, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "account_role",
+            "kind": {
+              "Enum": [
+                "lecturer",
+                "student"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "da5ce0008379d887668207fda7b796c2aebc14ba38e6722c8b81ba2759383f81"
+}

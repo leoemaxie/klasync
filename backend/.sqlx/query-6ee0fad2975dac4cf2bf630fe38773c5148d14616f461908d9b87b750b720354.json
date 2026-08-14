@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select storage_key, content::text as content, content_type from lecture_resources where id = $1 and session_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "storage_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content_type",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      null,
+      true
+    ]
+  },
+  "hash": "6ee0fad2975dac4cf2bf630fe38773c5148d14616f461908d9b87b750b720354"
+}

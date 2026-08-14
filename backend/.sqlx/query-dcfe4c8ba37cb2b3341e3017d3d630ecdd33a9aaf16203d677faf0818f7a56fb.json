@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, matric_number, anomaly_type, description, severity, logged_at from attendance_audit_logs where session_id = $1 order by logged_at desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "matric_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "anomaly_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "severity",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "logged_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "dcfe4c8ba37cb2b3341e3017d3d630ecdd33a9aaf16203d677faf0818f7a56fb"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from student_claim_verifications where student_account_id = $1 and participant_id = $2 and consumed_at is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "29cc38492e5d9567420832b26329d06419a1ca97162bf6ffd9cd3312902ba5dd"
+}

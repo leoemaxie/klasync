@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into session_live_controls (session_id, captions_paused, audio_ingestion_active, late_join_policy, updated_by)\n         values ($1, coalesce($2, false), coalesce($3, false), coalesce($4, 'allowed'), $5)\n         on conflict (session_id) do update set\n           captions_paused = coalesce($2, session_live_controls.captions_paused),\n           audio_ingestion_active = coalesce($3, session_live_controls.audio_ingestion_active),\n           late_join_policy = coalesce($4, session_live_controls.late_join_policy),\n           updated_by = $5, updated_at = now()\n         returning session_id, captions_paused as \"captions_paused!\", audio_ingestion_active as \"audio_ingestion_active!\", late_join_policy as \"late_join_policy!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "captions_paused!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "audio_ingestion_active!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "late_join_policy!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool",
+        "Bool",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "19b267b611da017c9445a524ff727087d940c2c967fed46bf98bab5009f97059"
+}

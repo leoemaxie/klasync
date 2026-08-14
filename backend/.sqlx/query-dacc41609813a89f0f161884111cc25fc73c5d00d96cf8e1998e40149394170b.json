@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select a.email\n         from session_participants p join student_accounts a on a.id = $2\n         where p.id = $1 and p.student_account_id is null",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "email",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "dacc41609813a89f0f161884111cc25fc73c5d00d96cf8e1998e40149394170b"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update student_claim_verifications set attempts = attempts + 1 where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cd48ce98cfee3a55bee03aec0a7d9c87820cc34d8011433cfe86e28e617f19f9"
+}

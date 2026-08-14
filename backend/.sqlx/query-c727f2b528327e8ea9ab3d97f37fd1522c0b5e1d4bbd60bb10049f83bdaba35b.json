@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select \n            c.id,\n            c.code,\n            c.title,\n            c.academic_session,\n            c.semester,\n            l.name as lecturer_name,\n            count(distinct s.id) as \"session_count!\",\n            e.enrolled_at\n           from student_course_enrollments e\n           join courses c on c.id = e.course_id\n           join lecturers l on l.id = c.lecturer_id\n           left join lecture_sessions s on s.course_id = c.id\n           where e.student_account_id = $1\n           group by c.id, c.code, c.title, c.academic_session, c.semester, l.name, e.enrolled_at\n           order by c.academic_session desc, c.semester asc, c.code asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "academic_session",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "semester",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "lecturer_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "session_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "enrolled_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "c727f2b528327e8ea9ab3d97f37fd1522c0b5e1d4bbd60bb10049f83bdaba35b"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update ai_jobs set status = 'failed', error_message = $2 where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e1b9c6036ac2fec0960c9c9d5f2162ca5c2c88b47bdf898da9ccccf603216234"
+}

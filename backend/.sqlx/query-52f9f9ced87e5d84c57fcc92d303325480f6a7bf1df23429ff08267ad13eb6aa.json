@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select exists(select 1 from auth_sessions where id = $1 and account_id = $2 and account_role = $3 and revoked_at is null and expires_at > now()) as \"exists!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "account_role",
+            "kind": {
+              "Enum": [
+                "lecturer",
+                "student"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "52f9f9ced87e5d84c57fcc92d303325480f6a7bf1df23429ff08267ad13eb6aa"
+}

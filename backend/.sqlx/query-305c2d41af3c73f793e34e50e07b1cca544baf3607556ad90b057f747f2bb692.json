@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update student_accounts set password_hash = $1 where id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "305c2d41af3c73f793e34e50e07b1cca544baf3607556ad90b057f747f2bb692"
+}

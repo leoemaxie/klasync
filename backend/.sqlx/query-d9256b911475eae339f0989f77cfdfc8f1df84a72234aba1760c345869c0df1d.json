@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants set removed_at = coalesce(removed_at, now()), removal_reason = 'lecturer_action' where id = $1 and session_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d9256b911475eae339f0989f77cfdfc8f1df84a72234aba1760c345869c0df1d"
+}

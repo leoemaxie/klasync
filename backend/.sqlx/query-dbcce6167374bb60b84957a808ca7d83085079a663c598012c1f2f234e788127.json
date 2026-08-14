@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into lms_course_sync (id, course_id, lms_provider, external_course_id, api_endpoint, last_synced_at) values ($1, $2, 'canvas', $3, $4, $5) on conflict (course_id, lms_provider) do update set external_course_id = excluded.external_course_id, api_endpoint = excluded.api_endpoint, last_synced_at = excluded.last_synced_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dbcce6167374bb60b84957a808ca7d83085079a663c598012c1f2f234e788127"
+}

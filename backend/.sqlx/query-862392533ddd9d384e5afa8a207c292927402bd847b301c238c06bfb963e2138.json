@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select coalesce((select captions_paused from session_live_controls where session_id = $1), false) as \"coalesce!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "coalesce!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "862392533ddd9d384e5afa8a207c292927402bd847b301c238c06bfb963e2138"
+}

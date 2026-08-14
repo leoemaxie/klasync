@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into attendance_events (participant_id, event_type) values ($1, 'heartbeat')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb50409e17a7fd455a487fadf0a6844a4dcce5b66ecd69032970049349f9b3b4"
+}

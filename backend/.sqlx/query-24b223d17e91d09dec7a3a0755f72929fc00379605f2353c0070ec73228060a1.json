@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select full_name from roster_students where course_id = $1 and lower(matric_number) = lower($2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "full_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "24b223d17e91d09dec7a3a0755f72929fc00379605f2353c0070ec73228060a1"
+}

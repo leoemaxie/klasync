@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants set last_seen_at = greatest(last_seen_at, $3), heartbeat_count = heartbeat_count + 1 where session_id = $1 and lower(matric_number) = lower($2) and removed_at is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "18226a4d576bb2c828ca2a0d34a857193250a68820b76091296fe52f1221ddc3"
+}

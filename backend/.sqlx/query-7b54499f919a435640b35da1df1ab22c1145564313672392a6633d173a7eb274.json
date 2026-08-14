@@ -1,0 +1,61 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, lecturer_id, code, title, academic_session, semester, is_active\n           from courses\n           where lecturer_id = $1\n             and ($2::text is null or academic_session = $2)\n             and ($3::text is null or semester = $3)\n             and ($4::bool is null or is_active = $4)\n           order by created_at desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "lecturer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "academic_session",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "semester",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7b54499f919a435640b35da1df1ab22c1145564313672392a6633d173a7eb274"
+}

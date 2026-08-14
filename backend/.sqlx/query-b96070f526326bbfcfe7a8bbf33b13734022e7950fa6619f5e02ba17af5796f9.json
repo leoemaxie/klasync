@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants set student_account_id = $1 where id = $2 and student_account_id is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b96070f526326bbfcfe7a8bbf33b13734022e7950fa6619f5e02ba17af5796f9"
+}

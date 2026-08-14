@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, 'transcribe', $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3ac4f6b09dc760921fa9313b21bba56751705fbfad4277ff60894334318be941"
+}

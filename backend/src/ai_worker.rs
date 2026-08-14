@@ -182,7 +182,7 @@ async fn execute_claimed_job(
         .and_then(|value| value.as_f64());
     let provider_name = state.ai.provider_name();
     sqlx::query!(
-        "update ai_jobs set provider = $2, model = $3, input_tokens = $4, output_tokens = $5, cost_usd = $6 where id = $1",
+        "update ai_jobs set provider = $2, model = $3, input_tokens = $4, output_tokens = $5, cost_usd = ($6::float8)::numeric where id = $1",
         job.id,
         provider_name,
         model,

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into student_session_claims (participant_id, student_account_id, verified_at) select p.id, sa.id, now() from session_participants p join student_accounts sa on sa.id = $2 where p.id = $1 and lower(p.matric_number) = lower(sa.matric_number) on conflict (participant_id) do update set verified_at = excluded.verified_at returning id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a98d54a90736aefdb35f32191ffdadd0d8a06e23f8f88b4a0db1b5930ebe7f49"
+}

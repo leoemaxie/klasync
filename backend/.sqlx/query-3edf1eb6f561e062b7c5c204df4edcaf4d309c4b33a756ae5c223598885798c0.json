@@ -1,0 +1,67 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update lecture_sessions set title = coalesce($1, title), scheduled_start_at = coalesce($2, scheduled_start_at), timezone = coalesce($3, timezone), status = case when $2 is not null then 'scheduled' else status end where id = $4 and deleted_at is null returning id, title, status::text as \"status!\", scheduled_start_at, timezone, archived_at, deleted_at, reopen_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "scheduled_start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "timezone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "reopen_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      true,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3edf1eb6f561e062b7c5c204df4edcaf4d309c4b33a756ae5c223598885798c0"
+}

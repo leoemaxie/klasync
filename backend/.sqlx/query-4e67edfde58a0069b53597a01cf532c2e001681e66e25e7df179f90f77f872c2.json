@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants set muted_at = coalesce(muted_at, now()) where id = $1 and session_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4e67edfde58a0069b53597a01cf532c2e001681e66e25e7df179f90f77f872c2"
+}

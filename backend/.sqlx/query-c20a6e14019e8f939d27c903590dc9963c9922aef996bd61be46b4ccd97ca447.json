@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into student_course_enrollments (id, student_account_id, course_id, enrollment_type)\n           select $1::uuid, $2::uuid, s.course_id, 'claimed'\n           from lecture_sessions s\n           where s.id = $3\n           on conflict (student_account_id, course_id) do nothing",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c20a6e14019e8f939d27c903590dc9963c9922aef996bd61be46b4ccd97ca447"
+}

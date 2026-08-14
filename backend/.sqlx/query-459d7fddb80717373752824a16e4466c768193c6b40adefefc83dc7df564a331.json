@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select a.id, a.matric_number, a.anomaly_type, a.description, a.severity, a.logged_at\n           from attendance_audit_logs a\n           join lecture_sessions s on s.id = a.session_id\n           where s.course_id = $1 and s.lecturer_id = $2\n           order by a.logged_at desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "matric_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "anomaly_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "severity",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "logged_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "459d7fddb80717373752824a16e4466c768193c6b40adefefc83dc7df564a331"
+}

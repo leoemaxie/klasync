@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select r.storage_key, r.content::text as content, r.content_type, r.original_filename\n         from lecture_resources r join lecture_sessions s on s.id = r.session_id\n         where r.id = $1 and s.short_code = upper($2) and s.lecturer_id = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "storage_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "original_filename",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      null,
+      true,
+      true
+    ]
+  },
+  "hash": "af3e5c26e8cdd0757a0533a051e6c084d71c1803dc6dfdbe7d6fefe5534daa75"
+}

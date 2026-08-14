@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, question_text, upvote_count, is_resolved, created_at from session_questions where session_code = upper($1) order by is_resolved asc, upvote_count desc, created_at asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "question_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "upvote_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_resolved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "01df54acb4322b806b10b6100ba665f300e1dceb316fce949d35a5eb6e50c763"
+}

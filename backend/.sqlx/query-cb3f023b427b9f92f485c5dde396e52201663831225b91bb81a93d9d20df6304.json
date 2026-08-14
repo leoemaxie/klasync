@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update student_claim_verifications set verified_at = now(), consumed_at = now() where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb3f023b427b9f92f485c5dde396e52201663831225b91bb81a93d9d20df6304"
+}

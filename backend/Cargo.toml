@@ -13,11 +13,12 @@ name = "klasync-backend"
 path = "src/main.rs"
 
 [dependencies]
-axum = { version = "0.8", default-features = false, features = ["multipart", "ws", "http1", "json", "tokio"] }
+axum = { version = "0.8", default-features = false, features = ["multipart", "ws", "http1", "json", "tokio", "query"] }
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "net", "sync", "fs", "io-util", "time"] }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["std"] }
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "derive"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "derive", "json", "bigdecimal"] }
+bigdecimal = "0.4"
 argon2 = { version = "0.5", default-features = false, features = ["std", "password-hash"] }
 jsonwebtoken = { version = "9", default-features = false }
 aws-config = { version = "1", default-features = false }

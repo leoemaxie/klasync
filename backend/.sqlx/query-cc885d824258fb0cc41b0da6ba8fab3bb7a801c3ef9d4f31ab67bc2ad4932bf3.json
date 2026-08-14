@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants set last_seen_at = now(), heartbeat_count = heartbeat_count + 1 where id = $1 and removed_at is null returning id, session_id, heartbeat_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "heartbeat_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cc885d824258fb0cc41b0da6ba8fab3bb7a801c3ef9d4f31ab67bc2ad4932bf3"
+}

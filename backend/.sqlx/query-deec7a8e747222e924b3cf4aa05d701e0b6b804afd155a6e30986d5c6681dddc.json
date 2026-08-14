@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants participant set verification_status = $1, reviewed_by = $2, reviewed_at = now(), review_note = $3\n         from lecture_sessions session where participant.id = $4 and participant.session_id = session.id\n         and session.short_code = upper($5) and session.lecturer_id = $2\n         returning participant.id, participant.session_id, participant.matric_number, participant.display_name, participant.verification_status as \"verification_status: VerificationStatus\", participant.joined_at, participant.last_seen_at, participant.heartbeat_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "matric_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "verification_status: VerificationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "joined_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_seen_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "heartbeat_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        },
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "deec7a8e747222e924b3cf4aa05d701e0b6b804afd155a6e30986d5c6681dddc"
+}

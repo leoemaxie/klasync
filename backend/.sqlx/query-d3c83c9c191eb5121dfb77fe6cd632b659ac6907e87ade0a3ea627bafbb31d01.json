@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into session_participants (id, session_id, matric_number, display_name, verification_status)\n         values ($1, $2, $3, $4, $5)\n         on conflict (session_id, matric_number) do update set last_seen_at = now()\n         returning id, session_id, matric_number, display_name, verification_status as \"verification_status: VerificationStatus\", joined_at, last_seen_at, heartbeat_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "matric_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "verification_status: VerificationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "joined_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_seen_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "heartbeat_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d3c83c9c191eb5121dfb77fe6cd632b659ac6907e87ade0a3ea627bafbb31d01"
+}

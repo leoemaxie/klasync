@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update session_participants p set last_seen_at = now(), heartbeat_count = heartbeat_count + 1\n         from lecture_sessions s where p.id = $1 and p.session_id = s.id and s.status = 'live'\n         returning p.id, p.session_id, p.matric_number, p.display_name, p.verification_status as \"verification_status: VerificationStatus\", p.joined_at, p.last_seen_at, p.heartbeat_count",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "matric_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "verification_status: VerificationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "verification_status",
+            "kind": {
+              "Enum": [
+                "verified",
+                "provisional",
+                "flagged",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "joined_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_seen_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "heartbeat_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8bd5351ba4ce3a05cf58430c4d59f0222eaf48ad0539977b956144346cd4e981"
+}
