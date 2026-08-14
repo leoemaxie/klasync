@@ -37,7 +37,7 @@ pub async fn create(
         LectureSession,
         r#"insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)
          values ($1, $2, $3, $4, $5, $6, $7)
-         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at"#,
+         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", coalesce(started_at, now()) as "started_at!""#,
         input.course_id,
         input.title.trim(),
         &code,
@@ -111,7 +111,7 @@ pub async fn end(
         LectureSession,
         r#"update lecture_sessions set status = 'ended', ended_at = now()
          where short_code = upper($1) and lecturer_id = $2
-         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at"#,
+         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", coalesce(started_at, now()) as "started_at!""#,
         short_code,
         lecturer.id
     )
@@ -131,7 +131,7 @@ where
 {
     sqlx::query_as!(
         LectureSession,
-        r#"select id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at
+        r#"select id, course_id, title, short_code, invite_token, status as "status: SessionStatus", coalesce(started_at, now()) as "started_at!"
          from lecture_sessions where short_code = upper($1)"#,
         short_code
     )

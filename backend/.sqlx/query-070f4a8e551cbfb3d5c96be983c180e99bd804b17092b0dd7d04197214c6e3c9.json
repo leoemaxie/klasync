@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select id, course_id, title, short_code, invite_token, status as \"status: SessionStatus\", started_at\n         from lecture_sessions where short_code = upper($1)",
+  "query": "update lecture_sessions set status = 'ended', ended_at = now()\n         where short_code = upper($1) and lecturer_id = $2\n         returning id, course_id, title, short_code, invite_token, status as \"status: SessionStatus\", coalesce(started_at, now()) as \"started_at!\"",
   "describe": {
     "columns": [
       {
@@ -46,13 +46,14 @@
       },
       {
         "ordinal": 6,
-        "name": "started_at",
+        "name": "started_at!",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Text",
+        "Uuid"
       ]
     },
     "nullable": [
@@ -62,8 +63,8 @@
       false,
       false,
       false,
-      true
+      null
     ]
   },
-  "hash": "5550b65725a7d1e908299415cab61e90e390caa5b3899763b0f9a4c6094180e8"
+  "hash": "070f4a8e551cbfb3d5c96be983c180e99bd804b17092b0dd7d04197214c6e3c9"
 }

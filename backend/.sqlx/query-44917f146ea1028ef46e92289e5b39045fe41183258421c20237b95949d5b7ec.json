@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)\n         values ($1, $2, $3, $4, $5, $6, $7)\n         returning id, course_id, title, short_code, invite_token, status as \"status: SessionStatus\", started_at",
+  "query": "insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)\n         values ($1, $2, $3, $4, $5, $6, $7)\n         returning id, course_id, title, short_code, invite_token, status as \"status: SessionStatus\", coalesce(started_at, now()) as \"started_at!\"",
   "describe": {
     "columns": [
       {
@@ -46,7 +46,7 @@
       },
       {
         "ordinal": 6,
-        "name": "started_at",
+        "name": "started_at!",
         "type_info": "Timestamptz"
       }
     ],
@@ -79,8 +79,8 @@
       false,
       false,
       false,
-      true
+      null
     ]
   },
-  "hash": "832669bce1afc743a92bcbccf23dbcd20ee87a4d0bacc90fa074e87df8924886"
+  "hash": "44917f146ea1028ef46e92289e5b39045fe41183258421c20237b95949d5b7ec"
 }

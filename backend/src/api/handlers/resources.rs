@@ -98,7 +98,7 @@ pub async fn list_student_archive(
          join lecture_sessions s on s.id = p.session_id
          join courses c on c.id = s.course_id
          where claim.student_account_id = $1
-         order by date desc"#,
+         order by to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') desc"#,
         student_id
     )
     .fetch_all(pool)

@@ -1,36 +1,36 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update lecture_sessions set status = 'ended', ended_at = now()\n         where short_code = upper($1) and lecturer_id = $2\n         returning id, course_id, title, short_code, invite_token, status as \"status: SessionStatus\", started_at",
+  "query": "select session.id as \"id!\", session.course_id as \"course_id!\", session.title as \"title!\", session.short_code as \"short_code!\", session.invite_token as \"invite_token!\", session.status as \"status!: SessionStatus\", coalesce(session.started_at, now()) as \"started_at!\"\n         from session_invites invite join lecture_sessions session on session.id = invite.session_id\n         where invite.token = $1 and invite.revoked_at is null and (invite.expires_at is null or invite.expires_at > now())",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "id!",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "course_id",
+        "name": "course_id!",
         "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "title",
+        "name": "title!",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "short_code",
+        "name": "short_code!",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "invite_token",
+        "name": "invite_token!",
         "type_info": "Uuid"
       },
       {
         "ordinal": 5,
-        "name": "status: SessionStatus",
+        "name": "status!: SessionStatus",
         "type_info": {
           "Custom": {
             "name": "session_status",
@@ -46,13 +46,12 @@
       },
       {
         "ordinal": 6,
-        "name": "started_at",
+        "name": "started_at!",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Text",
         "Uuid"
       ]
     },
@@ -63,8 +62,8 @@
       false,
       false,
       false,
-      true
+      null
     ]
   },
-  "hash": "fec04ba2b8ba69483b116b707bf6e902ae73fcc6e232b6b18b447b1980404030"
+  "hash": "9dd35bb7cdffe178571899c6ef4245c4c4c73430746e7edf52454b6838cc4346"
 }

@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select distinct s.id, \n          c.code as \"course_code!\", \n          c.title as \"course_title!\",\n          c.academic_session as \"academic_session!\",\n          c.semester as \"semester!\",\n          s.title as \"session_title!\",\n          to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') as \"date!\"\n         from student_session_claims claim\n         join session_participants p on p.id = claim.participant_id\n         join lecture_sessions s on s.id = p.session_id\n         join courses c on c.id = s.course_id\n         where claim.student_account_id = $1\n         order by to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "course_code!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "course_title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "academic_session!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "semester!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "session_title!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "date!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "240fc01ab5296e1ecea575a92b61995a44cddc3123c16751e3ab831767721890"
+}
