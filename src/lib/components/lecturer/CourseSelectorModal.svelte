@@ -43,7 +43,7 @@
   );
 
   function handleSelectCourse(course: Course) {
-    triggerHaptic('selection');
+    triggerHaptic('light');
     activeCourse = course;
     courseCode = course.code;
     courseTitle = course.title;
@@ -58,7 +58,15 @@
     handleSelectCourse(created);
     isCreating = false;
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeyDown} />
 
 {#if isOpen}
   <div
@@ -66,6 +74,7 @@
     onclick={(e) => e.target === e.currentTarget && (isOpen = false)}
     role="dialog"
     aria-modal="true"
+    aria-labelledby="course-modal-title"
   >
     <div class="panel modal-container">
       <div class="modal-header">
@@ -76,13 +85,13 @@
               style="display:inline-block; vertical-align:middle;"
             /> COURSE OFFERING SWITCHER
           </div>
-          <h2>Manage Course Offerings</h2>
+          <h2 id="course-modal-title">Manage Course Offerings</h2>
         </div>
         <button
           type="button"
           class="text close-btn"
           onclick={() => (isOpen = false)}
-          aria-label="Close"><X size={18} /></button
+          aria-label="Close modal"><X size={18} /></button
         >
       </div>
 
@@ -141,7 +150,7 @@
   }
   .modal-container {
     width: 100%;
-    max-width: 680px;
+    max-width: 760px;
     max-height: 85vh;
     overflow-y: auto;
     padding: var(--spacing-24);
@@ -199,7 +208,7 @@
   }
   .courses-grid-list {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-12);
     margin-top: var(--spacing-4);
   }
