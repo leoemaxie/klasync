@@ -31,42 +31,66 @@
       class="attendance-search"
     />
     {#if searchQuery}
-      <button type="button" class="text clear-btn" onclick={() => (searchQuery = '')} aria-label="Clear search">
+      <button
+        type="button"
+        class="text clear-btn"
+        onclick={() => (searchQuery = '')}
+        aria-label="Clear search"
+      >
         <X size={13} />
       </button>
     {/if}
   </div>
 
   <div class="filter-actions-group">
-    <div class="segmented-filters" role="group" aria-label="Filter attendance status">
+    <div
+      class="segmented-filters"
+      role="group"
+      aria-label="Filter attendance status"
+    >
       <button
         type="button"
         class={statusFilter === 'all' ? 'active' : ''}
-        onclick={() => (statusFilter = 'all')}
-      >All</button>
+        onclick={() => (statusFilter = 'all')}>All</button
+      >
       <button
         type="button"
         class={statusFilter === 'verified' ? 'active' : ''}
-        onclick={() => (statusFilter = 'verified')}
-      >Verified</button>
+        onclick={() => (statusFilter = 'verified')}>Verified</button
+      >
       <button
         type="button"
         class={statusFilter === 'provisional' ? 'active' : ''}
-        onclick={() => (statusFilter = 'provisional')}
-      >Provisional</button>
+        onclick={() => (statusFilter = 'provisional')}>Provisional</button
+      >
     </div>
 
-    <select bind:value={sortBy} class="sort-select" aria-label="Sort attendance list">
+    <select
+      bind:value={sortBy}
+      class="sort-select"
+      aria-label="Sort attendance list"
+    >
       <option value="joined">Sort: Recent Joined</option>
       <option value="name">Sort: Name (A-Z)</option>
       <option value="heartbeats">Sort: Active Heartbeats</option>
     </select>
 
-    <button type="button" class="outline icon-btn" onclick={onRefresh} disabled={isRefreshing} aria-label="Refresh attendance feed">
+    <button
+      type="button"
+      class="outline icon-btn"
+      onclick={onRefresh}
+      disabled={isRefreshing}
+      aria-label="Refresh attendance feed"
+    >
       <RefreshCw size={13} class={isRefreshing ? 'spinning' : ''} />
     </button>
 
-    <button type="button" class="primary-bark export-btn" onclick={onExportCsv} disabled={isExporting}>
+    <button
+      type="button"
+      class="primary-bark export-btn"
+      onclick={onExportCsv}
+      disabled={isExporting}
+    >
       {#if isExporting}
         <ButtonSpinner />
       {:else}
@@ -166,7 +190,11 @@
     animation: spin 1s linear infinite;
   }
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

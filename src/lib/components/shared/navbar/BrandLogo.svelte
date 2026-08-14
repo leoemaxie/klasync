@@ -2,11 +2,7 @@
   let { onClick }: { onClick: () => void } = $props();
 </script>
 
-<button
-  class="brand app-no-drag"
-  onclick={onClick}
-  aria-label="Klasync home"
->
+<button class="brand app-no-drag" onclick={onClick} aria-label="Klasync home">
   <svg
     class="brand-mark"
     aria-hidden="true"

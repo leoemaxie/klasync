@@ -44,7 +44,8 @@
         appState.activeCourse = found;
         if (!appState.courseCode) appState.courseCode = found.code;
         if (!appState.courseTitle) appState.courseTitle = found.title;
-        if (found.academic_session) appState.academicSession = found.academic_session;
+        if (found.academic_session)
+          appState.academicSession = found.academic_session;
         if (found.semester) appState.semester = found.semester;
       }
     } catch {}

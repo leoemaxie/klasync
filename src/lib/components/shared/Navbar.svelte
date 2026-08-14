@@ -36,9 +36,10 @@
       navigate('lecturer');
     } else {
       if (appState) {
-        appState.authNotice = role === 'student'
-          ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
-          : 'Please sign in to access the Lecturer Workspace.';
+        appState.authNotice =
+          role === 'student'
+            ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
+            : 'Please sign in to access the Lecturer Workspace.';
       }
       navigate('lecturer-login');
     }
@@ -51,9 +52,10 @@
       navigate('archive');
     } else {
       if (appState) {
-        appState.authNotice = role === 'lecturer' || role === 'admin'
-          ? 'Access restricted: Student Archive is only accessible to student accounts.'
-          : 'Please sign in to access your Student Archive.';
+        appState.authNotice =
+          role === 'lecturer' || role === 'admin'
+            ? 'Access restricted: Student Archive is only accessible to student accounts.'
+            : 'Please sign in to access your Student Archive.';
       }
       navigate('student-login');
     }
@@ -77,39 +79,64 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && mobileMenuOpen && (mobileMenuOpen = false)} />
+<svelte:window
+  onkeydown={(e) =>
+    e.key === 'Escape' && mobileMenuOpen && (mobileMenuOpen = false)}
+/>
 
 <nav class="navbar app-drag-region">
   <BrandLogo onClick={() => navigate('home')} />
 
   <button
     class="mobile-toggle app-no-drag"
-    onclick={() => { triggerHaptic('light'); mobileMenuOpen = !mobileMenuOpen; }}
+    onclick={() => {
+      triggerHaptic('light');
+      mobileMenuOpen = !mobileMenuOpen;
+    }}
     aria-label="Toggle navigation menu"
     aria-expanded={mobileMenuOpen}
     aria-controls="nav-actions-menu"
   >
-    {#if mobileMenuOpen}<X size={22} aria-hidden="true" />{:else}<Menu size={22} aria-hidden="true" />{/if}
+    {#if mobileMenuOpen}<X size={22} aria-hidden="true" />{:else}<Menu
+        size={22}
+        aria-hidden="true"
+      />{/if}
   </button>
 
-  <div id="nav-actions-menu" class="nav-actions app-no-drag" class:open={mobileMenuOpen}>
-    <button class="nav-btn text search-trigger" onclick={triggerSpotlight} aria-label="Spotlight search">
+  <div
+    id="nav-actions-menu"
+    class="nav-actions app-no-drag"
+    class:open={mobileMenuOpen}
+  >
+    <button
+      class="nav-btn text search-trigger"
+      onclick={triggerSpotlight}
+      aria-label="Spotlight search"
+    >
       <Search size={14} aria-hidden="true" style="vertical-align: middle;" />
       <span class="spotlight-kbd">⌘K</span>
     </button>
 
     {#if !appState?.currentUser || appState.currentUser.role === 'student'}
-      <button class="nav-btn text" onclick={() => navigate('join')}>Join Session</button>
-      <button class="nav-btn text" onclick={handleStudentArchive}>Courses &amp; Archive</button>
+      <button class="nav-btn text" onclick={() => navigate('join')}
+        >Join Session</button
+      >
+      <button class="nav-btn text" onclick={handleStudentArchive}
+        >Courses &amp; Archive</button
+      >
     {/if}
 
     {#if appState?.currentUser}
       <div class="user-pill" title={appState.currentUser.email}>
-        <span class="user-name">{appState.currentUser.name || appState.currentUser.email}</span>
+        <span class="user-name"
+          >{appState.currentUser.name || appState.currentUser.email}</span
+        >
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {:else}
-      <button class="nav-btn outline" onclick={handleLecturerAccess}>Lecturer Access</button>
+      <button class="nav-btn outline" onclick={handleLecturerAccess}
+        >Lecturer Access</button
+      >
     {/if}
   </div>
 </nav>
@@ -175,7 +202,9 @@
     color: var(--color-driftwood);
   }
   @media (max-width: 800px) {
-    .mobile-toggle { display: block; }
+    .mobile-toggle {
+      display: block;
+    }
     .nav-actions {
       display: none;
       position: absolute;
@@ -189,7 +218,12 @@
       gap: var(--spacing-12);
       align-items: stretch;
     }
-    .nav-actions.open { display: flex; }
-    .nav-btn { width: 100%; text-align: center; }
+    .nav-actions.open {
+      display: flex;
+    }
+    .nav-btn {
+      width: 100%;
+      text-align: center;
+    }
   }
 </style>

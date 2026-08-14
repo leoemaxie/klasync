@@ -20,8 +20,14 @@
 
   async function handleCreateOffering(e: SubmitEvent) {
     e.preventDefault();
-    if (!newCode.trim() || !newTitle.trim() || !newSession.trim() || !newSemester.trim()) {
-      formError = 'All fields (Code, Title, Academic Session, Semester) are required.';
+    if (
+      !newCode.trim() ||
+      !newTitle.trim() ||
+      !newSession.trim() ||
+      !newSemester.trim()
+    ) {
+      formError =
+        'All fields (Code, Title, Academic Session, Semester) are required.';
       triggerHaptic('error');
       return;
     }
@@ -55,18 +61,35 @@
   <div class="twocol">
     <label for="offering-code">
       Course Code
-      <input id="offering-code" type="text" bind:value={newCode} placeholder="e.g. MEE 541" required />
+      <input
+        id="offering-code"
+        type="text"
+        bind:value={newCode}
+        placeholder="e.g. MEE 541"
+        required
+      />
     </label>
     <label for="offering-title">
       Course Title
-      <input id="offering-title" type="text" bind:value={newTitle} placeholder="e.g. Advanced Fluid Dynamics" required />
+      <input
+        id="offering-title"
+        type="text"
+        bind:value={newTitle}
+        placeholder="e.g. Advanced Fluid Dynamics"
+        required
+      />
     </label>
   </div>
 
   <div class="twocol">
     <label for="offering-session">
       Academic Session
-      <select id="offering-session" bind:value={newSession} class="select-input" required>
+      <select
+        id="offering-session"
+        bind:value={newSession}
+        class="select-input"
+        required
+      >
         <option value="2025/2026">2025/2026</option>
         <option value="2026/2027">2026/2027</option>
         <option value="2027/2028">2027/2028</option>
@@ -74,7 +97,12 @@
     </label>
     <label for="offering-semester">
       Semester (Required)
-      <select id="offering-semester" bind:value={newSemester} class="select-input" required>
+      <select
+        id="offering-semester"
+        bind:value={newSemester}
+        class="select-input"
+        required
+      >
         <option value="Second Semester">Second Semester</option>
         <option value="First Semester">First Semester</option>
         <option value="Harmattan">Harmattan</option>
@@ -85,7 +113,12 @@
   </div>
 
   <div class="form-actions-row">
-    <button type="button" class="outline" onclick={onCancel} disabled={isSubmitting}>Cancel</button>
+    <button
+      type="button"
+      class="outline"
+      onclick={onCancel}
+      disabled={isSubmitting}>Cancel</button
+    >
     <button type="submit" class="primary" disabled={isSubmitting}>
       {isSubmitting ? 'Creating...' : 'Create Offering'}
     </button>
@@ -93,8 +126,16 @@
 </form>
 
 <style>
-  .create-offering-form { display: flex; flex-direction: column; gap: var(--spacing-16); }
-  .section-lead { font-size: 13px; color: var(--color-driftwood); margin: 0; }
+  .create-offering-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-16);
+  }
+  .section-lead {
+    font-size: 13px;
+    color: var(--color-driftwood);
+    margin: 0;
+  }
   .error-banner {
     background: rgba(220, 53, 69, 0.15);
     border: 1px solid rgba(220, 53, 69, 0.4);
@@ -114,5 +155,10 @@
     border-radius: 4px;
     outline: none;
   }
-  .form-actions-row { display: flex; justify-content: flex-end; gap: var(--spacing-12); margin-top: var(--spacing-8); }
+  .form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-12);
+    margin-top: var(--spacing-8);
+  }
 </style>

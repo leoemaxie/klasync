@@ -38,7 +38,9 @@
     color: var(--color-warm-cream);
     text-align: left;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
     width: 100%;
   }
   .spotlight-item:hover {

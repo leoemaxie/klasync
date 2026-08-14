@@ -53,10 +53,17 @@
   </div>
 
   <!-- Active Course Indicator Pill -->
-  <div class="offering-summary-pill" onclick={() => (isSelectorOpen = true)} role="button" tabindex="0">
+  <div
+    class="offering-summary-pill"
+    onclick={() => (isSelectorOpen = true)}
+    role="button"
+    tabindex="0"
+  >
     <div class="pill-left">
       <span class="pill-code">{courseCode || 'NO COURSE SET'}</span>
-      <span class="pill-title">{courseTitle || 'Click to select or create a course offering'}</span>
+      <span class="pill-title"
+        >{courseTitle || 'Click to select or create a course offering'}</span
+      >
     </div>
     <div class="pill-badges">
       <span class="tag session-tag">{academicSession || '2025/2026'}</span>
@@ -114,7 +121,8 @@
     <div class="info-text">
       <strong>Calendar-Aware Offerings</strong>
       <p class="hint">
-        Rosters, sessions, and attendance metrics are securely isolated per academic session and semester.
+        Rosters, sessions, and attendance metrics are securely isolated per
+        academic session and semester.
       </p>
     </div>
   </div>

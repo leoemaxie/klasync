@@ -14,7 +14,7 @@ export class SessionState {
   authNotice = $state('');
   lecturerName = $state('');
   lecturerEmail = $state('');
-  
+
   // Multi-course & calendar state
   courses = $state<Course[]>([]);
   activeCourse = $state<Course | null>(null);

@@ -57,7 +57,11 @@
 <section class="join-wrap">
   <div class="join-left-content">
     <div class="header-view-switch">
-      <div class="view-toggle-btns" role="group" aria-label="Student portal view">
+      <div
+        class="view-toggle-btns"
+        role="group"
+        aria-label="Student portal view"
+      >
         <button
           type="button"
           class={activeView === 'hub' ? 'primary' : 'outline'}
@@ -97,7 +101,11 @@
         {#if searchQuery}
           <div class="filter-indicator-bar">
             <span>Filtered by: <strong>{searchQuery}</strong></span>
-            <button type="button" class="text clear-filter-btn" onclick={() => (searchQuery = '')}>
+            <button
+              type="button"
+              class="text clear-filter-btn"
+              onclick={() => (searchQuery = '')}
+            >
               Clear Filter
             </button>
           </div>

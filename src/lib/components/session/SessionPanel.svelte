@@ -6,7 +6,11 @@
   import SessionControlsCard from './SessionControlsCard.svelte';
   import StartSessionCard from './StartSessionCard.svelte';
   import { pauseSession, resumeSession, toggleRecording } from '$lib/api';
-  import { startMicrophoneAudioStream, type AudioStreamer, type IngestedCaption } from '$lib/api/audio';
+  import {
+    startMicrophoneAudioStream,
+    type AudioStreamer,
+    type IngestedCaption,
+  } from '$lib/api/audio';
   import LiveQaPanel from './LiveQaPanel.svelte';
 
   let {
@@ -50,7 +54,9 @@
   let lastMeterUpdate = 0;
 
   const inviteUrl = $derived(
-    session?.code ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}` : ''
+    session?.code
+      ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}`
+      : ''
   );
 
   function startLevelMeter(stream: MediaStream) {
@@ -63,10 +69,16 @@
       src.connect(analyzer);
       const data = new Uint8Array(analyzer.frequencyBinCount);
       function tick(timestamp: number) {
-        if (!isRecording) { audioLevel = 0; return; }
+        if (!isRecording) {
+          audioLevel = 0;
+          return;
+        }
         if (timestamp - lastMeterUpdate > 50) {
           analyzer.getByteFrequencyData(data);
-          audioLevel = Math.min((data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100, 100);
+          audioLevel = Math.min(
+            (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
+            100
+          );
           lastMeterUpdate = timestamp;
         }
         animFrameId = requestAnimationFrame(tick);
@@ -78,10 +90,22 @@
   }
 
   function stopAudioStream() {
-    if (streamer) { streamer.stop(); streamer = null; }
-    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
-    if (mediaStream) { mediaStream.getTracks().forEach((t) => t.stop()); mediaStream = null; }
-    if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+    if (streamer) {
+      streamer.stop();
+      streamer = null;
+    }
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+    }
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((t) => t.stop());
+      mediaStream = null;
+    }
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
     audioLevel = 0;
   }
 
@@ -111,11 +135,21 @@
     try {
       if (!isRecording) {
         try {
-          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
           startLevelMeter(mediaStream);
-          streamer = startMicrophoneAudioStream(session.code, mediaStream, (cap) => onCaptionIngested?.(cap), (err) => { actionError = `Audio stream notice: ${err.message}`; });
+          streamer = startMicrophoneAudioStream(
+            session.code,
+            mediaStream,
+            (cap) => onCaptionIngested?.(cap),
+            (err) => {
+              actionError = `Audio stream notice: ${err.message}`;
+            }
+          );
         } catch {
-          actionError = 'Could not access browser microphone. Check device permissions.';
+          actionError =
+            'Could not access browser microphone. Check device permissions.';
           return;
         }
         await toggleRecording(session.code, true);
@@ -149,8 +183,18 @@
 
 <div class="session-dashboard">
   {#if session?.live}
-    <SessionTopHeader title={session.title} {isPaused} {isRecording} {audioLevel} />
-    <SessionAccessCard code={session.code} {inviteUrl} {copied} {onCopyInvite} />
+    <SessionTopHeader
+      title={session.title}
+      {isPaused}
+      {isRecording}
+      {audioLevel}
+    />
+    <SessionAccessCard
+      code={session.code}
+      {inviteUrl}
+      {copied}
+      {onCopyInvite}
+    />
     <SessionControlsCard
       {isPaused}
       {isRecording}

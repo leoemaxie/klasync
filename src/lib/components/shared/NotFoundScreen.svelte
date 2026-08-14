@@ -1,6 +1,14 @@
 <script lang="ts">
   import type { Screen } from '$lib/types';
-  import { Home, Radio, UserCheck, Search, Compass, AlertCircle, ArrowRight } from '@lucide/svelte';
+  import {
+    Home,
+    Radio,
+    UserCheck,
+    Search,
+    Compass,
+    AlertCircle,
+    ArrowRight,
+  } from '@lucide/svelte';
   import NotFoundVisualCard from './not_found/NotFoundVisualCard.svelte';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
@@ -24,12 +32,15 @@
         </div>
         <h1 class="card-title">Room or Route Not Found</h1>
         <p class="card-desc">
-          The lecture session code, invite link, or requested resource does not exist or has expired.
+          The lecture session code, invite link, or requested resource does not
+          exist or has expired.
         </p>
       </div>
 
       <form class="retry-code-box" onsubmit={handleRetryJoin}>
-        <label for="nf-retry-input" class="retry-label">Have a session code?</label>
+        <label for="nf-retry-input" class="retry-label"
+          >Have a session code?</label
+        >
         <div class="retry-input-row">
           <div class="search-input-wrap">
             <Search size={15} class="input-icon" />
@@ -64,15 +75,27 @@
       </div>
 
       <div class="action-buttons-group">
-        <button type="button" class="nf-action-btn primary" onclick={() => (screen = 'home')}>
+        <button
+          type="button"
+          class="nf-action-btn primary"
+          onclick={() => (screen = 'home')}
+        >
           <Home size={15} />
           <span>Return Home</span>
         </button>
-        <button type="button" class="nf-action-btn outline" onclick={() => (screen = 'join')}>
+        <button
+          type="button"
+          class="nf-action-btn outline"
+          onclick={() => (screen = 'join')}
+        >
           <Radio size={15} />
           <span>Join Session</span>
         </button>
-        <button type="button" class="nf-action-btn secondary" onclick={() => (screen = 'lecturer-login')}>
+        <button
+          type="button"
+          class="nf-action-btn secondary"
+          onclick={() => (screen = 'lecturer-login')}
+        >
           <UserCheck size={15} />
           <span>Lecturer Sign In</span>
         </button>
@@ -85,7 +108,8 @@
 
 <style>
   .not-found-container {
-    padding: calc(var(--nav-height) + 24px) var(--card-padding) var(--spacing-68);
+    padding: calc(var(--nav-height) + 24px) var(--card-padding)
+      var(--spacing-68);
     max-width: 1100px;
     margin: 0 auto;
   }

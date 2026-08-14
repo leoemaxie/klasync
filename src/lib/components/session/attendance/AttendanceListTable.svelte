@@ -19,7 +19,9 @@
     if (!timestamp) return 'Recent';
     try {
       const date = new Date(timestamp);
-      return isNaN(date.getTime()) ? 'Recent' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return isNaN(date.getTime())
+        ? 'Recent'
+        : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
       return 'Recent';
     }
@@ -47,13 +49,20 @@
           <td class="matric-cell">{p.matric}</td>
           <td>
             {#if p.verified}
-              <span class="status-pill verified"><ShieldCheck size={12} /> Verified</span>
+              <span class="status-pill verified"
+                ><ShieldCheck size={12} /> Verified</span
+              >
             {:else}
-              <span class="status-pill provisional"><UserX size={12} /> Provisional</span>
+              <span class="status-pill provisional"
+                ><UserX size={12} /> Provisional</span
+              >
             {/if}
           </td>
-          <td class="time-cell"><Clock size={11} /> {formatTime(p.joinedAt)}</td>
-          <td class="heartbeats-cell"><Activity size={11} /> {p.heartbeats || 0}</td>
+          <td class="time-cell"><Clock size={11} /> {formatTime(p.joinedAt)}</td
+          >
+          <td class="heartbeats-cell"
+            ><Activity size={11} /> {p.heartbeats || 0}</td
+          >
         </tr>
       {/each}
     </tbody>
@@ -128,7 +137,8 @@
     background: rgba(220, 80, 0, 0.15);
     color: var(--color-ember-accent);
   }
-  .time-cell, .heartbeats-cell {
+  .time-cell,
+  .heartbeats-cell {
     color: var(--color-driftwood);
     font-size: 11px;
   }

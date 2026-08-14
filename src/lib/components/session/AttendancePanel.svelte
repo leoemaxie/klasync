@@ -25,9 +25,13 @@
   let sortBy = $state<'joined' | 'name' | 'heartbeats'>('joined');
 
   let verifiedCount = $derived(participants.filter((p) => p.verified).length);
-  let provisionalCount = $derived(participants.filter((p) => !p.verified).length);
+  let provisionalCount = $derived(
+    participants.filter((p) => !p.verified).length
+  );
   let matchRate = $derived(
-    participants.length > 0 ? Math.round((verifiedCount / participants.length) * 100) : 0
+    participants.length > 0
+      ? Math.round((verifiedCount / participants.length) * 100)
+      : 0
   );
 
   let filteredParticipants = $derived(
@@ -37,12 +41,18 @@
         if (statusFilter === 'provisional' && p.verified) return false;
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase().trim();
-        return p.name.toLowerCase().includes(q) || p.matric.toLowerCase().includes(q);
+        return (
+          p.name.toLowerCase().includes(q) || p.matric.toLowerCase().includes(q)
+        );
       })
       .sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
-        if (sortBy === 'heartbeats') return (b.heartbeats || 0) - (a.heartbeats || 0);
-        return (b.joinedAt ? new Date(b.joinedAt).getTime() : 0) - (a.joinedAt ? new Date(a.joinedAt).getTime() : 0);
+        if (sortBy === 'heartbeats')
+          return (b.heartbeats || 0) - (a.heartbeats || 0);
+        return (
+          (b.joinedAt ? new Date(b.joinedAt).getTime() : 0) -
+          (a.joinedAt ? new Date(a.joinedAt).getTime() : 0)
+        );
       })
   );
 
@@ -100,7 +110,9 @@
   {:else}
     <div class="empty-state-box">
       <p class="empty-title">No participants match your criteria</p>
-      <p class="hint">Waiting for students to join using session code {sessionCode || '...'}</p>
+      <p class="hint">
+        Waiting for students to join using session code {sessionCode || '...'}
+      </p>
     </div>
   {/if}
 </div>

@@ -19,7 +19,9 @@
         <th scope="col">Matric Number</th>
         <th scope="col">Student Name</th>
         <th scope="col">Roster Verification</th>
-        {#if onRemoveStudent}<th scope="col" style="text-align: right;">Action</th>{/if}
+        {#if onRemoveStudent}<th scope="col" style="text-align: right;"
+            >Action</th
+          >{/if}
       </tr>
     </thead>
     <tbody>

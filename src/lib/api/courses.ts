@@ -90,14 +90,18 @@ export async function resolveCourseUuid(
   // 1. Check existing courses list first
   try {
     const courses = await getCourses();
-    const matched = courses.find(
-      (c) =>
-        (c.code.toLowerCase() === trimmed.toLowerCase() || c.id === trimmed) &&
-        (!academic_session || c.academic_session === academic_session) &&
-        (!semester || c.semester === semester)
-    ) || courses.find(
-      (c) => c.code.toLowerCase() === trimmed.toLowerCase() || c.id === trimmed
-    );
+    const matched =
+      courses.find(
+        (c) =>
+          (c.code.toLowerCase() === trimmed.toLowerCase() ||
+            c.id === trimmed) &&
+          (!academic_session || c.academic_session === academic_session) &&
+          (!semester || c.semester === semester)
+      ) ||
+      courses.find(
+        (c) =>
+          c.code.toLowerCase() === trimmed.toLowerCase() || c.id === trimmed
+      );
     if (matched?.id) return matched.id;
   } catch {}
 

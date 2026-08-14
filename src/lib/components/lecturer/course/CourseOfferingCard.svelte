@@ -24,8 +24,12 @@
   <div class="card-top-row">
     <span class="course-badge">{course.code}</span>
     <div class="session-tags">
-      <span class="tag session-tag">{course.academic_session || '2025/2026'}</span>
-      <span class="tag semester-tag">{course.semester || 'Second Semester'}</span>
+      <span class="tag session-tag"
+        >{course.academic_session || '2025/2026'}</span
+      >
+      <span class="tag semester-tag"
+        >{course.semester || 'Second Semester'}</span
+      >
     </div>
   </div>
 
@@ -74,7 +78,10 @@
     color: var(--color-ember-accent);
     letter-spacing: 0.1em;
   }
-  .session-tags { display: flex; gap: 4px; }
+  .session-tags {
+    display: flex;
+    gap: 4px;
+  }
   .tag {
     font-size: 9px;
     padding: 2px 6px;
@@ -97,7 +104,10 @@
     font-weight: 500;
     line-height: 1.3;
   }
-  .card-footer-row { margin-top: auto; font-size: 11px; }
+  .card-footer-row {
+    margin-top: auto;
+    font-size: 11px;
+  }
   .active-badge {
     color: var(--color-ember-accent);
     display: inline-flex;

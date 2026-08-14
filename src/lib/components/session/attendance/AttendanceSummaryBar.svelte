@@ -102,8 +102,12 @@
     font-family: var(--font-display);
     color: var(--color-warm-cream);
   }
-  .text-success { color: #4ade80; }
-  .text-warning { color: var(--color-ember-accent); }
+  .text-success {
+    color: #4ade80;
+  }
+  .text-warning {
+    color: var(--color-ember-accent);
+  }
 
   @media (max-width: 900px) {
     .attendance-summary-cards {

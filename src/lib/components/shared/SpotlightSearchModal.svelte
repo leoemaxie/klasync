@@ -3,7 +3,10 @@
   import { triggerHaptic } from '$lib/native/haptics';
   import { Search, X, ArrowRight } from '@lucide/svelte';
   import type { AuthUser } from '$lib/api/auth';
-  import { getShortcutActions, type ShortcutAction } from './spotlight/spotlightActions';
+  import {
+    getShortcutActions,
+    type ShortcutAction,
+  } from './spotlight/spotlightActions';
   import SpotlightItem from './spotlight/SpotlightItem.svelte';
 
   let {
@@ -90,7 +93,12 @@
           onkeydown={(e) => e.key === 'Enter' && handleQuickJoinSubmit()}
         />
         {#if searchQuery}
-          <button type="button" class="clear-btn text" onclick={() => (searchQuery = '')} aria-label="Clear query">
+          <button
+            type="button"
+            class="clear-btn text"
+            onclick={() => (searchQuery = '')}
+            aria-label="Clear query"
+          >
             <X size={14} />
           </button>
         {/if}
@@ -99,7 +107,11 @@
 
       {#if searchQuery.trim().length >= 4 && searchQuery.trim().length <= 8}
         <div class="quick-code-option">
-          <button type="button" class="quick-code-btn" onclick={handleQuickJoinSubmit}>
+          <button
+            type="button"
+            class="quick-code-btn"
+            onclick={handleQuickJoinSubmit}
+          >
             <span>Join room <strong>{searchQuery.toUpperCase()}</strong></span>
             <ArrowRight size={14} />
           </button>

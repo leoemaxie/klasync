@@ -9,22 +9,32 @@ export interface ShortcutAction {
   description: string;
   icon: Component<any>;
   category: 'Navigation' | 'Action';
-  action: (state: { screen: Screen; isOpen: boolean }) => { screen: Screen; isOpen: boolean };
+  action: (state: { screen: Screen; isOpen: boolean }) => {
+    screen: Screen;
+    isOpen: boolean;
+  };
 }
 
-export function getShortcutActions(currentUser: AuthUser | null): ShortcutAction[] {
+export function getShortcutActions(
+  currentUser: AuthUser | null
+): ShortcutAction[] {
   const actions: ShortcutAction[] = [
     {
       id: 'join',
       title: 'Join Live Lecture Session',
-      description: 'Enter guest short-code & student ID to access live captions',
+      description:
+        'Enter guest short-code & student ID to access live captions',
       icon: Radio,
       category: 'Navigation',
       action: (state) => ({ screen: 'join', isOpen: false }),
     },
   ];
 
-  if (!currentUser || currentUser.role === 'lecturer' || currentUser.role === 'admin') {
+  if (
+    !currentUser ||
+    currentUser.role === 'lecturer' ||
+    currentUser.role === 'admin'
+  ) {
     actions.push({
       id: 'lecturer',
       title: 'Lecturer Control Room',
