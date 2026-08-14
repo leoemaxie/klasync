@@ -12,6 +12,7 @@
   import type { Course } from '$lib/types';
   import { getCourses } from '$lib/api/courses';
   import { connectCaptionWebSocket } from '$lib/api/captions';
+  import { triggerHaptic } from '$lib/native/haptics';
   import {
     copyInvite,
     endSession,
@@ -28,6 +29,42 @@
 
   let { appState }: { appState: SessionState } = $props();
   let activeTab = $state<TabKey>('course');
+
+  const availableTabs = $derived<TabKey[]>([
+    'course',
+    'device',
+    'session',
+    ...(appState.session?.live ? (['live'] as TabKey[]) : []),
+    ...(appState.session ? (['attendance'] as TabKey[]) : []),
+    'analytics',
+  ]);
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  function handleTouchStart(e: TouchEvent) {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }
+
+  function handleTouchEnd(e: TouchEvent) {
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      const deltaY = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        const curIdx = availableTabs.indexOf(activeTab);
+        if (deltaX < 0 && curIdx < availableTabs.length - 1) {
+          triggerHaptic('light');
+          activeTab = availableTabs[curIdx + 1];
+        } else if (deltaX > 0 && curIdx > 0) {
+          triggerHaptic('light');
+          activeTab = availableTabs[curIdx - 1];
+        }
+      }
+    }
+  }
 
   onMount(async () => {
     try {
@@ -106,7 +143,12 @@
     participantCount={appState.session?.participants.length || 0}
   />
 
-  <div class="workspace-body">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="workspace-body"
+    ontouchstart={handleTouchStart}
+    ontouchend={handleTouchEnd}
+  >
     {#if activeTab === 'course'}
       <CourseSetupTab
         bind:lecturerName={appState.lecturerName}
@@ -180,6 +222,9 @@
       var(--spacing-68);
     max-width: 1320px;
     margin: 0 auto;
+  }
+  .workspace-body {
+    touch-action: pan-y;
   }
   @media (max-width: 640px) {
     .lecturer-workspace-wrap {
