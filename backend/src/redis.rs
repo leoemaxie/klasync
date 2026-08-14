@@ -214,8 +214,7 @@ impl RedisStore {
         let stream = self.key("ai-jobs", "stream");
         let options = StreamReadOptions::default()
             .group("ai-workers", consumer)
-            .count(1)
-            .block(1000);
+            .count(1);
         let mut manager = self.manager.clone();
         let reply: StreamReadReply = manager.xread_options(&[stream], &[">"], &options).await?;
         for key in reply.keys {
