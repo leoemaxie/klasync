@@ -33,10 +33,14 @@ pub async fn create(
         return Err(ApiError::bad_request("Course title cannot be empty"));
     }
     if academic_session.is_empty() {
-        return Err(ApiError::bad_request("Academic session cannot be empty (e.g. 2025/2026)"));
+        return Err(ApiError::bad_request(
+            "Academic session cannot be empty (e.g. 2025/2026)",
+        ));
     }
     if semester.is_empty() {
-        return Err(ApiError::bad_request("Academic semester is required (e.g. Second Semester)"));
+        return Err(ApiError::bad_request(
+            "Academic semester is required (e.g. Second Semester)",
+        ));
     }
 
     let course_id = Uuid::now_v7();
@@ -56,7 +60,9 @@ pub async fn create(
     .await
     .map_err(|error| {
         tracing::warn!(%error, "Course offering conflict on create");
-        ApiError::conflict("Course offering already exists for this lecturer, session, and semester")
+        ApiError::conflict(
+            "Course offering already exists for this lecturer, session, and semester",
+        )
     })?;
 
     Ok((StatusCode::CREATED, Json(course)))

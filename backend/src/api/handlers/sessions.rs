@@ -8,7 +8,9 @@ use uuid::Uuid;
 use crate::{
     api::error::{ApiError, LogApiError},
     auth::guard::AuthenticatedLecturer,
-    models::{Course, CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus},
+    models::{
+        Course, CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus,
+    },
     state::AppState,
     utils::short_code,
 };

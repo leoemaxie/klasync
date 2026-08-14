@@ -146,13 +146,10 @@ pub async fn logout(
     }
     let pool = state.db_pool();
     let (session_id, _) = parse_opaque_token(&input.refresh_token)?;
-    sqlx::query!(
-        "delete from auth_sessions where id = $1",
-        session_id
-    )
-    .execute(pool)
-    .await
-    .log_internal_error("Failed to delete auth session on logout")?;
+    sqlx::query!("delete from auth_sessions where id = $1", session_id)
+        .execute(pool)
+        .await
+        .log_internal_error("Failed to delete auth session on logout")?;
     Ok(StatusCode::NO_CONTENT)
 }
 

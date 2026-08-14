@@ -34,7 +34,11 @@ pub async fn heartbeat(
     const TTL: u64 = 90;
     if let Some(redis) = &state.redis {
         if let Err(error) = redis
-            .set_presence(&participant.session_id.to_string(), &participant.id.to_string(), TTL)
+            .set_presence(
+                &participant.session_id.to_string(),
+                &participant.id.to_string(),
+                TTL,
+            )
             .await
         {
             if state.config.redis_required {

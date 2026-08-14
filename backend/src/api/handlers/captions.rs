@@ -87,16 +87,13 @@ pub async fn publish(
 
     // Acquire transaction-scoped advisory lock on session ID to serialize sequence number updates
     let lock_key = session.id.to_string();
-    sqlx::query!(
-        "select pg_advisory_xact_lock(hashtext($1::text))",
-        lock_key
-    )
-    .execute(&mut *tx)
-    .await
-    .map_err(|error| {
-        tracing::error!(%error, "Failed to acquire advisory lock for caption sequencing");
-        ApiError::service_unavailable()
-    })?;
+    sqlx::query!("select pg_advisory_xact_lock(hashtext($1::text))", lock_key)
+        .execute(&mut *tx)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "Failed to acquire advisory lock for caption sequencing");
+            ApiError::service_unavailable()
+        })?;
 
     let caption_id = Uuid::now_v7();
     let caption = sqlx::query_as!(

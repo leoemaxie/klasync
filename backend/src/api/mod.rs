@@ -141,10 +141,7 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/students/archive",
             get(resources::list_student_archive),
         )
-        .route(
-            "/api/v1/students/courses",
-            get(courses::student_courses),
-        )
+        .route("/api/v1/students/courses", get(courses::student_courses))
         .route(
             "/api/v1/students/courses/enroll",
             post(courses::enroll_course),
