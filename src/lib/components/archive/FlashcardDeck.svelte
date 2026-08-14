@@ -23,15 +23,16 @@
     },
   ];
 
-  let displayCards = $state<{ prompt: string; answer: string }[]>([]);
+  let customCards = $state<{ prompt: string; answer: string }[]>([]);
   let customTopic = $state('');
   let isGenerating = $state(false);
   let currentIndex = $state(0);
   let isFlipped = $state(false);
 
-  $effect(() => {
-    displayCards = cards.length > 0 ? cards : defaultSampleCards;
-  });
+  let displayCards = $derived([
+    ...customCards,
+    ...(cards.length > 0 ? cards : defaultSampleCards),
+  ]);
 
   function nextCard() {
     if (!displayCards.length) return;
@@ -55,7 +56,7 @@
         prompt: `Custom Flashcard: What are the key elements of "${topic}"?`,
         answer: `Summary for "${topic}": Based on your lecture material, "${topic}" involves core definitions, foundational formulas, and practical applications.`,
       };
-      displayCards = [newCard, ...displayCards];
+      customCards = [newCard, ...customCards];
       currentIndex = 0;
       isFlipped = false;
       customTopic = '';

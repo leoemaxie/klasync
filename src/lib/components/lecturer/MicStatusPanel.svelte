@@ -24,6 +24,8 @@
   let stream: MediaStream | null = null;
   let animFrameId: number | null = null;
   let streamer: AudioStreamer | null = null;
+  let audioCtx: AudioContext | null = null;
+  let lastMeterUpdate = 0;
 
   async function enableDeviceMic() {
     triggerHaptic('medium');
@@ -57,21 +59,35 @@
   }
 
   function startLevelMeter(mediaStream: MediaStream) {
-    const ctx = new AudioContext();
-    const src = ctx.createMediaStreamSource(mediaStream);
-    const analyzer = ctx.createAnalyser();
-    analyzer.fftSize = 64;
-    src.connect(analyzer);
-    const data = new Uint8Array(analyzer.frequencyBinCount);
-    function tick() {
-      analyzer.getByteFrequencyData(data);
-      audioLevel = Math.min(
-        (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
-        100
-      );
+    try {
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+      }
+      audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(mediaStream);
+      const analyzer = audioCtx.createAnalyser();
+      analyzer.fftSize = 64;
+      src.connect(analyzer);
+      const data = new Uint8Array(analyzer.frequencyBinCount);
+      function tick(timestamp: number) {
+        if (!isUsingDeviceMic) {
+          audioLevel = 0;
+          return;
+        }
+        if (timestamp - lastMeterUpdate > 50) {
+          analyzer.getByteFrequencyData(data);
+          audioLevel = Math.min(
+            (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
+            100
+          );
+          lastMeterUpdate = timestamp;
+        }
+        animFrameId = requestAnimationFrame(tick);
+      }
       animFrameId = requestAnimationFrame(tick);
+    } catch {
+      audioLevel = 50;
     }
-    tick();
   }
 
   function stopDeviceMic() {
@@ -80,8 +96,18 @@
       streamer.stop();
       streamer = null;
     }
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    if (animFrameId) cancelAnimationFrame(animFrameId);
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+    }
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+    }
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
     isUsingDeviceMic = false;
     isWsStreaming = false;
     audioLevel = 0;

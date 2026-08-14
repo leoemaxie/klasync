@@ -27,9 +27,9 @@
     </p>
 
     <div class="actions not-found-actions">
-      <a href="/" class="primary">Return Home</a>
-      <a href="/join" class="outline">Join Session</a>
-      <a href="/lecturer/sign-in" class="primary-bark">Lecturer Access</a>
+      <a href="#/" class="primary" onclick={() => (screen = 'home')}>Return Home</a>
+      <a href="#/join" class="outline" onclick={() => (screen = 'join')}>Join Session</a>
+      <a href="#/auth/lecturer/login" class="primary-bark" onclick={() => (screen = 'lecturer-login')}>Lecturer Access</a>
     </div>
   </section>
 </main>

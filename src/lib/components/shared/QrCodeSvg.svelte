@@ -2,14 +2,12 @@
   let { value = 'KLASYNC-ROOM', size = 128 }: { value: string; size?: number } =
     $props();
 
-  // Simple deterministic pattern generator for SVG QR preview grid
   const matrixSize = 21;
-  const grid = $derived.by(() => {
+  const pathData = $derived.by(() => {
     const cells: boolean[][] = Array.from({ length: matrixSize }, () =>
       Array(matrixSize).fill(false)
     );
 
-    // Finder patterns (top-left, top-right, bottom-left)
     const addFinder = (r: number, c: number) => {
       for (let i = 0; i < 7; i++) {
         for (let j = 0; j < 7; j++) {
@@ -29,7 +27,6 @@
     addFinder(0, matrixSize - 7);
     addFinder(matrixSize - 7, 0);
 
-    // Data dots based on hash of value
     let hash = 0;
     for (let i = 0; i < value.length; i++)
       hash = (hash << 5) - hash + value.charCodeAt(i);
@@ -45,7 +42,16 @@
         }
       }
     }
-    return cells;
+
+    let d = '';
+    for (let r = 0; r < matrixSize; r++) {
+      for (let c = 0; c < matrixSize; c++) {
+        if (cells[r][c]) {
+          d += `M${c},${r}h1v1h-1z `;
+        }
+      }
+    }
+    return d;
   });
 </script>
 
@@ -58,13 +64,7 @@
     aria-label="QR Code for {value}"
   >
     <rect width="21" height="21" fill="#ffedd7" rx="1.5" />
-    {#each grid as row, r}
-      {#each row as cell, c}
-        {#if cell}
-          <rect x={c} y={r} width="1" height="1" fill="#100904" />
-        {/if}
-      {/each}
-    {/each}
+    <path d={pathData} fill="#100904" />
   </svg>
 </div>
 

@@ -142,8 +142,9 @@
     <LiveScreen
       session={appState.session}
       joinedParticipant={appState.joinedParticipant}
-      captions={appState.captions}
-      captionIndex={appState.captionIndex}
+      courseCode={appState.courseCode}
+      bind:captions={appState.captions}
+      bind:captionIndex={appState.captionIndex}
       bind:accountCreated={appState.accountCreated}
       bind:screen={appState.screen}
       currentUser={appState.currentUser}

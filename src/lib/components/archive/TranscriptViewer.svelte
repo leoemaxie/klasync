@@ -54,7 +54,7 @@
       aria-label="Lecture transcript content"
     >
       {#if lines.length > 0}
-        {#each lines as line}
+        {#each lines as line, i (i)}
           <p class="transcript-line">{line}</p>
         {/each}
       {:else}

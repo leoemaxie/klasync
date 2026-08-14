@@ -1,4 +1,5 @@
 import type { Resource } from './archive';
+import { API_BASE, WS_BASE } from './http';
 
 export async function uploadSessionAudio(
   shortCode: string,
@@ -6,12 +7,11 @@ export async function uploadSessionAudio(
 ): Promise<Resource> {
   const formData = new FormData();
   formData.append('file', file);
-  const apiBase =
-    import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
   const response = await fetch(
-    `${apiBase}/sessions/code/${encodeURIComponent(shortCode)}/audio/upload`,
+    `${API_BASE}/sessions/code/${encodeURIComponent(shortCode)}/audio/upload`,
     {
       method: 'POST',
+      credentials: 'include',
       body: formData,
     }
   );
@@ -23,9 +23,7 @@ export async function uploadSessionAudio(
 }
 
 export function getAudioChunkUrl(shortCode: string, seq: number): string {
-  const apiBase =
-    import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
-  return `${apiBase}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk/${seq}`;
+  return `${API_BASE}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk/${seq}`;
 }
 
 export async function uploadAudioChunk(
@@ -36,12 +34,11 @@ export async function uploadAudioChunk(
   const formData = new FormData();
   formData.append('chunk', chunk);
   formData.append('seq', seq.toString());
-  const apiBase =
-    import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
   await fetch(
-    `${apiBase}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk`,
+    `${API_BASE}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk`,
     {
       method: 'POST',
+      credentials: 'include',
       body: formData,
     }
   );
@@ -67,11 +64,7 @@ export interface AudioStreamer {
 }
 
 export function connectAudioWebSocket(options: AudioWebSocketOptions) {
-  const apiBase =
-    import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1';
-  const wsUrl =
-    apiBase.replace(/^http/, 'ws') +
-    `/sessions/code/${encodeURIComponent(options.shortCode)}/audio/ws`;
+  const wsUrl = `${WS_BASE}/sessions/code/${encodeURIComponent(options.shortCode)}/audio/ws`;
 
   const ws = new WebSocket(wsUrl);
   ws.binaryType = 'arraybuffer';

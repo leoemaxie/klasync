@@ -93,17 +93,13 @@
     )
   );
 
-  onMount(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        triggerHaptic('light');
-        isOpen = !isOpen;
-      }
+  function handleGlobalKeyDown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      triggerHaptic('light');
+      isOpen = !isOpen;
     }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }
 
   $effect(() => {
     if (isOpen && searchInputRef) {
@@ -126,6 +122,8 @@
     }
   }
 </script>
+
+<svelte:window onkeydown={handleGlobalKeyDown} />
 
 {#if isOpen}
   <div

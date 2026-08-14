@@ -131,7 +131,7 @@
       aria-live="polite"
       aria-label="Live questions feed"
     >
-      {#each questions as q}
+      {#each questions as q (q.id)}
         <div class="question-item" class:resolved={q.is_resolved}>
           <div class="q-content">
             <p class="q-text">{q.question_text}</p>

@@ -50,7 +50,9 @@
   let audioLevel = $state(0);
   let mediaStream: MediaStream | null = null;
   let streamer: AudioStreamer | null = null;
+  let audioCtx: AudioContext | null = null;
   let animFrameId: number | null = null;
+  let lastMeterUpdate = 0;
 
   const inviteUrl = $derived(
     session?.code
@@ -60,25 +62,32 @@
 
   function startLevelMeter(stream: MediaStream) {
     try {
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      const analyzer = ctx.createAnalyser();
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+      }
+      audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(stream);
+      const analyzer = audioCtx.createAnalyser();
       analyzer.fftSize = 64;
       src.connect(analyzer);
       const data = new Uint8Array(analyzer.frequencyBinCount);
-      function tick() {
+      function tick(timestamp: number) {
         if (!isRecording) {
           audioLevel = 0;
           return;
         }
-        analyzer.getByteFrequencyData(data);
-        audioLevel = Math.min(
-          (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
-          100
-        );
+        // Throttle UI reactive updates to ~20 FPS (every 50ms)
+        if (timestamp - lastMeterUpdate > 50) {
+          analyzer.getByteFrequencyData(data);
+          audioLevel = Math.min(
+            (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
+            100
+          );
+          lastMeterUpdate = timestamp;
+        }
         animFrameId = requestAnimationFrame(tick);
       }
-      tick();
+      animFrameId = requestAnimationFrame(tick);
     } catch {
       audioLevel = 50;
     }
@@ -88,6 +97,10 @@
     if (streamer) {
       streamer.stop();
       streamer = null;
+    }
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
     }
     if (mediaStream) {
       mediaStream.getTracks().forEach((t) => t.stop());

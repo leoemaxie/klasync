@@ -5,46 +5,57 @@ import type { Screen } from './types';
 import { getAccessToken, getRefreshToken, setTokens } from './api/http';
 
 /**
- * Clears localStorage, sessionStorage, and IndexedDB storage upon unauthenticated redirect.
+ * Sanitizes sensitive personal and authentication data upon unauthenticated redirect or logout.
+ * Purges tokens, user records, matric numbers, and active session cache without destroying
+ * non-sensitive database schemas or breaking active IndexedDB connections.
  */
-export function clearAllClientStorage() {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.clear();
-    }
-  } catch {}
+export function purgeSensitiveAuthStorage() {
+  setTokens(null, null);
 
-  try {
-    if (typeof sessionStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const keysToRemove = [
+        'klasync_access_token',
+        'klasync_refresh_token',
+        'klasync-user',
+        'klasync-lecturer',
+        'klasync-session',
+        'klasync-roster',
+        'klasync-rosterText',
+        'klasync-courseCode',
+        'klasync-courseTitle',
+        'klasync-captions',
+      ];
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+    } catch {}
+  }
+
+  if (typeof sessionStorage !== 'undefined') {
+    try {
       sessionStorage.clear();
-    }
-  } catch {}
+    } catch {}
+  }
 
-  try {
-    if (
-      typeof indexedDB !== 'undefined' &&
-      'databases' in indexedDB &&
-      typeof indexedDB.databases === 'function'
-    ) {
-      indexedDB
-        .databases()
-        .then((dbs) => {
-          for (const db of dbs) {
-            if (db.name) {
-              try {
-                indexedDB.deleteDatabase(db.name);
-              } catch {}
-            }
+  // Sanitize sensitive session_state in IndexedDB without deleting databases
+  if (typeof window !== 'undefined') {
+    void import('./storage/db')
+      .then(async ({ getDB }) => {
+        try {
+          const db = await getDB();
+          if (db.objectStoreNames.contains('session_state')) {
+            await db.clear('session_state');
           }
-        })
-        .catch(() => {});
-    }
-  } catch {}
+        } catch {}
+      })
+      .catch(() => {});
+  }
 }
 
 /**
  * Standardized, high-efficiency auth guard for protecting /lecturer and /archive endpoints.
- * Clears storage and redirects away if no access/refresh token is found or if role checks fail.
+ * Clears sensitive credentials and redirects away if no access/refresh token is found or if role checks fail.
  */
 export function enforceAuthGuard(path: string, state: SessionState): Screen {
   const currentLoc = path || '/';
@@ -71,8 +82,7 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
 
     if (!isLecturer) {
       if (!hasToken || !state.currentUser) {
-        clearAllClientStorage();
-        setTokens(null, null);
+        purgeSensitiveAuthStorage();
         state.currentUser = null;
       }
       state.authNotice =
@@ -97,8 +107,7 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
 
     if (!isStudent) {
       if (!hasToken || !state.currentUser) {
-        clearAllClientStorage();
-        setTokens(null, null);
+        purgeSensitiveAuthStorage();
         state.currentUser = null;
       }
       state.authNotice =

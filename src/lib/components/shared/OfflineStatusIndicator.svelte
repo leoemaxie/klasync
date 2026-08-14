@@ -8,35 +8,31 @@
 
   onMount(() => {
     isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-
-    function handleOnline() {
-      if (!isOnline) {
-        triggerHaptic('success');
-        showReconnected = true;
-        clearTimeout(reconnectedTimer);
-        reconnectedTimer = window.setTimeout(() => {
-          showReconnected = false;
-        }, 3000);
-      }
-      isOnline = true;
-    }
-
-    function handleOffline() {
-      triggerHaptic('warning');
-      isOnline = false;
-      showReconnected = false;
-    }
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
       clearTimeout(reconnectedTimer);
     };
   });
+
+  function handleOnline() {
+    if (!isOnline) {
+      triggerHaptic('success');
+      showReconnected = true;
+      clearTimeout(reconnectedTimer);
+      reconnectedTimer = window.setTimeout(() => {
+        showReconnected = false;
+      }, 3000);
+    }
+    isOnline = true;
+  }
+
+  function handleOffline() {
+    triggerHaptic('warning');
+    isOnline = false;
+    showReconnected = false;
+  }
 </script>
+
+<svelte:window ononline={handleOnline} onoffline={handleOffline} />
 
 {#if !isOnline}
   <div class="offline-banner offline" role="status" aria-live="polite">

@@ -3,13 +3,43 @@
 
   let { sessionCode = '' }: { sessionCode?: string } = $props();
 
+  let audioElement: HTMLAudioElement | null = $state(null);
   let isPlaying = $state(false);
-  let progress = $state(0);
+  let currentTime = $state(0);
+  let duration = $state(0);
   let playbackRate = $state<'1.0x' | '1.25x' | '1.5x'>('1.0x');
 
   const chunkUrl = $derived(
     sessionCode ? getAudioChunkUrl(sessionCode, 1) : ''
   );
+
+  const numericPlaybackRate = $derived(
+    playbackRate === '1.25x' ? 1.25 : playbackRate === '1.5x' ? 1.5 : 1.0
+  );
+
+  $effect(() => {
+    if (audioElement) {
+      audioElement.playbackRate = numericPlaybackRate;
+    }
+  });
+
+  function togglePlay() {
+    if (!audioElement) return;
+    if (audioElement.paused) {
+      void audioElement.play().catch(() => {});
+      isPlaying = true;
+    } else {
+      audioElement.pause();
+      isPlaying = false;
+    }
+  }
+
+  function formatTime(secs: number): string {
+    if (!secs || isNaN(secs)) return '00:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
 </script>
 
 <div class="panel audio-player-panel">
@@ -18,7 +48,16 @@
     <span class="player-format">48kHz PCM STEREOPHONIC</span>
   </div>
 
-  <audio src={chunkUrl} preload="none"></audio>
+  <audio
+    bind:this={audioElement}
+    src={chunkUrl}
+    preload="metadata"
+    bind:currentTime
+    bind:duration
+    onplay={() => (isPlaying = true)}
+    onpause={() => (isPlaying = false)}
+    onended={() => (isPlaying = false)}
+  ></audio>
 
   <div class="player-controls">
     <div class="progress-wrap">
@@ -27,21 +66,23 @@
         id="playback-scrubber"
         type="range"
         min="0"
-        max="100"
-        bind:value={progress}
+        max={duration || 100}
+        step="0.1"
+        bind:value={currentTime}
         class="audio-scrubber"
-        aria-valuetext="{progress}% played"
+        aria-valuetext="{Math.round(currentTime)} seconds played"
       />
       <div class="time-stamps">
-        <span>04:12</span>
-        <span>14:30</span>
+        <span>{formatTime(currentTime)}</span>
+        <span>{formatTime(duration)}</span>
       </div>
     </div>
 
     <div class="control-buttons-row">
       <button
+        type="button"
         class="primary play-btn"
-        onclick={() => (isPlaying = !isPlaying)}
+        onclick={togglePlay}
         aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
       >
         {isPlaying ? 'PAUSE' : 'PLAY AUDIO'}
@@ -49,16 +90,19 @@
 
       <div class="speed-selector" role="group" aria-label="Playback speed">
         <button
+          type="button"
           class={playbackRate === '1.0x' ? 'outline active' : 'text'}
           aria-pressed={playbackRate === '1.0x'}
           onclick={() => (playbackRate = '1.0x')}>1.0x</button
         >
         <button
+          type="button"
           class={playbackRate === '1.25x' ? 'outline active' : 'text'}
           aria-pressed={playbackRate === '1.25x'}
           onclick={() => (playbackRate = '1.25x')}>1.25x</button
         >
         <button
+          type="button"
           class={playbackRate === '1.5x' ? 'outline active' : 'text'}
           aria-pressed={playbackRate === '1.5x'}
           onclick={() => (playbackRate = '1.5x')}>1.5x</button

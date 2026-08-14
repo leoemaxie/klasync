@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Participant, Screen, Session } from '$lib/types';
+  import type { AuthUser } from '$lib/api/auth';
   import { connectCaptionWebSocket } from '$lib/api/captions';
   import {
     sendHandRaise,
@@ -8,6 +9,8 @@
     sendPresenceHeartbeat,
     claimAttendance,
   } from '$lib/api';
+  import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
+  import { triggerHaptic } from '$lib/native/haptics';
   import AccessibilityDrawer from './AccessibilityDrawer.svelte';
   import LiveQaPanel from './LiveQaPanel.svelte';
   import LiveHeader from './LiveHeader.svelte';
@@ -15,13 +18,12 @@
   import LivePresenceCard from './LivePresenceCard.svelte';
   import LiveArchiveCta from './LiveArchiveCta.svelte';
 
-  import type { AuthUser } from '$lib/api/auth';
-
   let {
     session,
     joinedParticipant,
-    captions = [],
-    captionIndex = 0,
+    courseCode = '',
+    captions = $bindable([]),
+    captionIndex = $bindable(0),
     accountCreated = $bindable(false),
     screen = $bindable(),
     currentUser = null,
@@ -30,8 +32,9 @@
   }: {
     session: Session | null;
     joinedParticipant: Participant | null;
-    captions: string[];
-    captionIndex: number;
+    courseCode?: string;
+    captions?: string[];
+    captionIndex?: number;
     accountCreated: boolean;
     screen: Screen;
     currentUser?: AuthUser | null;
@@ -47,10 +50,6 @@
   let fontSize = $state('18px');
   let dyslexicFont = $state(false);
   let lineHeight = $state(1.6);
-
-  import { onDestroy } from 'svelte';
-  import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
-  import { triggerHaptic } from '$lib/native/haptics';
 
   onMount(() => {
     void requestWakeLock();
@@ -121,7 +120,7 @@
             joinedParticipant.matric,
             joinedParticipant.id,
             session.title,
-            session.course_code || appState?.courseCode || 'COURSE'
+            session.course_code || courseCode || 'COURSE'
           );
         } catch (err) {
           claimNotice =

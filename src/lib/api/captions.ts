@@ -1,4 +1,4 @@
-import { http } from './http';
+import { http, WS_BASE } from './http';
 import type { ApiCaption } from './types';
 
 export function getCaptions(shortCode: string): Promise<ApiCaption[]> {
@@ -24,11 +24,7 @@ export function connectCaptionWebSocket(
   shortCode: string,
   onMessage: (caption: ApiCaption) => void
 ): () => void {
-  const wsUrl =
-    (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8787/api/v1').replace(
-      /^http/,
-      'ws'
-    ) + `/sessions/code/${encodeURIComponent(shortCode)}/captions/ws`;
+  const wsUrl = `${WS_BASE}/sessions/code/${encodeURIComponent(shortCode)}/captions/ws`;
   const ws = new WebSocket(wsUrl);
   ws.onmessage = (event) => {
     try {
