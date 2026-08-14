@@ -39,7 +39,25 @@
 </script>
 
 <div class="archive-row">
-  <span class="feat-num">{claim.course_code}</span>
+  <div class="card-title-header">
+    <div class="title-meta-left">
+      <span class="feat-num">{claim.course_code}</span>
+      {#if claim.course_title && claim.course_title !== claim.course_code}
+        <span class="course-sub-title">· {claim.course_title}</span>
+      {/if}
+    </div>
+    {#if claim.academic_session || claim.semester}
+      <div class="session-badges">
+        {#if claim.academic_session}
+          <span class="tag session-tag">{claim.academic_session}</span>
+        {/if}
+        {#if claim.semester}
+          <span class="tag semester-tag">{claim.semester}</span>
+        {/if}
+      </div>
+    {/if}
+  </div>
+
   <h3>{claim.session_title}</h3>
   <p class="hint">Claimed on {claim.date} · Verified Student Access</p>
 
@@ -91,6 +109,44 @@
     border: 1px solid var(--color-cork-border);
     border-radius: var(--radius-cards);
     margin-bottom: var(--spacing-16);
+  }
+  .card-title-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .title-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .course-sub-title {
+    font-size: 11px;
+    color: var(--color-warm-cream-dim, #ffedd7aa);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .session-badges {
+    display: flex;
+    gap: 4px;
+  }
+  .tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .session-tag {
+    background: rgba(255, 237, 215, 0.1);
+    color: var(--color-driftwood);
+  }
+  .semester-tag {
+    background: rgba(255, 237, 215, 0.15);
+    color: var(--color-warm-cream);
   }
   .feat-num {
     font-size: 11px;

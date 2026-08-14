@@ -30,20 +30,33 @@ export async function createLiveSession(input: {
   lecturerEmail: string;
   courseCode: string;
   courseTitle: string;
+  academic_session?: string;
+  semester?: string;
+  course_id?: string;
   roster: ApiRosterStudent[];
 }) {
-  const course = await http<CreateCourseResponse>('/courses', {
-    method: 'POST',
-    body: JSON.stringify({ code: input.courseCode, title: input.courseTitle }),
-  });
-  if (input.roster.length) {
-    await http(`/courses/${course.id}/roster`, {
+  let courseId = input.course_id;
+  if (!courseId) {
+    const course = await http<CreateCourseResponse>('/courses', {
+      method: 'POST',
+      body: JSON.stringify({
+        code: input.courseCode,
+        title: input.courseTitle,
+        academic_session: input.academic_session || '2025/2026',
+        semester: input.semester || 'Second Semester',
+      }),
+    });
+    courseId = course.id;
+  }
+
+  if (input.roster.length && courseId) {
+    await http(`/courses/${courseId}/roster`, {
       method: 'POST',
       body: JSON.stringify({ students: input.roster }),
     });
   }
   return createSession({
-    course_id: course.id,
+    course_id: courseId,
     title: `${input.courseCode}: ${input.courseTitle}`,
   });
 }

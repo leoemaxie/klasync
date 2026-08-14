@@ -86,8 +86,13 @@ pub async fn list_student_archive(
     };
     let items = sqlx::query_as!(
         StudentArchiveItem,
-        r#"select distinct s.id, c.code as "course_code!", s.title as "session_title!",
-         to_char(s.created_at, 'Mon DD, YYYY') as "date!"
+        r#"select distinct s.id, 
+          c.code as "course_code!", 
+          c.title as "course_title!",
+          c.academic_session as "academic_session!",
+          c.semester as "semester!",
+          s.title as "session_title!",
+          to_char(s.created_at, 'Mon DD, YYYY') as "date!"
          from student_session_claims claim
          join session_participants p on p.id = claim.participant_id
          join lecture_sessions s on s.id = p.session_id

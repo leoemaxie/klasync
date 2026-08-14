@@ -181,7 +181,7 @@
         >Join Session</button
       >
       <button class="nav-btn text" onclick={handleStudentArchive}
-        >Student Archive</button
+        >Courses &amp; Archive</button
       >
     {/if}
 

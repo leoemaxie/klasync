@@ -70,7 +70,7 @@ pub async fn resolve(
     .ok_or_else(|| ApiError::not_found("Invite link not found or expired"))?;
     let course = sqlx::query_as!(
         Course,
-        "select id, lecturer_id, code, title from courses where id = $1",
+        "select id, lecturer_id, code, title, academic_session, semester, is_active from courses where id = $1",
         session.course_id
     )
     .fetch_optional(pool)

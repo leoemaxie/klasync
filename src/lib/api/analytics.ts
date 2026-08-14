@@ -1,8 +1,9 @@
 import { apiRequest } from './http';
+import { resolveCourseUuid } from './courses';
 
 export interface CourseAnalyticsSummary {
   course_id: string;
-  course_code: string;
+  course_code?: string;
   total_sessions: number;
   avg_attendance_percentage: number;
   roster_verification_match_rate: number;
@@ -20,19 +21,33 @@ export interface AttendanceAnomaly {
 }
 
 export async function fetchCourseAnalytics(
-  courseId: string
+  courseIdOrCode: string
 ): Promise<CourseAnalyticsSummary | null> {
-  if (!courseId) return null;
+  const trimmed = courseIdOrCode.trim();
+  if (!trimmed) return null;
+  const targetId = await resolveCourseUuid(trimmed);
   return await apiRequest<CourseAnalyticsSummary>(
-    `/analytics/courses/${encodeURIComponent(courseId)}/attendance-summary`
+    `/analytics/courses/${encodeURIComponent(targetId || trimmed)}/attendance-summary`
   ).catch(() => null);
 }
 
-export async function fetchSessionAnomalies(
-  sessionId: string
+export async function fetchCourseAnomalies(
+  courseIdOrCode: string
 ): Promise<AttendanceAnomaly[]> {
-  if (!sessionId) return [];
+  const trimmed = courseIdOrCode.trim();
+  if (!trimmed) return [];
+  const targetId = await resolveCourseUuid(trimmed);
   return await apiRequest<AttendanceAnomaly[]>(
-    `/analytics/sessions/${encodeURIComponent(sessionId)}/anomalies`
+    `/analytics/courses/${encodeURIComponent(targetId || trimmed)}/anomalies`
+  ).catch(() => []);
+}
+
+export async function fetchSessionAnomalies(
+  sessionIdOrCode: string
+): Promise<AttendanceAnomaly[]> {
+  const trimmed = sessionIdOrCode.trim();
+  if (!trimmed) return [];
+  return await apiRequest<AttendanceAnomaly[]>(
+    `/analytics/sessions/${encodeURIComponent(trimmed)}/anomalies`
   ).catch(() => []);
 }

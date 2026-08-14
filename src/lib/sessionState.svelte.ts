@@ -1,4 +1,11 @@
-import type { Participant, RosterStudent, Screen, Session } from './types';
+import type {
+  Course,
+  Participant,
+  RosterStudent,
+  Screen,
+  Session,
+  StudentEnrolledCourse,
+} from './types';
 import type { AuthUser } from './api/auth';
 
 export class SessionState {
@@ -7,6 +14,15 @@ export class SessionState {
   authNotice = $state('');
   lecturerName = $state('');
   lecturerEmail = $state('');
+  
+  // Multi-course & calendar state
+  courses = $state<Course[]>([]);
+  activeCourse = $state<Course | null>(null);
+  academicSession = $state('2025/2026');
+  semester = $state('Second Semester');
+  studentCourses = $state<StudentEnrolledCourse[]>([]);
+
+  courseId = $state('');
   courseCode = $state('');
   courseTitle = $state('');
   rosterText = $state('');

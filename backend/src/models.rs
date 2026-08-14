@@ -10,12 +10,15 @@ pub struct Lecturer {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Course {
     pub id: Uuid,
     pub lecturer_id: Uuid,
     pub code: String,
     pub title: String,
+    pub academic_session: String,
+    pub semester: String,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -80,6 +83,32 @@ pub struct CaptionChunk {
 pub struct CreateCourseRequest {
     pub code: String,
     pub title: String,
+    pub academic_session: String,
+    pub semester: String,
+}
+
+#[derive(Deserialize, Default)]
+pub struct CourseFilterQuery {
+    pub academic_session: Option<String>,
+    pub semester: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct StudentEnrolledCourse {
+    pub id: Uuid,
+    pub code: String,
+    pub title: String,
+    pub academic_session: String,
+    pub semester: String,
+    pub lecturer_name: String,
+    pub session_count: i64,
+    pub enrolled_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize)]
+pub struct EnrollCourseRequest {
+    pub course_id: Uuid,
 }
 
 #[derive(Deserialize)]
@@ -163,6 +192,9 @@ pub struct RosterImportReport {
 pub struct StudentArchiveItem {
     pub id: Uuid,
     pub course_code: String,
+    pub course_title: String,
+    pub academic_session: String,
+    pub semester: String,
     pub session_title: String,
     pub date: String,
 }

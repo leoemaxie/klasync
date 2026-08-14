@@ -23,12 +23,16 @@ export async function startSession(state: SessionState) {
       lecturerEmail: state.lecturerEmail,
       courseCode: state.courseCode,
       courseTitle: state.courseTitle,
+      academic_session: state.academicSession || '2025/2026',
+      semester: state.semester || 'Second Semester',
+      course_id: state.courseId || state.activeCourse?.id,
       roster: state.roster.map((s) => ({
         matric_number: s.matric,
         full_name: s.name,
       })),
     });
     state.session = {
+      id: invite.session.id,
       title: invite.session.title,
       code: invite.session.short_code,
       live: true,

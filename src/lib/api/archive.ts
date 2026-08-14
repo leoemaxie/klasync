@@ -4,7 +4,11 @@ import type { SuccessResponse } from './types';
 export type ClaimRecord = {
   id: string;
   course_code: string;
+  course_title?: string;
+  academic_session?: string;
+  semester?: string;
   session_title: string;
+  session_code?: string;
   date: string;
 };
 

@@ -30,6 +30,7 @@
     const savedRosterText = localStorage.getItem('klasync-rosterText');
     const savedLecturer = localStorage.getItem('klasync-lecturer');
     const savedUser = localStorage.getItem('klasync-user');
+    const savedCourseId = localStorage.getItem('klasync-courseId');
     const savedCourseCode = localStorage.getItem('klasync-courseCode');
     const savedCourseTitle = localStorage.getItem('klasync-courseTitle');
 
@@ -51,6 +52,7 @@
         .join('\n');
     }
     if (savedLecturer) appState.lecturerName = savedLecturer;
+    if (savedCourseId) appState.courseId = savedCourseId;
     if (savedCourseCode) appState.courseCode = savedCourseCode;
     if (savedCourseTitle) appState.courseTitle = savedCourseTitle;
 

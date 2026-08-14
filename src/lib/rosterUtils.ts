@@ -5,6 +5,7 @@ import {
   importRosterFile,
   getCourseRoster,
   createCourse,
+  resolveCourseUuid,
   type ApiRosterStudent,
 } from './api';
 
@@ -17,6 +18,9 @@ export function persist(state: SessionState) {
     localStorage.setItem('klasync-rosterText', state.rosterText);
   }
   localStorage.setItem('klasync-lecturer', state.lecturerName);
+  if (state.courseId) {
+    localStorage.setItem('klasync-courseId', state.courseId);
+  }
   if (state.courseCode) {
     localStorage.setItem('klasync-courseCode', state.courseCode);
   }
@@ -31,13 +35,22 @@ export function persist(state: SessionState) {
 export async function loadCourseRosterFromApi(
   state: SessionState
 ): Promise<boolean> {
-  const courseId = state.courseCode?.trim();
-  if (!courseId) {
+  const courseCodeOrId = state.courseId || state.courseCode?.trim();
+  if (!courseCodeOrId) {
     state.rosterNotice = 'Specify a Course Code to load roster from cloud.';
     return false;
   }
   try {
-    const remoteStudents = await getCourseRoster(courseId);
+    const targetUuid = await resolveCourseUuid(
+      courseCodeOrId,
+      state.courseTitle,
+      state.academicSession,
+      state.semester
+    );
+    if (targetUuid) {
+      state.courseId = targetUuid;
+    }
+    const remoteStudents = await getCourseRoster(targetUuid || courseCodeOrId);
     if (Array.isArray(remoteStudents)) {
       state.roster = remoteStudents.map((s) => ({
         matric: s.matric_number,
@@ -67,8 +80,8 @@ export async function saveToCloudRoster(state: SessionState): Promise<void> {
     return;
   }
 
-  const courseId = state.courseCode?.trim();
-  if (!courseId) {
+  const courseCode = state.courseCode?.trim();
+  if (!courseCode) {
     state.rosterNotice = 'Course Code is required to save roster to cloud.';
     return;
   }
@@ -82,16 +95,16 @@ export async function saveToCloudRoster(state: SessionState): Promise<void> {
   }));
 
   try {
-    try {
-      await createCourse({
-        code: courseId,
-        title: state.courseTitle?.trim() || courseId,
-      });
-    } catch {
-      // Course may already exist on cloud API
-    }
+    const courseUuid = await resolveCourseUuid(
+      state.courseId || courseCode,
+      state.courseTitle?.trim() || courseCode,
+      state.academicSession || '2025/2026',
+      state.semester || 'Second Semester'
+    );
+    state.courseId = courseUuid;
 
-    const res = await uploadRoster(courseId, apiStudents);
+    const res = await uploadRoster(courseUuid, apiStudents);
+    persist(state);
     state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
   } catch (err) {
     state.rosterNotice = `Cloud sync failed (${err instanceof Error ? err.message : 'API offline'}). Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
@@ -173,12 +186,15 @@ export async function parseRoster(state: SessionState) {
         await createCourse({
           code: courseId,
           title: state.courseTitle?.trim() || courseId,
+          academic_session: state.academicSession || '2025/2026',
+          semester: state.semester || 'Second Semester',
         });
       } catch {
         // Course may already exist on backend
       }
 
-      const res = await uploadRoster(courseId, apiStudents);
+      const targetCourseKey = state.activeCourse?.id || courseId;
+      const res = await uploadRoster(targetCourseKey, apiStudents);
       state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
     } catch {
       state.rosterNotice = `✓ Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
@@ -415,10 +431,13 @@ export async function importFile(
         await createCourse({
           code: courseId,
           title: state.courseTitle?.trim() || courseId,
+          academic_session: state.academicSession || '2025/2026',
+          semester: state.semester || 'Second Semester',
         });
       } catch {}
 
-      const report = await importRosterFile(courseId, file);
+      const targetCourseKey = state.activeCourse?.id || courseId;
+      const report = await importRosterFile(targetCourseKey, file);
       if (report && typeof report.imported_count === 'number') {
         state.rosterNotice = `✓ Imported ${report.imported_count} student${report.imported_count === 1 ? '' : 's'} via API.`;
       }

@@ -2,13 +2,17 @@
   import LecturerFormPanel from './LecturerFormPanel.svelte';
   import RosterUploadPanel from './RosterUploadPanel.svelte';
   import CourseStudentsRosterPanel from './CourseStudentsRosterPanel.svelte';
-  import type { RosterStudent } from '$lib/types';
+  import type { Course, RosterStudent } from '$lib/types';
 
   let {
     lecturerName = $bindable(''),
     lecturerEmail = $bindable(''),
     courseCode = $bindable(''),
     courseTitle = $bindable(''),
+    academicSession = $bindable('2025/2026'),
+    semester = $bindable('Second Semester'),
+    courses = $bindable([]),
+    activeCourse = $bindable(null),
     rosterText = $bindable(''),
     rosterNotice = '',
     roster = [],
@@ -18,11 +22,16 @@
     onRemoveStudent,
     onClearRoster,
     onReloadFromCloud,
+    onCourseSelected,
   }: {
     lecturerName: string;
     lecturerEmail: string;
     courseCode: string;
     courseTitle: string;
+    academicSession?: string;
+    semester?: string;
+    courses?: Course[];
+    activeCourse?: Course | null;
     rosterText: string;
     rosterNotice?: string;
     roster?: RosterStudent[];
@@ -32,14 +41,15 @@
     onRemoveStudent?: (matric: string) => void;
     onClearRoster?: () => void;
     onReloadFromCloud?: () => Promise<void> | void;
+    onCourseSelected?: (course: Course) => void;
   } = $props();
 
-  let lastCourseCode = $state('');
+  let lastCourseKey = $state('');
 
   $effect(() => {
-    const trimmed = courseCode.trim();
-    if (trimmed && trimmed !== lastCourseCode && onReloadFromCloud) {
-      lastCourseCode = trimmed;
+    const key = `${courseCode.trim()}::${academicSession.trim()}::${semester.trim()}`;
+    if (courseCode.trim() && key !== lastCourseKey && onReloadFromCloud) {
+      lastCourseKey = key;
       void onReloadFromCloud();
     }
   });
@@ -52,6 +62,11 @@
       bind:lecturerEmail
       bind:courseCode
       bind:courseTitle
+      bind:academicSession
+      bind:semester
+      bind:courses
+      bind:activeCourse
+      {onCourseSelected}
     />
     <RosterUploadPanel
       bind:rosterText

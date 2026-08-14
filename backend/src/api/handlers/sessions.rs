@@ -81,7 +81,7 @@ pub async fn get_by_code(
     let session = database_session_by_code(pool, &short_code).await?;
     let course = sqlx::query_as!(
         Course,
-        "select id, lecturer_id, code, title from courses where id = $1",
+        "select id, lecturer_id, code, title, academic_session, semester, is_active from courses where id = $1",
         session.course_id
     )
     .fetch_optional(pool)

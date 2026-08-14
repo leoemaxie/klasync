@@ -9,6 +9,8 @@
   import CaptionControlPanel from '$lib/components/session/CaptionControlPanel.svelte';
   import AttendancePanel from '$lib/components/session/AttendancePanel.svelte';
   import type { SessionState } from '$lib/sessionState.svelte';
+  import type { Course } from '$lib/types';
+  import { getCourses } from '$lib/api/courses';
   import { connectCaptionWebSocket } from '$lib/api/captions';
   import {
     copyInvite,
@@ -27,11 +29,39 @@
   let { appState }: { appState: SessionState } = $props();
   let activeTab = $state<TabKey>('course');
 
-  onMount(() => {
+  onMount(async () => {
+    try {
+      const courseList = await getCourses();
+      appState.courses = courseList;
+      if (courseList.length > 0) {
+        const found =
+          courseList.find(
+            (c) =>
+              c.code.toLowerCase() === appState.courseCode.toLowerCase() &&
+              c.academic_session === appState.academicSession
+          ) || courseList[0];
+
+        appState.activeCourse = found;
+        if (!appState.courseCode) appState.courseCode = found.code;
+        if (!appState.courseTitle) appState.courseTitle = found.title;
+        if (found.academic_session) appState.academicSession = found.academic_session;
+        if (found.semester) appState.semester = found.semester;
+      }
+    } catch {}
+
     if (appState.courseCode) {
       void loadCourseRosterFromApi(appState);
     }
   });
+
+  function handleCourseSelected(course: Course) {
+    appState.activeCourse = course;
+    appState.courseCode = course.code;
+    appState.courseTitle = course.title;
+    appState.academicSession = course.academic_session;
+    appState.semester = course.semester;
+    void loadCourseRosterFromApi(appState);
+  }
 
   let wsCleanup: (() => void) | undefined;
 
@@ -82,6 +112,10 @@
         bind:lecturerEmail={appState.lecturerEmail}
         bind:courseCode={appState.courseCode}
         bind:courseTitle={appState.courseTitle}
+        bind:academicSession={appState.academicSession}
+        bind:semester={appState.semester}
+        bind:courses={appState.courses}
+        bind:activeCourse={appState.activeCourse}
         bind:rosterText={appState.rosterText}
         roster={appState.roster}
         rosterNotice={appState.rosterNotice}
@@ -91,6 +125,7 @@
         onRemoveStudent={(matric) => removeStudentFromRoster(appState, matric)}
         onClearRoster={() => clearRoster(appState)}
         onReloadFromCloud={() => loadCourseRosterFromApi(appState)}
+        onCourseSelected={handleCourseSelected}
       />
     {:else if activeTab === 'device'}
       <DeviceSetupTab
@@ -126,9 +161,11 @@
       />
     {:else if activeTab === 'analytics'}
       <LecturerAnalyticsPanel
-        courseId={appState.courseCode || ''}
+        courseId={appState.courseId || appState.activeCourse?.id || ''}
         courseCode={appState.courseCode}
         courseTitle={appState.courseTitle}
+        sessionId={appState.session?.id || ''}
+        sessionCode={appState.session?.code || ''}
         participants={appState.session?.participants || []}
         roster={appState.roster}
       />

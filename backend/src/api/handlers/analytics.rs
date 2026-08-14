@@ -58,6 +58,29 @@ pub async fn course_summary(
     Ok(Json(summary))
 }
 
+pub async fn course_anomalies(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(course_id): Path<Uuid>,
+) -> Result<Json<Vec<AttendanceAnomaly>>, ApiError> {
+    let pool = state.db_pool();
+    ensure_course_owner(pool, course_id, lecturer.id).await?;
+    let anomalies = sqlx::query_as!(
+        AttendanceAnomaly,
+        r#"select a.id, a.matric_number, a.anomaly_type, a.description, a.severity, a.logged_at
+           from attendance_audit_logs a
+           join lecture_sessions s on s.id = a.session_id
+           where s.course_id = $1 and s.lecturer_id = $2
+           order by a.logged_at desc"#,
+        course_id,
+        lecturer.id
+    )
+    .fetch_all(pool)
+    .await
+    .log_internal_error("Failed to query course attendance anomalies")?;
+    Ok(Json(anomalies))
+}
+
 pub async fn session_anomalies(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,

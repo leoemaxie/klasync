@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import {
     fetchCourseAnalytics,
+    fetchCourseAnomalies,
     fetchSessionAnomalies,
     type CourseAnalyticsSummary,
     type AttendanceAnomaly,
@@ -15,12 +16,16 @@
     courseId = '',
     courseCode = '',
     courseTitle = '',
+    sessionId = '',
+    sessionCode = '',
     participants = [],
     roster = [],
   }: {
     courseId?: string;
     courseCode?: string;
     courseTitle?: string;
+    sessionId?: string;
+    sessionCode?: string;
     participants?: Participant[];
     roster?: RosterStudent[];
   } = $props();
@@ -32,10 +37,13 @@
 
   onMount(async () => {
     try {
-      if (courseId) {
+      const courseKey = courseId.trim() || courseCode.trim();
+      if (courseKey) {
         const [sum, anom] = await Promise.all([
-          fetchCourseAnalytics(courseId),
-          fetchSessionAnomalies(courseId),
+          fetchCourseAnalytics(courseKey),
+          sessionId.trim()
+            ? fetchSessionAnomalies(sessionId.trim())
+            : fetchCourseAnomalies(courseKey),
         ]);
         summary = sum;
         anomalies = anom;

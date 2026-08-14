@@ -174,6 +174,21 @@ pub async fn verify(
     .execute(pool)
     .await
     .log_internal_error("Failed to update claim verification status")?;
+
+    let enrollment_id = Uuid::now_v7();
+    let _ = sqlx::query!(
+        r#"insert into student_course_enrollments (id, student_account_id, course_id, enrollment_type)
+           select $1, $2, s.course_id, 'claimed'
+           from lecture_sessions s
+           where s.id = $3
+           on conflict (student_account_id, course_id) do nothing"#,
+        enrollment_id,
+        student.id,
+        record.session_id
+    )
+    .execute(pool)
+    .await;
+
     audit::record_session_event(pool, record.session_id, Some(student.id), Some("student"), AuditEvent {
         event_type: "student_participant_claimed",
         metadata: serde_json::json!({"participant_id": record.participant_id, "matric_number": record.matric_number}),

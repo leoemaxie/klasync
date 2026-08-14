@@ -85,6 +85,10 @@ pub fn router(state: AppState) -> Router {
             get(handlers::analytics::course_summary),
         )
         .route(
+            "/api/v1/analytics/courses/{course_id}/anomalies",
+            get(handlers::analytics::course_anomalies),
+        )
+        .route(
             "/api/v1/analytics/sessions/{session_id}/anomalies",
             get(handlers::analytics::session_anomalies),
         )
@@ -136,6 +140,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/students/archive",
             get(resources::list_student_archive),
+        )
+        .route(
+            "/api/v1/students/courses",
+            get(courses::student_courses),
+        )
+        .route(
+            "/api/v1/students/courses/enroll",
+            post(courses::enroll_course),
         )
         .route(
             "/api/v1/students/resources/{resource_id}/download",
