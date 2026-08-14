@@ -5,6 +5,7 @@
   import NotFoundScreen from '$lib/components/shared/NotFoundScreen.svelte';
   import OfflineStatusIndicator from '$lib/components/shared/OfflineStatusIndicator.svelte';
   import SpotlightSearchModal from '$lib/components/shared/SpotlightSearchModal.svelte';
+  import MobileBottomNav from '$lib/components/shared/MobileBottomNav.svelte';
   import HomeScreen from '$lib/components/home/HomeScreen.svelte';
   import LecturerScreen from '$lib/components/lecturer/LecturerScreen.svelte';
   import JoinScreen from '$lib/components/session/JoinScreen.svelte';
@@ -165,4 +166,5 @@
     bind:sessionCode={appState.sessionCode}
     currentUser={appState.currentUser}
   />
+  <MobileBottomNav bind:screen={appState.screen} {appState} />
 </main>
