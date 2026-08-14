@@ -3,7 +3,14 @@ FROM rust:1.85-alpine AS builder
 RUN apk add --no-cache build-base musl-dev openssl-dev pkgconfig
 
 WORKDIR /app
+ENV SQLX_OFFLINE=true
+
+# Copy root workspace manifests
 COPY Cargo.toml Cargo.lock ./
+# Remove desktop member so Cargo workspace resolution succeeds without src-tauri
+RUN sed -i '/"src-tauri"/d' Cargo.toml
+
+# Copy backend source, migrations, and cached sqlx query metadata
 COPY backend ./backend
 
 RUN cargo build --release --package klasync-backend
