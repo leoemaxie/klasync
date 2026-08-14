@@ -7,7 +7,9 @@
 
   let { claim }: { claim: ClaimRecord } = $props();
 
-  let activeTab = $state<'transcript' | 'chapters' | 'flashcards' | 'audio'>('transcript');
+  let activeTab = $state<'transcript' | 'chapters' | 'flashcards' | 'audio'>(
+    'transcript'
+  );
 
   const transcriptText = $derived.by(() => {
     if (typeof localStorage === 'undefined') return '';
