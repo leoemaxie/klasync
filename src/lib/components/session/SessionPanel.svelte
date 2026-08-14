@@ -11,6 +11,8 @@
     type AudioStreamer,
     type IngestedCaption,
   } from '$lib/api/audio';
+  import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
+  import { triggerHaptic } from '$lib/native/haptics';
   import LiveQaPanel from './LiveQaPanel.svelte';
 
   let {
@@ -58,6 +60,15 @@
       ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}`
       : ''
   );
+
+  // Keep screen awake on mobile while lecture is active or recording
+  $effect(() => {
+    if (session?.live || isRecording) {
+      void requestWakeLock();
+    } else {
+      void releaseWakeLock();
+    }
+  });
 
   function startLevelMeter(stream: MediaStream) {
     try {
@@ -111,6 +122,7 @@
 
   async function handlePauseToggle() {
     if (!session?.code) return;
+    triggerHaptic('light');
     actionError = '';
     isTogglingPause = true;
     try {
@@ -130,6 +142,7 @@
 
   async function handleRecordingToggle() {
     if (!session?.code) return;
+    triggerHaptic('medium');
     actionError = '';
     isTogglingRec = true;
     try {
@@ -167,9 +180,11 @@
   }
 
   async function handleEndSession() {
+    triggerHaptic('warning');
     isEnding = true;
     try {
       stopAudioStream();
+      void releaseWakeLock();
       await onEndSession();
     } finally {
       isEnding = false;
@@ -178,6 +193,7 @@
 
   onDestroy(() => {
     stopAudioStream();
+    void releaseWakeLock();
   });
 </script>
 
@@ -223,6 +239,6 @@
   .session-dashboard {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-20);
+    gap: var(--spacing-20, 20px);
   }
 </style>

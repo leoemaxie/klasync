@@ -77,6 +77,8 @@
     aria-labelledby="course-modal-title"
   >
     <div class="panel modal-container">
+      <div class="sheet-drag-handle" aria-hidden="true"></div>
+
       <div class="modal-header">
         <div>
           <div class="eyebrow">
@@ -143,20 +145,32 @@
     z-index: 200;
     background: rgba(8, 4, 2, 0.82);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-18);
+    padding: var(--spacing-18, 18px);
   }
   .modal-container {
     width: 100%;
     max-width: 760px;
     max-height: 85vh;
     overflow-y: auto;
-    padding: var(--spacing-24);
+    padding: var(--spacing-24, 24px);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-16);
+    gap: var(--spacing-16, 16px);
+    border-radius: var(--radius-cards, 12px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    position: relative;
+  }
+  .sheet-drag-handle {
+    display: none;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 237, 215, 0.25);
+    border-radius: 9999px;
+    margin: 0 auto -6px;
   }
   .modal-header {
     display: flex;
@@ -212,9 +226,43 @@
     gap: var(--spacing-12);
     margin-top: var(--spacing-4);
   }
-  @media (max-width: 600px) {
+
+  @media (max-width: 640px) {
+    .modal-backdrop {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .modal-container {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      max-height: 88vh;
+      padding: 14px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+      gap: 14px;
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sheet-drag-handle {
+      display: block;
+    }
+    .modal-header h2 {
+      font-size: 18px;
+    }
     .courses-grid-list {
       grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .filter-and-action-bar {
+      gap: 8px;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
     }
   }
 </style>

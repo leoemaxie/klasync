@@ -52,16 +52,16 @@
   .attendance-summary-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-14);
+    gap: var(--spacing-14, 14px);
   }
   .summary-card {
     display: flex;
     align-items: center;
-    gap: var(--spacing-12);
-    padding: var(--spacing-14) var(--spacing-16);
+    gap: var(--spacing-12, 12px);
+    padding: var(--spacing-14, 14px) var(--spacing-16, 16px);
     background: rgba(16, 9, 4, 0.45);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-cards);
+    border: 1px solid var(--color-cork-border, #40372e);
+    border-radius: var(--radius-cards, 8px);
   }
   .card-icon {
     width: 34px;
@@ -71,7 +71,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(255, 237, 215, 0.08);
-    color: var(--color-warm-cream);
+    color: var(--color-warm-cream, #ffedd7);
     flex-shrink: 0;
   }
   .card-icon.verified {
@@ -80,38 +80,60 @@
   }
   .card-icon.provisional {
     background: rgba(220, 80, 0, 0.15);
-    color: var(--color-ember-accent);
+    color: var(--color-ember-accent, #dc5000);
   }
   .card-icon.rate {
     background: rgba(255, 237, 215, 0.12);
-    color: var(--color-warm-cream);
+    color: var(--color-warm-cream, #ffedd7);
   }
   .card-content {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
   .card-label {
     font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--color-driftwood);
+    letter-spacing: 0.08em;
+    color: var(--color-driftwood, #b8a794);
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .card-val {
     font-size: 18px;
-    font-family: var(--font-display);
-    color: var(--color-warm-cream);
+    font-family: var(--font-display, serif);
+    color: var(--color-warm-cream, #ffedd7);
   }
   .text-success {
     color: #4ade80;
   }
   .text-warning {
-    color: var(--color-ember-accent);
+    color: var(--color-ember-accent, #dc5000);
   }
 
   @media (max-width: 900px) {
     .attendance-summary-cards {
       grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .summary-card {
+      padding: 10px 12px;
+      gap: 10px;
+    }
+    .card-icon {
+      width: 28px;
+      height: 28px;
+    }
+    .card-label {
+      font-size: 8.5px;
+    }
+    .card-val {
+      font-size: 16px;
     }
   }
 </style>
