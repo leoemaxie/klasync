@@ -1,6 +1,13 @@
 <script lang="ts">
   import QrCodeSvg from '$lib/components/shared/QrCodeSvg.svelte';
-  import { Copy, Check, Link as LinkIcon, Share2, Maximize2, X } from '@lucide/svelte';
+  import {
+    Copy,
+    Check,
+    Link as LinkIcon,
+    Share2,
+    Maximize2,
+    X,
+  } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
   let {
@@ -60,7 +67,12 @@
               /> Copy Code{/if}
           </button>
           {#if canNativeShare}
-            <button type="button" class="share-btn" onclick={handleShareInvite} aria-label="Share session invite">
+            <button
+              type="button"
+              class="share-btn"
+              onclick={handleShareInvite}
+              aria-label="Share session invite"
+            >
               <Share2 size={13} /> Share
             </button>
           {/if}
@@ -153,7 +165,9 @@
       <div class="qr-modal-frame">
         <QrCodeSvg value={inviteUrl || code} size={260} />
       </div>
-      <p class="qr-modal-hint">Point phone camera at the screen to join directly</p>
+      <p class="qr-modal-hint">
+        Point phone camera at the screen to join directly
+      </p>
     </div>
   </div>
 {/if}

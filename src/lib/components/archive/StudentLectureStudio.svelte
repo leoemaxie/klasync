@@ -28,7 +28,9 @@
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed
-            .map((c: any) => (typeof c === 'string' ? c : c.text || c.content || ''))
+            .map((c: any) =>
+              typeof c === 'string' ? c : c.text || c.content || ''
+            )
             .filter(Boolean)
             .join('\n');
         }
@@ -57,7 +59,10 @@
     {:else if activeTab === 'audio'}
       <AudioPlayerPanel sessionCode={claim.session_code || claim.id} />
     {:else if activeTab === 'notes'}
-      <LectureStudyNotes sessionId={claim.id} sessionTitle={claim.session_title} />
+      <LectureStudyNotes
+        sessionId={claim.id}
+        sessionTitle={claim.session_title}
+      />
     {/if}
   </div>
 </div>

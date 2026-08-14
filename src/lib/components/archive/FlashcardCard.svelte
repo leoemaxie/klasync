@@ -56,7 +56,8 @@
   ontouchend={handleTouchEnd}
   role="button"
   tabindex="0"
-  aria-label="Flashcard {currentIndex + 1} of {totalCards}. Tap to flip, swipe left or right."
+  aria-label="Flashcard {currentIndex +
+    1} of {totalCards}. Tap to flip, swipe left or right."
   onkeydown={(e) => (e.key === ' ' || e.key === 'Enter') && toggleFlip()}
 >
   <div class="card-face front" aria-hidden={isFlipped}>
@@ -85,11 +86,34 @@
     user-select: none;
     touch-action: pan-y;
   }
-  .flashcard-surface:hover { border-color: var(--color-warm-cream); }
-  .card-label { font-size: 10px; letter-spacing: 0.12em; color: var(--color-ember-accent); margin-bottom: 6px; display: block; }
-  .card-face.front h3 { font-size: 16px; color: var(--color-warm-cream); margin-bottom: 6px; line-height: 1.4; }
-  .answer-text { font-size: 14px; line-height: 1.5; color: var(--color-warm-cream); }
-  .card-face.back { display: none; }
-  .flashcard-surface.flipped .card-face.front { display: none; }
-  .flashcard-surface.flipped .card-face.back { display: block; }
+  .flashcard-surface:hover {
+    border-color: var(--color-warm-cream);
+  }
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--color-ember-accent);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .card-face.front h3 {
+    font-size: 16px;
+    color: var(--color-warm-cream);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .answer-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-warm-cream);
+  }
+  .card-face.back {
+    display: none;
+  }
+  .flashcard-surface.flipped .card-face.front {
+    display: none;
+  }
+  .flashcard-surface.flipped .card-face.back {
+    display: block;
+  }
 </style>

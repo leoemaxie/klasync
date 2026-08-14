@@ -24,12 +24,23 @@
 {#if isOpen}
   <div class="sheet-backdrop" onclick={close} role="presentation">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="sheet-panel" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      class="sheet-panel"
+      onclick={(e) => e.stopPropagation()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div class="sheet-drag-handle"></div>
 
       <div class="sheet-header">
         <h3 class="sheet-title">{title}</h3>
-        <button type="button" class="sheet-close-btn text" onclick={close} aria-label="Close">
+        <button
+          type="button"
+          class="sheet-close-btn text"
+          onclick={close}
+          aria-label="Close"
+        >
           <X size={16} />
         </button>
       </div>
@@ -78,9 +89,34 @@
     border-bottom: 1px solid var(--color-cork-border);
     padding-bottom: 8px;
   }
-  .sheet-title { font-family: var(--font-display); font-size: 17px; color: var(--color-warm-cream); margin: 0; }
-  .sheet-close-btn { padding: 4px; color: var(--color-driftwood); }
-  .sheet-content { overflow-y: auto; max-height: 60vh; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    color: var(--color-warm-cream);
+    margin: 0;
+  }
+  .sheet-close-btn {
+    padding: 4px;
+    color: var(--color-driftwood);
+  }
+  .sheet-content {
+    overflow-y: auto;
+    max-height: 60vh;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 </style>

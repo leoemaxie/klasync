@@ -46,8 +46,25 @@
 </div>
 
 <style>
-  .generator-box { margin-bottom: var(--spacing-6); }
-  .generator-input-row { display: flex; gap: var(--spacing-6); }
-  .generator-input { flex: 1; font-size: 12px; padding: 6px 10px; }
-  .gen-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 6px 12px; text-transform: uppercase; white-space: nowrap; }
+  .generator-box {
+    margin-bottom: var(--spacing-6);
+  }
+  .generator-input-row {
+    display: flex;
+    gap: var(--spacing-6);
+  }
+  .generator-input {
+    flex: 1;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  .gen-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    padding: 6px 12px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
 </style>

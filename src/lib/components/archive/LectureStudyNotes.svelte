@@ -2,7 +2,10 @@
   import { onMount } from 'svelte';
   import { Check, Copy, Download, Save } from '@lucide/svelte';
 
-  let { sessionId, sessionTitle = 'Lecture' }: { sessionId: string; sessionTitle?: string } = $props();
+  let {
+    sessionId,
+    sessionTitle = 'Lecture',
+  }: { sessionId: string; sessionTitle?: string } = $props();
 
   let notes = $state('');
   let isSaved = $state(true);
@@ -14,7 +17,9 @@
   onMount(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      notes = saved || `# Study Notes: ${sessionTitle}\n\n## Key Takeaways\n- \n\n## Action Items\n- `;
+      notes =
+        saved ||
+        `# Study Notes: ${sessionTitle}\n\n## Key Takeaways\n- \n\n## Action Items\n- `;
     } catch {}
   });
 
@@ -57,10 +62,20 @@
     </div>
 
     <div class="notes-actions">
-      <button type="button" class="outline" onclick={handleCopy} title="Copy notes">
+      <button
+        type="button"
+        class="outline"
+        onclick={handleCopy}
+        title="Copy notes"
+      >
         {#if showCopied}<Check size={12} /> Copied!{:else}<Copy size={12} /> Copy{/if}
       </button>
-      <button type="button" class="outline" onclick={handleDownload} title="Export markdown">
+      <button
+        type="button"
+        class="outline"
+        onclick={handleDownload}
+        title="Export markdown"
+      >
         <Download size={12} /> Export .md
       </button>
     </div>
@@ -72,8 +87,7 @@
     oninput={handleInput}
     placeholder="Take lecture notes, formulas, or summaries..."
     aria-label="Student lecture notes"
-    rows="12"
-  ></textarea>
+    rows="12"></textarea>
 </div>
 
 <style>
@@ -93,7 +107,8 @@
     flex-wrap: wrap;
     gap: var(--spacing-8);
   }
-  .notes-title-wrap, .notes-actions {
+  .notes-title-wrap,
+  .notes-actions {
     display: flex;
     align-items: center;
     gap: 8px;

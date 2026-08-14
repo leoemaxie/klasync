@@ -6,7 +6,11 @@
   import ArchiveWelcomeView from './ArchiveWelcomeView.svelte';
   import StudentLectureStudio from './StudentLectureStudio.svelte';
   import StudentCoursesHub from './StudentCoursesHub.svelte';
-  import { getArchiveResources, getStudentArchive, type ClaimRecord } from '$lib/api';
+  import {
+    getArchiveResources,
+    getStudentArchive,
+    type ClaimRecord,
+  } from '$lib/api';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -30,7 +34,9 @@
   function handleSelectCourse(code: string) {
     searchQuery = code;
     activeViewMode = 'claims';
-    const first = claims.find((c) => c.course_code.toLowerCase() === code.toLowerCase());
+    const first = claims.find(
+      (c) => c.course_code.toLowerCase() === code.toLowerCase()
+    );
     if (first) selectedClaim = first;
   }
 </script>
@@ -39,7 +45,10 @@
   <title>Student Archive Studio — Klasync</title>
 </svelte:head>
 
-<div class="student-studio-workspace" class:mobile-detail-open={!!selectedClaim}>
+<div
+  class="student-studio-workspace"
+  class:mobile-detail-open={!!selectedClaim}
+>
   <ArchiveTopBar claimsCount={claims.length} onNavigate={(s) => (screen = s)} />
 
   <div class="studio-layout">
@@ -54,13 +63,22 @@
       />
     </div>
 
-    <main class="studio-detail-canvas panel" class:visible-on-mobile={!!selectedClaim}>
+    <main
+      class="studio-detail-canvas panel"
+      class:visible-on-mobile={!!selectedClaim}
+    >
       {#if activeViewMode === 'courses' && !selectedClaim}
         <StudentCoursesHub onSelectCourseFilter={handleSelectCourse} />
       {:else if selectedClaim}
-        <StudentLectureStudio claim={selectedClaim} onBack={() => (selectedClaim = null)} />
+        <StudentLectureStudio
+          claim={selectedClaim}
+          onBack={() => (selectedClaim = null)}
+        />
       {:else}
-        <ArchiveWelcomeView {claims} onOpenLatest={(c) => (selectedClaim = c)} />
+        <ArchiveWelcomeView
+          {claims}
+          onOpenLatest={(c) => (selectedClaim = c)}
+        />
       {/if}
     </main>
   </div>
@@ -68,7 +86,8 @@
 
 <style>
   .student-studio-workspace {
-    padding: calc(var(--nav-height) + 16px) var(--card-padding) calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
+    padding: calc(var(--nav-height) + 16px) var(--card-padding)
+      calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
     max-width: 1440px;
     margin: 0 auto;
     display: flex;

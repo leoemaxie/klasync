@@ -8,7 +8,9 @@
 
   const lines = $derived(
     transcript
-      ? transcript.split('\n').filter((l) => l.toLowerCase().includes(filterTerm.toLowerCase()))
+      ? transcript
+          .split('\n')
+          .filter((l) => l.toLowerCase().includes(filterTerm.toLowerCase()))
       : []
   );
 
@@ -30,13 +32,22 @@
     <div class="header-controls">
       {#if transcript}
         <button type="button" class="outline copy-btn" onclick={handleCopyAll}>
-          {#if isAllCopied}<Check size={12} /> Copied{:else}<Copy size={12} /> Copy Full{/if}
+          {#if isAllCopied}<Check size={12} /> Copied{:else}<Copy size={12} /> Copy
+            Full{/if}
         </button>
         <div class="font-controls" role="group" aria-label="Font size">
           <Type size={12} color="var(--color-driftwood)" />
-          <button type="button" class="text" onclick={() => (fontSize = Math.max(13, fontSize - 1))}>A-</button>
+          <button
+            type="button"
+            class="text"
+            onclick={() => (fontSize = Math.max(13, fontSize - 1))}>A-</button
+          >
           <span class="font-size-label">{fontSize}px</span>
-          <button type="button" class="text" onclick={() => (fontSize = Math.min(28, fontSize + 1))}>A+</button>
+          <button
+            type="button"
+            class="text"
+            onclick={() => (fontSize = Math.min(28, fontSize + 1))}>A+</button
+          >
         </div>
       {/if}
     </div>
@@ -45,7 +56,12 @@
   {#if transcript}
     <div class="search-bar-wrap">
       <Search size={13} class="search-icon" />
-      <input type="search" bind:value={filterTerm} placeholder="Filter transcript keywords..." class="transcript-search" />
+      <input
+        type="search"
+        bind:value={filterTerm}
+        placeholder="Filter transcript keywords..."
+        class="transcript-search"
+      />
     </div>
     <div class="transcript-content" style="font-size: {fontSize}px;" role="log">
       {#if lines.length > 0}
@@ -74,15 +90,23 @@
     border: 1px solid var(--color-cork-border);
     border-radius: var(--radius-cards);
   }
-  .transcript-header, .header-controls {
+  .transcript-header,
+  .header-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
   }
-  .transcript-stats { font-size: 11px; color: var(--color-driftwood); }
-  .copy-btn { font-size: 10px; padding: 4px 8px; text-transform: uppercase; }
+  .transcript-stats {
+    font-size: 11px;
+    color: var(--color-driftwood);
+  }
+  .copy-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+    text-transform: uppercase;
+  }
   .font-controls {
     display: flex;
     align-items: center;
@@ -92,11 +116,32 @@
     padding: 2px 6px;
     border-radius: 4px;
   }
-  .font-controls button { font-size: 10px; padding: 2px 4px; border: none; }
-  .font-size-label { font-size: 10px; color: var(--color-warm-cream); font-family: var(--font-mono, monospace); }
-  .search-bar-wrap { position: relative; display: flex; align-items: center; }
-  :global(.search-bar-wrap .search-icon) { position: absolute; left: 10px; color: var(--color-driftwood); }
-  .transcript-search { width: 100%; padding-left: 28px !important; font-size: 12px; margin: 0; }
+  .font-controls button {
+    font-size: 10px;
+    padding: 2px 4px;
+    border: none;
+  }
+  .font-size-label {
+    font-size: 10px;
+    color: var(--color-warm-cream);
+    font-family: var(--font-mono, monospace);
+  }
+  .search-bar-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  :global(.search-bar-wrap .search-icon) {
+    position: absolute;
+    left: 10px;
+    color: var(--color-driftwood);
+  }
+  .transcript-search {
+    width: 100%;
+    padding-left: 28px !important;
+    font-size: 12px;
+    margin: 0;
+  }
   .transcript-content {
     min-height: 240px;
     max-height: 480px;
@@ -107,7 +152,20 @@
     border-radius: 6px;
     padding: var(--spacing-10);
   }
-  .transcript-row { display: flex; gap: 8px; padding: 3px 0; }
-  .line-idx { font-family: var(--font-mono, monospace); font-size: 10px; color: var(--color-driftwood); opacity: 0.7; min-width: 18px; }
-  .transcript-line { margin: 0; flex: 1; }
+  .transcript-row {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+  }
+  .line-idx {
+    font-family: var(--font-mono, monospace);
+    font-size: 10px;
+    color: var(--color-driftwood);
+    opacity: 0.7;
+    min-width: 18px;
+  }
+  .transcript-line {
+    margin: 0;
+    flex: 1;
+  }
 </style>

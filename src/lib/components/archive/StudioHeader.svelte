@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { ClaimRecord } from '$lib/api';
-  import { ArrowLeft, CheckCircle2, Share2, Calendar, Check } from '@lucide/svelte';
+  import {
+    ArrowLeft,
+    CheckCircle2,
+    Share2,
+    Calendar,
+    Check,
+  } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
   let {
@@ -26,7 +32,12 @@
 <div class="studio-header">
   <div class="header-left">
     {#if onBack}
-      <button type="button" class="back-btn outline" onclick={onBack} title="Back to explorer">
+      <button
+        type="button"
+        class="back-btn outline"
+        onclick={onBack}
+        title="Back to explorer"
+      >
         <ArrowLeft size={14} />
         <span>Explorer</span>
       </button>
@@ -44,7 +55,11 @@
   </div>
 
   <div class="header-right">
-    <button type="button" class="action-ghost-btn outline" onclick={handleCopyShare}>
+    <button
+      type="button"
+      class="action-ghost-btn outline"
+      onclick={handleCopyShare}
+    >
       {#if isCopied}
         <Check size={12} color="var(--color-warm-cream)" /> <span>Copied</span>
       {:else}
@@ -61,10 +76,13 @@
 <div class="studio-title-area">
   <h1 class="session-main-title">{claim.session_title}</h1>
   <div class="session-sub-info">
-    <span class="info-item"><Calendar size={12} /> Claimed on {claim.date}</span>
+    <span class="info-item"><Calendar size={12} /> Claimed on {claim.date}</span
+    >
     {#if claim.session_code}
       <span class="info-divider">·</span>
-      <span class="info-item">Session Code: <strong>{claim.session_code}</strong></span>
+      <span class="info-item"
+        >Session Code: <strong>{claim.session_code}</strong></span
+      >
     {/if}
   </div>
 </div>
@@ -79,7 +97,9 @@
     padding-bottom: var(--spacing-10);
     border-bottom: 1px solid var(--color-cork-border);
   }
-  .header-left, .meta-tags-row, .header-right {
+  .header-left,
+  .meta-tags-row,
+  .header-right {
     display: flex;
     align-items: center;
     gap: 6px;

@@ -79,28 +79,50 @@
         <Skeleton height="36px" label="Verifying session code..." />
       {:else if sessionTitle}
         <div class="session-info-badge">
-          <p class="eyebrow"><span class="eyebrow-accent">●</span> {sessionStatus.toUpperCase()}</p>
+          <p class="eyebrow">
+            <span class="eyebrow-accent">●</span>
+            {sessionStatus.toUpperCase()}
+          </p>
           <h2>{sessionTitle}</h2>
         </div>
       {/if}
 
       <label for="matric-input">
         Matric / Student ID
-        <input id="matric-input" type="text" autocapitalize="characters" bind:value={matric} placeholder="MAT/2023/001" />
+        <input
+          id="matric-input"
+          type="text"
+          autocapitalize="characters"
+          bind:value={matric}
+          placeholder="MAT/2023/001"
+        />
       </label>
 
       <label for="display-name-input">
         Full name <span>(optional if on roster)</span>
-        <input id="display-name-input" type="text" bind:value={displayName} placeholder="Ada Okafor" />
+        <input
+          id="display-name-input"
+          type="text"
+          bind:value={displayName}
+          placeholder="Ada Okafor"
+        />
       </label>
 
       {#if joinError}<p class="error" role="alert">{joinError}</p>{/if}
 
-      <button class="primary full" onclick={handleJoin} disabled={sessionStatus === 'ended' || !matric.trim() || isJoining}>
-        {#if isJoining}<ButtonSpinner label="Verifying..." /> Entering...{:else if sessionStatus === 'ended'}Session Ended{:else}Join lecture{/if}
+      <button
+        class="primary full"
+        onclick={handleJoin}
+        disabled={sessionStatus === 'ended' || !matric.trim() || isJoining}
+      >
+        {#if isJoining}<ButtonSpinner label="Verifying..." /> Entering...{:else if sessionStatus === 'ended'}Session
+          Ended{:else}Join lecture{/if}
       </button>
       <p class="hint">Matric number verified against course roster.</p>
     </div>
   </div>
-  <PublicVisualPanel title="INSTANT GUEST ACCESS" subtitle="Zero barriers · Real-time captions · Fair attendance" />
+  <PublicVisualPanel
+    title="INSTANT GUEST ACCESS"
+    subtitle="Zero barriers · Real-time captions · Fair attendance"
+  />
 </section>

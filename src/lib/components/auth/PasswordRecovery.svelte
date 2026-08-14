@@ -5,16 +5,28 @@
   import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
-  let mode = $state<'request' | 'complete'>(screen === 'reset-password' ? 'complete' : 'request');
-  let email = $state(''), role = $state<'lecturer' | 'student'>('lecturer');
-  let resetToken = $state(''), newPassword = $state(''), confirmPassword = $state('');
-  let statusNotice = $state(''), errorMsg = $state(''), isSubmitting = $state(false);
+  let mode = $state<'request' | 'complete'>(
+    screen === 'reset-password' ? 'complete' : 'request'
+  );
+  let email = $state(''),
+    role = $state<'lecturer' | 'student'>('lecturer');
+  let resetToken = $state(''),
+    newPassword = $state(''),
+    confirmPassword = $state('');
+  let statusNotice = $state(''),
+    errorMsg = $state(''),
+    isSubmitting = $state(false);
 
   $effect(() => {
     if (typeof window !== 'undefined') {
-      const q = new URLSearchParams(window.location.search || window.location.hash.split('?')[1]);
+      const q = new URLSearchParams(
+        window.location.search || window.location.hash.split('?')[1]
+      );
       const tok = q.get('token');
-      if (tok) { resetToken = tok; mode = 'complete'; }
+      if (tok) {
+        resetToken = tok;
+        mode = 'complete';
+      }
     }
   });
 
@@ -29,26 +41,32 @@
     errorMsg = '';
     statusNotice = '';
     if (mode === 'request') {
-      if (!email.trim()) return (errorMsg = 'Please enter your registered email address.');
+      if (!email.trim())
+        return (errorMsg = 'Please enter your registered email address.');
       isSubmitting = true;
       try {
         await requestPasswordReset(email.trim(), role);
         statusNotice = `Recovery instructions dispatched. If an account exists for ${email.trim()}, check your inbox and spam folder.`;
       } catch (err) {
-        errorMsg = err instanceof Error ? err.message : 'Unable to process request.';
+        errorMsg =
+          err instanceof Error ? err.message : 'Unable to process request.';
       } finally {
         isSubmitting = false;
       }
     } else {
-      if (!resetToken.trim()) return (errorMsg = 'Please enter the reset token.');
-      if (newPassword.length < 12) return (errorMsg = 'Password must be at least 12 characters.');
-      if (newPassword !== confirmPassword) return (errorMsg = 'Passwords do not match.');
+      if (!resetToken.trim())
+        return (errorMsg = 'Please enter the reset token.');
+      if (newPassword.length < 12)
+        return (errorMsg = 'Password must be at least 12 characters.');
+      if (newPassword !== confirmPassword)
+        return (errorMsg = 'Passwords do not match.');
       isSubmitting = true;
       try {
         await completePasswordReset(resetToken.trim(), newPassword.trim());
         statusNotice = 'Password reset successfully. You may now sign in.';
       } catch (err) {
-        errorMsg = err instanceof Error ? err.message : 'Unable to reset password.';
+        errorMsg =
+          err instanceof Error ? err.message : 'Unable to reset password.';
       } finally {
         isSubmitting = false;
       }
@@ -63,33 +81,89 @@
 <section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
     <p class="eyebrow">ACCOUNT RECOVERY / PASSWORD RESET</p>
-    <h1 class="title-single-line">{mode === 'request' ? 'Recover account access.' : 'Complete password reset.'}</h1>
-    <p class="lede">{mode === 'request' ? 'Enter your registered email address to receive reset instructions.' : 'Enter your reset token and your new password.'}</p>
+    <h1 class="title-single-line">
+      {mode === 'request'
+        ? 'Recover account access.'
+        : 'Complete password reset.'}
+    </h1>
+    <p class="lede">
+      {mode === 'request'
+        ? 'Enter your registered email address to receive reset instructions.'
+        : 'Enter your reset token and your new password.'}
+    </p>
 
     <form class="join-card panel" onsubmit={handleSubmit}>
       {#if mode === 'request'}
-        <div class="role-selector" role="group" aria-label="Account type selection">
-          <button type="button" class={role === 'lecturer' ? 'primary' : 'outline'} aria-pressed={role === 'lecturer'} onclick={() => (role = 'lecturer')}>Lecturer</button>
-          <button type="button" class={role === 'student' ? 'primary' : 'outline'} aria-pressed={role === 'student'} onclick={() => (role = 'student')}>Student</button>
+        <div
+          class="role-selector"
+          role="group"
+          aria-label="Account type selection"
+        >
+          <button
+            type="button"
+            class={role === 'lecturer' ? 'primary' : 'outline'}
+            aria-pressed={role === 'lecturer'}
+            onclick={() => (role = 'lecturer')}>Lecturer</button
+          >
+          <button
+            type="button"
+            class={role === 'student' ? 'primary' : 'outline'}
+            aria-pressed={role === 'student'}
+            onclick={() => (role = 'student')}>Student</button
+          >
         </div>
-        <label for="rec-email">Registered Email
-          <input id="rec-email" type="email" bind:value={email} placeholder="name@university.edu" required autocomplete="email" />
+        <label for="rec-email"
+          >Registered Email
+          <input
+            id="rec-email"
+            type="email"
+            bind:value={email}
+            placeholder="name@university.edu"
+            required
+            autocomplete="email"
+          />
         </label>
       {:else}
-        <label for="rec-tok">Reset Token
-          <input id="rec-tok" bind:value={resetToken} placeholder="Paste token from email..." required />
+        <label for="rec-tok"
+          >Reset Token
+          <input
+            id="rec-tok"
+            bind:value={resetToken}
+            placeholder="Paste token from email..."
+            required
+          />
         </label>
-        <label for="rec-pw">New Password <span>(minimum 12 characters)</span>
-          <input id="rec-pw" type="password" bind:value={newPassword} placeholder="••••••••••••" required autocomplete="new-password" />
+        <label for="rec-pw"
+          >New Password <span>(minimum 12 characters)</span>
+          <input
+            id="rec-pw"
+            type="password"
+            bind:value={newPassword}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
         </label>
-        <label for="rec-cpw">Confirm New Password
-          <input id="rec-cpw" type="password" bind:value={confirmPassword} placeholder="••••••••••••" required autocomplete="new-password" />
+        <label for="rec-cpw"
+          >Confirm New Password
+          <input
+            id="rec-cpw"
+            type="password"
+            bind:value={confirmPassword}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
         </label>
       {/if}
 
       {#if statusNotice}
         <div class="feedback-box" role="status" aria-live="polite">
-          <span class="feedback-badge">{mode === 'request' ? 'EMAIL DISPATCHED' : 'PASSWORD UPDATED'}</span>
+          <span class="feedback-badge"
+            >{mode === 'request'
+              ? 'EMAIL DISPATCHED'
+              : 'PASSWORD UPDATED'}</span
+          >
           <p class="feedback-msg">{statusNotice}</p>
         </div>
       {/if}
@@ -97,22 +171,43 @@
         <p class="error" role="alert">{errorMsg}</p>
       {/if}
 
-      <button type="submit" class="primary full" disabled={isSubmitting || (!!statusNotice && mode === 'complete')}>
-        {#if isSubmitting}<ButtonSpinner label="Processing..." /> Processing...{:else if mode === 'request'}Send Reset Link{:else}Complete Password Reset{/if}
+      <button
+        type="submit"
+        class="primary full"
+        disabled={isSubmitting || (!!statusNotice && mode === 'complete')}
+      >
+        {#if isSubmitting}<ButtonSpinner label="Processing..." /> Processing...{:else if mode === 'request'}Send
+          Reset Link{:else}Complete Password Reset{/if}
       </button>
 
       <div class="auth-footer-links">
-        <button type="button" class="text-link" onclick={() => setMode(mode === 'request' ? 'complete' : 'request')}>
-          {mode === 'request' ? 'Already have a reset token?' : 'Need to request a token?'}
+        <button
+          type="button"
+          class="text-link"
+          onclick={() => setMode(mode === 'request' ? 'complete' : 'request')}
+        >
+          {mode === 'request'
+            ? 'Already have a reset token?'
+            : 'Need to request a token?'}
         </button>
-        <a href={role === 'lecturer' ? '#/auth/lecturer/login' : '#/auth/student/login'} class="text-link" onclick={() => (screen = role === 'lecturer' ? 'lecturer-login' : 'student-login')}>
+        <a
+          href={role === 'lecturer'
+            ? '#/auth/lecturer/login'
+            : '#/auth/student/login'}
+          class="text-link"
+          onclick={() =>
+            (screen = role === 'lecturer' ? 'lecturer-login' : 'student-login')}
+        >
           Back to sign in
         </a>
       </div>
     </form>
   </div>
 
-  <PublicVisualPanel title="SECURE AUTHENTICATION" subtitle="Encrypted Identity · Verification Claims · Password Reset" />
+  <PublicVisualPanel
+    title="SECURE AUTHENTICATION"
+    subtitle="Encrypted Identity · Verification Claims · Password Reset"
+  />
 </section>
 
 <style>
@@ -139,5 +234,7 @@
     color: var(--color-warm-cream, #e4e0d4);
     margin: 0;
   }
-  .full { width: 100%; }
+  .full {
+    width: 100%;
+  }
 </style>

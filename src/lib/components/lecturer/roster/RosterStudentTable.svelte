@@ -69,7 +69,9 @@
         </div>
       </div>
       <div class="card-right">
-        <span class="status-pill verified"><CheckCircle2 size={10} /> Verified</span>
+        <span class="status-pill verified"
+          ><CheckCircle2 size={10} /> Verified</span
+        >
         {#if onRemoveStudent}
           <button
             type="button"

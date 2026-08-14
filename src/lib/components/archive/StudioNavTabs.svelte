@@ -2,7 +2,8 @@
   import { FileText, Bookmark, Layers, Volume2, Edit3 } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
-  export type StudioTab = 'transcript' | 'chapters' | 'flashcards' | 'audio' | 'notes';
+  export type StudioTab =
+    'transcript' | 'chapters' | 'flashcards' | 'audio' | 'notes';
 
   let {
     activeTab = $bindable<StudioTab>('transcript'),

@@ -31,7 +31,8 @@
   <h3 class="course-card-title">{course.title}</h3>
 
   <div class="card-meta-row">
-    <span class="tag session-tag">{course.academic_session || '2025/2026'}</span>
+    <span class="tag session-tag">{course.academic_session || '2025/2026'}</span
+    >
     <span class="tag semester-tag">{course.semester || 'Second Semester'}</span>
   </div>
 
@@ -39,7 +40,9 @@
     {#if isActive}
       <span class="active-status">Active offering in workspace</span>
     {:else}
-      <span class="select-hint">Switch to this course <ArrowRight size={11} /></span>
+      <span class="select-hint"
+        >Switch to this course <ArrowRight size={11} /></span
+      >
     {/if}
   </div>
 </div>
@@ -54,7 +57,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
     text-align: left;
     position: relative;
   }
