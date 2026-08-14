@@ -76,7 +76,7 @@ impl R2ObjectStore {
             .filter(|ext| !ext.is_empty())
             .map(|ext| format!(".{ext}"))
             .unwrap_or_default();
-        format!("uploads/{}{}", uuid::Uuid::now_v7(), extension)
+        format!("uploads/{}{}", uuid::Uuid::new_v4(), extension)
     }
 }
 

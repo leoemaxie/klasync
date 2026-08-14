@@ -4,7 +4,6 @@ use axum::{
     Json,
 };
 use chrono::Utc;
-use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{

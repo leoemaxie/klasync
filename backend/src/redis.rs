@@ -50,9 +50,6 @@ impl RedisStore {
             .set_number_of_retries(2)
             .set_min_delay(Duration::from_millis(250))
             .set_max_delay(Duration::from_secs(2));
-        // Health-check the exact manager held by the application. The previous
-        // implementation checked a separate connection, then opened another
-        // unmanaged manager connection that could time out during startup.
         let mut manager = tokio::time::timeout(
             connect_timeout,
             client.get_connection_manager_with_config(manager_config),

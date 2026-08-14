@@ -25,9 +25,7 @@ pub async fn upload(
     Path(short_code): Path<String>,
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<AudioIngestionResponse>), ApiError> {
-    let pool = state
-        .production_database()
-        .ok_or_else(|| ApiError::service_unavailable())?;
+    let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     let owns_session: bool = sqlx::query_scalar(
         "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
@@ -58,9 +56,9 @@ pub async fn upload(
     if bytes.is_empty() {
         return Err(ApiError::bad_request("Audio file cannot be empty"));
     }
-    if bytes.len() > 250 * 1024 * 1024 {
+    if bytes.len() > 50 * 1024 * 1024 {
         return Err(ApiError::bad_request(
-            "Audio file exceeds maximum allowed size (250MB)",
+            "Audio file exceeds maximum allowed size (50MB)",
         ));
     }
 
@@ -72,7 +70,7 @@ pub async fn upload(
             tracing::error!(%error, "Audio file storage put failed");
             ApiError::service_unavailable()
         })?;
-    let resource_id = Uuid::now_v7();
+    let resource_id = Uuid::new_v4();
     sqlx::query(
         "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) values ($1, $2, 'audio', $3, $4, $5, $6)",
     )
