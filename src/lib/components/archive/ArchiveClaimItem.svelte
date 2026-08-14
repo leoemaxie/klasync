@@ -14,7 +14,7 @@
   } = $props();
 
   function handleClick() {
-    triggerHaptic('selection');
+    triggerHaptic('light');
     onSelect(claim);
   }
 </script>
@@ -24,7 +24,6 @@
   class="claim-item-card"
   class:selected={isSelected}
   onclick={handleClick}
-  role="listitem"
   aria-current={isSelected ? 'true' : undefined}
 >
   <div class="item-head">

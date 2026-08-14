@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { UserCheck, Layers, Calendar } from '@lucide/svelte';
+  import { UserCheck, Layers } from '@lucide/svelte';
   import type { Course } from '$lib/types';
   import CourseSelectorModal from './CourseSelectorModal.svelte';
 
@@ -52,12 +52,12 @@
     </button>
   </div>
 
-  <!-- Active Course Indicator Pill -->
-  <div
+  <!-- Active Course Indicator Button -->
+  <button
+    type="button"
     class="offering-summary-pill"
     onclick={() => (isSelectorOpen = true)}
-    role="button"
-    tabindex="0"
+    aria-label="Select or create course offering"
   >
     <div class="pill-left">
       <span class="pill-code">{courseCode || 'NO COURSE SET'}</span>
@@ -69,7 +69,7 @@
       <span class="tag session-tag">{academicSession || '2025/2026'}</span>
       <span class="tag semester-tag">{semester || 'Second Semester'}</span>
     </div>
-  </div>
+  </button>
 
   <div class="form-fields">
     <label>
@@ -166,6 +166,8 @@
     cursor: pointer;
     transition: all 0.2s ease;
     gap: 8px;
+    width: 100%;
+    text-align: left;
   }
   .offering-summary-pill:hover {
     border-color: var(--color-ember-accent);

@@ -70,17 +70,15 @@
 {#if isOpen}
   <div
     class="spotlight-backdrop"
-    role="presentation"
-    onclick={() => (isOpen = false)}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Spotlight Quick Search"
+    onclick={(e) => e.target === e.currentTarget && (isOpen = false)}
     onkeydown={(e) => e.key === 'Escape' && (isOpen = false)}
   >
     <div
       class="spotlight-dialog panel"
-      role="dialog"
-      aria-modal="true"
       tabindex="-1"
-      aria-label="Spotlight Quick Search"
-      onclick={(e) => e.stopPropagation()}
     >
       <div class="spotlight-header">
         <Search size={18} class="search-icon" />
