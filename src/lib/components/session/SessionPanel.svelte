@@ -1,17 +1,12 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import type { Session } from '$lib/types';
-  import ButtonSpinner from '$lib/components/shared/ButtonSpinner.svelte';
   import SessionTopHeader from './SessionTopHeader.svelte';
   import SessionAccessCard from './SessionAccessCard.svelte';
   import SessionControlsCard from './SessionControlsCard.svelte';
+  import StartSessionCard from './StartSessionCard.svelte';
   import { pauseSession, resumeSession, toggleRecording } from '$lib/api';
-  import {
-    startMicrophoneAudioStream,
-    type AudioStreamer,
-    type IngestedCaption,
-  } from '$lib/api/audio';
-  import { Radio } from '@lucide/svelte';
+  import { startMicrophoneAudioStream, type AudioStreamer, type IngestedCaption } from '$lib/api/audio';
   import LiveQaPanel from './LiveQaPanel.svelte';
 
   let {
@@ -55,16 +50,12 @@
   let lastMeterUpdate = 0;
 
   const inviteUrl = $derived(
-    session?.code
-      ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}`
-      : ''
+    session?.code ? `${typeof location !== 'undefined' ? location.origin : ''}/#/?join=${session.code}` : ''
   );
 
   function startLevelMeter(stream: MediaStream) {
     try {
-      if (audioCtx) {
-        audioCtx.close().catch(() => {});
-      }
+      if (audioCtx) audioCtx.close().catch(() => {});
       audioCtx = new AudioContext();
       const src = audioCtx.createMediaStreamSource(stream);
       const analyzer = audioCtx.createAnalyser();
@@ -72,17 +63,10 @@
       src.connect(analyzer);
       const data = new Uint8Array(analyzer.frequencyBinCount);
       function tick(timestamp: number) {
-        if (!isRecording) {
-          audioLevel = 0;
-          return;
-        }
-        // Throttle UI reactive updates to ~20 FPS (every 50ms)
+        if (!isRecording) { audioLevel = 0; return; }
         if (timestamp - lastMeterUpdate > 50) {
           analyzer.getByteFrequencyData(data);
-          audioLevel = Math.min(
-            (data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100,
-            100
-          );
+          audioLevel = Math.min((data.reduce((a, b) => a + b, 0) / (data.length * 128)) * 100, 100);
           lastMeterUpdate = timestamp;
         }
         animFrameId = requestAnimationFrame(tick);
@@ -94,22 +78,10 @@
   }
 
   function stopAudioStream() {
-    if (streamer) {
-      streamer.stop();
-      streamer = null;
-    }
-    if (audioCtx) {
-      audioCtx.close().catch(() => {});
-      audioCtx = null;
-    }
-    if (mediaStream) {
-      mediaStream.getTracks().forEach((t) => t.stop());
-      mediaStream = null;
-    }
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
+    if (streamer) { streamer.stop(); streamer = null; }
+    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
+    if (mediaStream) { mediaStream.getTracks().forEach((t) => t.stop()); mediaStream = null; }
+    if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
     audioLevel = 0;
   }
 
@@ -125,9 +97,8 @@
         await pauseSession(session.code);
         isPaused = true;
       }
-    } catch (err) {
-      actionError =
-        err instanceof Error ? err.message : 'Failed to toggle session state';
+    } catch (err: any) {
+      actionError = err?.message || 'Failed to toggle session state';
     } finally {
       isTogglingPause = false;
     }
@@ -140,23 +111,11 @@
     try {
       if (!isRecording) {
         try {
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           startLevelMeter(mediaStream);
-          streamer = startMicrophoneAudioStream(
-            session.code,
-            mediaStream,
-            (caption) => {
-              onCaptionIngested?.(caption);
-            },
-            (err) => {
-              actionError = `Audio stream notice: ${err.message}`;
-            }
-          );
+          streamer = startMicrophoneAudioStream(session.code, mediaStream, (cap) => onCaptionIngested?.(cap), (err) => { actionError = `Audio stream notice: ${err.message}`; });
         } catch {
-          actionError =
-            'Could not access browser microphone. Check device permissions.';
+          actionError = 'Could not access browser microphone. Check device permissions.';
           return;
         }
         await toggleRecording(session.code, true);
@@ -166,9 +125,8 @@
         await toggleRecording(session.code, false);
         isRecording = false;
       }
-    } catch (err) {
-      actionError =
-        err instanceof Error ? err.message : 'Failed to toggle recording';
+    } catch (err: any) {
+      actionError = err?.message || 'Failed to toggle recording';
     } finally {
       isTogglingRec = false;
     }
@@ -191,18 +149,8 @@
 
 <div class="session-dashboard">
   {#if session?.live}
-    <SessionTopHeader
-      title={session.title}
-      {isPaused}
-      {isRecording}
-      {audioLevel}
-    />
-    <SessionAccessCard
-      code={session.code}
-      {inviteUrl}
-      {copied}
-      {onCopyInvite}
-    />
+    <SessionTopHeader title={session.title} {isPaused} {isRecording} {audioLevel} />
+    <SessionAccessCard code={session.code} {inviteUrl} {copied} {onCopyInvite} />
     <SessionControlsCard
       {isPaused}
       {isRecording}
@@ -217,39 +165,13 @@
     />
     <LiveQaPanel sessionCode={session.code} isLecturer={true} />
   {:else}
-    <div class="start-session-card">
-      <div class="start-header">
-        <p class="eyebrow">READY TO BROADCAST</p>
-        <h2 class="start-title">Start Live Lecture Session</h2>
-        <p class="start-desc">
-          Generate access code, invite link, and QR code for student entry.
-        </p>
-      </div>
-      <div class="lecturer-summary-box">
-        <div class="summary-item">
-          <span class="sum-label">LECTURER:</span><span class="sum-val"
-            >{lecturerName || 'Not Set'}</span
-          >
-        </div>
-        <div class="summary-item">
-          <span class="sum-label">EMAIL:</span><span class="sum-val"
-            >{lecturerEmail || 'Not Set'}</span
-          >
-        </div>
-      </div>
-      {#if apiNotice}<p class="error-notice">{apiNotice}</p>{/if}
-      <button
-        type="button"
-        class="primary start-btn"
-        onclick={onStartSession}
-        disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}
-      >
-        {#if isSaving}<ButtonSpinner
-            label="Initializing live lecture room..."
-          /> Initializing Live Room...{:else}<Radio size={16} /> Start Live Session
-          Now{/if}
-      </button>
-    </div>
+    <StartSessionCard
+      {lecturerName}
+      {lecturerEmail}
+      {apiNotice}
+      {isSaving}
+      {onStartSession}
+    />
   {/if}
 </div>
 
@@ -257,61 +179,6 @@
   .session-dashboard {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-16);
-  }
-  .start-session-card {
-    background: rgba(16, 9, 4, 0.6);
-    border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
-    padding: var(--spacing-28);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-18);
-  }
-  .start-title {
-    font-size: 24px;
-    font-weight: 500;
-    color: var(--color-warm-cream);
-    margin: 4px 0 8px 0;
-    font-family: var(--font-display);
-  }
-  .start-desc {
-    font-size: 13px;
-    color: var(--color-driftwood);
-    margin: 0;
-  }
-  .lecturer-summary-box {
-    display: flex;
     gap: var(--spacing-20);
-    background: rgba(10, 5, 2, 0.6);
-    border: 1px solid var(--color-cork-border);
-    padding: 12px 16px;
-    border-radius: 6px;
-    flex-wrap: wrap;
-  }
-  .summary-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-  }
-  .sum-label {
-    color: var(--color-driftwood);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-  }
-  .sum-val {
-    color: var(--color-warm-cream);
-    font-weight: 500;
-  }
-  .start-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 24px;
-    font-size: 13px;
-    align-self: flex-start;
   }
 </style>

@@ -1,18 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import type { Screen } from '$lib/types';
   import { triggerHaptic } from '$lib/native/haptics';
-  import {
-    Search,
-    Radio,
-    BookOpen,
-    Users,
-    Settings,
-    X,
-    ArrowRight,
-  } from '@lucide/svelte';
-
+  import { Search, X, ArrowRight } from '@lucide/svelte';
   import type { AuthUser } from '$lib/api/auth';
+  import { getShortcutActions, type ShortcutAction } from './spotlight/spotlightActions';
+  import SpotlightItem from './spotlight/SpotlightItem.svelte';
 
   let {
     isOpen = $bindable(false),
@@ -29,62 +21,7 @@
   let searchQuery = $state('');
   let searchInputRef: HTMLInputElement | null = $state(null);
 
-  interface ShortcutAction {
-    id: string;
-    title: string;
-    description: string;
-    icon: typeof Radio;
-    category: 'Navigation' | 'Action';
-    action: () => void;
-  }
-
-  const actions: ShortcutAction[] = $derived([
-    {
-      id: 'join',
-      title: 'Join Live Lecture Session',
-      description:
-        'Enter guest short-code & student ID to access live captions',
-      icon: Radio,
-      category: 'Navigation',
-      action: () => {
-        screen = 'join';
-        isOpen = false;
-      },
-    },
-    ...(!currentUser ||
-    currentUser.role === 'lecturer' ||
-    currentUser.role === 'admin'
-      ? [
-          {
-            id: 'lecturer',
-            title: 'Lecturer Control Room',
-            description: 'Course setup, roster management, and broadcasting',
-            icon: BookOpen,
-            category: 'Navigation' as const,
-            action: () => {
-              screen = 'lecturer';
-              isOpen = false;
-            },
-          },
-        ]
-      : []),
-    ...(!currentUser || currentUser.role === 'student'
-      ? [
-          {
-            id: 'archive',
-            title: 'Student Archive & Materials',
-            description: 'Review saved lecture notes, slides, and transcripts',
-            icon: Users,
-            category: 'Navigation' as const,
-            action: () => {
-              screen = 'archive';
-              isOpen = false;
-            },
-          },
-        ]
-      : []),
-  ]);
-
+  const actions = $derived(getShortcutActions(currentUser));
   const filteredActions = $derived(
     actions.filter(
       (a) =>
@@ -109,7 +46,9 @@
 
   function executeAction(act: ShortcutAction) {
     triggerHaptic('medium');
-    act.action();
+    const res = act.action({ screen, isOpen });
+    screen = res.screen;
+    isOpen = res.isOpen;
   }
 
   function handleQuickJoinSubmit() {
@@ -139,7 +78,6 @@
       tabindex="-1"
       aria-label="Spotlight Quick Search"
       onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.key === 'Escape' && (isOpen = false)}
     >
       <div class="spotlight-header">
         <Search size={18} class="search-icon" />
@@ -152,12 +90,7 @@
           onkeydown={(e) => e.key === 'Enter' && handleQuickJoinSubmit()}
         />
         {#if searchQuery}
-          <button
-            type="button"
-            class="clear-btn text"
-            onclick={() => (searchQuery = '')}
-            aria-label="Clear query"
-          >
+          <button type="button" class="clear-btn text" onclick={() => (searchQuery = '')} aria-label="Clear query">
             <X size={14} />
           </button>
         {/if}
@@ -166,11 +99,7 @@
 
       {#if searchQuery.trim().length >= 4 && searchQuery.trim().length <= 8}
         <div class="quick-code-option">
-          <button
-            type="button"
-            class="quick-code-btn"
-            onclick={handleQuickJoinSubmit}
-          >
+          <button type="button" class="quick-code-btn" onclick={handleQuickJoinSubmit}>
             <span>Join room <strong>{searchQuery.toUpperCase()}</strong></span>
             <ArrowRight size={14} />
           </button>
@@ -179,22 +108,13 @@
 
       <div class="spotlight-results">
         <p class="section-label">QUICK NAVIGATION &amp; ACTIONS</p>
-        {#each filteredActions as item}
-          {@const Icon = item.icon}
-          <button
-            type="button"
-            class="spotlight-item"
-            onclick={() => executeAction(item)}
-          >
-            <div class="item-icon-wrap">
-              <Icon size={16} />
-            </div>
-            <div class="item-text">
-              <span class="item-title">{item.title}</span>
-              <span class="item-desc">{item.description}</span>
-            </div>
-            <ArrowRight size={14} class="item-arrow" />
-          </button>
+        {#each filteredActions as item (item.id)}
+          <SpotlightItem
+            title={item.title}
+            description={item.description}
+            icon={item.icon}
+            onClick={() => executeAction(item)}
+          />
         {/each}
 
         {#if filteredActions.length === 0 && !searchQuery}
@@ -293,49 +213,6 @@
     color: var(--color-driftwood);
     margin-bottom: 6px;
     padding-left: 8px;
-  }
-  .spotlight-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--color-warm-cream);
-    text-align: left;
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
-  }
-  .spotlight-item:hover {
-    background: rgba(56, 36, 22, 0.6);
-    border-color: var(--color-cork-border);
-  }
-  .item-icon-wrap {
-    color: var(--color-ember-accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .item-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .item-title {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  .item-desc {
-    font-size: 12px;
-    color: var(--color-driftwood);
-  }
-  :global(.item-arrow) {
-    color: var(--color-driftwood);
-    opacity: 0.6;
   }
   .empty-hint {
     padding: 16px;

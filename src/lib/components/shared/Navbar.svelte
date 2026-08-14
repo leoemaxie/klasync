@@ -4,6 +4,7 @@
   import type { SessionState } from '$lib/sessionState.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
   import { Menu, X, Search } from '@lucide/svelte';
+  import BrandLogo from './navbar/BrandLogo.svelte';
 
   let {
     screen = $bindable(),
@@ -28,57 +29,32 @@
     mobileMenuOpen = false;
   }
 
-  function toggleMobileMenu() {
-    triggerHaptic('light');
-    mobileMenuOpen = !mobileMenuOpen;
-  }
-
-  function handleNavKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && mobileMenuOpen) {
-      mobileMenuOpen = false;
-    }
-  }
-
   function handleLecturerAccess() {
     triggerHaptic('medium');
-    if (
-      appState?.currentUser &&
-      (appState.currentUser.role === 'lecturer' ||
-        appState.currentUser.role === 'admin')
-    ) {
+    const role = appState?.currentUser?.role;
+    if (role === 'lecturer' || role === 'admin') {
       navigate('lecturer');
-    } else if (
-      appState?.currentUser &&
-      appState.currentUser.role === 'student'
-    ) {
-      if (appState)
-        appState.authNotice =
-          'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.';
-      navigate('lecturer-login');
     } else {
-      if (appState)
-        appState.authNotice =
-          'Please sign in to access the Lecturer Workspace.';
+      if (appState) {
+        appState.authNotice = role === 'student'
+          ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
+          : 'Please sign in to access the Lecturer Workspace.';
+      }
       navigate('lecturer-login');
     }
   }
 
   function handleStudentArchive() {
     triggerHaptic('light');
-    if (appState?.currentUser && appState.currentUser.role === 'student') {
+    const role = appState?.currentUser?.role;
+    if (role === 'student') {
       navigate('archive');
-    } else if (
-      appState?.currentUser &&
-      (appState.currentUser.role === 'lecturer' ||
-        appState.currentUser.role === 'admin')
-    ) {
-      if (appState)
-        appState.authNotice =
-          'Access restricted: Student Archive is only accessible to student accounts.';
-      navigate('student-login');
     } else {
-      if (appState)
-        appState.authNotice = 'Please sign in to access your Student Archive.';
+      if (appState) {
+        appState.authNotice = role === 'lecturer' || role === 'admin'
+          ? 'Access restricted: Student Archive is only accessible to student accounts.'
+          : 'Please sign in to access your Student Archive.';
+      }
       navigate('student-login');
     }
   }
@@ -101,216 +77,119 @@
   }
 </script>
 
-<svelte:window onkeydown={handleNavKeydown} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && mobileMenuOpen && (mobileMenuOpen = false)} />
 
 <nav class="navbar app-drag-region">
-  <button
-    class="brand app-no-drag"
-    onclick={() => navigate('home')}
-    aria-label="Klasync home"
-  >
-    <svg
-      class="brand-mark"
-      aria-hidden="true"
-      viewBox="0 0 48 48"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M8 26 A18 18 0 0 1 40 26"
-        fill="none"
-        stroke="#dc5000"
-        stroke-width="2.5"
-        stroke-linecap="round"
-      />
-      <text
-        x="9"
-        y="40"
-        font-family="'Playfair Display', Georgia, serif"
-        font-size="28"
-        font-weight="500"
-        fill="#ffedd7">K</text
-      >
-      <g fill="#ffedd7" opacity="0.75">
-        <rect x="30" y="28" width="2" height="8" rx="1" /><rect
-          x="33.5"
-          y="24"
-          width="2"
-          height="12"
-          rx="1"
-        /><rect x="37" y="26" width="2" height="10" rx="1" /><rect
-          x="40.5"
-          y="29"
-          width="2"
-          height="6"
-          rx="1"
-        />
-      </g>
-    </svg>
-    <span class="brand-name">Klasync</span>
-  </button>
+  <BrandLogo onClick={() => navigate('home')} />
 
   <button
     class="mobile-toggle app-no-drag"
-    onclick={toggleMobileMenu}
+    onclick={() => { triggerHaptic('light'); mobileMenuOpen = !mobileMenuOpen; }}
     aria-label="Toggle navigation menu"
     aria-expanded={mobileMenuOpen}
     aria-controls="nav-actions-menu"
   >
-    {#if mobileMenuOpen}<X size={22} aria-hidden="true" />{:else}<Menu
-        size={22}
-        aria-hidden="true"
-      />{/if}
+    {#if mobileMenuOpen}<X size={22} aria-hidden="true" />{:else}<Menu size={22} aria-hidden="true" />{/if}
   </button>
 
-  <div
-    id="nav-actions-menu"
-    class="nav-actions app-no-drag"
-    class:open={mobileMenuOpen}
-  >
-    <button
-      class="nav-btn text search-trigger"
-      onclick={triggerSpotlight}
-      aria-label="Spotlight search"
-    >
+  <div id="nav-actions-menu" class="nav-actions app-no-drag" class:open={mobileMenuOpen}>
+    <button class="nav-btn text search-trigger" onclick={triggerSpotlight} aria-label="Spotlight search">
       <Search size={14} aria-hidden="true" style="vertical-align: middle;" />
       <span class="spotlight-kbd">⌘K</span>
     </button>
 
     {#if !appState?.currentUser || appState.currentUser.role === 'student'}
-      <button class="nav-btn text" onclick={() => navigate('join')}
-        >Join Session</button
-      >
-      <button class="nav-btn text" onclick={handleStudentArchive}
-        >Courses &amp; Archive</button
-      >
+      <button class="nav-btn text" onclick={() => navigate('join')}>Join Session</button>
+      <button class="nav-btn text" onclick={handleStudentArchive}>Courses &amp; Archive</button>
     {/if}
 
     {#if appState?.currentUser}
       <div class="user-pill" title={appState.currentUser.email}>
-        <span class="user-name"
-          >{appState.currentUser.name || appState.currentUser.email}</span
-        >
+        <span class="user-name">{appState.currentUser.name || appState.currentUser.email}</span>
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {:else}
-      <button class="nav-btn outline" onclick={handleLecturerAccess}
-        >Lecturer Access</button
-      >
+      <button class="nav-btn outline" onclick={handleLecturerAccess}>Lecturer Access</button>
     {/if}
   </div>
 </nav>
 
 <style>
-  nav.navbar {
+  .navbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 100;
     height: var(--nav-height);
+    background: rgba(16, 9, 4, 0.72);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-cork-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--card-padding);
-    background: rgba(16, 9, 4, 0.9);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--color-cork-border);
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: transparent;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-  }
-  .brand-mark {
-    width: 34px;
-    height: 34px;
-  }
-  .brand-name {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 500;
-    color: var(--color-warm-cream);
+    z-index: 100;
   }
   .mobile-toggle {
     display: none;
     background: transparent;
-    border: 0;
+    border: none;
     color: var(--color-warm-cream);
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
   }
   .nav-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-18);
+    gap: var(--spacing-16);
   }
-  .user-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(56, 36, 22, 0.4);
-    border: 1px solid var(--color-cork-border);
-    padding: 5px 12px;
-    border-radius: var(--radius-buttons-outlined);
+  .nav-btn {
     font-size: 12px;
-  }
-  .user-name {
-    color: var(--color-warm-cream);
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
   }
   .search-trigger {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--spacing-8);
   }
   .spotlight-kbd {
     font-size: 10px;
-    background: rgba(255, 237, 215, 0.1);
+    color: var(--color-driftwood);
     border: 1px solid var(--color-cork-border);
     padding: 1px 5px;
     border-radius: 4px;
-    color: var(--color-driftwood);
-    font-weight: 600;
   }
-  @media (max-width: 768px) {
-    .mobile-toggle {
-      display: flex;
-    }
+  .user-pill {
+    padding: 6px 12px;
+    border: 1px solid var(--color-cork-border);
+    border-radius: 999px;
+    background: rgba(255, 237, 215, 0.06);
+  }
+  .user-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-driftwood);
+  }
+  @media (max-width: 800px) {
+    .mobile-toggle { display: block; }
     .nav-actions {
-      position: fixed;
+      display: none;
+      position: absolute;
       top: var(--nav-height);
       left: 0;
       right: 0;
-      background: rgba(16, 9, 4, 0.96);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--color-cork-border);
       flex-direction: column;
-      align-items: stretch;
-      padding: var(--spacing-20);
+      background: #100904;
+      border-bottom: 1px solid var(--color-cork-border);
+      padding: var(--spacing-18) var(--card-padding);
       gap: var(--spacing-12);
-      transform: translateY(-100%);
-      opacity: 0;
-      pointer-events: none;
-      transition:
-        transform 0.25s ease,
-        opacity 0.25s ease;
+      align-items: stretch;
     }
-    .nav-actions.open {
-      transform: translateY(0);
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .nav-btn {
-      width: 100%;
-      text-align: center;
-    }
+    .nav-actions.open { display: flex; }
+    .nav-btn { width: 100%; text-align: center; }
   }
 </style>
