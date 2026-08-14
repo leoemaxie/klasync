@@ -147,7 +147,27 @@ export async function http<T>(
     const msg = payload.error ?? payload.message ?? 'Service request failed';
     throw new Error(msg.replaceAll('_', ' '));
   }
-  return response.json() as Promise<T>;
+  if (response.status === 204 || response.status === 202) {
+    const text = await response.text();
+    if (!text) {
+      return { success: true } as unknown as T;
+    }
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return { success: true } as unknown as T;
+    }
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return { success: true } as unknown as T;
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
 
 export const apiRequest = http;
