@@ -16,18 +16,17 @@ use crate::{
     state::AppState,
 };
 
-const CAPTION_COLUMNS: &str = "id, session_id, text, created_at";
-
 pub async fn list(
     State(state): State<AppState>,
     Path(short_code): Path<String>,
 ) -> Result<Json<Vec<CaptionChunk>>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let captions = sqlx::query_as::<_, CaptionChunk>(&format!(
-        "select {CAPTION_COLUMNS} from caption_chunks where session_id = $1 order by sequence_number"
-    ))
-    .bind(session.id)
+    let captions = sqlx::query_as!(
+        CaptionChunk,
+        "select id, session_id, text, created_at from caption_chunks where session_id = $1 order by sequence_number",
+        session.id
+    )
     .fetch_all(pool)
     .await
     .map_err(|error| {
@@ -59,10 +58,10 @@ pub async fn publish(
             "Captions can only be published to live sessions",
         ));
     }
-    let captions_paused: bool = sqlx::query_scalar(
-        "select coalesce((select captions_paused from session_live_controls where session_id = $1), false)",
+    let captions_paused = sqlx::query_scalar!(
+        r#"select coalesce((select captions_paused from session_live_controls where session_id = $1), false) as "coalesce!""#,
+        session.id
     )
-    .bind(session.id)
     .fetch_one(&mut *tx)
     .await
     .map_err(|error| {
@@ -72,11 +71,11 @@ pub async fn publish(
     if captions_paused {
         return Err(ApiError::conflict("Captions are paused"));
     }
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(&mut *tx)
     .await
     .map_err(|error| {
@@ -88,24 +87,29 @@ pub async fn publish(
     }
 
     // Acquire transaction-scoped advisory lock on session ID to serialize sequence number updates
-    sqlx::query("select pg_advisory_xact_lock(hashtext($1::text))")
-        .bind(session.id.to_string())
-        .execute(&mut *tx)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to acquire advisory lock for caption sequencing");
-            ApiError::service_unavailable()
-        })?;
+    let lock_key = session.id.to_string();
+    sqlx::query!(
+        "select pg_advisory_xact_lock(hashtext($1::text))",
+        lock_key
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to acquire advisory lock for caption sequencing");
+        ApiError::service_unavailable()
+    })?;
 
-    let caption = sqlx::query_as::<_, CaptionChunk>(&format!(
+    let caption_id = Uuid::now_v7();
+    let caption = sqlx::query_as!(
+        CaptionChunk,
         "insert into caption_chunks (id, session_id, sequence_number, text, created_at) \
          values ($1, $2, (select coalesce(max(sequence_number), 0) + 1 from caption_chunks where session_id = $2), $3, $4) \
-         returning {CAPTION_COLUMNS}"
-    ))
-    .bind(Uuid::now_v7())
-    .bind(session.id)
-    .bind(text)
-    .bind(Utc::now())
+         returning id, session_id, text, created_at",
+        caption_id,
+        session.id,
+        text,
+        Utc::now()
+    )
     .fetch_one(&mut *tx)
     .await
     .map_err(|error| {

@@ -47,12 +47,12 @@ impl FromRequestParts<AppState> for AuthenticatedAccount {
         let claims = tokens::validate_access_token(&state.config, token)
             .map_err(|_| ApiError::unauthorized("Invalid or expired access token"))?;
         let pool = state.db_pool();
-        let active: bool = sqlx::query_scalar(
-            "select exists(select 1 from auth_sessions where id = $1 and account_id = $2 and account_role = $3 and revoked_at is null and expires_at > now())",
+        let active = sqlx::query_scalar!(
+            r#"select exists(select 1 from auth_sessions where id = $1 and account_id = $2 and account_role = $3 and revoked_at is null and expires_at > now()) as "exists!""#,
+            claims.sid,
+            claims.sub,
+            claims.role as AccountRole
         )
-        .bind(claims.sid)
-        .bind(claims.sub)
-        .bind(claims.role)
         .fetch_one(pool)
         .await
         .log_internal_error("Failed to check active auth session")?;

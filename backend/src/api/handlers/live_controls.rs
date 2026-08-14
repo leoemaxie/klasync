@@ -42,21 +42,22 @@ pub async fn update(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
-    let current = sqlx::query_as::<_, LiveControlState>(
-        "insert into session_live_controls (session_id, captions_paused, audio_ingestion_active, late_join_policy, updated_by)
+    let current = sqlx::query_as!(
+        LiveControlState,
+        r#"insert into session_live_controls (session_id, captions_paused, audio_ingestion_active, late_join_policy, updated_by)
          values ($1, coalesce($2, false), coalesce($3, false), coalesce($4, 'allowed'), $5)
          on conflict (session_id) do update set
            captions_paused = coalesce($2, session_live_controls.captions_paused),
            audio_ingestion_active = coalesce($3, session_live_controls.audio_ingestion_active),
            late_join_policy = coalesce($4, session_live_controls.late_join_policy),
            updated_by = $5, updated_at = now()
-         returning session_id, captions_paused, audio_ingestion_active, late_join_policy",
+         returning session_id, captions_paused as "captions_paused!", audio_ingestion_active as "audio_ingestion_active!", late_join_policy as "late_join_policy!""#,
+        session.id,
+        input.captions_paused,
+        input.audio_ingestion_active,
+        input.late_join_policy,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(input.captions_paused)
-    .bind(input.audio_ingestion_active)
-    .bind(input.late_join_policy)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .map_err(|error| {
@@ -162,21 +163,34 @@ pub async fn participant_action(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
-    let query = if action == "mute" {
-        "update session_participants set muted_at = coalesce(muted_at, now()) where id = $1 and session_id = $2"
-    } else {
-        "update session_participants set removed_at = coalesce(removed_at, now()), removal_reason = 'lecturer_action' where id = $1 and session_id = $2"
-    };
-    let result = sqlx::query(query)
-        .bind(participant_id)
-        .bind(session.id)
+    let rows_affected = if action == "mute" {
+        sqlx::query!(
+            "update session_participants set muted_at = coalesce(muted_at, now()) where id = $1 and session_id = $2",
+            participant_id,
+            session.id
+        )
         .execute(pool)
         .await
         .map_err(|error| {
             tracing::error!(%error, %action, "Failed to perform participant action");
             ApiError::service_unavailable()
-        })?;
-    if result.rows_affected() == 0 {
+        })?
+        .rows_affected()
+    } else {
+        sqlx::query!(
+            "update session_participants set removed_at = coalesce(removed_at, now()), removal_reason = 'lecturer_action' where id = $1 and session_id = $2",
+            participant_id,
+            session.id
+        )
+        .execute(pool)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, %action, "Failed to perform participant action");
+            ApiError::service_unavailable()
+        })?
+        .rows_affected()
+    };
+    if rows_affected == 0 {
         return Err(ApiError::not_found("Participant not found"));
     }
     audit::record_session_event(
@@ -210,15 +224,15 @@ pub async fn moderate_caption(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
-    let result = sqlx::query(
+    let result = sqlx::query!(
         "update caption_chunks set text = coalesce($1, text), is_hidden = coalesce($2, is_hidden), moderation_note = $3, edited_at = now(), edited_by = $4 where id = $5 and session_id = $6",
+        input.text,
+        input.hidden,
+        input.note,
+        lecturer.id,
+        caption_id,
+        session.id
     )
-    .bind(input.text)
-    .bind(input.hidden)
-    .bind(input.note)
-    .bind(lecturer.id)
-    .bind(caption_id)
-    .bind(session.id)
     .execute(pool)
     .await
     .map_err(|error| {
@@ -254,11 +268,11 @@ async fn ensure_owner(
     session_id: Uuid,
     lecturer_id: Uuid,
 ) -> Result<(), ApiError> {
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session_id,
+        lecturer_id
     )
-    .bind(session_id)
-    .bind(lecturer_id)
     .fetch_one(pool)
     .await
     .map_err(|error| {

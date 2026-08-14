@@ -18,10 +18,6 @@ use crate::{
     state::AppState,
 };
 
-const RESOURCE_COLUMNS: &str =
-    "id, session_id, resource_type, storage_key, content, checksum, created_at, expires_at";
-const RESOURCE_SELECT_COLUMNS: &str = "resource.id, resource.session_id, resource.resource_type, resource.storage_key, resource.content, resource.checksum, resource.created_at, resource.expires_at";
-
 pub async fn create_for_session(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
@@ -31,28 +27,31 @@ pub async fn create_for_session(
     validate_resource(&input)?;
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify session ownership in create_for_session")?;
     if !owns_session {
         return Err(ApiError::not_found("Session not found"));
     }
-    let resource = sqlx::query_as::<_, LectureResource>(&format!(
-        "insert into lecture_resources (id, session_id, resource_type, storage_key, content, checksum, expires_at) \
-         values ($1, $2, $3, $4, $5, $6, $7) returning {RESOURCE_COLUMNS}"
-    ))
-    .bind(Uuid::now_v7())
-    .bind(session.id)
-    .bind(input.resource_type)
-    .bind(input.storage_key)
-    .bind(input.content)
-    .bind(input.checksum)
-    .bind(input.expires_at)
+    let resource_id = Uuid::now_v7();
+    let resource = sqlx::query_as!(
+        LectureResource,
+        r#"insert into lecture_resources (id, session_id, resource_type, storage_key, content, checksum, expires_at)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         returning id, session_id, resource_type, storage_key, content, checksum, created_at, expires_at"#,
+        resource_id,
+        session.id,
+        input.resource_type,
+        input.storage_key,
+        input.content,
+        input.checksum,
+        input.expires_at
+    )
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to insert lecture resource")?;
@@ -63,11 +62,13 @@ pub async fn list_public_resources(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<LectureResource>>, ApiError> {
     let pool = state.db_pool();
-    let resources = sqlx::query_as::<_, LectureResource>(&format!(
-        "select {RESOURCE_SELECT_COLUMNS} from lecture_resources resource \
-         where (resource.expires_at is null or resource.expires_at > now()) \
-         order by resource.created_at desc limit 50"
-    ))
+    let resources = sqlx::query_as!(
+        LectureResource,
+        r#"select resource.id, resource.session_id, resource.resource_type, resource.storage_key, resource.content, resource.checksum, resource.created_at, resource.expires_at
+         from lecture_resources resource
+         where (resource.expires_at is null or resource.expires_at > now())
+         order by resource.created_at desc limit 50"#
+    )
     .fetch_all(pool)
     .await
     .log_internal_error("Failed to list public resources")?;
@@ -83,17 +84,18 @@ pub async fn list_student_archive(
         Some(s) => s.id,
         None => return Ok(Json(vec![])),
     };
-    let items = sqlx::query_as::<_, StudentArchiveItem>(
-        "select distinct s.id, c.code as course_code, s.title as session_title, \
-         to_char(s.created_at, 'Mon DD, YYYY') as date \
-         from student_session_claims claim \
-         join session_participants p on p.id = claim.participant_id \
-         join lecture_sessions s on s.id = p.session_id \
-         join courses c on c.id = s.course_id \
-         where claim.student_account_id = $1 \
-         order by date desc",
+    let items = sqlx::query_as!(
+        StudentArchiveItem,
+        r#"select distinct s.id, c.code as "course_code!", s.title as "session_title!",
+         to_char(s.created_at, 'Mon DD, YYYY') as "date!"
+         from student_session_claims claim
+         join session_participants p on p.id = claim.participant_id
+         join lecture_sessions s on s.id = p.session_id
+         join courses c on c.id = s.course_id
+         where claim.student_account_id = $1
+         order by date desc"#,
+        student_id
     )
-    .bind(student_id)
     .fetch_all(pool)
     .await
     .log_internal_error("Failed to list student archive")?;
@@ -135,13 +137,14 @@ pub async fn download_for_student(
     Path(resource_id): Path<Uuid>,
 ) -> Result<Response, ApiError> {
     let pool = state.db_pool();
-    let resource = sqlx::query_as::<_, DownloadableResource>(
-        "select r.storage_key, r.content, r.content_type, r.original_filename
+    let resource = sqlx::query_as!(
+        DownloadableResource,
+        r#"select r.storage_key, r.content::text as content, r.content_type, r.original_filename
          from lecture_resources r join resource_access_grants g on g.resource_id = r.id
-         where r.id = $1 and g.student_account_id = $2 and (r.expires_at is null or r.expires_at > now())",
+         where r.id = $1 and g.student_account_id = $2 and (r.expires_at is null or r.expires_at > now())"#,
+        resource_id,
+        student.id
     )
-    .bind(resource_id)
-    .bind(student.id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query downloadable resource for student")?
@@ -155,14 +158,15 @@ pub async fn download_for_lecturer(
     Path((short_code, resource_id)): Path<(String, Uuid)>,
 ) -> Result<Response, ApiError> {
     let pool = state.db_pool();
-    let resource = sqlx::query_as::<_, DownloadableResource>(
-        "select r.storage_key, r.content, r.content_type, r.original_filename
+    let resource = sqlx::query_as!(
+        DownloadableResource,
+        r#"select r.storage_key, r.content::text as content, r.content_type, r.original_filename
          from lecture_resources r join lecture_sessions s on s.id = r.session_id
-         where r.id = $1 and s.short_code = upper($2) and s.lecturer_id = $3",
+         where r.id = $1 and s.short_code = upper($2) and s.lecturer_id = $3"#,
+        resource_id,
+        short_code,
+        lecturer.id
     )
-    .bind(resource_id)
-    .bind(short_code)
-    .bind(lecturer.id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query downloadable resource for lecturer")?

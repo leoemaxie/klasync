@@ -59,14 +59,16 @@ pub async fn update(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
-    let view = sqlx::query_as::<_, LifecycleView>(
-        "update lecture_sessions set title = coalesce($1, title), scheduled_start_at = coalesce($2, scheduled_start_at), timezone = coalesce($3, timezone), status = case when $2 is not null then 'scheduled' else status end where id = $4 and deleted_at is null returning id, title, status::text, scheduled_start_at, timezone, archived_at, deleted_at, reopen_count",
+    let view = sqlx::query_as!(
+        LifecycleView,
+        r#"update lecture_sessions set title = coalesce($1, title), scheduled_start_at = coalesce($2, scheduled_start_at), timezone = coalesce($3, timezone), status = case when $2 is not null then 'scheduled' else status end where id = $4 and deleted_at is null returning id, title, status::text as "status!", scheduled_start_at, timezone, archived_at, deleted_at, reopen_count"#,
+        input.title.map(|value| value.trim().to_owned()),
+        input.scheduled_start_at,
+        input.timezone.map(|value| value.trim().to_owned()),
+        session.id
     )
-    .bind(input.title.map(|value| value.trim().to_owned()))
-    .bind(input.scheduled_start_at)
-    .bind(input.timezone.map(|value| value.trim().to_owned()))
-    .bind(session.id)
-    .fetch_one(pool).await
+    .fetch_one(pool)
+    .await
     .map_err(|error| {
         tracing::error!(%error, "Failed to update lecture session lifecycle");
         ApiError::service_unavailable()
@@ -113,12 +115,16 @@ pub async fn remove(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
     ensure_owner(pool, session.id, lecturer.id).await?;
-    let result = sqlx::query("update lecture_sessions set deleted_at = now() where id = $1 and status = 'ended' and deleted_at is null")
-        .bind(session.id).execute(pool).await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to delete session");
-            ApiError::service_unavailable()
-        })?;
+    let result = sqlx::query!(
+        "update lecture_sessions set deleted_at = now() where id = $1 and status = 'ended' and deleted_at is null",
+        session.id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to delete session");
+        ApiError::service_unavailable()
+    })?;
     if result.rows_affected() == 0 {
         return Err(ApiError::conflict(
             "Sessions must be ended before they can be deleted",
@@ -147,28 +153,40 @@ async fn transition(
     let pool = state.db_pool();
     let session = database_session_by_code(pool, short_code).await?;
     ensure_owner(pool, session.id, lecturer_id).await?;
-    let (query, event) = match action {
-        "archive" => (
-            "update lecture_sessions set archived_at = now() where id = $1 and status = 'ended' and archived_at is null and deleted_at is null returning id, title, status::text, scheduled_start_at, timezone, archived_at, deleted_at, reopen_count",
-            "session_archived",
-        ),
-        "reopen" => (
-            "update lecture_sessions set status = 'live', started_at = now(), ended_at = null, archived_at = null, reopen_count = reopen_count + 1 where id = $1 and status = 'ended' and deleted_at is null returning id, title, status::text, scheduled_start_at, timezone, archived_at, deleted_at, reopen_count",
-            "session_reopened",
-        ),
+    let (view, event) = match action {
+        "archive" => {
+            let view = sqlx::query_as!(
+                LifecycleView,
+                r#"update lecture_sessions set archived_at = now() where id = $1 and status = 'ended' and archived_at is null and deleted_at is null returning id, title, status::text as "status!", scheduled_start_at, timezone, archived_at, deleted_at, reopen_count"#,
+                session.id
+            )
+            .fetch_optional(pool)
+            .await
+            .map_err(|error| {
+                tracing::error!(%error, %action, "Failed to transition session lifecycle");
+                ApiError::service_unavailable()
+            })?;
+            (view, "session_archived")
+        }
+        "reopen" => {
+            let view = sqlx::query_as!(
+                LifecycleView,
+                r#"update lecture_sessions set status = 'live', started_at = now(), ended_at = null, archived_at = null, reopen_count = reopen_count + 1 where id = $1 and status = 'ended' and deleted_at is null returning id, title, status::text as "status!", scheduled_start_at, timezone, archived_at, deleted_at, reopen_count"#,
+                session.id
+            )
+            .fetch_optional(pool)
+            .await
+            .map_err(|error| {
+                tracing::error!(%error, %action, "Failed to transition session lifecycle");
+                ApiError::service_unavailable()
+            })?;
+            (view, "session_reopened")
+        }
         _ => return Err(ApiError::bad_request("Invalid session lifecycle action")),
     };
-    let view = sqlx::query_as::<_, LifecycleView>(query)
-        .bind(session.id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, %action, "Failed to transition session lifecycle");
-            ApiError::service_unavailable()
-        })?
-        .ok_or_else(|| {
-            ApiError::conflict("Session cannot be transitioned from its current status")
-        })?;
+    let view = view.ok_or_else(|| {
+        ApiError::conflict("Session cannot be transitioned from its current status")
+    })?;
     audit::record_session_event(
         pool,
         session.id,
@@ -188,11 +206,11 @@ async fn ensure_owner(
     session_id: Uuid,
     lecturer_id: Uuid,
 ) -> Result<(), ApiError> {
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session_id,
+        lecturer_id
     )
-    .bind(session_id)
-    .bind(lecturer_id)
     .fetch_one(pool)
     .await
     .map_err(|error| {

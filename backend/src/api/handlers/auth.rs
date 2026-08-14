@@ -43,12 +43,12 @@ pub async fn register_lecturer(
     let password_hash = passwords::hash_async(input.password)
         .await
         .log_internal_error("Failed to hash lecturer password")?;
-    let account_id = sqlx::query_scalar::<_, Uuid>(
+    let account_id = sqlx::query_scalar!(
         "insert into lecturers (name, email, password_hash) values ($1, lower($2), $3) returning id",
+        input.name.trim(),
+        input.email.trim(),
+        password_hash
     )
-    .bind(input.name.trim())
-    .bind(input.email.trim())
-    .bind(password_hash)
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::conflict("An account with this email address already exists"))?;
@@ -68,13 +68,13 @@ pub async fn register_student(
     let password_hash = passwords::hash_async(input.password)
         .await
         .log_internal_error("Failed to hash student password")?;
-    let account_id = sqlx::query_scalar::<_, Uuid>(
+    let account_id = sqlx::query_scalar!(
         "insert into student_accounts (matric_number, display_name, email, password_hash) values ($1, $2, lower($3), $4) returning id",
+        input.matric_number.trim(),
+        input.display_name.trim(),
+        input.email.trim(),
+        password_hash
     )
-    .bind(input.matric_number.trim())
-    .bind(input.display_name.trim())
-    .bind(input.email.trim())
-    .bind(password_hash)
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::conflict("A student account with this matriculation number or email already exists"))?;
@@ -105,10 +105,11 @@ pub async fn refresh(
     }
     let pool = state.db_pool();
     let (session_id, secret) = parse_opaque_token(&input.refresh_token)?;
-    let session = sqlx::query_as::<_, RefreshSession>(
-        "select account_id, account_role, refresh_token_hash, expires_at, revoked_at from auth_sessions where id = $1",
+    let session = sqlx::query_as!(
+        RefreshSession,
+        r#"select account_id, account_role as "account_role: AccountRole", refresh_token_hash, expires_at, revoked_at from auth_sessions where id = $1"#,
+        session_id
     )
-    .bind(session_id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query refresh session")?
@@ -118,11 +119,13 @@ pub async fn refresh(
     if !valid_hash || !valid_session {
         return Err(ApiError::unauthorized("Invalid or expired refresh token"));
     }
-    sqlx::query("update auth_sessions set revoked_at = now() where id = $1")
-        .bind(session_id)
-        .execute(pool)
-        .await
-        .log_internal_error("Failed to revoke session on refresh")?;
+    sqlx::query!(
+        "update auth_sessions set revoked_at = now() where id = $1",
+        session_id
+    )
+    .execute(pool)
+    .await
+    .log_internal_error("Failed to revoke session on refresh")?;
     Ok(Json(
         issue_tokens(
             pool,
@@ -143,11 +146,13 @@ pub async fn logout(
     }
     let pool = state.db_pool();
     let (session_id, _) = parse_opaque_token(&input.refresh_token)?;
-    sqlx::query("delete from auth_sessions where id = $1")
-        .bind(session_id)
-        .execute(pool)
-        .await
-        .log_internal_error("Failed to delete auth session on logout")?;
+    sqlx::query!(
+        "delete from auth_sessions where id = $1",
+        session_id
+    )
+    .execute(pool)
+    .await
+    .log_internal_error("Failed to delete auth session on logout")?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -160,16 +165,25 @@ async fn login(
         return Err(ApiError::service_unavailable());
     }
     let pool = state.db_pool();
-    let query = match role {
-        AccountRole::Lecturer => "select id, password_hash from lecturers where email = lower($1)",
-        AccountRole::Student => "select id, password_hash from student_accounts where email = lower($1) and status <> 'suspended'",
-    };
-    let account = sqlx::query_as::<_, PasswordAccount>(query)
-        .bind(input.email.trim())
+    let account = match role {
+        AccountRole::Lecturer => sqlx::query_as!(
+            PasswordAccount,
+            "select id, password_hash from lecturers where email = lower($1)",
+            input.email.trim()
+        )
         .fetch_optional(pool)
         .await
-        .log_internal_error("Failed to query account for login")?
-        .ok_or_else(|| ApiError::unauthorized("Invalid email or password"))?;
+        .log_internal_error("Failed to query lecturer for login")?,
+        AccountRole::Student => sqlx::query_as!(
+            PasswordAccount,
+            "select id, password_hash from student_accounts where email = lower($1) and status <> 'suspended'",
+            input.email.trim()
+        )
+        .fetch_optional(pool)
+        .await
+        .log_internal_error("Failed to query student for login")?,
+    }
+    .ok_or_else(|| ApiError::unauthorized("Invalid email or password"))?;
     if !passwords::verify_async(input.password, account.password_hash).await {
         return Err(ApiError::unauthorized("Invalid email or password"));
     }

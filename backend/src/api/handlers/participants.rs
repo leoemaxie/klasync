@@ -15,8 +15,6 @@ use crate::{
     state::AppState,
 };
 
-const PARTICIPANT_COLUMNS: &str = "id, session_id, matric_number, display_name, verification_status, joined_at, last_seen_at, heartbeat_count";
-
 pub async fn join(
     State(state): State<AppState>,
     Path(short_code): Path<String>,
@@ -29,11 +27,11 @@ pub async fn join(
             "This lecture session is not currently active",
         ));
     }
-    let roster_name: Option<String> = sqlx::query_scalar(
+    let roster_name = sqlx::query_scalar!(
         "select full_name from roster_students where course_id = $1 and lower(matric_number) = lower($2)",
+        session.course_id,
+        input.matric_number.trim()
     )
-    .bind(session.course_id)
-    .bind(input.matric_number.trim())
     .fetch_optional(pool)
     .await
     .map_err(|error| {
@@ -49,31 +47,35 @@ pub async fn join(
         .or(input.display_name)
         .filter(|value| !value.trim().is_empty())
         .unwrap_or_else(|| "Guest student".to_owned());
-    let participant = sqlx::query_as::<_, SessionParticipant>(&format!(
-        "insert into session_participants (id, session_id, matric_number, display_name, verification_status) \
-         values ($1, $2, $3, $4, $5) \
-         on conflict (session_id, matric_number) do update set last_seen_at = now() \
-         returning {PARTICIPANT_COLUMNS}"
-    ))
-    .bind(Uuid::now_v7())
-    .bind(session.id)
-    .bind(input.matric_number.trim())
-    .bind(name)
-    .bind(status)
+    let participant_id = Uuid::now_v7();
+    let participant = sqlx::query_as!(
+        SessionParticipant,
+        r#"insert into session_participants (id, session_id, matric_number, display_name, verification_status)
+         values ($1, $2, $3, $4, $5)
+         on conflict (session_id, matric_number) do update set last_seen_at = now()
+         returning id, session_id, matric_number, display_name, verification_status as "verification_status: VerificationStatus", joined_at, last_seen_at, heartbeat_count"#,
+        participant_id,
+        session.id,
+        input.matric_number.trim(),
+        name,
+        status as VerificationStatus
+    )
     .fetch_one(pool)
     .await
     .map_err(|error| {
         tracing::error!(%error, "Failed to insert/update session participant on join");
         ApiError::service_unavailable()
     })?;
-    sqlx::query("insert into attendance_events (participant_id, event_type) values ($1, 'joined')")
-        .bind(participant.id)
-        .execute(pool)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to insert attendance event 'joined'");
-            ApiError::service_unavailable()
-        })?;
+    sqlx::query!(
+        "insert into attendance_events (participant_id, event_type) values ($1, 'joined')",
+        participant.id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to insert attendance event 'joined'");
+        ApiError::service_unavailable()
+    })?;
     Ok((StatusCode::CREATED, Json(participant)))
 }
 
@@ -84,10 +86,12 @@ pub async fn list_for_session(
 ) -> Result<Json<Vec<SessionParticipant>>, ApiError> {
     let pool = state.db_pool();
     let session = owned_session(pool, &short_code, lecturer.id).await?;
-    let participants = sqlx::query_as::<_, SessionParticipant>(&format!(
-        "select {PARTICIPANT_COLUMNS} from session_participants where session_id = $1 order by joined_at"
-    ))
-    .bind(session.id)
+    let participants = sqlx::query_as!(
+        SessionParticipant,
+        r#"select id, session_id, matric_number, display_name, verification_status as "verification_status: VerificationStatus", joined_at, last_seen_at, heartbeat_count
+         from session_participants where session_id = $1 order by joined_at"#,
+        session.id
+    )
     .fetch_all(pool)
     .await
     .map_err(|error| {
@@ -102,12 +106,13 @@ pub async fn heartbeat(
     Path(participant_id): Path<Uuid>,
 ) -> Result<Json<SessionParticipant>, ApiError> {
     let pool = state.db_pool();
-    let participant = sqlx::query_as::<_, SessionParticipant>(&format!(
-        "update session_participants p set last_seen_at = now(), heartbeat_count = heartbeat_count + 1 \
-         from lecture_sessions s where p.id = $1 and p.session_id = s.id and s.status = 'live' \
-         returning p.{PARTICIPANT_COLUMNS}"
-    ))
-    .bind(participant_id)
+    let participant = sqlx::query_as!(
+        SessionParticipant,
+        r#"update session_participants p set last_seen_at = now(), heartbeat_count = heartbeat_count + 1
+         from lecture_sessions s where p.id = $1 and p.session_id = s.id and s.status = 'live'
+         returning p.id, p.session_id, p.matric_number, p.display_name, p.verification_status as "verification_status: VerificationStatus", p.joined_at, p.last_seen_at, p.heartbeat_count"#,
+        participant_id
+    )
     .fetch_optional(pool)
     .await
     .map_err(|error| {
@@ -115,10 +120,10 @@ pub async fn heartbeat(
         ApiError::service_unavailable()
     })?
     .ok_or_else(|| ApiError::conflict("Participant record not found or session is no longer active"))?;
-    sqlx::query(
+    sqlx::query!(
         "insert into attendance_events (participant_id, event_type) values ($1, 'heartbeat')",
+        participant.id
     )
-    .bind(participant.id)
     .execute(pool)
     .await
     .map_err(|error| {
@@ -135,10 +140,14 @@ pub async fn attendance_summary(
 ) -> Result<Json<AttendanceSummary>, ApiError> {
     let pool = state.db_pool();
     let session = owned_session(pool, &short_code, lecturer.id).await?;
-    let (participant_count, verified_count, provisional_count, total_heartbeats): (i64, i64, i64, i64) = sqlx::query_as(
-        "select count(*), count(*) filter (where verification_status = 'verified'), count(*) filter (where verification_status = 'provisional'), coalesce(sum(heartbeat_count), 0) from session_participants where session_id = $1",
+    let row = sqlx::query!(
+        r#"select count(*) as "participant_count!",
+                  count(*) filter (where verification_status = 'verified') as "verified_count!",
+                  count(*) filter (where verification_status = 'provisional') as "provisional_count!",
+                  coalesce(sum(heartbeat_count), 0)::bigint as "total_heartbeats!"
+           from session_participants where session_id = $1"#,
+        session.id
     )
-    .bind(session.id)
     .fetch_one(pool)
     .await
     .map_err(|error| {
@@ -147,10 +156,10 @@ pub async fn attendance_summary(
     })?;
     Ok(Json(AttendanceSummary {
         session_id: session.id,
-        participant_count: participant_count as usize,
-        verified_count: verified_count as usize,
-        provisional_count: provisional_count as usize,
-        total_heartbeats: total_heartbeats.max(0) as u64,
+        participant_count: row.participant_count as usize,
+        verified_count: row.verified_count as usize,
+        provisional_count: row.provisional_count as usize,
+        total_heartbeats: row.total_heartbeats.max(0) as u64,
     }))
 }
 
@@ -160,11 +169,11 @@ async fn owned_session(
     lecturer_id: Uuid,
 ) -> Result<crate::models::LectureSession, ApiError> {
     let session = database_session_by_code(pool, code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer_id
     )
-    .bind(session.id)
-    .bind(lecturer_id)
     .fetch_one(pool)
     .await
     .map_err(|error| {

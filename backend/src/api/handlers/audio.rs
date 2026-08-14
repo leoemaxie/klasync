@@ -27,11 +27,11 @@ pub async fn upload(
 ) -> Result<(StatusCode, Json<AudioIngestionResponse>), ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
@@ -71,15 +71,15 @@ pub async fn upload(
             ApiError::service_unavailable()
         })?;
     let resource_id = Uuid::new_v4();
-    sqlx::query(
+    sqlx::query!(
         "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) values ($1, $2, 'audio', $3, $4, $5, $6)",
+        resource_id,
+        session.id,
+        stored.key,
+        file_name,
+        content_type,
+        stored.bytes as i64
     )
-    .bind(resource_id)
-    .bind(session.id)
-    .bind(stored.key)
-    .bind(file_name)
-    .bind(content_type)
-    .bind(stored.bytes as i64)
     .execute(pool)
     .await
     .map_err(|error| {
@@ -88,13 +88,13 @@ pub async fn upload(
     })?;
 
     let ai_job_id = Uuid::now_v7();
-    sqlx::query(
+    sqlx::query!(
         "insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, 'transcribe', $4)",
+        ai_job_id,
+        session.id,
+        lecturer.id,
+        resource_id
     )
-    .bind(ai_job_id)
-    .bind(session.id)
-    .bind(lecturer.id)
-    .bind(resource_id)
     .execute(pool)
     .await
     .map_err(|error| {

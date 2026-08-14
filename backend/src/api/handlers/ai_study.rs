@@ -65,8 +65,14 @@ pub async fn chapters(
     Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<SessionChapter>>, ApiError> {
     let pool = state.db_pool();
-    let rows = sqlx::query_as::<_, SessionChapter>("select id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec, created_at from session_chapters where session_id = $1 order by chapter_index")
-        .bind(session_id).fetch_all(pool).await.log_internal_error("Failed to query session chapters")?;
+    let rows = sqlx::query_as!(
+        SessionChapter,
+        "select id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec, created_at from session_chapters where session_id = $1 order by chapter_index",
+        session_id
+    )
+    .fetch_all(pool)
+    .await
+    .log_internal_error("Failed to query session chapters")?;
     Ok(Json(rows))
 }
 
@@ -76,8 +82,14 @@ pub async fn flashcards(
     Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<SessionFlashcard>>, ApiError> {
     let pool = state.db_pool();
-    let rows = sqlx::query_as::<_, SessionFlashcard>("select id, prompt, answer, topic_tag, difficulty, created_at from session_flashcards where session_id = $1 order by created_at")
-        .bind(session_id).fetch_all(pool).await.log_internal_error("Failed to query session flashcards")?;
+    let rows = sqlx::query_as!(
+        SessionFlashcard,
+        "select id, prompt, answer, topic_tag, difficulty, created_at from session_flashcards where session_id = $1 order by created_at",
+        session_id
+    )
+    .fetch_all(pool)
+    .await
+    .log_internal_error("Failed to query session flashcards")?;
     Ok(Json(rows))
 }
 
@@ -88,13 +100,25 @@ async fn enqueue(
     job_type: &str,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
     let pool = state.db_pool();
-    let input_resource: Option<Uuid> = sqlx::query_scalar("select id from lecture_resources where session_id = $1 and resource_type = 'transcript' order by created_at desc limit 1")
-        .bind(session_id).fetch_optional(pool).await.log_internal_error("Failed to query input transcript resource for AI job")?;
+    let input_resource = sqlx::query_scalar!(
+        "select id from lecture_resources where session_id = $1 and resource_type = 'transcript' order by created_at desc limit 1",
+        session_id
+    )
+    .fetch_optional(pool)
+    .await
+    .log_internal_error("Failed to query input transcript resource for AI job")?;
     let job_id = Uuid::now_v7();
-    sqlx::query("insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, $4, $5)")
-        .bind(job_id).bind(session_id).bind(requester_id).bind(job_type).bind(input_resource)
-        .execute(pool).await
-        .log_internal_error("Failed to insert study AI job")?;
+    sqlx::query!(
+        "insert into ai_jobs (id, session_id, requested_by, job_type, input_resource_id) values ($1, $2, $3, $4, $5)",
+        job_id,
+        session_id,
+        requester_id,
+        job_type,
+        input_resource
+    )
+    .execute(pool)
+    .await
+    .log_internal_error("Failed to insert study AI job")?;
     if let Some(redis) = &state.redis {
         if let Err(error) = redis.enqueue_ai_job(&job_id.to_string()).await {
             if state.config.redis_required {

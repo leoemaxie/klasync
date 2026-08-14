@@ -15,9 +15,6 @@ use crate::{
     state::AppState,
 };
 
-const RESOURCE_COLUMNS: &str =
-    "id, session_id, resource_type, storage_key, content, checksum, created_at, expires_at";
-
 pub async fn upload(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
@@ -42,11 +39,11 @@ pub async fn upload(
         .map_err(|_| ApiError::bad_request("Failed to read uploaded file"))?;
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify session ownership in upload")?;
@@ -62,17 +59,20 @@ pub async fn upload(
             ApiError::service_unavailable()
         })?;
 
-    let resource = sqlx::query_as::<_, LectureResource>(&format!(
-        "insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size) \
-         values ($1, $2, $3, $4, $5, $6, $7) returning {RESOURCE_COLUMNS}"
-    ))
-    .bind(Uuid::now_v7())
-    .bind(session.id)
-    .bind(resource_type)
-    .bind(stored.key)
-    .bind(file_name)
-    .bind(content_type)
-    .bind(stored.bytes as i64)
+    let resource_id = Uuid::now_v7();
+    let resource = sqlx::query_as!(
+        LectureResource,
+        r#"insert into lecture_resources (id, session_id, resource_type, storage_key, original_filename, content_type, byte_size)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         returning id, session_id, resource_type, storage_key, content, checksum, created_at, expires_at"#,
+        resource_id,
+        session.id,
+        resource_type,
+        stored.key,
+        file_name,
+        content_type,
+        stored.bytes as i64
+    )
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to insert uploaded lecture resource")?;

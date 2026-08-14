@@ -49,30 +49,32 @@ pub async fn import_file(
         .begin()
         .await
         .log_internal_error("Failed to start transaction for roster import")?;
-    let owns_course: bool = sqlx::query_scalar(
-        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    let owns_course = sqlx::query_scalar!(
+        r#"select exists(select 1 from courses where id = $1 and lecturer_id = $2) as "exists!""#,
+        course_id,
+        lecturer.id
     )
-    .bind(course_id)
-    .bind(lecturer.id)
     .fetch_one(&mut *transaction)
     .await
     .log_internal_error("Failed to verify course ownership in import_file")?;
     if !owns_course {
         return Err(ApiError::not_found("Course not found"));
     }
-    sqlx::query("delete from roster_students where course_id = $1")
-        .bind(course_id)
-        .execute(&mut *transaction)
-        .await
-        .log_internal_error("Failed to delete previous roster students")?;
+    sqlx::query!(
+        "delete from roster_students where course_id = $1",
+        course_id
+    )
+    .execute(&mut *transaction)
+    .await
+    .log_internal_error("Failed to delete previous roster students")?;
     for student in parsed.students {
-        sqlx::query(
+        sqlx::query!(
             "insert into roster_students (course_id, matric_number, full_name, email) values ($1, $2, $3, $4)",
+            course_id,
+            student.matric_number,
+            student.full_name,
+            student.email
         )
-        .bind(course_id)
-        .bind(student.matric_number)
-        .bind(student.full_name)
-        .bind(student.email)
         .execute(&mut *transaction)
         .await
         .map_err(|_| ApiError::conflict("Roster contains duplicate or invalid student records"))?;

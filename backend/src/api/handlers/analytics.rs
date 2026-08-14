@@ -40,17 +40,20 @@ pub async fn course_summary(
 ) -> Result<Json<CourseAttendanceSummary>, ApiError> {
     let pool = state.db_pool();
     ensure_course_owner(pool, course_id, lecturer.id).await?;
-    let summary = sqlx::query_as::<_, CourseAttendanceSummary>(
-        "select $1 as course_id,
-          count(distinct s.id)::bigint as total_sessions,
-          coalesce(avg(coalesce(p.attendance_score, 0)) filter (where p.id is not null), 0)::double precision as avg_attendance_percentage,
-          coalesce(100.0 * avg(case when p.verification_status = 'verified' then 1.0 else 0.0 end) filter (where p.id is not null), 0)::double precision as roster_verification_match_rate,
-          count(*) filter (where p.verification_status = 'provisional')::bigint as total_provisional_students,
-          (select count(*) from attendance_audit_logs a where a.session_id in (select id from lecture_sessions where course_id = $1))::bigint as total_anomalies_flagged
+    let summary = sqlx::query_as!(
+        CourseAttendanceSummary,
+        r#"select $1 as "course_id!",
+          count(distinct s.id)::bigint as "total_sessions!",
+          coalesce(avg(coalesce(p.attendance_score, 0)) filter (where p.id is not null), 0)::double precision as "avg_attendance_percentage!",
+          coalesce(100.0 * avg(case when p.verification_status = 'verified' then 1.0 else 0.0 end) filter (where p.id is not null), 0)::double precision as "roster_verification_match_rate!",
+          count(*) filter (where p.verification_status = 'provisional')::bigint as "total_provisional_students!",
+          (select count(*) from attendance_audit_logs a where a.session_id in (select id from lecture_sessions where course_id = $1))::bigint as "total_anomalies_flagged!"
          from lecture_sessions s left join session_participants p on p.session_id = s.id
-         where s.course_id = $1 and s.deleted_at is null",
+         where s.course_id = $1 and s.deleted_at is null"#,
+        course_id
     )
-    .bind(course_id).fetch_one(pool).await
+    .fetch_one(pool)
+    .await
     .log_internal_error("Failed to query course attendance summary")?;
     Ok(Json(summary))
 }
@@ -61,19 +64,25 @@ pub async fn session_anomalies(
     Path(session_id): Path<Uuid>,
 ) -> Result<Json<Vec<AttendanceAnomaly>>, ApiError> {
     let pool = state.db_pool();
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session_id,
+        lecturer.id
     )
-    .bind(session_id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify session ownership for anomalies")?;
     if !owns {
         return Err(ApiError::not_found("Session not found."));
     }
-    let anomalies = sqlx::query_as::<_, AttendanceAnomaly>("select id, matric_number, anomaly_type, description, severity, logged_at from attendance_audit_logs where session_id = $1 order by logged_at desc")
-        .bind(session_id).fetch_all(pool).await.log_internal_error("Failed to query attendance anomalies")?;
+    let anomalies = sqlx::query_as!(
+        AttendanceAnomaly,
+        "select id, matric_number, anomaly_type, description, severity, logged_at from attendance_audit_logs where session_id = $1 order by logged_at desc",
+        session_id
+    )
+    .fetch_all(pool)
+    .await
+    .log_internal_error("Failed to query attendance anomalies")?;
     Ok(Json(anomalies))
 }
 
@@ -82,11 +91,11 @@ async fn ensure_course_owner(
     course_id: Uuid,
     lecturer_id: Uuid,
 ) -> Result<(), ApiError> {
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from courses where id = $1 and lecturer_id = $2) as "exists!""#,
+        course_id,
+        lecturer_id
     )
-    .bind(course_id)
-    .bind(lecturer_id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify course ownership in analytics")?;

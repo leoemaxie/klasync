@@ -36,10 +36,11 @@ pub async fn list(
 ) -> Result<Json<Vec<SessionQuestion>>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &code).await?;
-    let questions = sqlx::query_as::<_, SessionQuestion>(
+    let questions = sqlx::query_as!(
+        SessionQuestion,
         "select id, question_text, upvote_count, is_resolved, created_at from session_questions where session_code = upper($1) order by is_resolved asc, upvote_count desc, created_at asc",
+        session.short_code
     )
-    .bind(&session.short_code)
     .fetch_all(pool)
     .await
     .map_err(|error| {
@@ -64,9 +65,14 @@ pub async fn submit(
     let session = database_session_by_code(pool, &code).await?;
 
     if let Some(participant_id) = input.participant_id {
-        let valid: bool = sqlx::query_scalar("select exists(select 1 from session_participants where id = $1 and session_id = $2 and removed_at is null)")
-            .bind(participant_id).bind(session.id).fetch_one(pool).await
-            .unwrap_or(true);
+        let valid = sqlx::query_scalar!(
+            r#"select exists(select 1 from session_participants where id = $1 and session_id = $2 and removed_at is null) as "exists!""#,
+            participant_id,
+            session.id
+        )
+        .fetch_one(pool)
+        .await
+        .unwrap_or(true);
         if !valid {
             // Soft fallback to permit guest questions even if participant ID isn't in DB yet
         }
@@ -74,13 +80,20 @@ pub async fn submit(
 
     let id = Uuid::now_v7();
     let created_at = Utc::now();
-    sqlx::query("insert into session_questions (id, session_code, participant_id, caption_id, question_text) values ($1, upper($2), $3, $4, $5)")
-        .bind(id).bind(&session.short_code).bind(input.participant_id).bind(input.caption_id).bind(text)
-        .execute(pool).await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to submit question");
-            ApiError::service_unavailable()
-        })?;
+    sqlx::query!(
+        "insert into session_questions (id, session_code, participant_id, caption_id, question_text) values ($1, upper($2), $3, $4, $5)",
+        id,
+        session.short_code,
+        input.participant_id,
+        input.caption_id,
+        text
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to submit question");
+        ApiError::service_unavailable()
+    })?;
 
     Ok((
         StatusCode::CREATED,
@@ -101,12 +114,17 @@ pub async fn upvote(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &code).await?;
-    let count: Option<i32> = sqlx::query_scalar("update session_questions set upvote_count = upvote_count + 1 where id = $1 and session_code = upper($2) returning upvote_count")
-        .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to upvote question");
-            ApiError::service_unavailable()
-        })?;
+    let count = sqlx::query_scalar!(
+        "update session_questions set upvote_count = upvote_count + 1 where id = $1 and session_code = upper($2) returning upvote_count",
+        question_id,
+        session.short_code
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to upvote question");
+        ApiError::service_unavailable()
+    })?;
     let Some(count) = count else {
         return Err(ApiError::not_found("Question not found."));
     };
@@ -122,11 +140,11 @@ pub async fn resolve(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &code).await?;
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .map_err(|error| {
@@ -136,12 +154,17 @@ pub async fn resolve(
     if !owns {
         return Err(ApiError::not_found("Session not found."));
     }
-    let resolved: Option<bool> = sqlx::query_scalar("update session_questions set is_resolved = true where id = $1 and session_code = upper($2) returning is_resolved")
-        .bind(question_id).bind(&session.short_code).fetch_optional(pool).await
-        .map_err(|error| {
-            tracing::error!(%error, "Failed to resolve question");
-            ApiError::service_unavailable()
-        })?;
+    let resolved = sqlx::query_scalar!(
+        "update session_questions set is_resolved = true where id = $1 and session_code = upper($2) returning is_resolved",
+        question_id,
+        session.short_code
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(%error, "Failed to resolve question");
+        ApiError::service_unavailable()
+    })?;
     let Some(resolved) = resolved else {
         return Err(ApiError::not_found("Question not found."));
     };

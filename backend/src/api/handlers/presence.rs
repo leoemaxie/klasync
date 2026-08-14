@@ -23,10 +23,10 @@ pub async fn heartbeat(
     Path(participant_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<PresenceHeartbeat>), ApiError> {
     let pool = state.db_pool();
-    let participant = sqlx::query_as::<_, (Uuid, Uuid, i32)>(
+    let participant = sqlx::query!(
         "update session_participants set last_seen_at = now(), heartbeat_count = heartbeat_count + 1 where id = $1 and removed_at is null returning id, session_id, heartbeat_count",
+        participant_id
     )
-    .bind(participant_id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to record presence heartbeat")?
@@ -34,7 +34,7 @@ pub async fn heartbeat(
     const TTL: u64 = 90;
     if let Some(redis) = &state.redis {
         if let Err(error) = redis
-            .set_presence(&participant.1.to_string(), &participant.0.to_string(), TTL)
+            .set_presence(&participant.session_id.to_string(), &participant.id.to_string(), TTL)
             .await
         {
             if state.config.redis_required {
@@ -47,8 +47,8 @@ pub async fn heartbeat(
     Ok((
         StatusCode::OK,
         Json(PresenceHeartbeat {
-            participant_id: participant.0,
-            heartbeat_count: participant.2,
+            participant_id: participant.id,
+            heartbeat_count: participant.heartbeat_count,
             presence_ttl_seconds: TTL,
         }),
     ))

@@ -26,11 +26,11 @@ pub async fn reconcile(
 ) -> Result<Json<ReconciliationResult>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify session ownership in reconcile")?;
@@ -38,8 +38,8 @@ pub async fn reconcile(
         return Err(ApiError::not_found("Session not found"));
     }
 
-    let scored: i64 = sqlx::query_scalar(
-        "with duration as (
+    let scored = sqlx::query_scalar!(
+        r#"with duration as (
            select greatest(60, extract(epoch from (coalesce(ended_at, now()) - started_at))) as seconds
            from lecture_sessions where id = $1
          ), updated as (
@@ -49,26 +49,27 @@ pub async fn reconcile(
            ))
            from duration where p.session_id = $1
            returning 1
-         ) select count(*) from updated",
+         ) select count(*) as "count!" from updated"#,
+        session.id
     )
-    .bind(session.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to score attendance")?;
 
-    let flagged: i64 = sqlx::query_scalar(
-        "with duplicates as (
+    let flagged = sqlx::query_scalar!(
+        r#"with duplicates as (
            select matric_number from session_participants where session_id = $1 group by matric_number having count(*) > 1
          ), flagged as (
            update session_participants p set duplicate_flag = true
            from duplicates d where p.session_id = $1 and p.matric_number = d.matric_number
            returning 1
-         ) select count(*) from flagged",
+         ) select count(*) as "count!" from flagged"#,
+        session.id
     )
-    .bind(session.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to flag duplicate participants in reconcile")?;
+
     Ok(Json(ReconciliationResult {
         participants_scored: scored,
         duplicate_participants_flagged: flagged,

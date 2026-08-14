@@ -9,12 +9,10 @@ use uuid::Uuid;
 use crate::{
     api::error::{ApiError, LogApiError},
     auth::guard::AuthenticatedLecturer,
-    models::{CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus},
+    models::{Course, CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus},
     state::AppState,
     utils::short_code,
 };
-
-const SESSION_COLUMNS: &str = "id, course_id, title, short_code, invite_token, status, started_at";
 
 pub async fn create(
     State(state): State<AppState>,
@@ -22,11 +20,11 @@ pub async fn create(
     Json(input): Json<CreateSessionRequest>,
 ) -> Result<(StatusCode, Json<InviteResponse>), ApiError> {
     let pool = state.db_pool();
-    let owns_course: bool = sqlx::query_scalar(
-        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    let owns_course = sqlx::query_scalar!(
+        r#"select exists(select 1 from courses where id = $1 and lecturer_id = $2) as "exists!""#,
+        input.course_id,
+        lecturer.id
     )
-    .bind(input.course_id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify course ownership in session create")?;
@@ -36,28 +34,30 @@ pub async fn create(
 
     let code = short_code();
     let invite_token = Uuid::now_v7();
-    let session = sqlx::query_as::<_, LectureSession>(&format!(
-        "insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id) \
-         values ($1, $2, $3, $4, $5, $6, $7) returning {SESSION_COLUMNS}"
-    ))
-    .bind(input.course_id)
-    .bind(input.title.trim())
-    .bind(&code)
-    .bind(invite_token)
-    .bind(SessionStatus::Live)
-    .bind(Utc::now())
-    .bind(lecturer.id)
+    let session = sqlx::query_as!(
+        LectureSession,
+        r#"insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at"#,
+        input.course_id,
+        input.title.trim(),
+        &code,
+        invite_token,
+        SessionStatus::Live as SessionStatus,
+        Utc::now(),
+        lecturer.id
+    )
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::conflict("A session code collision occurred, please try again"))?;
 
-    sqlx::query(
+    sqlx::query!(
         "insert into session_invites (session_id, token, short_code, created_by) values ($1, $2, $3, $4)",
+        session.id,
+        invite_token,
+        &code,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(invite_token)
-    .bind(&code)
-    .bind(lecturer.id)
     .execute(pool)
     .await
     .log_internal_error("Failed to insert session invite")?;
@@ -79,18 +79,22 @@ pub async fn get_by_code(
 ) -> Result<Json<SessionDetail>, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let course = sqlx::query_as("select id, lecturer_id, code, title from courses where id = $1")
-        .bind(session.course_id)
-        .fetch_optional(pool)
-        .await
-        .log_internal_error("Failed to query course for session detail")?
-        .ok_or_else(|| ApiError::not_found("Course not found"))?;
-    let participant_count: i64 =
-        sqlx::query_scalar("select count(*) from session_participants where session_id = $1")
-            .bind(session.id)
-            .fetch_one(pool)
-            .await
-            .log_internal_error("Failed to count session participants")?;
+    let course = sqlx::query_as!(
+        Course,
+        "select id, lecturer_id, code, title from courses where id = $1",
+        session.course_id
+    )
+    .fetch_optional(pool)
+    .await
+    .log_internal_error("Failed to query course for session detail")?
+    .ok_or_else(|| ApiError::not_found("Course not found"))?;
+    let participant_count = sqlx::query_scalar!(
+        r#"select count(*) as "count!" from session_participants where session_id = $1"#,
+        session.id
+    )
+    .fetch_one(pool)
+    .await
+    .log_internal_error("Failed to count session participants")?;
     Ok(Json(SessionDetail {
         session,
         course,
@@ -104,12 +108,14 @@ pub async fn end(
     Path(short_code): Path<String>,
 ) -> Result<Json<LectureSession>, ApiError> {
     let pool = state.db_pool();
-    let session = sqlx::query_as::<_, LectureSession>(&format!(
-        "update lecture_sessions set status = 'ended', ended_at = now() \
-         where short_code = upper($1) and lecturer_id = $2 returning {SESSION_COLUMNS}"
-    ))
-    .bind(short_code)
-    .bind(lecturer.id)
+    let session = sqlx::query_as!(
+        LectureSession,
+        r#"update lecture_sessions set status = 'ended', ended_at = now()
+         where short_code = upper($1) and lecturer_id = $2
+         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at"#,
+        short_code,
+        lecturer.id
+    )
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to end lecture session")?
@@ -122,12 +128,14 @@ pub async fn database_session_by_code<'e, E>(
     short_code: &str,
 ) -> Result<LectureSession, ApiError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::PgExecutor<'e>,
 {
-    sqlx::query_as::<_, LectureSession>(&format!(
-        "select {SESSION_COLUMNS} from lecture_sessions where short_code = upper($1)"
-    ))
-    .bind(short_code)
+    sqlx::query_as!(
+        LectureSession,
+        r#"select id, course_id, title, short_code, invite_token, status as "status: SessionStatus", started_at
+         from lecture_sessions where short_code = upper($1)"#,
+        short_code
+    )
     .fetch_optional(executor)
     .await
     .map_err(|error| {

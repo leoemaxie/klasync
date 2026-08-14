@@ -62,13 +62,14 @@ pub async fn request(
     Json(input): Json<ClaimRequestInput>,
 ) -> Result<(StatusCode, Json<ClaimRequestResponse>), ApiError> {
     let pool = state.db_pool();
-    let context = sqlx::query_as::<_, ClaimContext>(
+    let context = sqlx::query_as!(
+        ClaimContext,
         "select a.email
          from session_participants p join student_accounts a on a.id = $2
          where p.id = $1 and p.student_account_id is null",
+        input.participant_id,
+        student.id
     )
-    .bind(input.participant_id)
-    .bind(student.id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query student claim context")?
@@ -78,15 +79,26 @@ pub async fn request(
     let code_hash =
         passwords::hash(&code).log_internal_error("Failed to hash verification code")?;
     let expires_at = Utc::now() + Duration::minutes(10);
-    sqlx::query("delete from student_claim_verifications where student_account_id = $1 and participant_id = $2 and consumed_at is null")
-        .bind(student.id).bind(input.participant_id).execute(pool).await
-        .log_internal_error("Failed to delete existing claim verifications")?;
-    let verification_id = Uuid::now_v7();
-    sqlx::query(
-        "insert into student_claim_verifications (id, student_account_id, participant_id, email, code_hash, expires_at) values ($1, $2, $3, $4, $5, $6)",
+    sqlx::query!(
+        "delete from student_claim_verifications where student_account_id = $1 and participant_id = $2 and consumed_at is null",
+        student.id,
+        input.participant_id
     )
-    .bind(verification_id).bind(student.id).bind(input.participant_id).bind(&context.email).bind(code_hash).bind(expires_at)
-    .execute(pool).await
+    .execute(pool)
+    .await
+    .log_internal_error("Failed to delete existing claim verifications")?;
+    let verification_id = Uuid::now_v7();
+    sqlx::query!(
+        "insert into student_claim_verifications (id, student_account_id, participant_id, email, code_hash, expires_at) values ($1, $2, $3, $4, $5, $6)",
+        verification_id,
+        student.id,
+        input.participant_id,
+        context.email,
+        code_hash,
+        expires_at
+    )
+    .execute(pool)
+    .await
     .log_internal_error("Failed to insert student claim verification")?;
     let template = ClaimVerifyTemplate {
         code,
@@ -117,12 +129,16 @@ pub async fn verify(
     Json(input): Json<ClaimVerifyInput>,
 ) -> Result<Json<ClaimVerifyResponse>, ApiError> {
     let pool = state.db_pool();
-    let record = sqlx::query_as::<_, VerificationRecord>(
+    let record = sqlx::query_as!(
+        VerificationRecord,
         "select v.id, v.participant_id, p.session_id, p.matric_number, v.email, v.code_hash, v.attempts, v.expires_at, v.consumed_at
          from student_claim_verifications v join session_participants p on p.id = v.participant_id
          where v.id = $1 and v.student_account_id = $2",
+        input.verification_id,
+        student.id
     )
-    .bind(input.verification_id).bind(student.id).fetch_optional(pool).await
+    .fetch_optional(pool)
+    .await
     .log_internal_error("Failed to query verification record")?
     .ok_or_else(|| ApiError::unauthorized("Invalid claim verification request"))?;
     if record.consumed_at.is_some() || record.expires_at <= Utc::now() || record.attempts >= 5 {
@@ -131,24 +147,33 @@ pub async fn verify(
         ));
     }
     if !passwords::verify(&input.code, &record.code_hash) {
-        sqlx::query("update student_claim_verifications set attempts = attempts + 1 where id = $1")
-            .bind(record.id)
-            .execute(pool)
-            .await
-            .log_internal_error("Failed to increment verification attempts")?;
+        sqlx::query!(
+            "update student_claim_verifications set attempts = attempts + 1 where id = $1",
+            record.id
+        )
+        .execute(pool)
+        .await
+        .log_internal_error("Failed to increment verification attempts")?;
         return Err(ApiError::unauthorized("Invalid verification code"));
     }
-    let linked = sqlx::query(
+    let linked = sqlx::query!(
         "update session_participants set student_account_id = $1 where id = $2 and student_account_id is null",
+        student.id,
+        record.participant_id
     )
-    .bind(student.id).bind(record.participant_id).execute(pool).await
+    .execute(pool)
+    .await
     .log_internal_error("Failed to link participant to student account")?;
     if linked.rows_affected() == 0 {
         return Err(ApiError::conflict("Participant has already been claimed"));
     }
-    sqlx::query("update student_claim_verifications set verified_at = now(), consumed_at = now() where id = $1")
-        .bind(record.id).execute(pool).await
-        .log_internal_error("Failed to update claim verification status")?;
+    sqlx::query!(
+        "update student_claim_verifications set verified_at = now(), consumed_at = now() where id = $1",
+        record.id
+    )
+    .execute(pool)
+    .await
+    .log_internal_error("Failed to update claim verification status")?;
     audit::record_session_event(pool, record.session_id, Some(student.id), Some("student"), AuditEvent {
         event_type: "student_participant_claimed",
         metadata: serde_json::json!({"participant_id": record.participant_id, "matric_number": record.matric_number}),

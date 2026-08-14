@@ -65,14 +65,15 @@ async fn process_job_unlocked(
         .production_database()
         .ok_or_else(|| ApiError::service_unavailable())?;
 
-    let job = sqlx::query_as::<_, PendingJob>(
-        "update ai_jobs set status = 'running', started_at = now(), attempts = attempts + 1, error_message = null
+    let job = sqlx::query_as!(
+        PendingJob,
+        r#"update ai_jobs set status = 'running', started_at = now(), attempts = attempts + 1, error_message = null
          where id = $1 and requested_by = $2 and status in ('queued', 'failed') and attempts < $3
-         returning id, session_id, job_type, input_resource_id, attempts",
+         returning id, session_id, job_type, input_resource_id, attempts"#,
+        job_id,
+        lecturer_id,
+        MAX_ATTEMPTS
     )
-    .bind(job_id)
-    .bind(lecturer_id)
-    .bind(MAX_ATTEMPTS)
     .fetch_optional(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?
@@ -81,11 +82,11 @@ async fn process_job_unlocked(
     let result = execute_claimed_job(state, pool, &job).await;
     match result {
         Ok(output_resource_id) => {
-            sqlx::query(
+            sqlx::query!(
                 "update ai_jobs set status = 'completed', output_resource_id = $2, completed_at = now(), error_message = null where id = $1",
+                job.id,
+                output_resource_id
             )
-            .bind(job.id)
-            .bind(output_resource_id)
             .execute(pool)
             .await
             .map_err(|_| ApiError::service_unavailable())?;
@@ -98,12 +99,14 @@ async fn process_job_unlocked(
         }
         Err(error) => {
             let message = error.to_string();
-            sqlx::query("update ai_jobs set status = 'failed', error_message = $2 where id = $1")
-                .bind(job.id)
-                .bind(&message)
-                .execute(pool)
-                .await
-                .map_err(|_| ApiError::service_unavailable())?;
+            sqlx::query!(
+                "update ai_jobs set status = 'failed', error_message = $2 where id = $1",
+                job.id,
+                message
+            )
+            .execute(pool)
+            .await
+            .map_err(|_| ApiError::service_unavailable())?;
             Err(error)
         }
     }
@@ -115,11 +118,12 @@ async fn execute_claimed_job(
     job: &PendingJob,
 ) -> Result<Uuid, ApiError> {
     let resource = match job.input_resource_id {
-        Some(resource_id) => sqlx::query_as::<_, InputResource>(
-            "select storage_key, content, content_type from lecture_resources where id = $1 and session_id = $2",
+        Some(resource_id) => sqlx::query_as!(
+            InputResource,
+            r#"select storage_key, content::text as content, content_type from lecture_resources where id = $1 and session_id = $2"#,
+            resource_id,
+            job.session_id
         )
-        .bind(resource_id)
-        .bind(job.session_id)
         .fetch_optional(pool)
         .await
         .map_err(|_| ApiError::service_unavailable())?
@@ -176,31 +180,31 @@ async fn execute_claimed_job(
     let cost_usd = usage
         .and_then(|value| value.get("cost"))
         .and_then(|value| value.as_f64());
-    sqlx::query(
+    let provider_name = state.ai.provider_name();
+    sqlx::query!(
         "update ai_jobs set provider = $2, model = $3, input_tokens = $4, output_tokens = $5, cost_usd = $6 where id = $1",
+        job.id,
+        provider_name,
+        model,
+        input_tokens,
+        output_tokens,
+        cost_usd
     )
-    .bind(job.id)
-    .bind(state.ai.provider_name())
-    .bind(model)
-    .bind(input_tokens)
-    .bind(output_tokens)
-    .bind(cost_usd)
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
-    let content =
-        serde_json::to_string(&output.content).map_err(|_| ApiError::service_unavailable())?;
     persist_study_rows(pool, job.session_id, &job.job_type, &output.content).await?;
     let resource_type = output_type(&job.job_type);
     let output_id = Uuid::now_v7();
-    sqlx::query(
+    let metadata_str = output.metadata.to_string();
+    sqlx::query!(
         "insert into lecture_resources (id, session_id, resource_type, content, checksum) values ($1, $2, $3, $4, $5)",
+        output_id,
+        job.session_id,
+        resource_type,
+        output.content,
+        metadata_str
     )
-    .bind(output_id)
-    .bind(job.session_id)
-    .bind(resource_type)
-    .bind(content)
-    .bind(output.metadata.to_string())
     .execute(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;
@@ -237,10 +241,10 @@ pub async fn run_loop(state: AppState) {
                         if let Ok(job_id) = Uuid::parse_str(&job_id) {
                             let pool = state.production_database();
                             if let Some(pool) = pool {
-                                if let Ok(Some(lecturer_id)) = sqlx::query_scalar::<_, Uuid>(
+                                if let Ok(Some(lecturer_id)) = sqlx::query_scalar!(
                                     "select requested_by from ai_jobs where id = $1",
+                                    job_id
                                 )
-                                .bind(job_id)
                                 .fetch_optional(pool)
                                 .await
                                 {
@@ -268,10 +272,11 @@ pub async fn run_loop(state: AppState) {
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             continue;
         };
-        let candidate = sqlx::query_as::<_, JobCandidate>(
+        let candidate = sqlx::query_as!(
+            JobCandidate,
             "select id, requested_by from ai_jobs where status = 'queued' and attempts < $1 order by created_at asc limit 1",
+            MAX_ATTEMPTS
         )
-        .bind(MAX_ATTEMPTS)
         .fetch_optional(pool)
         .await;
         let Ok(Some(job)) = candidate else {
@@ -305,17 +310,42 @@ async fn persist_study_rows(
     if job_type == "chapters" {
         if let Ok(chapters) = serde_json::from_str::<Vec<ChapterPayload>>(text) {
             for (index, chapter) in chapters.into_iter().enumerate() {
-                sqlx::query("insert into session_chapters (id, session_id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec) values ($1, $2, $3, $4, $5, $6, $7) on conflict (session_id, chapter_index) do update set title = excluded.title, summary = excluded.summary, start_timestamp_sec = excluded.start_timestamp_sec, end_timestamp_sec = excluded.end_timestamp_sec")
-                    .bind(Uuid::now_v7()).bind(session_id).bind(chapter.chapter_index.unwrap_or(index as i32 + 1)).bind(chapter.title).bind(chapter.summary).bind(chapter.start_timestamp_sec.unwrap_or(0)).bind(chapter.end_timestamp_sec.unwrap_or(0))
-                    .execute(pool).await.map_err(|_| ApiError::service_unavailable())?;
+                let chapter_id = Uuid::now_v7();
+                let chapter_index = chapter.chapter_index.unwrap_or(index as i32 + 1);
+                let start_sec = chapter.start_timestamp_sec.unwrap_or(0);
+                let end_sec = chapter.end_timestamp_sec.unwrap_or(0);
+                sqlx::query!(
+                    "insert into session_chapters (id, session_id, chapter_index, title, summary, start_timestamp_sec, end_timestamp_sec) values ($1, $2, $3, $4, $5, $6, $7) on conflict (session_id, chapter_index) do update set title = excluded.title, summary = excluded.summary, start_timestamp_sec = excluded.start_timestamp_sec, end_timestamp_sec = excluded.end_timestamp_sec",
+                    chapter_id,
+                    session_id,
+                    chapter_index,
+                    chapter.title,
+                    chapter.summary,
+                    start_sec,
+                    end_sec
+                )
+                .execute(pool)
+                .await
+                .map_err(|_| ApiError::service_unavailable())?;
             }
         }
     } else if job_type == "flashcards" {
         if let Ok(cards) = serde_json::from_str::<Vec<FlashcardPayload>>(text) {
             for card in cards {
-                sqlx::query("insert into session_flashcards (id, session_id, prompt, answer, topic_tag, difficulty) values ($1, $2, $3, $4, $5, $6)")
-                    .bind(Uuid::now_v7()).bind(session_id).bind(card.prompt).bind(card.answer).bind(card.topic_tag).bind(card.difficulty.unwrap_or_else(|| "medium".to_owned()))
-                    .execute(pool).await.map_err(|_| ApiError::service_unavailable())?;
+                let card_id = Uuid::now_v7();
+                let diff = card.difficulty.unwrap_or_else(|| "medium".to_owned());
+                sqlx::query!(
+                    "insert into session_flashcards (id, session_id, prompt, answer, topic_tag, difficulty) values ($1, $2, $3, $4, $5, $6)",
+                    card_id,
+                    session_id,
+                    card.prompt,
+                    card.answer,
+                    card.topic_tag,
+                    diff
+                )
+                .execute(pool)
+                .await
+                .map_err(|_| ApiError::service_unavailable())?;
             }
         }
     }
@@ -348,12 +378,12 @@ pub async fn dispatch(
     let pool = state
         .production_database()
         .ok_or_else(|| ApiError::service_unavailable())?;
-    let owns_job: bool = sqlx::query_scalar(
-        "select exists(select 1 from ai_jobs j join lecture_sessions s on s.id = j.session_id where j.id = $1 and j.requested_by = $2 and s.short_code = upper($3) and s.lecturer_id = $2)",
+    let owns_job = sqlx::query_scalar!(
+        r#"select exists(select 1 from ai_jobs j join lecture_sessions s on s.id = j.session_id where j.id = $1 and j.requested_by = $2 and s.short_code = upper($3) and s.lecturer_id = $2) as "exists!""#,
+        job_id,
+        lecturer.id,
+        short_code
     )
-    .bind(job_id)
-    .bind(lecturer.id)
-    .bind(short_code)
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::service_unavailable())?;

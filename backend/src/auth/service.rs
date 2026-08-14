@@ -45,14 +45,14 @@ pub async fn issue_tokens(
     let secret = generate_refresh_secret();
     let refresh_hash = hash_token_secret(&secret);
     let expires_at = Utc::now() + Duration::days(config.refresh_token_days);
-    sqlx::query(
+    sqlx::query!(
         "insert into auth_sessions (id, account_id, account_role, refresh_token_hash, expires_at) values ($1, $2, $3, $4, $5)",
+        session_id,
+        account_id,
+        role as AccountRole,
+        refresh_hash,
+        expires_at
     )
-    .bind(session_id)
-    .bind(account_id)
-    .bind(role)
-    .bind(refresh_hash)
-    .bind(expires_at)
     .execute(pool)
     .await
     .log_internal_error("Failed to record auth session in database")?;

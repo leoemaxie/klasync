@@ -51,11 +51,11 @@ pub async fn canvas(
         ));
     }
     let pool = state.db_pool();
-    let owns: bool = sqlx::query_scalar(
-        "select exists(select 1 from courses where id = $1 and lecturer_id = $2)",
+    let owns = sqlx::query_scalar!(
+        r#"select exists(select 1 from courses where id = $1 and lecturer_id = $2) as "exists!""#,
+        course_id,
+        lecturer.id
     )
-    .bind(course_id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify course ownership in canvas sync")?;
@@ -102,17 +102,35 @@ pub async fn canvas(
             .and_then(|v| v.as_str())
             .unwrap_or("Canvas student");
         let email = user.get("email").and_then(|v| v.as_str());
-        let inserted = sqlx::query("insert into roster_students (id, course_id, matric_number, full_name, email) values ($1, $2, $3, $4, $5) on conflict (course_id, matric_number) do update set full_name = excluded.full_name, email = excluded.email")
-            .bind(Uuid::now_v7()).bind(course_id).bind(matric).bind(name).bind(email).execute(&mut *transaction).await
-            .log_internal_error("Failed to insert synced Canvas roster student")?;
+        let student_id = Uuid::now_v7();
+        let inserted = sqlx::query!(
+            "insert into roster_students (id, course_id, matric_number, full_name, email) values ($1, $2, $3, $4, $5) on conflict (course_id, matric_number) do update set full_name = excluded.full_name, email = excluded.email",
+            student_id,
+            course_id,
+            matric,
+            name,
+            email
+        )
+        .execute(&mut *transaction)
+        .await
+        .log_internal_error("Failed to insert synced Canvas roster student")?;
         if inserted.rows_affected() > 0 {
             new_entries += 1;
         }
     }
     let synced_at = Utc::now();
-    sqlx::query("insert into lms_course_sync (id, course_id, lms_provider, external_course_id, api_endpoint, last_synced_at) values ($1, $2, 'canvas', $3, $4, $5) on conflict (course_id, lms_provider) do update set external_course_id = excluded.external_course_id, api_endpoint = excluded.api_endpoint, last_synced_at = excluded.last_synced_at")
-        .bind(Uuid::now_v7()).bind(course_id).bind(input.course_id).bind(base).bind(synced_at).execute(&mut *transaction).await
-        .log_internal_error("Failed to record LMS course sync metadata")?;
+    let sync_id = Uuid::now_v7();
+    sqlx::query!(
+        "insert into lms_course_sync (id, course_id, lms_provider, external_course_id, api_endpoint, last_synced_at) values ($1, $2, 'canvas', $3, $4, $5) on conflict (course_id, lms_provider) do update set external_course_id = excluded.external_course_id, api_endpoint = excluded.api_endpoint, last_synced_at = excluded.last_synced_at",
+        sync_id,
+        course_id,
+        input.course_id,
+        base,
+        synced_at
+    )
+    .execute(&mut *transaction)
+    .await
+    .log_internal_error("Failed to record LMS course sync metadata")?;
     transaction
         .commit()
         .await

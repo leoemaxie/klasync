@@ -12,7 +12,7 @@ use crate::{
         handlers::sessions::database_session_by_code,
     },
     auth::guard::AuthenticatedLecturer,
-    models::{Course, InviteResolution, LectureSession},
+    models::{Course, InviteResolution, LectureSession, SessionStatus},
     state::AppState,
 };
 
@@ -23,11 +23,11 @@ pub async fn qr_svg(
 ) -> Result<Response, ApiError> {
     let pool = state.db_pool();
     let session = database_session_by_code(pool, &short_code).await?;
-    let owns_session: bool = sqlx::query_scalar(
-        "select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2)",
+    let owns_session = sqlx::query_scalar!(
+        r#"select exists(select 1 from lecture_sessions where id = $1 and lecturer_id = $2) as "exists!""#,
+        session.id,
+        lecturer.id
     )
-    .bind(session.id)
-    .bind(lecturer.id)
     .fetch_one(pool)
     .await
     .log_internal_error("Failed to verify session ownership for QR SVG")?;
@@ -57,20 +57,22 @@ pub async fn resolve(
     let pool = state.db_pool();
     let token = uuid::Uuid::parse_str(&token)
         .map_err(|_| ApiError::not_found("Invite link not found or expired"))?;
-    let session = sqlx::query_as::<_, LectureSession>(
-        "select session.id, session.course_id, session.title, session.short_code, session.invite_token, session.status, session.started_at \
-         from session_invites invite join lecture_sessions session on session.id = invite.session_id \
-         where invite.token = $1 and invite.revoked_at is null and (invite.expires_at is null or invite.expires_at > now())",
+    let session = sqlx::query_as!(
+        LectureSession,
+        r#"select session.id, session.course_id, session.title, session.short_code, session.invite_token, session.status as "status: SessionStatus", session.started_at
+         from session_invites invite join lecture_sessions session on session.id = invite.session_id
+         where invite.token = $1 and invite.revoked_at is null and (invite.expires_at is null or invite.expires_at > now())"#,
+        token
     )
-    .bind(token)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to resolve invite token")?
     .ok_or_else(|| ApiError::not_found("Invite link not found or expired"))?;
-    let course = sqlx::query_as::<_, Course>(
+    let course = sqlx::query_as!(
+        Course,
         "select id, lecturer_id, code, title from courses where id = $1",
+        session.course_id
     )
-    .bind(session.course_id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query course for resolved invite")?
@@ -84,12 +86,12 @@ pub async fn revoke(
     Path(short_code): Path<String>,
 ) -> Result<axum::http::StatusCode, ApiError> {
     let pool = state.db_pool();
-    let result = sqlx::query(
-        "update session_invites invite set revoked_at = now() from lecture_sessions session \
+    let result = sqlx::query!(
+        "update session_invites invite set revoked_at = now() from lecture_sessions session
          where invite.session_id = session.id and invite.short_code = upper($1) and session.lecturer_id = $2 and invite.revoked_at is null",
+        short_code,
+        lecturer.id
     )
-    .bind(short_code)
-    .bind(lecturer.id)
     .execute(pool)
     .await
     .log_internal_error("Failed to revoke session invite")?;
