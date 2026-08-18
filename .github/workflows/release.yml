@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
+
 jobs:
   build-desktop:
     name: Build Desktop (${{ matrix.platform }})
@@ -60,6 +63,7 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
         with:
           tagName: ${{ inputs.release_tag || github.ref_name }}
           releaseName: 'KLASYNC ${{ inputs.release_tag || github.ref_name }}'
@@ -112,6 +116,7 @@ jobs:
         run: pnpm tauri android build --apk
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
