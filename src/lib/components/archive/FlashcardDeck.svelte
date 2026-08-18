@@ -89,10 +89,10 @@
         type="button"
         class="tool-btn"
         title="Shuffle"
-        onclick={shuffleDeck}><Shuffle size={12} /></button
+        onclick={shuffleDeck}><Shuffle size={15} /></button
       >
       <button type="button" class="tool-btn" title="Reset" onclick={resetDeck}
-        ><RotateCcw size={12} /></button
+        ><RotateCcw size={15} /></button
       >
       {#if deck.length}<span class="card-counter"
           >{currentIndex + 1} / {deck.length}</span
@@ -157,18 +157,30 @@
     gap: 8px;
   }
   .tool-btn {
-    background: transparent;
+    background: rgba(16, 9, 4, 0.4);
     border: 1px solid var(--color-cork-border);
     color: var(--color-driftwood);
-    padding: 4px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    margin: 0;
     border-radius: 4px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    transition:
+      border-color 0.2s,
+      color 0.2s,
+      background 0.2s;
   }
   .tool-btn:hover {
     border-color: var(--color-warm-cream);
     color: var(--color-warm-cream);
+    background: rgba(255, 237, 215, 0.05);
   }
   .card-counter {
     font-size: 10px;

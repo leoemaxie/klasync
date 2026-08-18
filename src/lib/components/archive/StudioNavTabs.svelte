@@ -73,10 +73,12 @@
 <style>
   .studio-nav-tabs {
     display: flex;
-    gap: 2px;
+    gap: 4px;
     border-bottom: 1px solid var(--color-cork-border);
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
   }
   .studio-nav-tabs::-webkit-scrollbar {
     display: none;
@@ -85,7 +87,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -95,7 +97,9 @@
     color: var(--color-driftwood);
     cursor: pointer;
     white-space: nowrap;
-    min-height: 40px;
+    min-height: 38px;
+    flex-shrink: 0;
+    transition: color 0.15s ease, background 0.15s ease;
   }
   .tab-btn:hover {
     color: var(--color-warm-cream);
@@ -104,5 +108,15 @@
     color: var(--color-warm-cream);
     border-bottom: 2px solid var(--color-ember-accent);
     background: rgba(220, 80, 0, 0.06);
+  }
+  @media (max-width: 640px) {
+    .studio-nav-tabs {
+      gap: 2px;
+    }
+    .tab-btn {
+      padding: 8px 10px;
+      font-size: 10.5px;
+      gap: 4px;
+    }
   }
 </style>

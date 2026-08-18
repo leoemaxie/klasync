@@ -23,37 +23,35 @@
 </script>
 
 <div class="studio-header">
-  <div class="header-left">
+  <div class="header-actions">
     {#if onBack}
       <button
         type="button"
         class="back-btn outline"
         onclick={onBack}
-        title="Back"
+        title="Back to lectures"
       >
         <ArrowLeft size={14} /><span>Back</span>
       </button>
     {/if}
-    <div class="meta-tags-row">
-      <span class="course-code-badge">{claim.course_code}</span>
-      {#if claim.course_title && claim.course_title !== claim.course_code}
-        <span class="course-title-sub">{claim.course_title}</span>
-      {/if}
-      {#if claim.academic_session}<span class="meta-pill"
-          >{claim.academic_session}</span
-        >{/if}
-    </div>
-  </div>
 
-  <div class="header-right">
     <button
       type="button"
       class="action-ghost-btn outline"
       onclick={handleCopyShare}
+      title="Share lecture archive link"
     >
-      {#if isCopied}<Check size={12} color="var(--color-warm-cream)" />
-        <span>Copied</span>{:else}<Share2 size={12} /> <span>Share</span>{/if}
+      {#if isCopied}
+        <Check size={12} color="var(--color-warm-cream)" />
+        <span>Copied</span>
+      {:else}
+        <Share2 size={12} />
+        <span>Share</span>
+      {/if}
     </button>
+  </div>
+
+  <div class="header-badges">
     <div class="verified-pill">
       <CheckCircle2 size={12} /><span>Verified</span>
     </div>
@@ -76,54 +74,36 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
     gap: 8px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--color-cork-border);
   }
-  .header-left,
-  .meta-tags-row,
-  .header-right {
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-badges {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
   }
-  .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
-    text-transform: uppercase;
-    min-height: 32px;
-  }
-  .course-code-badge {
-    font-family: var(--font-mono, monospace);
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-ember-accent);
-  }
-  .course-title-sub {
-    font-size: 11px;
-    color: var(--color-driftwood);
-    text-transform: uppercase;
-  }
-  .meta-pill {
-    font-size: 9px;
-    background: rgba(255, 237, 215, 0.08);
-    color: var(--color-warm-cream-dim);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
+  .back-btn,
   .action-ghost-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    padding: 4px 8px;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
     min-height: 32px;
+    border-radius: var(--radius-controls, 4px);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .action-ghost-btn {
+    font-size: 11px;
   }
   .verified-pill {
     display: inline-flex;
@@ -132,8 +112,9 @@
     font-size: 10px;
     color: #4ade80;
     background: rgba(74, 222, 128, 0.1);
-    padding: 3px 8px;
+    padding: 4px 8px;
     border-radius: 4px;
+    font-weight: 500;
   }
   .studio-title-area {
     margin-top: 4px;
@@ -144,6 +125,7 @@
     color: var(--color-warm-cream);
     margin: 0 0 4px 0;
     word-break: break-word;
+    line-height: 1.25;
   }
   .session-sub-info {
     display: flex;
@@ -162,12 +144,23 @@
     color: var(--color-cork-border);
   }
   @media (max-width: 640px) {
+    .studio-header {
+      align-items: flex-start;
+    }
+    .header-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      width: fit-content;
+    }
+    .back-btn,
+    .action-ghost-btn {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 6px 12px;
+    }
     .session-main-title {
       font-size: 18px;
-    }
-    .header-right {
-      width: 100%;
-      justify-content: space-between;
     }
   }
 </style>
