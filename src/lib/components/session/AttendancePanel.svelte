@@ -81,8 +81,8 @@
 <div class="panel attendance-panel">
   <div class="attendance-header">
     <div>
-      <p class="eyebrow">LIVE ATTENDANCE &amp; ROSTER RECONCILIATION</p>
-      <h2>Session Attendance Feed</h2>
+      <p class="eyebrow">ATTENDANCE</p>
+      <h2>Session Attendance</h2>
     </div>
   </div>
 
@@ -109,9 +109,9 @@
     <AttendanceListTable participants={filteredParticipants} />
   {:else}
     <div class="empty-state-box">
-      <p class="empty-title">No participants match your criteria</p>
+      <p class="empty-title">No participants found</p>
       <p class="hint">
-        Waiting for students to join using session code {sessionCode || '...'}
+        Waiting for students to join with code {sessionCode || '...'}
       </p>
     </div>
   {/if}
@@ -122,10 +122,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-20, 20px);
-    padding: var(--spacing-24, 24px);
-    background: var(--color-walnut-shadow, #100904);
-    border: 1px solid var(--color-cork-border, #40372e);
-    border-radius: var(--radius-cards, 12px);
   }
   .attendance-header h2 {
     font-family: var(--font-display, serif);

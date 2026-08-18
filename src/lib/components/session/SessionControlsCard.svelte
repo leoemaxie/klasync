@@ -28,7 +28,7 @@
 </script>
 
 <div class="controls-card">
-  <p class="section-label">LECTURER BROADCAST CONTROLS</p>
+  <p class="section-label">SESSION CONTROLS</p>
   <div class="action-buttons-grid">
     <button
       type="button"
@@ -40,8 +40,7 @@
     >
       {#if isTogglingPause}<ButtonSpinner
           label="Updating status..."
-        />{:else if isPaused}<Play size={16} aria-hidden="true" /> Resume Lecture
-        Room{:else}<Pause size={16} aria-hidden="true" /> Pause Lecture Room{/if}
+        />{:else if isPaused}<Play size={16} aria-hidden="true" /> Resume Session{:else}<Pause size={16} aria-hidden="true" /> Pause Session{/if}
     </button>
     <button
       type="button"
@@ -59,9 +58,9 @@
           <span class="reverb-ring delay"></span>
           <Mic size={15} aria-hidden="true" class="reverb-mic-icon" />
         </span>
-        Stop Audio Recording &amp; Stream
+        Stop Recording
       {:else}
-        <Mic size={16} aria-hidden="true" /> Start Audio Recording
+        <Mic size={16} aria-hidden="true" /> Record Audio
       {/if}
     </button>
   </div>
@@ -79,18 +78,18 @@
     disabled={isEndingSession}
   >
     {#if isEndingSession}
-      <ButtonSpinner label="Ending lecture session..." /> Ending Session...
+      <ButtonSpinner label="Ending session..." /> Ending Session...
     {:else}
-      <Power size={15} aria-hidden="true" /> End Live Lecture Session
+      <Power size={15} aria-hidden="true" /> End Session
     {/if}
   </button>
 </div>
 
 <style>
   .controls-card {
-    background: rgba(16, 9, 4, 0.6);
+    background: rgba(16, 9, 4, 0.5);
     border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
+    border-radius: var(--radius-cards);
     padding: var(--spacing-18);
   }
   .section-label {

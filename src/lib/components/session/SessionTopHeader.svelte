@@ -22,7 +22,7 @@
   <div class="live-status-pills">
     {#if isPaused}
       <span class="status-pill paused"
-        ><Pause size={12} aria-hidden="true" /> ROOM PAUSED</span
+        ><Pause size={12} aria-hidden="true" /> PAUSED</span
       >
     {:else}
       <span class="status-pill broadcasting"
@@ -37,7 +37,7 @@
           <span class="reverb-ring delay"></span>
           <Mic size={13} aria-hidden="true" class="reverb-mic-icon" />
         </span>
-        AUDIO STREAMING &amp; RECORDING
+        RECORDING
         {#if audioLevel > 0}
           <span
             class="level-indicator-bar"
@@ -47,7 +47,7 @@
       </span>
     {:else}
       <span class="status-pill idle"
-        ><Mic size={12} aria-hidden="true" /> MIC STANDBY</span
+        ><Mic size={12} aria-hidden="true" /> MIC OFF</span
       >
     {/if}
   </div>
@@ -55,9 +55,9 @@
 
 <style>
   .session-top-card {
-    background: rgba(16, 9, 4, 0.6);
+    background: rgba(16, 9, 4, 0.5);
     border: 1px solid var(--color-cork-border);
-    border-radius: 8px;
+    border-radius: var(--radius-cards);
     padding: var(--spacing-16) var(--spacing-20);
     display: flex;
     justify-content: space-between;

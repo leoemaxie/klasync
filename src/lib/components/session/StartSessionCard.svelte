@@ -17,23 +17,23 @@
   } = $props();
 </script>
 
-<div class="start-session-card">
+<div class="panel start-session-card">
   <div class="start-header">
-    <p class="eyebrow">READY TO BROADCAST</p>
-    <h2 class="start-title">Start Live Lecture Session</h2>
+    <p class="eyebrow">START SESSION</p>
+    <h2 class="start-title">Start Live Session</h2>
     <p class="start-desc">
-      Generate access code, invite link, and QR code for student entry.
+      Create an access code and invite link for students.
     </p>
   </div>
 
   <div class="lecturer-summary-box">
     <div class="summary-item">
-      <span class="sum-label">LECTURER:</span>
-      <span class="sum-val">{lecturerName || 'Not Set'}</span>
+      <span class="sum-label">Lecturer:</span>
+      <span class="sum-val">{lecturerName || 'Not set'}</span>
     </div>
     <div class="summary-item">
-      <span class="sum-label">EMAIL:</span>
-      <span class="sum-val">{lecturerEmail || 'Not Set'}</span>
+      <span class="sum-label">Email:</span>
+      <span class="sum-val">{lecturerEmail || 'Not set'}</span>
     </div>
   </div>
 
@@ -48,25 +48,18 @@
     disabled={!lecturerName.trim() || !lecturerEmail.trim() || isSaving}
   >
     {#if isSaving}
-      <ButtonSpinner label="Initializing live lecture room..." /> Initializing Live
-      Room...
+      <ButtonSpinner label="Starting session..." /> Starting...
     {:else}
-      <Radio size={16} /> Start Live Session Now
+      <Radio size={16} /> Start Session
     {/if}
   </button>
 </div>
 
 <style>
   .start-session-card {
-    padding: var(--spacing-28);
-    background: rgba(16, 9, 4, 0.45);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-cards);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-20);
-    max-width: 580px;
-    margin: 0 auto;
   }
   .start-header {
     display: flex;
@@ -90,9 +83,9 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px 14px;
-    background: rgba(8, 4, 2, 0.6);
+    background: rgba(16, 9, 4, 0.5);
     border: 1px solid var(--color-cork-border);
-    border-radius: 6px;
+    border-radius: var(--radius-cards);
   }
   .summary-item {
     display: flex;

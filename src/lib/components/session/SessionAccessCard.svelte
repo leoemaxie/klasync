@@ -57,14 +57,14 @@
 <div class="access-grid">
   <div class="access-card code-link-card">
     <div class="card-section">
-      <p class="section-label">STUDENT ACCESS CODE</p>
+      <p class="section-label">SESSION CODE</p>
       <div class="code-box">
         <span class="code-display">{code}</span>
         <div class="code-actions">
           <button type="button" class="copy-code-btn" onclick={handleCopyCode}>
             {#if copiedCode}<Check size={13} class="success-icon" /> Copied{:else}<Copy
                 size={13}
-              /> Copy Code{/if}
+              /> Copy{/if}
           </button>
           {#if canNativeShare}
             <button
@@ -81,7 +81,7 @@
     </div>
     <div class="card-divider"></div>
     <div class="card-section">
-      <p class="section-label">DIRECT INVITE LINK</p>
+      <p class="section-label">INVITE LINK</p>
       <div class="url-input-wrap">
         <LinkIcon size={14} aria-hidden="true" class="link-icon" />
         <input
@@ -107,14 +107,13 @@
       </div>
     </div>
     <p class="access-hint">
-      Students can join by entering this 8-character code, clicking the link, or
-      scanning the QR code.
+      Share this code, link, or QR code with students.
     </p>
   </div>
 
   <div class="access-card qr-card">
     <div class="qr-header">
-      <p class="section-label">CLASSROOM QR INVITE</p>
+      <p class="section-label">QR CODE</p>
       <button
         type="button"
         class="enlarge-qr-btn"
@@ -135,7 +134,7 @@
         <QrCodeSvg value={inviteUrl || code} size={140} />
       </div>
     </button>
-    <p class="qr-hint">Tap to enlarge or show on projector</p>
+    <p class="qr-hint">Tap to enlarge for projector</p>
   </div>
 </div>
 
@@ -151,7 +150,7 @@
       <div class="qr-modal-top">
         <div>
           <span class="qr-modal-code">{code}</span>
-          <p class="qr-modal-sub">Scan to join live lecture</p>
+          <p class="qr-modal-sub">Scan to join</p>
         </div>
         <button
           type="button"
@@ -166,7 +165,7 @@
         <QrCodeSvg value={inviteUrl || code} size={260} />
       </div>
       <p class="qr-modal-hint">
-        Point phone camera at the screen to join directly
+        Scan with camera to join
       </p>
     </div>
   </div>
@@ -179,9 +178,9 @@
     gap: var(--spacing-16, 16px);
   }
   .access-card {
-    background: rgba(16, 9, 4, 0.6);
+    background: rgba(16, 9, 4, 0.5);
     border: 1px solid var(--color-cork-border, #40372e);
-    border-radius: 8px;
+    border-radius: var(--radius-cards);
     padding: var(--spacing-18, 18px);
     display: flex;
     flex-direction: column;
@@ -212,10 +211,10 @@
     font-weight: 700;
     letter-spacing: 0.18em;
     color: var(--color-warm-cream, #ffedd7);
-    background: rgba(10, 5, 2, 0.8);
+    background: rgba(16, 9, 4, 0.5);
     border: 1px solid var(--color-cork-border, #40372e);
     padding: 8px 18px;
-    border-radius: 6px;
+    border-radius: var(--radius-cards);
   }
   .copy-code-btn,
   .share-btn {

@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { Users, ShieldCheck, UserX, Activity } from '@lucide/svelte';
-
   let {
     totalCount = 0,
     verifiedCount = 0,
@@ -16,35 +14,23 @@
 
 <div class="attendance-summary-cards">
   <div class="summary-card">
-    <div class="card-icon total"><Users size={16} /></div>
-    <div class="card-content">
-      <span class="card-label">TOTAL ATTENDEES</span>
-      <strong class="card-val">{totalCount}</strong>
-    </div>
+    <span class="m-val">{totalCount}</span>
+    <span class="m-lbl">Total Attendees</span>
   </div>
 
   <div class="summary-card">
-    <div class="card-icon verified"><ShieldCheck size={16} /></div>
-    <div class="card-content">
-      <span class="card-label">ROSTER VERIFIED</span>
-      <strong class="card-val text-success">{verifiedCount}</strong>
-    </div>
+    <span class="m-val">{matchRate}%</span>
+    <span class="m-lbl">Roster Match Rate</span>
   </div>
 
   <div class="summary-card">
-    <div class="card-icon provisional"><UserX size={16} /></div>
-    <div class="card-content">
-      <span class="card-label">PROVISIONAL GUESTS</span>
-      <strong class="card-val text-warning">{provisionalCount}</strong>
-    </div>
+    <span class="m-val">{verifiedCount}</span>
+    <span class="m-lbl">Verified Matches</span>
   </div>
 
   <div class="summary-card">
-    <div class="card-icon rate"><Activity size={16} /></div>
-    <div class="card-content">
-      <span class="card-label">VERIFICATION RATE</span>
-      <strong class="card-val">{matchRate}%</strong>
-    </div>
+    <span class="m-val warning">{provisionalCount}</span>
+    <span class="m-lbl">Provisional Guests</span>
   </div>
 </div>
 
@@ -52,88 +38,35 @@
   .attendance-summary-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-14, 14px);
+    gap: var(--spacing-12);
   }
   .summary-card {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-12, 12px);
-    padding: var(--spacing-14, 14px) var(--spacing-16, 16px);
-    background: rgba(16, 9, 4, 0.45);
-    border: 1px solid var(--color-cork-border, #40372e);
-    border-radius: var(--radius-cards, 8px);
-  }
-  .card-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 237, 215, 0.08);
-    color: var(--color-warm-cream, #ffedd7);
-    flex-shrink: 0;
-  }
-  .card-icon.verified {
-    background: rgba(40, 167, 69, 0.15);
-    color: #4ade80;
-  }
-  .card-icon.provisional {
-    background: rgba(220, 80, 0, 0.15);
-    color: var(--color-ember-accent, #dc5000);
-  }
-  .card-icon.rate {
-    background: rgba(255, 237, 215, 0.12);
-    color: var(--color-warm-cream, #ffedd7);
-  }
-  .card-content {
-    display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+    padding: var(--spacing-14);
+    background: rgba(16, 9, 4, 0.5);
+    border: 1px solid var(--color-cork-border);
+    border-radius: var(--radius-cards);
+    text-align: center;
   }
-  .card-label {
+  .m-val {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--color-warm-cream);
+  }
+  .m-val.warning {
+    color: var(--color-ember-accent);
+  }
+  .m-lbl {
     font-size: 10px;
-    letter-spacing: 0.08em;
-    color: var(--color-driftwood, #b8a794);
+    letter-spacing: 0.1em;
+    color: var(--color-driftwood);
+    margin-top: 4px;
     text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
-  .card-val {
-    font-size: 18px;
-    font-family: var(--font-display, serif);
-    color: var(--color-warm-cream, #ffedd7);
-  }
-  .text-success {
-    color: #4ade80;
-  }
-  .text-warning {
-    color: var(--color-ember-accent, #dc5000);
-  }
-
-  @media (max-width: 900px) {
+  @media (max-width: 768px) {
     .attendance-summary-cards {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .summary-card {
-      padding: 10px 12px;
-      gap: 10px;
-    }
-    .card-icon {
-      width: 28px;
-      height: 28px;
-    }
-    .card-label {
-      font-size: 8.5px;
-    }
-    .card-val {
-      font-size: 16px;
+      grid-template-columns: 1fr 1fr;
     }
   }
 </style>
