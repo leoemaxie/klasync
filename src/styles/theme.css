@@ -61,8 +61,8 @@
 
   /* ── Layout ──────────────────────────────────────────────── */
   --titlebar-height: 0px;
-  --nav-height: 64px;
-  --app-top-offset: calc(var(--nav-height) + var(--titlebar-height));
+  --nav-height: 60px;
+  --app-top-offset: var(--nav-height);
   --card-padding: clamp(24px, 4vw, 68px);
   --element-gap: 18px;
 

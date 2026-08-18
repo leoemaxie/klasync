@@ -4,7 +4,6 @@
   import '../styles/elements.css';
   import '../styles/forms.css';
   import '../styles/components.css';
-  import Titlebar from '$lib/components/shared/Titlebar.svelte';
 
   let { children } = $props();
 
@@ -44,5 +43,4 @@
   />
 </svelte:head>
 
-<Titlebar />
 {@render children()}

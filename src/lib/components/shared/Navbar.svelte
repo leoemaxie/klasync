@@ -1,8 +1,15 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Screen } from '$lib/types';
   import { logout } from '$lib/api/auth';
   import type { SessionState } from '$lib/sessionState.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
+  import { platform } from '$lib/native/platform';
+  import {
+    minimizeWindow,
+    toggleMaximizeWindow,
+    closeWindow,
+  } from '$lib/native/window';
   import { Menu, X, Search } from '@lucide/svelte';
   import BrandLogo from './navbar/BrandLogo.svelte';
 
@@ -16,6 +23,13 @@
     onOpenSpotlight?: () => void;
   } = $props();
   let mobileMenuOpen = $state(false);
+  let isTauri = $state(false);
+  let isMac = $state(false);
+
+  onMount(() => {
+    isTauri = platform.isTauri;
+    isMac = platform.isMacOS;
+  });
 
   function triggerSpotlight() {
     triggerHaptic('light');
@@ -84,7 +98,10 @@
     e.key === 'Escape' && mobileMenuOpen && (mobileMenuOpen = false)}
 />
 
-<nav class="navbar app-drag-region">
+<nav
+  class="navbar app-drag-region"
+  ondblclick={isTauri ? toggleMaximizeWindow : undefined}
+>
   <BrandLogo
     onClick={() => {
       const role = appState?.currentUser?.role;
@@ -145,24 +162,75 @@
         >Lecturer Sign In</button
       >
     {/if}
+
+    {#if isTauri && !isMac}
+      <div class="window-controls app-no-drag" role="group" aria-label="Window controls">
+        <button
+          type="button"
+          class="win-btn"
+          onclick={minimizeWindow}
+          aria-label="Minimize"
+          title="Minimize"
+        >
+          <svg width="10" height="1" viewBox="0 0 10 1"
+            ><rect width="10" height="1" fill="currentColor" /></svg
+          >
+        </button>
+        <button
+          type="button"
+          class="win-btn"
+          onclick={toggleMaximizeWindow}
+          aria-label="Maximize"
+          title="Maximize"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10"
+            ><rect
+              width="9"
+              height="9"
+              x="0.5"
+              y="0.5"
+              fill="none"
+              stroke="currentColor"
+            /></svg
+          >
+        </button>
+        <button
+          type="button"
+          class="win-btn close"
+          onclick={closeWindow}
+          aria-label="Close"
+          title="Close"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10"
+            ><path
+              d="M1,1 L9,9 M9,1 L1,9"
+              stroke="currentColor"
+              stroke-width="1.2"
+            /></svg
+          >
+        </button>
+      </div>
+    {/if}
   </div>
 </nav>
 
 <style>
   .navbar {
     position: fixed;
-    top: var(--titlebar-height, 0px);
+    top: 0;
     left: 0;
     right: 0;
     height: var(--nav-height);
-    background: rgba(16, 9, 4, 0.72);
+    background: rgba(16, 9, 4, 0.85);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--color-cork-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--card-padding);
     z-index: 100;
+    user-select: none;
   }
   .mobile-toggle {
     display: none;
@@ -208,6 +276,35 @@
     font-weight: 500;
     color: var(--color-driftwood);
   }
+  .window-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: var(--spacing-8);
+    border-left: 1px solid var(--color-cork-border);
+    padding-left: var(--spacing-8);
+  }
+  .win-btn {
+    width: 36px;
+    height: 32px;
+    background: transparent;
+    border: 0;
+    color: var(--color-driftwood);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    padding: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .win-btn:hover {
+    background: rgba(255, 237, 215, 0.1);
+    color: var(--color-warm-cream);
+  }
+  .win-btn.close:hover {
+    background: #dc3545;
+    color: #ffffff;
+  }
   @media (max-width: 800px) {
     .mobile-toggle {
       display: block;
@@ -231,6 +328,9 @@
     .nav-btn {
       width: 100%;
       text-align: center;
+    }
+    .window-controls {
+      display: none;
     }
   }
 </style>
