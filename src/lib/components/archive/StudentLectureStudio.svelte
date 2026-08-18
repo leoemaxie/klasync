@@ -55,10 +55,7 @@
     {:else if activeTab === 'chapters'}
       <ChapterBreakdown sessionId={claim.session_code || claim.id} />
     {:else if activeTab === 'flashcards'}
-      <FlashcardDeck
-        sessionId={claim.session_code || claim.id}
-        transcript={transcriptText}
-      />
+      <FlashcardDeck sessionId={claim.session_code || claim.id} />
     {:else if activeTab === 'audio'}
       <AudioPlayerPanel sessionCode={claim.session_code || claim.id} />
     {:else if activeTab === 'notes'}

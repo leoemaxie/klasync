@@ -9,7 +9,6 @@
     generateSessionFlashcards,
   } from '$lib/api/aiStudy';
   import {
-    extractDynamicFlashcards,
     getStoredDeck,
     saveStoredDeck,
     type FlashcardItem,
@@ -17,12 +16,10 @@
   import { Shuffle, RotateCcw, Layers } from '@lucide/svelte';
 
   let {
-    sessionId = 'demo-session',
-    transcript = '',
+    sessionId = '',
     cards = [],
   }: {
     sessionId?: string;
-    transcript?: string;
     cards?: FlashcardItem[];
   } = $props();
 
@@ -37,6 +34,11 @@
     try {
       if (cards.length > 0) {
         deck = [...cards];
+        return;
+      }
+
+      if (!sessionId) {
+        deck = [];
         return;
       }
 
@@ -62,10 +64,7 @@
         return;
       }
 
-      if (transcript) {
-        deck = extractDynamicFlashcards(transcript);
-        saveStoredDeck(sessionId, deck);
-      }
+      deck = [];
     } finally {
       isLoading = false;
     }
@@ -119,11 +118,6 @@
           }
         }
       }
-
-      // Offline / fallback generation
-      deck = [...extractDynamicFlashcards(transcript, topic), ...deck];
-      saveStoredDeck(sessionId, deck);
-      currentIndex = 0;
     } finally {
       isGenerating = false;
     }
@@ -162,19 +156,23 @@
       <button
         type="button"
         class="tool-btn"
-        title="Shuffle deck"
+        title="Shuffle flashcards"
         onclick={shuffleDeck}
-        aria-label="Shuffle deck"><Shuffle size={14} /></button
+        disabled={deck.length <= 1}
       >
+        <Shuffle size={15} />
+      </button>
       <button
         type="button"
         class="tool-btn"
-        title="Reset deck"
+        title="Reset order"
         onclick={resetDeck}
-        aria-label="Reset deck"><RotateCcw size={14} /></button
+        disabled={!deck.length}
       >
+        <RotateCcw size={15} />
+      </button>
       {#if deck.length}
-        <span class="card-counter">{currentIndex + 1} of {deck.length}</span>
+        <span class="card-counter">{currentIndex + 1} / {deck.length}</span>
       {/if}
     </div>
   </div>
@@ -182,7 +180,7 @@
   <FlashcardGenerator onGenerate={handleGenerate} />
 
   {#if isLoading && deck.length === 0}
-    <SkeletonCard lines={3} label="Loading flashcards from backend..." />
+    <SkeletonCard lines={3} label="Loading flashcards..." />
   {:else if deck.length > 0}
     <div class="deck-progress">
       <div
@@ -221,12 +219,12 @@
   {:else}
     <div class="empty-flashcards-state">
       <div class="empty-icon-wrap">
-        <Layers size={26} color="var(--color-driftwood)" />
+        <Layers size={24} color="var(--color-driftwood)" />
       </div>
-      <h3 class="empty-title">No Flashcards Yet</h3>
+      <h3 class="empty-title">No Flashcards Generated</h3>
       <p class="empty-desc">
-        Flashcards haven't been generated for this lecture session yet. Enter a
-        topic or pick a quick topic above to generate study cards with AI.
+        AI flashcards for this lecture have not been generated yet. Use the topic
+        generator above to create revision flashcards.
       </p>
     </div>
   {/if}

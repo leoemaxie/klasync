@@ -61,9 +61,6 @@
   <div class="player-header">
     <div class="player-title-group">
       <h2 class="section-title">Lecture Audio Replay</h2>
-      {#if sessionCode}
-        <span class="session-pill">Session {sessionCode}</span>
-      {/if}
     </div>
   </div>
 
