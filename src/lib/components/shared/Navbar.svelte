@@ -85,7 +85,14 @@
 />
 
 <nav class="navbar app-drag-region">
-  <BrandLogo onClick={() => navigate('home')} />
+  <BrandLogo
+    onClick={() => {
+      const role = appState?.currentUser?.role;
+      if (role === 'student') navigate('archive');
+      else if (role === 'lecturer' || role === 'admin') navigate('lecturer');
+      else navigate('home');
+    }}
+  />
 
   <button
     class="mobile-toggle app-no-drag"

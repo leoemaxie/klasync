@@ -120,7 +120,7 @@
   <OfflineStatusIndicator />
 
   {#if appState.screen === 'home'}
-    <HomeScreen bind:screen={appState.screen} />
+    <HomeScreen bind:screen={appState.screen} {appState} />
   {:else if appState.screen === 'lecturer-login'}
     <LecturerSignIn bind:screen={appState.screen} {appState} />
   {:else if appState.screen === 'lecturer-register'}
@@ -166,5 +166,9 @@
     bind:sessionCode={appState.sessionCode}
     currentUser={appState.currentUser}
   />
-  <MobileBottomNav bind:screen={appState.screen} {appState} />
+  <MobileBottomNav
+    bind:screen={appState.screen}
+    {appState}
+    onOpenSpotlight={() => (isSpotlightOpen = true)}
+  />
 </main>
