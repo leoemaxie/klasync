@@ -122,6 +122,9 @@
     overflow-x: hidden;
   }
   @media (max-width: 960px) {
+    .mobile-detail-open :global(.workspace-top-bar) {
+      display: none;
+    }
     .studio-layout {
       grid-template-columns: minmax(0, 1fr);
       min-height: auto;
