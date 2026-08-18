@@ -13,11 +13,6 @@
 
 <header class="workspace-top-bar">
   <div class="top-bar-left">
-    <div class="eyebrow-brand">
-      <span class="brand-pill">KLASYNC</span>
-      <span class="divider">/</span>
-      <span class="workspace-label">STUDY ARCHIVE</span>
-    </div>
     <h1 class="workspace-title">Lecture Archive</h1>
   </div>
 
@@ -48,26 +43,6 @@
     gap: var(--spacing-10);
     padding-bottom: var(--spacing-10);
     border-bottom: 1px solid var(--color-cork-border);
-  }
-  .eyebrow-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-  .brand-pill {
-    color: var(--color-ember-accent);
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-  }
-  .divider {
-    color: var(--color-cork-border);
-  }
-  .workspace-label {
-    color: var(--color-driftwood);
   }
   .workspace-title {
     font-family: var(--font-display);
