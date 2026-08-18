@@ -35,9 +35,7 @@
 
   <div class="item-footer">
     <div class="item-badges">
-      <span class="badge verified">
-        <CheckCircle2 size={10} /> Verified
-      </span>
+      <span class="badge verified"><CheckCircle2 size={11} /> Verified</span>
       {#if claim.academic_session}
         <span class="badge session">{claim.academic_session}</span>
       {/if}
@@ -52,22 +50,22 @@
     flex-direction: column;
     gap: 6px;
     padding: var(--spacing-12);
-    background: rgba(16, 9, 4, 0.4);
+    background: rgba(16, 9, 4, 0.55);
     border: 1px solid var(--color-cork-border);
     border-radius: 6px;
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
     width: 100%;
-    min-height: 48px;
+    min-height: 52px;
   }
   .claim-item-card:hover {
     border-color: var(--color-warm-cream);
-    background: rgba(255, 237, 215, 0.03);
+    background: rgba(255, 237, 215, 0.04);
   }
   .claim-item-card.selected {
     border-color: var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.08);
+    background: rgba(220, 80, 0, 0.1);
   }
   .item-head {
     display: flex;
@@ -76,53 +74,53 @@
   }
   .course-code-tag {
     font-family: var(--font-mono, monospace);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--color-ember-accent);
+    letter-spacing: 0.05em;
   }
   .date-tag {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--color-driftwood);
   }
   .item-title {
-    font-family: var(--font-display);
-    font-size: 14px;
-    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 2px 0 0 0;
     color: var(--color-warm-cream);
-    line-height: 1.3;
+    line-height: 1.35;
+    word-break: break-word;
   }
   .item-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 2px;
+    margin-top: 4px;
   }
   .item-badges {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
   .badge {
-    font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
   .badge.verified {
-    background: rgba(74, 222, 128, 0.1);
+    background: rgba(74, 222, 128, 0.12);
     color: #4ade80;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
   }
   .badge.session {
     background: rgba(255, 237, 215, 0.08);
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
   }
-  :global(.item-arrow) {
-    color: var(--color-driftwood);
-  }
-  .claim-item-card.selected :global(.item-arrow) {
-    color: var(--color-ember-accent);
-  }
+  :global(.item-arrow) { color: var(--color-driftwood); }
+  .claim-item-card.selected :global(.item-arrow) { color: var(--color-ember-accent); }
 </style>
