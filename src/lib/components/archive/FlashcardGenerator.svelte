@@ -150,12 +150,24 @@
     background: rgba(255, 237, 215, 0.1);
     color: var(--color-warm-cream);
   }
-  @media (max-width: 480px) {
+  @media (max-width: 640px) {
     .generator-input-row {
       flex-direction: column;
+      gap: 6px;
+    }
+    .generator-input {
+      width: 100%;
+      min-width: 0;
     }
     .gen-btn {
       width: 100%;
+    }
+    .quick-topics {
+      gap: 6px;
+    }
+    .quick-pill {
+      font-size: 10.5px;
+      padding: 3px 10px;
     }
   }
 </style>

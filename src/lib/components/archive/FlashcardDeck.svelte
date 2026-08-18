@@ -372,4 +372,24 @@
     line-height: 1.5;
     margin: 0;
   }
+  @media (max-width: 640px) {
+    .deck-header {
+      gap: 6px;
+    }
+    .deck-section-title {
+      font-size: 14px;
+    }
+    .mastered-pill {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+    .deck-actions {
+      gap: 8px;
+    }
+    .deck-nav-btn {
+      height: 38px;
+      min-height: 38px;
+      font-size: 11px;
+    }
+  }
 </style>

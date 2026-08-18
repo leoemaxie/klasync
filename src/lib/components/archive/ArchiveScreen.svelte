@@ -88,17 +88,26 @@
       var(--card-padding)
       calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
     max-width: 1440px;
+    width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-14);
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
   .studio-layout {
     display: grid;
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 350px minmax(0, 1fr);
     gap: var(--spacing-16);
     align-items: start;
     min-height: 600px;
+    width: 100%;
+    min-width: 0;
+  }
+  .sidebar-slot {
+    min-width: 0;
+    width: 100%;
   }
   .studio-detail-canvas {
     background: rgba(16, 9, 4, 0.5);
@@ -106,10 +115,15 @@
     border-radius: var(--radius-cards);
     padding: var(--spacing-16);
     min-height: 600px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
   @media (max-width: 960px) {
     .studio-layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       min-height: auto;
       gap: var(--spacing-10);
     }
@@ -126,12 +140,13 @@
   }
   @media (max-width: 640px) {
     .student-studio-workspace {
-      padding: calc(var(--nav-height) + 10px) 12px
+      padding: calc(var(--nav-height) + 10px) 10px
         calc(90px + env(safe-area-inset-bottom, 0px));
       gap: var(--spacing-10);
     }
     .studio-detail-canvas {
-      padding: 10px;
+      padding: 8px;
+      border-radius: 6px;
     }
   }
 </style>

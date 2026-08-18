@@ -307,4 +307,44 @@
     font-family: var(--font-mono, monospace);
     color: var(--color-warm-cream-dim);
   }
+  @media (max-width: 640px) {
+    .flashcard-flipper {
+      padding: 12px;
+      min-height: 190px;
+    }
+    .card-face.back {
+      inset: 12px;
+    }
+    .face-top {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .top-meta-right {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .card-prompt {
+      font-size: 16px;
+      line-height: 1.35;
+    }
+    .card-answer {
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+    .face-content {
+      padding: var(--spacing-8) 0;
+    }
+    .topic-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+    .diff-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+    }
+    .card-master-btn {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+  }
 </style>

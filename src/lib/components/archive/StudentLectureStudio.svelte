@@ -76,8 +76,20 @@
     flex-direction: column;
     gap: var(--spacing-14);
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .studio-content-body {
     padding-top: var(--spacing-4);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  @media (max-width: 640px) {
+    .lecture-studio-pane {
+      gap: var(--spacing-10);
+    }
   }
 </style>
