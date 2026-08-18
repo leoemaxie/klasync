@@ -140,7 +140,7 @@
     background: rgba(16, 9, 4, 0.6);
     border: 1px solid var(--color-cork-border);
     padding: 3px;
-    border-radius: 4px;
+    border-radius: var(--radius-controls, 4px);
   }
   .mode-btn {
     flex: 1;
@@ -148,14 +148,20 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px;
+    padding: 7px 8px;
     font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
     background: transparent;
     border: none;
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
     border-radius: 3px;
     cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .mode-btn:hover {
+    color: var(--color-warm-cream);
   }
   .mode-btn.active {
     background: var(--color-bark-brown);
@@ -166,16 +172,31 @@
     display: flex;
     align-items: center;
   }
-  :global(.search-input-wrap .search-icon) {
+  :global(.search-input-wrap .search-ico) {
     position: absolute;
     left: 10px;
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
+    pointer-events: none;
   }
   .sidebar-search-input {
     width: 100%;
-    padding-left: 30px !important;
+    padding-left: 32px !important;
     font-size: 12px;
+    height: 36px;
+    min-height: 36px;
     margin: 0;
+    background: rgba(16, 9, 4, 0.6);
+    border: 1px solid var(--color-cork-border);
+    color: var(--color-warm-cream);
+    border-radius: var(--radius-controls, 4px);
+    box-sizing: border-box;
+  }
+  .sidebar-search-input::placeholder {
+    color: rgba(255, 237, 215, 0.45);
+  }
+  .sidebar-search-input:focus {
+    border-color: var(--color-warm-cream);
+    outline: none;
   }
   .clear-query-btn {
     position: absolute;
@@ -183,6 +204,12 @@
     font-size: 10px;
     text-transform: uppercase;
     color: var(--color-ember-accent);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
   }
   .sidebar-list-container {
     overflow-y: auto;
@@ -202,7 +229,7 @@
   }
   .sidebar-footer {
     border-top: 1px solid var(--color-cork-border);
-    padding-top: var(--spacing-6);
+    padding-top: var(--spacing-8);
     margin-top: auto;
   }
   .sync-status-row {
@@ -217,8 +244,10 @@
     background: #4ade80;
   }
   .sync-label {
-    font-size: 10px;
-    color: var(--color-driftwood);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-warm-cream-dim);
     text-transform: uppercase;
   }
   @media (max-width: 960px) {

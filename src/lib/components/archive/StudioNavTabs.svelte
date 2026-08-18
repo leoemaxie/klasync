@@ -78,7 +78,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
+    padding-bottom: 0;
   }
   .studio-nav-tabs::-webkit-scrollbar {
     display: none;
@@ -87,27 +87,29 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
-    font-size: 11px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
     cursor: pointer;
     white-space: nowrap;
-    min-height: 38px;
+    min-height: 40px;
     flex-shrink: 0;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
   .tab-btn:hover {
     color: var(--color-warm-cream);
+    background: rgba(255, 237, 215, 0.04);
   }
   .tab-btn.active {
     color: var(--color-warm-cream);
     border-bottom: 2px solid var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.06);
+    background: rgba(220, 80, 0, 0.08);
   }
   @media (max-width: 640px) {
     .studio-nav-tabs {
@@ -115,8 +117,8 @@
     }
     .tab-btn {
       padding: 8px 10px;
-      font-size: 10.5px;
-      gap: 4px;
+      font-size: 11px;
+      gap: 5px;
     }
   }
 </style>

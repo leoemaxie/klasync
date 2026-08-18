@@ -52,22 +52,23 @@
     padding: var(--spacing-12);
     background: rgba(16, 9, 4, 0.55);
     border: 1px solid var(--color-cork-border);
-    border-radius: 6px;
+    border-radius: var(--radius-controls, 6px);
     text-align: left;
     cursor: pointer;
     transition:
-      border-color 0.2s ease,
-      background 0.2s ease;
+      border-color 0.15s ease,
+      background 0.15s ease;
     width: 100%;
     min-height: 52px;
+    box-sizing: border-box;
   }
   .claim-item-card:hover {
-    border-color: var(--color-warm-cream);
+    border-color: rgba(255, 237, 215, 0.3);
     background: rgba(255, 237, 215, 0.04);
   }
   .claim-item-card.selected {
     border-color: var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.1);
+    background: rgba(220, 80, 0, 0.12);
   }
   .item-head {
     display: flex;
@@ -76,14 +77,14 @@
   }
   .course-code-tag {
     font-family: var(--font-mono, monospace);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--color-ember-accent);
     letter-spacing: 0.05em;
   }
   .date-tag {
     font-size: 11px;
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
   }
   .item-title {
     font-size: 15px;
@@ -106,7 +107,7 @@
   }
   .badge {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     padding: 2px 7px;
     border-radius: 4px;
     letter-spacing: 0.04em;
@@ -114,6 +115,7 @@
   }
   .badge.verified {
     background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.25);
     color: #4ade80;
     display: inline-flex;
     align-items: center;
@@ -121,10 +123,11 @@
   }
   .badge.session {
     background: rgba(255, 237, 215, 0.08);
-    color: var(--color-warm-cream-dim);
+    border: 1px solid rgba(255, 237, 215, 0.1);
+    color: var(--color-warm-cream);
   }
   :global(.item-arrow) {
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
   }
   .claim-item-card.selected :global(.item-arrow) {
     color: var(--color-ember-accent);

@@ -35,6 +35,12 @@
       </button>
     {/if}
 
+    {#if claim.course_code}
+      <span class="course-code-pill">{claim.course_code}</span>
+    {/if}
+  </div>
+
+  <div class="header-badges">
     <button
       type="button"
       class="action-ghost-btn outline"
@@ -49,9 +55,7 @@
         <span>Share</span>
       {/if}
     </button>
-  </div>
 
-  <div class="header-badges">
     <div class="verified-pill">
       <CheckCircle2 size={12} /><span>Verified</span>
     </div>
@@ -64,7 +68,7 @@
     <span class="info-item"><Calendar size={12} /> Saved {claim.date}</span>
     {#if claim.session_code}
       <span class="info-divider">·</span>
-      <span class="info-item">Code: <strong>{claim.session_code}</strong></span>
+      <span class="info-item">Session Code: <strong>{claim.session_code}</strong></span>
     {/if}
   </div>
 </div>
@@ -74,19 +78,32 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding-bottom: 8px;
+    gap: var(--spacing-10);
+    padding-bottom: var(--spacing-10);
     border-bottom: 1px solid var(--color-cork-border);
   }
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-8);
   }
   .header-badges {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--spacing-8);
+  }
+  .course-code-pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-ember-accent);
+    background: rgba(220, 80, 0, 0.1);
+    border: 1px solid rgba(220, 80, 0, 0.25);
+    padding: 3px 9px;
+    border-radius: 4px;
   }
   .back-btn,
   .action-ghost-btn {
@@ -94,51 +111,61 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 5px 12px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    min-height: 32px;
+    min-height: 30px;
     border-radius: var(--radius-controls, 4px);
-    transition: background 0.15s ease, border-color 0.15s ease;
+    color: var(--color-warm-cream-dim);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  .action-ghost-btn {
-    font-size: 11px;
+  .back-btn:hover,
+  .action-ghost-btn:hover {
+    color: var(--color-warm-cream);
+    border-color: var(--color-warm-cream);
   }
   .verified-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 10px;
+    gap: 5px;
+    font-size: 11px;
     color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-    padding: 4px 8px;
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    padding: 4px 10px;
     border-radius: 4px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
   .studio-title-area {
-    margin-top: 4px;
+    margin-top: 6px;
   }
   .session-main-title {
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: 24px;
     color: var(--color-warm-cream);
-    margin: 0 0 4px 0;
+    margin: 0 0 6px 0;
     word-break: break-word;
     line-height: 1.25;
+    font-weight: 700;
   }
   .session-sub-info {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--color-driftwood);
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-warm-cream-dim);
     flex-wrap: wrap;
   }
   .info-item {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+  }
+  .info-item strong {
+    color: var(--color-warm-cream);
+    font-family: var(--font-mono, monospace);
   }
   .info-divider {
     color: var(--color-cork-border);
@@ -146,21 +173,15 @@
   @media (max-width: 640px) {
     .studio-header {
       align-items: flex-start;
-    }
-    .header-actions {
       flex-direction: column;
-      align-items: stretch;
-      gap: 6px;
-      width: fit-content;
+      gap: 8px;
     }
-    .back-btn,
-    .action-ghost-btn {
+    .header-badges {
       width: 100%;
-      justify-content: flex-start;
-      padding: 6px 12px;
+      justify-content: space-between;
     }
     .session-main-title {
-      font-size: 18px;
+      font-size: 19px;
     }
   }
 </style>
