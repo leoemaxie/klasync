@@ -79,6 +79,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Optimize Windows Defender
+        if: runner.os == 'Windows'
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true
+        shell: powershell
+
       - name: Download pre-built frontend
         uses: actions/download-artifact@v4
         with:
@@ -101,6 +107,7 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-C linker=rust-lld.exe' || '' }}
         with:
           tagName: ${{ inputs.release_tag || github.ref_name }}
           releaseName: 'KLASYNC ${{ inputs.release_tag || github.ref_name }}'
@@ -165,7 +172,7 @@ jobs:
       - name: Install Rust & Android targets
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: aarch64-linux-android,x86_64-linux-android
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
@@ -174,6 +181,7 @@ jobs:
         run: pnpm tauri android build --apk --no-frontend-build
         env:
           NDK_HOME: ${{ env.NDK_HOME }}
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.jvmargs=-Xmx4g"
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
@@ -181,6 +189,8 @@ jobs:
         with:
           tag_name: ${{ inputs.release_tag || github.ref_name }}
           files: |
+            src-tauri/gen/android/app/build/outputs/apk/arm64/release/*.apk
+            src-tauri/gen/android/app/build/outputs/apk/x86_64/release/*.apk
             src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk
             src-tauri/gen/android/app/build/outputs/apk/single/release/*.apk
         env:
