@@ -14,7 +14,7 @@
     saveStoredDeck,
     type FlashcardItem,
   } from '$lib/utils/flashcards';
-  import { Shuffle, RotateCcw } from '@lucide/svelte';
+  import { Shuffle, RotateCcw, Layers } from '@lucide/svelte';
 
   let {
     sessionId = 'demo-session',
@@ -150,25 +150,30 @@
   }}
 />
 
-<div class="panel flashcard-deck">
+<div class="flashcard-deck">
   <div class="deck-header">
-    <div>
-      <p class="eyebrow">FLASHCARDS</p>
-      <span class="hint">{masteredCount} of {deck.length} mastered</span>
+    <div class="deck-title-group">
+      <h2 class="deck-section-title">Study Flashcards</h2>
+      <span class="mastered-pill">{masteredCount} of {deck.length} Mastered</span>
     </div>
     <div class="header-tools">
       <button
         type="button"
         class="tool-btn"
-        title="Shuffle"
-        onclick={shuffleDeck}><Shuffle size={15} /></button
-      >
-      <button type="button" class="tool-btn" title="Reset" onclick={resetDeck}
-        ><RotateCcw size={15} /></button
-      >
-      {#if deck.length}<span class="card-counter"
-          >{currentIndex + 1} / {deck.length}</span
-        >{/if}
+        title="Shuffle deck"
+        onclick={shuffleDeck}
+        aria-label="Shuffle deck"
+      ><Shuffle size={14} /></button>
+      <button
+        type="button"
+        class="tool-btn"
+        title="Reset deck"
+        onclick={resetDeck}
+        aria-label="Reset deck"
+      ><RotateCcw size={14} /></button>
+      {#if deck.length}
+        <span class="card-counter">{currentIndex + 1} of {deck.length}</span>
+      {/if}
     </div>
   </div>
 
@@ -183,6 +188,7 @@
         style="width: {((currentIndex + 1) / deck.length) * 100}%"
       ></div>
     </div>
+
     <FlashcardCard
       card={deck[currentIndex]}
       {currentIndex}
@@ -191,22 +197,36 @@
       onSwipeLeft={nextCard}
       onSwipeRight={prevCard}
     />
+
     <div class="deck-actions">
       <button
         type="button"
-        class="outline"
+        class="outline deck-nav-btn"
         onclick={prevCard}
-        disabled={deck.length <= 1}>Previous</button
+        disabled={deck.length <= 1}
       >
+        Previous Card
+      </button>
       <button
         type="button"
-        class="primary"
+        class="primary deck-nav-btn"
         onclick={nextCard}
-        disabled={deck.length <= 1}>Next</button
+        disabled={deck.length <= 1}
       >
+        Next Card
+      </button>
     </div>
   {:else}
-    <p class="hint">No flashcards available. Generate above.</p>
+    <div class="empty-flashcards-state">
+      <div class="empty-icon-wrap">
+        <Layers size={26} color="var(--color-driftwood)" />
+      </div>
+      <h3 class="empty-title">No Flashcards Yet</h3>
+      <p class="empty-desc">
+        Flashcards haven't been generated for this lecture session yet.
+        Enter a topic or pick a quick topic above to generate study cards with AI.
+      </p>
+    </div>
   {/if}
 </div>
 
@@ -214,75 +234,140 @@
   .flashcard-deck {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-8);
-    padding: var(--spacing-14);
-    background: rgba(16, 9, 4, 0.4);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-cards);
+    gap: var(--spacing-10);
+    width: 100%;
   }
   .deck-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--spacing-8);
+    flex-wrap: wrap;
+  }
+  .deck-title-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+  }
+  .deck-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-warm-cream);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .mastered-pill {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    padding: 2px 8px;
+    border-radius: 999px;
   }
   .header-tools {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
   .tool-btn {
-    background: rgba(16, 9, 4, 0.4);
+    background: rgba(255, 237, 215, 0.04);
     border: 1px solid var(--color-cork-border);
-    color: var(--color-driftwood);
+    color: var(--color-warm-cream-dim);
     width: 32px;
     height: 32px;
     min-width: 32px;
     min-height: 32px;
     padding: 0;
     margin: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-controls, 4px);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     transition:
-      border-color 0.2s,
-      color 0.2s,
-      background 0.2s;
+      border-color 0.15s ease,
+      color 0.15s ease,
+      background 0.15s ease;
   }
   .tool-btn:hover {
     border-color: var(--color-warm-cream);
     color: var(--color-warm-cream);
-    background: rgba(255, 237, 215, 0.05);
+    background: rgba(255, 237, 215, 0.1);
   }
   .card-counter {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--color-driftwood);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--color-warm-cream-dim);
     font-family: var(--font-mono, monospace);
+    padding-left: 4px;
+    font-weight: 600;
   }
   .deck-progress {
-    height: 2px;
-    background: rgba(255, 237, 215, 0.1);
-    border-radius: 2px;
+    height: 3px;
+    background: rgba(255, 237, 215, 0.08);
+    border-radius: 999px;
     overflow: hidden;
   }
   .progress-fill {
     height: 100%;
-    background: var(--color-warm-cream);
+    background: var(--color-ember-accent);
     transition: width 0.3s ease;
   }
   .deck-actions {
     display: flex;
     justify-content: space-between;
-    gap: var(--spacing-8);
-    margin-top: var(--spacing-2);
+    gap: var(--spacing-10);
+    margin-top: var(--spacing-4);
   }
-  .deck-actions button {
+  .deck-nav-btn {
     flex: 1;
-    padding: 8px 12px;
-    font-size: 11px;
+    height: 42px;
+    min-height: 42px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
+    border-radius: var(--radius-controls, 4px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  .empty-flashcards-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-24) var(--spacing-16);
+    background: rgba(16, 9, 4, 0.3);
+    border: 1px solid var(--color-cork-border);
+    border-radius: var(--radius-cards, 8px);
+    gap: var(--spacing-8);
+  }
+  .empty-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 237, 215, 0.04);
+    border: 1px solid var(--color-cork-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .empty-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--color-warm-cream);
+    margin: 0;
+  }
+  .empty-desc {
+    font-size: 13px;
+    color: var(--color-warm-cream-dim);
+    max-width: 380px;
+    line-height: 1.5;
+    margin: 0;
   }
 </style>

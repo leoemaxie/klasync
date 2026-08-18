@@ -64,26 +64,7 @@ export function extractDynamicFlashcards(
     });
   }
 
-  return [
-    {
-      id: 'default-1',
-      prompt: 'What is the primary lecture objective?',
-      answer:
-        'To understand core domain concepts, system architectures, and accessible study practices.',
-      topic_tag: 'Objective',
-      difficulty: 'easy',
-      mastered: false,
-    },
-    {
-      id: 'default-2',
-      prompt: 'How should lecture transcripts be utilized for revision?',
-      answer:
-        'Search key timestamps, review chapter breakdowns, and practice active recall via flashcard decks.',
-      topic_tag: 'Methodology',
-      difficulty: 'medium',
-      mastered: false,
-    },
-  ];
+  return [];
 }
 
 export function getStoredDeck(sessionId: string): FlashcardItem[] | null {

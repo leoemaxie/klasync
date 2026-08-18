@@ -45,17 +45,22 @@
 
 <style>
   .brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
     background: transparent;
     border: none;
     cursor: pointer;
     padding: 0;
+    margin: 0;
+    min-height: 0 !important;
+    min-width: 0 !important;
   }
   .brand-mark {
     width: 32px;
     height: 32px;
+    transform: translateY(-2px);
+    flex-shrink: 0;
   }
   .brand-name {
     font-family: var(--font-display);
@@ -64,5 +69,6 @@
     letter-spacing: 0.05em;
     color: var(--color-warm-cream);
     text-transform: uppercase;
+    line-height: 1;
   }
 </style>
