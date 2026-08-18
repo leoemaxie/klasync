@@ -2,8 +2,12 @@
   import { onMount } from 'svelte';
   import FlashcardCard from './FlashcardCard.svelte';
   import FlashcardGenerator from './FlashcardGenerator.svelte';
+  import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
-  import { fetchSessionFlashcards } from '$lib/api/aiStudy';
+  import {
+    fetchSessionFlashcards,
+    generateSessionFlashcards,
+  } from '$lib/api/aiStudy';
   import {
     extractDynamicFlashcards,
     getStoredDeck,
@@ -24,17 +28,51 @@
 
   let deck = $state<FlashcardItem[]>([]);
   let currentIndex = $state(0);
+  let isLoading = $state(true);
+  let isGenerating = $state(false);
   let masteredCount = $derived(deck.filter((c) => c.mastered).length);
 
-  onMount(async () => {
-    const stored = getStoredDeck(sessionId);
-    if (stored?.length) return (deck = stored);
-    if (cards.length > 0) return (deck = [...cards]);
-    const apiCards = await fetchSessionFlashcards(sessionId);
-    deck = apiCards?.length
-      ? apiCards.map((c) => ({ ...c, mastered: false }))
-      : extractDynamicFlashcards(transcript);
-    saveStoredDeck(sessionId, deck);
+  async function loadFlashcards() {
+    isLoading = true;
+    try {
+      if (cards.length > 0) {
+        deck = [...cards];
+        return;
+      }
+
+      const apiCards = await fetchSessionFlashcards(sessionId);
+      if (apiCards && apiCards.length > 0) {
+        const stored = getStoredDeck(sessionId) || [];
+        const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
+        deck = apiCards.map((c) => ({
+          id: c.id,
+          prompt: c.prompt,
+          answer: c.answer,
+          topic_tag: c.topic_tag,
+          difficulty: c.difficulty,
+          mastered: !!masteredMap.get(c.id),
+        }));
+        saveStoredDeck(sessionId, deck);
+        return;
+      }
+
+      const stored = getStoredDeck(sessionId);
+      if (stored && stored.length > 0) {
+        deck = stored;
+        return;
+      }
+
+      if (transcript) {
+        deck = extractDynamicFlashcards(transcript);
+        saveStoredDeck(sessionId, deck);
+      }
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  onMount(() => {
+    void loadFlashcards();
   });
 
   function nextCard() {
@@ -42,30 +80,64 @@
     triggerHaptic('light');
     currentIndex = (currentIndex + 1) % deck.length;
   }
+
   function prevCard() {
     if (!deck.length) return;
     triggerHaptic('light');
     currentIndex = (currentIndex - 1 + deck.length) % deck.length;
   }
+
   function toggleMastery(id: string) {
     deck = deck.map((c) => (c.id === id ? { ...c, mastered: !c.mastered } : c));
     saveStoredDeck(sessionId, deck);
     triggerHaptic('selection');
   }
-  function handleGenerate(topic: string) {
-    deck = [...extractDynamicFlashcards(transcript, topic), ...deck];
-    saveStoredDeck(sessionId, deck);
-    currentIndex = 0;
+
+  async function handleGenerate(topic: string) {
+    isGenerating = true;
+    try {
+      const job = await generateSessionFlashcards(sessionId).catch(() => null);
+      if (job) {
+        // Poll backend for newly generated AI cards
+        for (let i = 0; i < 5; i++) {
+          await new Promise((res) => setTimeout(res, 2500));
+          const updated = await fetchSessionFlashcards(sessionId);
+          if (updated && updated.length > deck.length) {
+            const stored = getStoredDeck(sessionId) || [];
+            const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
+            deck = updated.map((c) => ({
+              id: c.id,
+              prompt: c.prompt,
+              answer: c.answer,
+              topic_tag: c.topic_tag,
+              difficulty: c.difficulty,
+              mastered: !!masteredMap.get(c.id),
+            }));
+            saveStoredDeck(sessionId, deck);
+            currentIndex = 0;
+            return;
+          }
+        }
+      }
+
+      // Offline / fallback generation
+      deck = [...extractDynamicFlashcards(transcript, topic), ...deck];
+      saveStoredDeck(sessionId, deck);
+      currentIndex = 0;
+    } finally {
+      isGenerating = false;
+    }
   }
+
   function shuffleDeck() {
     triggerHaptic('medium');
     deck = [...deck].sort(() => Math.random() - 0.5);
     currentIndex = 0;
   }
+
   function resetDeck() {
     triggerHaptic('medium');
-    deck = extractDynamicFlashcards(transcript);
-    saveStoredDeck(sessionId, deck);
+    void loadFlashcards();
     currentIndex = 0;
   }
 </script>
@@ -102,7 +174,9 @@
 
   <FlashcardGenerator onGenerate={handleGenerate} />
 
-  {#if deck.length > 0}
+  {#if isLoading && deck.length === 0}
+    <SkeletonCard lines={3} label="Loading flashcards from backend..." />
+  {:else if deck.length > 0}
     <div class="deck-progress">
       <div
         class="progress-fill"
