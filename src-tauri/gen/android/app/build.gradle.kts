@@ -62,7 +62,7 @@ android {
 }
 
 rust {
-    rootDirRel = "../../../"
+    rootDirRel = "../../"
 }
 
 dependencies {
