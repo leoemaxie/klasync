@@ -1,5 +1,6 @@
 import { apiRequest } from './http';
 import { resolveCourseUuid } from './courses';
+import { resolveSessionUuid } from './sessions';
 
 export interface CourseAnalyticsSummary {
   course_id: string;
@@ -45,9 +46,9 @@ export async function fetchCourseAnomalies(
 export async function fetchSessionAnomalies(
   sessionIdOrCode: string
 ): Promise<AttendanceAnomaly[]> {
-  const trimmed = sessionIdOrCode.trim();
-  if (!trimmed) return [];
+  const targetId = await resolveSessionUuid(sessionIdOrCode);
+  if (!targetId) return [];
   return await apiRequest<AttendanceAnomaly[]>(
-    `/analytics/sessions/${encodeURIComponent(trimmed)}/anomalies`
+    `/analytics/sessions/${encodeURIComponent(targetId)}/anomalies`
   ).catch(() => []);
 }

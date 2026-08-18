@@ -40,10 +40,12 @@ export async function claimAttendance(
   matricNumber: string,
   participantId?: string,
   sessionTitle?: string,
-  courseCode?: string
+  courseCode?: string,
+  sessionId?: string
 ): Promise<SuccessResponse> {
   const claimRecord: ClaimRecord = {
-    id: participantId || shortCode,
+    id: sessionId || participantId || shortCode,
+    session_code: shortCode,
     course_code: courseCode || 'COURSE',
     session_title: sessionTitle || `Session (${shortCode})`,
     date: new Date().toLocaleDateString('en-US', {

@@ -142,3 +142,44 @@ export function sendHeartbeat(participantId: string) {
     { method: 'POST' }
   );
 }
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function resolveSessionUuid(
+  sessionIdOrCode: string
+): Promise<string | null> {
+  const trimmed = sessionIdOrCode?.trim();
+  if (!trimmed) return null;
+  if (UUID_REGEX.test(trimmed)) {
+    return trimmed;
+  }
+
+  // 1. Check local session storage if available
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const storedRaw = localStorage.getItem('klasync-session');
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        if (
+          (stored?.code?.toUpperCase() === trimmed.toUpperCase() ||
+            stored?.id === trimmed) &&
+          stored?.id &&
+          UUID_REGEX.test(stored.id)
+        ) {
+          return stored.id;
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Query backend by session code to resolve its UUID
+  try {
+    const detail = await lookupSessionByCode(trimmed);
+    if (detail?.session?.id) {
+      return detail.session.id;
+    }
+  } catch {}
+
+  return null;
+}

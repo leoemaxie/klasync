@@ -117,7 +117,8 @@
           joinedParticipant.matric,
           joinedParticipant.id,
           session.title,
-          courseCode || 'COURSE'
+          courseCode || 'COURSE',
+          session.id
         ).catch(() => {});
       }
       accountCreated = true;

@@ -43,7 +43,8 @@ export function getLocalStudentClaims(): ClaimRecord[] {
       if (session?.code) {
         return [
           {
-            id: session.code,
+            id: session.id || session.code,
+            session_code: session.code,
             course_code:
               session.course_code ||
               localStorage.getItem('klasync-courseCode') ||
