@@ -23,9 +23,24 @@ export default defineConfig(async () => ({
           port: 1421,
         }
       : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ['**/src-tauri/**'],
+  build: {
+    target: process.env.TAURI_ENV_PLATFORM === 'windows' ? 'chrome105' : 'safari13',
+    minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
+    sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/svelte')) {
+            return 'vendor-svelte';
+          }
+          if (id.includes('node_modules/@lucide')) {
+            return 'vendor-icons';
+          }
+          if (id.includes('node_modules/idb')) {
+            return 'vendor-idb';
+          }
+        },
+      },
     },
   },
 }));

@@ -78,7 +78,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -135,10 +135,21 @@ jobs:
       - name: Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK
+      - name: Configure Android NDK
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;26.1.10909125"
+          if [ -d "$ANDROID_HOME/ndk" ] && [ "$(ls -A $ANDROID_HOME/ndk 2>/dev/null)" ]; then
+            NDK_PATH=$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1)
+            echo "Using pre-installed NDK at $NDK_PATH"
+            echo "NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+          elif [ -n "$ANDROID_NDK_LATEST_HOME" ]; then
+            echo "Using ANDROID_NDK_LATEST_HOME at $ANDROID_NDK_LATEST_HOME"
+            echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+          else
+            echo "Installing NDK via sdkmanager..."
+            yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;26.1.10909125"
+            echo "NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+          fi
 
       - name: Install Rust & Android targets
         uses: dtolnay/rust-toolchain@stable
@@ -151,7 +162,7 @@ jobs:
       - name: Build Android APK
         run: pnpm tauri android build --apk --no-frontend-build
         env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+          NDK_HOME: ${{ env.NDK_HOME }}
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
