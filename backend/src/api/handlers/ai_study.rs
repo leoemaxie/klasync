@@ -46,6 +46,25 @@ pub async fn generate_chapters(
     OptionalStudent(student): OptionalStudent,
     Path(session_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
+    let pool = state.db_pool();
+    let has_existing = sqlx::query_scalar!(
+        r#"select exists(select 1 from session_chapters where session_id = $1) as "exists!""#,
+        session_id
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap_or(false);
+
+    if has_existing {
+        return Ok((
+            StatusCode::OK,
+            Json(StudyJobResponse {
+                job_id: Uuid::nil(),
+                status: "ready",
+            }),
+        ));
+    }
+
     let requester_id = student.map(|s| s.id).unwrap_or_else(Uuid::now_v7);
     enqueue(&state, requester_id, session_id, "chapters").await
 }
@@ -55,6 +74,25 @@ pub async fn generate_flashcards(
     OptionalStudent(student): OptionalStudent,
     Path(session_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
+    let pool = state.db_pool();
+    let has_existing = sqlx::query_scalar!(
+        r#"select exists(select 1 from session_flashcards where session_id = $1) as "exists!""#,
+        session_id
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap_or(false);
+
+    if has_existing {
+        return Ok((
+            StatusCode::OK,
+            Json(StudyJobResponse {
+                job_id: Uuid::nil(),
+                status: "ready",
+            }),
+        ));
+    }
+
     let requester_id = student.map(|s| s.id).unwrap_or_else(Uuid::now_v7);
     enqueue(&state, requester_id, session_id, "flashcards").await
 }
@@ -100,6 +138,26 @@ async fn enqueue(
     job_type: &str,
 ) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
     let pool = state.db_pool();
+
+    let existing_job = sqlx::query_scalar!(
+        "select id from ai_jobs where session_id = $1 and job_type = $2 and status in ('queued', 'running') order by created_at desc limit 1",
+        session_id,
+        job_type
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    if let Some(job_id) = existing_job {
+        return Ok((
+            StatusCode::ACCEPTED,
+            Json(StudyJobResponse {
+                job_id,
+                status: "processing",
+            }),
+        ));
+    }
+
     let input_resource = sqlx::query_scalar!(
         "select id from lecture_resources where session_id = $1 and resource_type = 'transcript' order by created_at desc limit 1",
         session_id

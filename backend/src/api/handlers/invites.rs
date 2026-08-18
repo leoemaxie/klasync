@@ -12,9 +12,11 @@ use crate::{
         handlers::sessions::database_session_by_code,
     },
     auth::guard::AuthenticatedLecturer,
-    models::{Course, InviteResolution, LectureSession, SessionStatus},
     state::AppState,
 };
+
+#[allow(unused_imports)]
+use crate::models::{Course, InviteResolution, LectureSession, SessionStatus};
 
 pub async fn qr_svg(
     State(state): State<AppState>,

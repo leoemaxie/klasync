@@ -8,11 +8,13 @@ use uuid::Uuid;
 use crate::{
     api::error::{ApiError, LogApiError},
     auth::guard::AuthenticatedLecturer,
-    models::{
-        Course, CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus,
-    },
     state::AppState,
     utils::short_code,
+};
+
+#[allow(unused_imports)]
+use crate::models::{
+    Course, CreateSessionRequest, InviteResponse, LectureSession, SessionDetail, SessionStatus,
 };
 
 pub async fn create(

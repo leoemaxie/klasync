@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select text from caption_chunks where session_id = $1 order by sequence_number asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "text",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a3b4dc5ff0c488904f4539bc09179caa13acab43f1d70b84ff432504f1f850cd"
+}

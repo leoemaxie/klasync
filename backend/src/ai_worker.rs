@@ -152,7 +152,32 @@ async fn execute_claimed_job(
             serde_json::json!({ "text": String::from_utf8_lossy(&bytes).to_string() })
         }
     } else {
-        serde_json::json!({ "text": resource.content.unwrap_or_default() })
+        let text = if let Some(content) =
+            resource.content.as_deref().filter(|s| !s.trim().is_empty())
+        {
+            content.to_owned()
+        } else {
+            let chunks: Vec<String> = sqlx::query_scalar!(
+                "select text from caption_chunks where session_id = $1 order by sequence_number asc",
+                job.session_id
+            )
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
+            chunks.join(" ")
+        };
+
+        match job.job_type.as_str() {
+            "flashcards" => serde_json::json!({
+                "text": text,
+                "system": "You are KLASYNC, an accessibility-first learning assistant. Generate study flashcards based on the provided lecture content. Return ONLY a valid JSON array of objects with keys: \"prompt\" (string question), \"answer\" (string concise answer), \"topic_tag\" (string short topic), \"difficulty\" (\"easy\", \"medium\", or \"hard\"). Do not output any text or markdown codeblocks outside the JSON array."
+            }),
+            "chapters" => serde_json::json!({
+                "text": text,
+                "system": "You are KLASYNC, an accessibility-first learning assistant. Generate structured lecture chapters based on the provided lecture content. Return ONLY a valid JSON array of objects with keys: \"chapter_index\" (integer starting at 1), \"title\" (string), \"summary\" (string), \"start_timestamp_sec\" (integer), \"end_timestamp_sec\" (integer). Do not output any text or markdown codeblocks outside the JSON array."
+            }),
+            _ => serde_json::json!({ "text": text }),
+        }
     };
 
     let work = AiWorkItem {
@@ -304,9 +329,18 @@ async fn persist_study_rows(
     job_type: &str,
     content: &serde_json::Value,
 ) -> Result<(), ApiError> {
-    let Some(text) = content.get("text").and_then(|value| value.as_str()) else {
+    let Some(raw_text) = content.get("text").and_then(|value| value.as_str()) else {
         return Ok(());
     };
+    let trimmed = raw_text.trim();
+    let text = if let Some(stripped) = trimmed.strip_prefix("```json") {
+        stripped.strip_suffix("```").unwrap_or(stripped).trim()
+    } else if let Some(stripped) = trimmed.strip_prefix("```") {
+        stripped.strip_suffix("```").unwrap_or(stripped).trim()
+    } else {
+        trimmed
+    };
+
     if job_type == "chapters" {
         if let Ok(chapters) = serde_json::from_str::<Vec<ChapterPayload>>(text) {
             for (index, chapter) in chapters.into_iter().enumerate() {
