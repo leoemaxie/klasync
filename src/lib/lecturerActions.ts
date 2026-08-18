@@ -12,8 +12,7 @@ import type { Participant } from './types';
 export async function startSession(state: SessionState) {
   state.apiNotice = '';
   if (!state.lecturerName.trim() || !state.lecturerEmail.trim()) {
-    state.apiNotice =
-      'Please enter your name and email.';
+    state.apiNotice = 'Please enter your name and email.';
     return;
   }
   state.isSaving = true;

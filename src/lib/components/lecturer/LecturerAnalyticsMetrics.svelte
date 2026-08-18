@@ -32,9 +32,7 @@
         ? `${summary.roster_verification_match_rate}%`
         : `${participants.filter((p) => p.verified).length}`}
     </span>
-    <span class="m-lbl"
-      >{summary ? 'Match rate' : 'Verified students'}</span
-    >
+    <span class="m-lbl">{summary ? 'Match rate' : 'Verified students'}</span>
   </div>
   <div class="metric-card">
     <span class="m-val"

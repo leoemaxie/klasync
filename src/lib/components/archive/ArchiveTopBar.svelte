@@ -58,9 +58,17 @@
     text-transform: uppercase;
     margin-bottom: 2px;
   }
-  .brand-pill { color: var(--color-ember-accent); font-weight: 700; font-family: var(--font-mono, monospace); }
-  .divider { color: var(--color-cork-border); }
-  .workspace-label { color: var(--color-driftwood); }
+  .brand-pill {
+    color: var(--color-ember-accent);
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+  }
+  .divider {
+    color: var(--color-cork-border);
+  }
+  .workspace-label {
+    color: var(--color-driftwood);
+  }
   .workspace-title {
     font-family: var(--font-display);
     font-size: 24px;
@@ -93,7 +101,12 @@
     text-transform: uppercase;
   }
   @media (max-width: 640px) {
-    .workspace-title { font-size: 19px; }
-    .top-bar-right { width: 100%; justify-content: space-between; }
+    .workspace-title {
+      font-size: 19px;
+    }
+    .top-bar-right {
+      width: 100%;
+      justify-content: space-between;
+    }
   }
 </style>

@@ -90,9 +90,7 @@
       </div>
 
       <h2>Sync with LMS</h2>
-      <p class="lede">
-        Import student list from Canvas or Moodle.
-      </p>
+      <p class="lede">Import student list from Canvas or Moodle.</p>
 
       <form onsubmit={handleSync} class="lms-form">
         <div

@@ -76,10 +76,7 @@
     onclick={(e) => e.target === e.currentTarget && (isOpen = false)}
     onkeydown={(e) => e.key === 'Escape' && (isOpen = false)}
   >
-    <div
-      class="spotlight-dialog panel"
-      tabindex="-1"
-    >
+    <div class="spotlight-dialog panel" tabindex="-1">
       <div class="spotlight-header">
         <Search size={18} class="search-icon" />
         <input
@@ -110,7 +107,9 @@
             class="quick-code-btn"
             onclick={handleQuickJoinSubmit}
           >
-            <span>Join session <strong>{searchQuery.toUpperCase()}</strong></span>
+            <span
+              >Join session <strong>{searchQuery.toUpperCase()}</strong></span
+            >
             <ArrowRight size={14} />
           </button>
         </div>

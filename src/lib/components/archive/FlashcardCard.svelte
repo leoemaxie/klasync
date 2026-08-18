@@ -65,23 +65,31 @@
     class="flashcard-flipper"
     class:flipped={isFlipped}
     onclick={toggleFlip}
-    aria-label="Card {currentIndex + 1}. {isFlipped ? 'Showing answer' : 'Showing question'}."
+    aria-label="Card {currentIndex + 1}. {isFlipped
+      ? 'Showing answer'
+      : 'Showing question'}."
   >
     <div class="card-face front" aria-hidden={isFlipped}>
       <div class="face-top">
         <span class="tag">{card.topic_tag || 'QUESTION'}</span>
-        <span class="diff-badge diff-{card.difficulty || 'medium'}">{card.difficulty || 'medium'}</span>
+        <span class="diff-badge diff-{card.difficulty || 'medium'}"
+          >{card.difficulty || 'medium'}</span
+        >
       </div>
       <h3 class="card-prompt">{card.prompt}</h3>
       <div class="face-bottom">
         <span class="flip-hint"><RotateCw size={12} /> Tap to flip</span>
-        {#if card.mastered}<span class="mastered-badge"><CheckCircle2 size={12} /> Mastered</span>{/if}
+        {#if card.mastered}<span class="mastered-badge"
+            ><CheckCircle2 size={12} /> Mastered</span
+          >{/if}
       </div>
     </div>
     <div class="card-face back" aria-hidden={!isFlipped}>
       <div class="face-top">
         <span class="tag">ANSWER</span>
-        {#if card.mastered}<span class="mastered-badge"><CheckCircle2 size={12} /> Mastered</span>{/if}
+        {#if card.mastered}<span class="mastered-badge"
+            ><CheckCircle2 size={12} /> Mastered</span
+          >{/if}
       </div>
       <p class="card-answer">{card.answer}</p>
       <div class="face-bottom">
@@ -105,21 +113,124 @@
 </div>
 
 <style>
-  .card-viewport { perspective: 1000px; display: flex; flex-direction: column; gap: var(--spacing-6); width: 100%; }
-  .flashcard-flipper { position: relative; width: 100%; min-height: 180px; background: rgba(16, 9, 4, 0.65); border: 1px solid var(--color-cork-border); border-radius: var(--radius-cards, 8px); cursor: pointer; text-align: left; padding: var(--spacing-12); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s; transform-style: preserve-3d; user-select: none; }
-  .flashcard-flipper:hover { border-color: var(--color-warm-cream); }
-  .flashcard-flipper.flipped { transform: rotateY(180deg); }
-  .card-face { display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; backface-visibility: hidden; }
-  .card-face.back { position: absolute; inset: var(--spacing-12); transform: rotateY(180deg); }
-  .face-top, .face-bottom { display: flex; justify-content: space-between; align-items: center; }
-  .tag { font-size: 11px; font-family: var(--font-mono, monospace); letter-spacing: 0.08em; color: var(--color-driftwood); text-transform: uppercase; font-weight: 600; }
-  .diff-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--color-cork-border); color: var(--color-driftwood); }
-  .diff-hard { border-color: var(--color-ember-accent); color: var(--color-ember-accent); }
-  .card-prompt { font-size: 16px; color: var(--color-warm-cream); line-height: 1.45; margin: var(--spacing-6) 0; font-weight: 600; word-break: break-word; }
-  .card-answer { font-size: 14px; color: var(--color-warm-cream); line-height: 1.6; margin: var(--spacing-6) 0; word-break: break-word; }
-  .flip-hint { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-driftwood); }
-  .mastered-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #a4c952; }
-  .mastery-bar { display: flex; justify-content: flex-end; }
-  .mastery-toggle { font-size: 11px; font-weight: 500; background: transparent; border: 1px dashed var(--color-cork-border); color: var(--color-driftwood); padding: 4px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-  .mastery-toggle.is-mastered { border-color: #a4c952; color: #a4c952; background: rgba(164, 201, 82, 0.08); }
+  .card-viewport {
+    perspective: 1000px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+    width: 100%;
+  }
+  .flashcard-flipper {
+    position: relative;
+    width: 100%;
+    min-height: 180px;
+    background: rgba(16, 9, 4, 0.65);
+    border: 1px solid var(--color-cork-border);
+    border-radius: var(--radius-cards, 8px);
+    cursor: pointer;
+    text-align: left;
+    padding: var(--spacing-12);
+    transition:
+      transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.2s;
+    transform-style: preserve-3d;
+    user-select: none;
+  }
+  .flashcard-flipper:hover {
+    border-color: var(--color-warm-cream);
+  }
+  .flashcard-flipper.flipped {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 150px;
+    backface-visibility: hidden;
+  }
+  .card-face.back {
+    position: absolute;
+    inset: var(--spacing-12);
+    transform: rotateY(180deg);
+  }
+  .face-top,
+  .face-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tag {
+    font-size: 11px;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.08em;
+    color: var(--color-driftwood);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .diff-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--color-cork-border);
+    color: var(--color-driftwood);
+  }
+  .diff-hard {
+    border-color: var(--color-ember-accent);
+    color: var(--color-ember-accent);
+  }
+  .card-prompt {
+    font-size: 16px;
+    color: var(--color-warm-cream);
+    line-height: 1.45;
+    margin: var(--spacing-6) 0;
+    font-weight: 600;
+    word-break: break-word;
+  }
+  .card-answer {
+    font-size: 14px;
+    color: var(--color-warm-cream);
+    line-height: 1.6;
+    margin: var(--spacing-6) 0;
+    word-break: break-word;
+  }
+  .flip-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-driftwood);
+  }
+  .mastered-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a4c952;
+  }
+  .mastery-bar {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .mastery-toggle {
+    font-size: 11px;
+    font-weight: 500;
+    background: transparent;
+    border: 1px dashed var(--color-cork-border);
+    color: var(--color-driftwood);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mastery-toggle.is-mastered {
+    border-color: #a4c952;
+    color: #a4c952;
+    background: rgba(164, 201, 82, 0.08);
+  }
 </style>

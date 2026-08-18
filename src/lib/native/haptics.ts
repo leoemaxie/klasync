@@ -4,13 +4,7 @@
 import { platform } from './platform';
 
 export type HapticImpact =
-  | 'light'
-  | 'medium'
-  | 'heavy'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'selection';
+  'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection';
 
 export function triggerHaptic(type: HapticImpact = 'light'): void {
   if (typeof window === 'undefined' || !platform.hasHaptics) return;

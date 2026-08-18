@@ -17,14 +17,18 @@
   });
 
   function formatTime(sec: number): string {
-    return `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`;
+    return `${Math.floor(sec / 60)
+      .toString()
+      .padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`;
   }
 </script>
 
 <div class="chapter-breakdown-panel">
   <div class="chapter-header">
     <p class="eyebrow">LECTURE TOPIC CHAPTERS</p>
-    <span class="chapter-count">{chapters.length} {chapters.length === 1 ? 'Chapter' : 'Chapters'}</span>
+    <span class="chapter-count"
+      >{chapters.length} {chapters.length === 1 ? 'Chapter' : 'Chapters'}</span
+    >
   </div>
 
   {#if isLoading}
@@ -33,7 +37,11 @@
     <div class="chapters-list" role="region" aria-label="Lecture chapters">
       {#each chapters as ch}
         <div class="chapter-card">
-          <span class="time-badge">{formatTime(ch.start_timestamp_sec)} – {formatTime(ch.end_timestamp_sec)}</span>
+          <span class="time-badge"
+            >{formatTime(ch.start_timestamp_sec)} – {formatTime(
+              ch.end_timestamp_sec
+            )}</span
+          >
           <div class="chapter-info">
             <h3 class="chapter-title">{ch.title}</h3>
             <p class="chapter-desc">{ch.summary}</p>

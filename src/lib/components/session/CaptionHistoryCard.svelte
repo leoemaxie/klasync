@@ -17,9 +17,7 @@
     <div class="empty-history">
       <MessageSquare size={24} aria-hidden="true" class="empty-icon" />
       <p class="empty-title">No captions sent yet</p>
-      <p class="hint">
-        Sent captions will appear here.
-      </p>
+      <p class="hint">Sent captions will appear here.</p>
     </div>
   {:else}
     <div class="caption-list" role="log" aria-label="Published captions">

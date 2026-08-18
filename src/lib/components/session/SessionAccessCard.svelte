@@ -106,9 +106,7 @@
         </button>
       </div>
     </div>
-    <p class="access-hint">
-      Share this code, link, or QR code with students.
-    </p>
+    <p class="access-hint">Share this code, link, or QR code with students.</p>
   </div>
 
   <div class="access-card qr-card">
@@ -164,9 +162,7 @@
       <div class="qr-modal-frame">
         <QrCodeSvg value={inviteUrl || code} size={260} />
       </div>
-      <p class="qr-modal-hint">
-        Scan with camera to join
-      </p>
+      <p class="qr-modal-hint">Scan with camera to join</p>
     </div>
   </div>
 {/if}

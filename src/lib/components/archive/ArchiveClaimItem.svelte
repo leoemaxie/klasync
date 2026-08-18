@@ -55,7 +55,9 @@
     border-radius: 6px;
     text-align: left;
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
     width: 100%;
     min-height: 52px;
   }
@@ -121,6 +123,10 @@
     background: rgba(255, 237, 215, 0.08);
     color: var(--color-warm-cream-dim);
   }
-  :global(.item-arrow) { color: var(--color-driftwood); }
-  .claim-item-card.selected :global(.item-arrow) { color: var(--color-ember-accent); }
+  :global(.item-arrow) {
+    color: var(--color-driftwood);
+  }
+  .claim-item-card.selected :global(.item-arrow) {
+    color: var(--color-ember-accent);
+  }
 </style>

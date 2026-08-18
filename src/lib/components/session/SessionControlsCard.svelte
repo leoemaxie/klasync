@@ -40,7 +40,10 @@
     >
       {#if isTogglingPause}<ButtonSpinner
           label="Updating status..."
-        />{:else if isPaused}<Play size={16} aria-hidden="true" /> Resume Session{:else}<Pause size={16} aria-hidden="true" /> Pause Session{/if}
+        />{:else if isPaused}<Play size={16} aria-hidden="true" /> Resume Session{:else}<Pause
+          size={16}
+          aria-hidden="true"
+        /> Pause Session{/if}
     </button>
     <button
       type="button"

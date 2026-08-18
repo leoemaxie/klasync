@@ -59,9 +59,7 @@
         <Send size={14} aria-hidden="true" /> Send (Enter ↵)
       {/if}
     </button>
-    <span class="hint-text"
-      >Press Enter to send to students</span
-    >
+    <span class="hint-text">Press Enter to send to students</span>
   </div>
 
   {#if apiNotice}

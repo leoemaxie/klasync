@@ -32,7 +32,8 @@
         </div>
         <h1 class="card-title">Page Not Found</h1>
         <p class="card-desc">
-          The page, session code, or link you requested does not exist or has expired.
+          The page, session code, or link you requested does not exist or has
+          expired.
         </p>
       </div>
 

@@ -22,13 +22,17 @@
 
   <div class="lecturer-row">
     <User size={13} color="var(--color-driftwood)" />
-    <span class="lecturer-name">{course.lecturer_name || 'Faculty Member'}</span>
+    <span class="lecturer-name">{course.lecturer_name || 'Faculty Member'}</span
+    >
   </div>
 
   <div class="stats-row">
     <div class="stat-pill">
       <BookOpen size={12} />
-      <span>{course.session_count} {course.session_count === 1 ? 'Lecture' : 'Lectures'}</span>
+      <span
+        >{course.session_count}
+        {course.session_count === 1 ? 'Lecture' : 'Lectures'}</span
+      >
     </div>
     <div class="stat-pill success">
       <CheckCircle2 size={12} />

@@ -27,9 +27,7 @@
     </p>
 
     <div class="actions not-found-actions">
-      <a href="#/" class="primary" onclick={() => (screen = 'home')}
-        >Home</a
-      >
+      <a href="#/" class="primary" onclick={() => (screen = 'home')}>Home</a>
       <a href="#/join" class="outline" onclick={() => (screen = 'join')}
         >Join Session</a
       >

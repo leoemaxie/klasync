@@ -41,8 +41,7 @@
     errorMsg = '';
     statusNotice = '';
     if (mode === 'request') {
-      if (!email.trim())
-        return (errorMsg = 'Please enter your email address.');
+      if (!email.trim()) return (errorMsg = 'Please enter your email address.');
       isSubmitting = true;
       try {
         await requestPasswordReset(email.trim(), role);
@@ -82,9 +81,7 @@
   <div class="join-left-content">
     <p class="eyebrow">PASSWORD RESET</p>
     <h1 class="title-single-line">
-      {mode === 'request'
-        ? 'Reset Password'
-        : 'New Password'}
+      {mode === 'request' ? 'Reset Password' : 'New Password'}
     </h1>
     <p class="lede">
       {mode === 'request'
@@ -160,9 +157,7 @@
       {#if statusNotice}
         <div class="feedback-box" role="status" aria-live="polite">
           <span class="feedback-badge"
-            >{mode === 'request'
-              ? 'SENT'
-              : 'UPDATED'}</span
+            >{mode === 'request' ? 'SENT' : 'UPDATED'}</span
           >
           <p class="feedback-msg">{statusNotice}</p>
         </div>

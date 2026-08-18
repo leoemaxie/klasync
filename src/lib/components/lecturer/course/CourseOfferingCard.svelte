@@ -40,9 +40,7 @@
     {#if isActive}
       <span class="active-status">Active course</span>
     {:else}
-      <span class="select-hint"
-        >Select <ArrowRight size={11} /></span
-      >
+      <span class="select-hint">Select <ArrowRight size={11} /></span>
     {/if}
   </div>
 </div>

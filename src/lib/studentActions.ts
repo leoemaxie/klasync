@@ -74,9 +74,7 @@ export async function refreshCaptions(state: SessionState) {
     state.captionIndex = Math.max(state.captions.length - 1, 0);
   } catch (error) {
     state.apiNotice =
-      error instanceof Error
-        ? error.message
-        : 'Unable to load captions.';
+      error instanceof Error ? error.message : 'Unable to load captions.';
   }
 }
 

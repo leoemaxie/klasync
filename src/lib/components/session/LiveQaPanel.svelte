@@ -95,9 +95,7 @@
         Questions ({questions.filter((q) => !q.is_resolved).length})
       </h2>
     </div>
-    <button type="button" class="text" onclick={loadQuestions}
-      >Refresh</button
-    >
+    <button type="button" class="text" onclick={loadQuestions}>Refresh</button>
   </div>
 
   {#if !isLecturer}

@@ -51,9 +51,7 @@
       screen = 'lecturer';
     } catch (err) {
       errorMsg =
-        err instanceof Error
-          ? err.message
-          : 'Invalid email or password.';
+        err instanceof Error ? err.message : 'Invalid email or password.';
     } finally {
       isSubmitting = false;
     }

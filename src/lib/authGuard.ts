@@ -19,18 +19,23 @@ export function purgeSensitiveAuthStorage() {
       'klasync-courseTitle',
       'klasync-captions',
     ].forEach((k) => {
-      try { localStorage.removeItem(k); } catch {}
+      try {
+        localStorage.removeItem(k);
+      } catch {}
     });
   }
   if (typeof sessionStorage !== 'undefined') {
-    try { sessionStorage.clear(); } catch {}
+    try {
+      sessionStorage.clear();
+    } catch {}
   }
   if (typeof window !== 'undefined') {
     void import('./storage/db')
       .then(async ({ getDB }) => {
         try {
           const db = await getDB();
-          if (db.objectStoreNames.contains('session_state')) await db.clear('session_state');
+          if (db.objectStoreNames.contains('session_state'))
+            await db.clear('session_state');
         } catch {}
       })
       .catch(() => {});
@@ -39,23 +44,30 @@ export function purgeSensitiveAuthStorage() {
 
 export function enforceAuthGuard(path: string, state: SessionState): Screen {
   const currentLoc = path || '/';
-  const cleanPath = currentLoc.length > 1 && currentLoc.endsWith('/') ? currentLoc.slice(0, -1) : currentLoc;
+  const cleanPath =
+    currentLoc.length > 1 && currentLoc.endsWith('/')
+      ? currentLoc.slice(0, -1)
+      : currentLoc;
   const matched = screenFromPath(cleanPath);
   const isAuthRoute = cleanPath.startsWith('/auth');
   const hasToken = Boolean(getAccessToken() || getRefreshToken());
   const role = state.currentUser?.role;
 
   // 1. Protect Lecturer Workspace
-  if (cleanPath === '/lecturer' || (cleanPath.startsWith('/lecturer/') && !isAuthRoute)) {
+  if (
+    cleanPath === '/lecturer' ||
+    (cleanPath.startsWith('/lecturer/') && !isAuthRoute)
+  ) {
     const isLecturer = hasToken && (role === 'lecturer' || role === 'admin');
     if (!isLecturer) {
       if (!hasToken || !state.currentUser) {
         purgeSensitiveAuthStorage();
         state.currentUser = null;
       }
-      state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to continue.'
-        : 'Please sign in with a lecturer account.';
+      state.authNotice =
+        !hasToken || !state.currentUser
+          ? 'Please sign in to continue.'
+          : 'Please sign in with a lecturer account.';
       const target = SCREEN_TO_PATH['lecturer-login'];
       if (currentLoc !== target) void replace(target);
       return 'lecturer-login';
@@ -64,16 +76,20 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
   }
 
   // 2. Protect Student Archive
-  if (cleanPath === '/archive' || (cleanPath.startsWith('/archive/') && !isAuthRoute)) {
+  if (
+    cleanPath === '/archive' ||
+    (cleanPath.startsWith('/archive/') && !isAuthRoute)
+  ) {
     const isStudent = hasToken && role === 'student';
     if (!isStudent) {
       if (!hasToken || !state.currentUser) {
         purgeSensitiveAuthStorage();
         state.currentUser = null;
       }
-      state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to continue.'
-        : 'Please sign in with a student account.';
+      state.authNotice =
+        !hasToken || !state.currentUser
+          ? 'Please sign in to continue.'
+          : 'Please sign in with a student account.';
       const target = SCREEN_TO_PATH['student-login'];
       if (currentLoc !== target) void replace(target);
       return 'student-login';
@@ -83,12 +99,18 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
 
   // 3. Redirect authenticated users away from /auth/* login/register pages
   if (isAuthRoute && hasToken && state.currentUser) {
-    if ((matched === 'lecturer-login' || matched === 'lecturer-register') && (role === 'lecturer' || role === 'admin')) {
+    if (
+      (matched === 'lecturer-login' || matched === 'lecturer-register') &&
+      (role === 'lecturer' || role === 'admin')
+    ) {
       const target = SCREEN_TO_PATH['lecturer'];
       if (currentLoc !== target) void replace(target);
       return 'lecturer';
     }
-    if ((matched === 'student-login' || matched === 'student-register') && role === 'student') {
+    if (
+      (matched === 'student-login' || matched === 'student-register') &&
+      role === 'student'
+    ) {
       const target = SCREEN_TO_PATH['archive'];
       if (currentLoc !== target) void replace(target);
       return 'archive';
@@ -96,7 +118,11 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
   }
 
   // 4. Redirect authenticated users navigating to root / home to their dedicated hubs
-  if ((cleanPath === '/' || cleanPath === '/home') && hasToken && state.currentUser) {
+  if (
+    (cleanPath === '/' || cleanPath === '/home') &&
+    hasToken &&
+    state.currentUser
+  ) {
     if (role === 'student') {
       const target = SCREEN_TO_PATH['archive'];
       if (currentLoc !== target) void replace(target);

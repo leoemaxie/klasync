@@ -27,8 +27,7 @@
         <th scope="col">Name</th>
         <th scope="col">Status</th>
         {#if onRemoveStudent}<th scope="col" style="text-align: right;"
-            ></th
-          >{/if}
+          ></th>{/if}
       </tr>
     </thead>
     <tbody>
