@@ -7,30 +7,22 @@ export interface FlashcardItem {
   mastered?: boolean;
 }
 
-export function getMasteredIds(sessionId: string): Set<string> {
-  if (typeof localStorage === 'undefined' || !sessionId) return new Set();
+export function getStoredDeck(sessionId: string): FlashcardItem[] | null {
+  if (typeof localStorage === 'undefined' || !sessionId) return null;
   try {
-    const raw = localStorage.getItem(`klasync_flashcards_mastered_${sessionId}`);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed : []);
+    const raw = localStorage.getItem(`klasync_flashcards_${sessionId}`);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    return new Set();
+    return null;
   }
 }
 
-export function saveMasteredIds(sessionId: string, ids: string[]): void {
+export function saveStoredDeck(sessionId: string, deck: FlashcardItem[]): void {
   if (typeof localStorage === 'undefined' || !sessionId) return;
   try {
     localStorage.setItem(
-      `klasync_flashcards_mastered_${sessionId}`,
-      JSON.stringify(ids)
+      `klasync_flashcards_${sessionId}`,
+      JSON.stringify(deck)
     );
-  } catch {}
-}
-
-export function clearLegacyCachedFlashcards(sessionId: string): void {
-  if (typeof localStorage === 'undefined' || !sessionId) return;
-  try {
-    localStorage.removeItem(`klasync_flashcards_${sessionId}`);
   } catch {}
 }

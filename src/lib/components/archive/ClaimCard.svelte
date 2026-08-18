@@ -93,7 +93,7 @@
   {:else if activeTab === 'chapters'}
     <ChapterBreakdown sessionId={claim.id} />
   {:else if activeTab === 'flashcards'}
-    <FlashcardDeck sessionId={claim.session_code || claim.id} />
+    <FlashcardDeck sessionId={claim.id} transcript={transcriptText} />
   {:else}
     <AudioPlayerPanel sessionCode={claim.session_code || ''} />
   {/if}

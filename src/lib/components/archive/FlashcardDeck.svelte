@@ -9,9 +9,8 @@
     generateSessionFlashcards,
   } from '$lib/api/aiStudy';
   import {
-    getMasteredIds,
-    saveMasteredIds,
-    clearLegacyCachedFlashcards,
+    getStoredDeck,
+    saveStoredDeck,
     type FlashcardItem,
   } from '$lib/utils/flashcards';
   import { Shuffle, RotateCcw, Layers } from '@lucide/svelte';
@@ -33,10 +32,6 @@
   async function loadFlashcards() {
     isLoading = true;
     try {
-      if (sessionId) {
-        clearLegacyCachedFlashcards(sessionId);
-      }
-
       if (cards.length > 0) {
         deck = [...cards];
         return;
@@ -49,15 +44,23 @@
 
       const apiCards = await fetchSessionFlashcards(sessionId);
       if (apiCards && apiCards.length > 0) {
-        const masteredSet = getMasteredIds(sessionId);
+        const stored = getStoredDeck(sessionId) || [];
+        const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
         deck = apiCards.map((c) => ({
           id: c.id,
           prompt: c.prompt,
           answer: c.answer,
           topic_tag: c.topic_tag,
           difficulty: c.difficulty,
-          mastered: masteredSet.has(c.id),
+          mastered: !!masteredMap.get(c.id),
         }));
+        saveStoredDeck(sessionId, deck);
+        return;
+      }
+
+      const stored = getStoredDeck(sessionId);
+      if (stored && stored.length > 0) {
+        deck = stored;
         return;
       }
 
@@ -85,8 +88,7 @@
 
   function toggleMastery(id: string) {
     deck = deck.map((c) => (c.id === id ? { ...c, mastered: !c.mastered } : c));
-    const masteredIds = deck.filter((c) => c.mastered).map((c) => c.id);
-    saveMasteredIds(sessionId, masteredIds);
+    saveStoredDeck(sessionId, deck);
     triggerHaptic('selection');
   }
 
@@ -100,15 +102,17 @@
           await new Promise((res) => setTimeout(res, 2500));
           const updated = await fetchSessionFlashcards(sessionId);
           if (updated && updated.length > deck.length) {
-            const masteredSet = getMasteredIds(sessionId);
+            const stored = getStoredDeck(sessionId) || [];
+            const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
             deck = updated.map((c) => ({
               id: c.id,
               prompt: c.prompt,
               answer: c.answer,
               topic_tag: c.topic_tag,
               difficulty: c.difficulty,
-              mastered: masteredSet.has(c.id),
+              mastered: !!masteredMap.get(c.id),
             }));
+            saveStoredDeck(sessionId, deck);
             currentIndex = 0;
             return;
           }
