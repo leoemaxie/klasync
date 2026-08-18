@@ -33,24 +33,39 @@ pub async fn create(
         return Err(ApiError::not_found("Course not found"));
     }
 
-    let code = short_code();
-    let invite_token = Uuid::now_v7();
-    let session = sqlx::query_as!(
-        LectureSession,
-        r#"insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)
-         values ($1, $2, $3, $4, $5, $6, $7)
-         returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", coalesce(started_at, now()) as "started_at!""#,
-        input.course_id,
-        input.title.trim(),
-        &code,
-        invite_token,
-        SessionStatus::Live as SessionStatus,
-        chrono::Utc::now(),
-        lecturer.id
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(|_| ApiError::conflict("A session code collision occurred, please try again"))?;
+    let invite_token = Uuid::new_v4();
+    let mut attempts = 0;
+    let (session, code) = loop {
+        attempts += 1;
+        let code = short_code();
+        let session_result = sqlx::query_as!(
+            LectureSession,
+            r#"insert into lecture_sessions (course_id, title, short_code, invite_token, status, started_at, lecturer_id)
+             values ($1, $2, $3, $4, $5, $6, $7)
+             returning id, course_id, title, short_code, invite_token, status as "status: SessionStatus", coalesce(started_at, now()) as "started_at!""#,
+            input.course_id,
+            input.title.trim(),
+            &code,
+            invite_token,
+            SessionStatus::Live as SessionStatus,
+            chrono::Utc::now(),
+            lecturer.id
+        )
+        .fetch_one(pool)
+        .await;
+
+        match session_result {
+            Ok(session) => break (session, code),
+            Err(err) if attempts < 5 => {
+                tracing::warn!(%err, attempt = attempts, "Session code collision occurred, retrying with new code");
+                continue;
+            }
+            Err(err) => {
+                tracing::error!(%err, "Exhausted retries creating lecture session due to collisions or db errors");
+                return Err(ApiError::service_unavailable());
+            }
+        }
+    };
 
     sqlx::query!(
         "insert into session_invites (session_id, token, short_code, created_by) values ($1, $2, $3, $4)",
