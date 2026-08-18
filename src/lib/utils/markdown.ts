@@ -1,48 +1,104 @@
 /**
- * Lightweight safe markdown parser for lecture notes
+ * Safe, structured markdown parser for study notes
  */
 export function renderMarkdown(md: string): string {
-  if (!md) return '';
+  if (!md?.trim()) return '';
 
-  // Escape raw HTML entities for safety
-  let safe = md
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  const lines = md.split('\n');
+  const out: string[] = [];
+  let inCodeBlock = false;
+  let codeBuffer: string[] = [];
+  let inList: 'ul' | 'ol' | null = null;
 
-  // Code blocks (```lang ... ```)
-  safe = safe.replace(
-    /```([\s\S]*?)```/g,
-    '<pre class="md-code-block"><code>$1</code></pre>'
-  );
+  function closeList() {
+    if (inList) {
+      out.push(inList === 'ul' ? '</ul>' : '</ol>');
+      inList = null;
+    }
+  }
 
-  // Inline code (`code`)
-  safe = safe.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
+  function inlineFormat(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>');
+  }
 
-  // Headers (# H1, ## H2, ### H3)
-  safe = safe.replace(/^### (.*$)/gim, '<h3 class="md-h3">$1</h3>');
-  safe = safe.replace(/^## (.*$)/gim, '<h2 class="md-h2">$1</h2>');
-  safe = safe.replace(/^# (.*$)/gim, '<h1 class="md-h1">$1</h1>');
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
 
-  // Blockquotes (> quote)
-  safe = safe.replace(
-    /^\> (.*$)/gim,
-    '<blockquote class="md-quote">$1</blockquote>'
-  );
+    // Code blocks
+    if (trimmed.startsWith('```')) {
+      closeList();
+      if (inCodeBlock) {
+        out.push(`<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`);
+        codeBuffer = [];
+        inCodeBlock = false;
+      } else {
+        inCodeBlock = true;
+      }
+      continue;
+    }
+    if (inCodeBlock) {
+      codeBuffer.push(rawLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      continue;
+    }
 
-  // Bold & Italic (**bold**, *italic*)
-  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>');
-  safe = safe.replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>');
+    // Skip empty lines (and close list)
+    if (!trimmed) {
+      closeList();
+      continue;
+    }
 
-  // Unordered list items (- item or * item)
-  safe = safe.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="md-li">$1</li>');
+    // Headers
+    if (trimmed.startsWith('# ')) {
+      closeList();
+      out.push(`<h1 class="md-h1">${inlineFormat(trimmed.slice(2))}</h1>`);
+    } else if (trimmed.startsWith('## ')) {
+      closeList();
+      out.push(`<h2 class="md-h2">${inlineFormat(trimmed.slice(3))}</h2>`);
+    } else if (trimmed.startsWith('### ')) {
+      closeList();
+      out.push(`<h3 class="md-h3">${inlineFormat(trimmed.slice(4))}</h3>`);
+    } else if (trimmed.startsWith('> ')) {
+      closeList();
+      out.push(`<blockquote class="md-quote">${inlineFormat(trimmed.slice(2))}</blockquote>`);
+    } else if (/^[-*]\s+/.test(trimmed)) {
+      // Unordered list (skip if content is empty)
+      const content = trimmed.replace(/^[-*]\s+/, '').trim();
+      if (content) {
+        if (inList !== 'ul') {
+          closeList();
+          out.push('<ul class="md-ul">');
+          inList = 'ul';
+        }
+        out.push(`<li class="md-li"><span class="md-bullet"></span><span class="md-li-content">${inlineFormat(content)}</span></li>`);
+      }
+    } else if (/^\d+\.\s+/.test(trimmed)) {
+      // Ordered list
+      const num = trimmed.match(/^(\d+)\.\s+/)?.[1] || '1';
+      const content = trimmed.replace(/^\d+\.\s+/, '').trim();
+      if (content) {
+        if (inList !== 'ol') {
+          closeList();
+          out.push('<ol class="md-ol">');
+          inList = 'ol';
+        }
+        out.push(`<li class="md-li-num"><span class="md-num-badge">${num}</span><span class="md-li-content">${inlineFormat(content)}</span></li>`);
+      }
+    } else {
+      closeList();
+      out.push(`<p class="md-p">${inlineFormat(trimmed)}</p>`);
+    }
+  }
 
-  // Ordered list items (1. item)
-  safe = safe.replace(/^\s*\d+\.\s+(.*$)/gim, '<li class="md-li-num">$1</li>');
+  closeList();
+  if (inCodeBlock && codeBuffer.length) {
+    out.push(`<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`);
+  }
 
-  // Paragraph line breaks (double newline = paragraph, single = br)
-  safe = safe.replace(/\n\n+/g, '</p><p class="md-p">');
-  safe = safe.replace(/\n/g, '<br/>');
-
-  return `<div class="md-root"><p class="md-p">${safe}</p></div>`;
+  return out.join('\n');
 }

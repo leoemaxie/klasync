@@ -3,7 +3,6 @@
   import { FileText } from '@lucide/svelte';
 
   let { content = '' }: { content?: string } = $props();
-
   const renderedHtml = $derived(renderMarkdown(content));
 </script>
 
@@ -15,102 +14,137 @@
     </article>
   {:else}
     <div class="empty-preview">
-      <FileText size={20} color="var(--color-driftwood)" />
-      <p class="empty-text">
-        No notes to preview. Switch to Edit mode to write.
-      </p>
+      <FileText size={22} color="var(--color-driftwood)" />
+      <p class="empty-text">No notes to preview. Switch to Edit mode to add study notes.</p>
     </div>
   {/if}
 </div>
 
 <style>
   .notes-preview-canvas {
-    min-height: 220px;
-    max-height: 520px;
+    min-height: 280px;
+    max-height: 600px;
     overflow-y: auto;
-    background: rgba(16, 9, 4, 0.6);
+    background: rgba(14, 8, 4, 0.7);
     border: 1px solid var(--color-cork-border);
-    border-radius: 6px;
-    padding: var(--spacing-14);
+    border-radius: var(--radius-cards, 8px);
+    padding: var(--spacing-18, 20px);
     color: var(--color-warm-cream);
-    line-height: 1.65;
+    box-sizing: border-box;
   }
   .empty-preview {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 180px;
+    min-height: 220px;
     gap: 8px;
     text-align: center;
   }
   .empty-text {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--color-driftwood);
     margin: 0;
   }
   :global(.markdown-body .md-h1) {
     font-family: var(--font-display);
-    font-size: 19px;
+    font-size: 21px;
+    font-weight: 700;
     color: var(--color-warm-cream);
-    margin: 0 0 10px 0;
-    padding-bottom: 6px;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--color-cork-border);
+    line-height: 1.3;
   }
   :global(.markdown-body .md-h2) {
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 16.5px;
+    font-weight: 700;
     color: var(--color-ember-accent);
-    margin: 14px 0 6px 0;
+    margin: 18px 0 8px 0;
+    letter-spacing: -0.01em;
   }
   :global(.markdown-body .md-h3) {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13.5px;
+    font-weight: 700;
     color: var(--color-warm-cream-dim);
-    margin: 10px 0 4px 0;
+    margin: 14px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   :global(.markdown-body .md-p) {
-    font-size: 13px;
-    color: var(--color-warm-cream-dim);
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--color-warm-cream);
     margin: 0 0 10px 0;
   }
-  :global(.markdown-body .md-li, .markdown-body .md-li-num) {
-    font-size: 13px;
-    margin: 3px 0 3px 18px;
+  :global(.markdown-body .md-ul),
+  :global(.markdown-body .md-ol) {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 0;
+    margin: 0 0 14px 0;
+    list-style: none;
+  }
+  :global(.markdown-body .md-li),
+  :global(.markdown-body .md-li-num) {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 13.5px;
+    line-height: 1.55;
     color: var(--color-warm-cream);
   }
-  :global(.markdown-body .md-bold) {
-    color: var(--color-warm-cream);
-    font-weight: 700;
+  :global(.markdown-body .md-bullet) {
+    width: 5px;
+    height: 5px;
+    min-width: 5px;
+    border-radius: 50%;
+    background: var(--color-ember-accent);
+    margin-top: 8px;
   }
-  :global(.markdown-body .md-italic) {
-    color: var(--color-driftwood);
-    font-style: italic;
-  }
-  :global(.markdown-body .md-inline-code) {
+  :global(.markdown-body .md-num-badge) {
+    font-size: 10.5px;
     font-family: var(--font-mono, monospace);
-    font-size: 11.5px;
-    background: rgba(255, 237, 215, 0.08);
-    border: 1px solid var(--color-cork-border);
+    font-weight: 700;
+    color: var(--color-ember-accent);
+    background: rgba(220, 80, 0, 0.12);
+    border: 1px solid rgba(220, 80, 0, 0.25);
     padding: 1px 5px;
     border-radius: 3px;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+  :global(.markdown-body .md-bold) { color: var(--color-warm-cream); font-weight: 700; }
+  :global(.markdown-body .md-italic) { color: var(--color-warm-cream-dim); font-style: italic; }
+  :global(.markdown-body .md-inline-code) {
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    background: rgba(255, 237, 215, 0.08);
+    border: 1px solid var(--color-cork-border);
+    padding: 2px 6px;
+    border-radius: 4px;
     color: var(--color-ember-accent);
   }
   :global(.markdown-body .md-code-block) {
-    font-family: var(--font-mono, monospace);
-    font-size: 12px;
-    background: rgba(8, 4, 2, 0.8);
+    background: rgba(8, 4, 2, 0.85);
     border: 1px solid var(--color-cork-border);
-    border-radius: 4px;
-    padding: 10px;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
     overflow-x: auto;
-    margin: 8px 0;
+    font-family: var(--font-mono, monospace);
+    font-size: 12.5px;
+    color: var(--color-warm-cream);
   }
   :global(.markdown-body .md-quote) {
-    border-left: 2px solid var(--color-ember-accent);
-    padding-left: 10px;
-    margin: 8px 0;
-    color: var(--color-driftwood);
+    border-left: 3px solid var(--color-ember-accent);
+    background: rgba(220, 80, 0, 0.06);
+    padding: 8px 14px;
+    border-radius: 0 4px 4px 0;
+    margin: 10px 0;
     font-style: italic;
+    color: var(--color-warm-cream-dim);
   }
 </style>
