@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Screen } from '$lib/types';
-  import { Archive, Radio, Home } from '@lucide/svelte';
+  import { Archive, Radio } from '@lucide/svelte';
 
   let {
     claimsCount = 0,
@@ -76,12 +76,15 @@
     text-transform: uppercase;
   }
   @media (max-width: 640px) {
+    .workspace-top-bar {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
     .workspace-title {
-      font-size: 19px;
+      font-size: 18px;
     }
     .top-bar-right {
-      width: 100%;
-      justify-content: space-between;
+      display: none;
     }
   }
 </style>

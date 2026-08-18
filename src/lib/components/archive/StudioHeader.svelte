@@ -23,7 +23,7 @@
 </script>
 
 <div class="studio-header">
-  <div class="header-actions">
+  <div class="header-left-actions">
     {#if onBack}
       <button
         type="button"
@@ -31,16 +31,10 @@
         onclick={onBack}
         title="Back to lectures"
       >
-        <ArrowLeft size={14} /><span>Back</span>
+        <ArrowLeft size={13} /><span>Back</span>
       </button>
     {/if}
 
-    {#if claim.course_code}
-      <span class="course-code-pill">{claim.course_code}</span>
-    {/if}
-  </div>
-
-  <div class="header-badges">
     <button
       type="button"
       class="action-ghost-btn outline"
@@ -55,10 +49,10 @@
         <span>Share</span>
       {/if}
     </button>
+  </div>
 
-    <div class="verified-pill">
-      <CheckCircle2 size={12} /><span>Verified</span>
-    </div>
+  <div class="verified-pill">
+    <CheckCircle2 size={12} /><span>Verified</span>
   </div>
 </div>
 
@@ -80,44 +74,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--spacing-10);
-    padding-bottom: var(--spacing-10);
+    gap: var(--spacing-8, 8px);
+    padding-bottom: var(--spacing-8, 8px);
     border-bottom: 1px solid var(--color-cork-border);
+    width: 100%;
   }
-  .header-actions {
+  .header-left-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-8);
-  }
-  .header-badges {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-8);
-  }
-  .course-code-pill {
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--font-mono, monospace);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.1);
-    border: 1px solid rgba(220, 80, 0, 0.25);
-    padding: 3px 9px;
-    border-radius: 4px;
+    gap: 6px;
   }
   .back-btn,
   .action-ghost-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 5px 12px;
+    gap: 5px;
+    padding: 4px 10px;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    min-height: 30px;
+    min-height: 28px;
+    height: 28px;
     border-radius: var(--radius-controls, 4px);
     color: var(--color-warm-cream-dim);
     transition:
@@ -133,22 +111,24 @@
   .verified-pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11px;
+    gap: 4px;
+    font-size: 10.5px;
     color: #4ade80;
     background: rgba(74, 222, 128, 0.12);
     border: 1px solid rgba(74, 222, 128, 0.25);
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 4px;
     font-weight: 600;
     letter-spacing: 0.02em;
+    height: 28px;
+    box-sizing: border-box;
   }
   .studio-title-area {
     margin-top: 6px;
   }
   .session-main-title {
     font-family: var(--font-display);
-    font-size: 24px;
+    font-size: 22px;
     color: var(--color-warm-cream);
     margin: 0 0 6px 0;
     word-break: break-word;
@@ -159,7 +139,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--color-warm-cream-dim);
     flex-wrap: wrap;
   }
@@ -177,16 +157,13 @@
   }
   @media (max-width: 640px) {
     .studio-header {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .header-badges {
-      width: 100%;
+      flex-direction: row;
+      align-items: center;
       justify-content: space-between;
+      gap: 6px;
     }
     .session-main-title {
-      font-size: 19px;
+      font-size: 18px;
     }
   }
 </style>
