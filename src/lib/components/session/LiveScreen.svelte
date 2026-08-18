@@ -176,7 +176,7 @@
 
 <style>
   .live-workspace-wrap {
-    padding: calc(var(--nav-height) + 16px) var(--card-padding)
+    padding: calc(var(--app-top-offset, var(--nav-height)) + 16px) var(--card-padding)
       calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
     max-width: 1320px;
     margin: 0 auto;

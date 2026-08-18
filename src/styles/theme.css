@@ -60,9 +60,11 @@
   --safe-right: env(safe-area-inset-right, 0px);
 
   /* ── Layout ──────────────────────────────────────────────── */
+  --titlebar-height: 0px;
+  --nav-height: 64px;
+  --app-top-offset: calc(var(--nav-height) + var(--titlebar-height));
   --card-padding: clamp(24px, 4vw, 68px);
   --element-gap: 18px;
-  --nav-height: 64px;
 
   /* ── Border Radius ───────────────────────────────────────── */
   --radius-cards: 12px;

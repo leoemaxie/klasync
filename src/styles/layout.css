@@ -4,7 +4,7 @@
 .join-wrap,
 .live-top {
   max-width: none;
-  padding: calc(var(--nav-height) + 60px) var(--card-padding) var(--spacing-68);
+  padding: calc(var(--app-top-offset, var(--nav-height)) + 60px) var(--card-padding) var(--spacing-68);
   min-height: 100vh;
   position: relative;
   z-index: 2;

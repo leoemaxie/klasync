@@ -13,11 +13,21 @@
   onMount(() => {
     isTauri = platform.isTauri;
     isMac = platform.isMacOS;
+    if (isTauri && !isMac) {
+      document.documentElement.style.setProperty('--titlebar-height', '32px');
+    }
+    return () => {
+      document.documentElement.style.setProperty('--titlebar-height', '0px');
+    };
   });
 </script>
 
 {#if isTauri && !isMac}
-  <div class="tauri-titlebar app-drag-region">
+  <div
+    class="tauri-titlebar app-drag-region"
+    ondblclick={toggleMaximizeWindow}
+    role="banner"
+  >
     <div class="titlebar-title">KLASYNC</div>
     <div class="titlebar-controls app-no-drag">
       <button
@@ -64,6 +74,10 @@
 
 <style>
   .tauri-titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 32px;
     background: #0d0703;
     border-bottom: 1px solid var(--color-cork-border);
@@ -72,8 +86,7 @@
     justify-content: space-between;
     padding-left: 14px;
     user-select: none;
-    z-index: 1000;
-    position: relative;
+    z-index: 1100;
   }
   .titlebar-title {
     font-size: 11px;

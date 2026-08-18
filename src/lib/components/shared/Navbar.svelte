@@ -151,7 +151,7 @@
 <style>
   .navbar {
     position: fixed;
-    top: 0;
+    top: var(--titlebar-height, 0px);
     left: 0;
     right: 0;
     height: var(--nav-height);

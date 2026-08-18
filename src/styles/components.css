@@ -13,7 +13,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
-  padding: calc(var(--nav-height) + 80px) var(--card-padding) 80px;
+  padding: calc(var(--app-top-offset, var(--nav-height)) + 80px) var(--card-padding) 80px;
   overflow: hidden;
   background: radial-gradient(
     ellipse 80% 60% at 20% 60%,
