@@ -34,7 +34,7 @@
       if (res.user && res.user.role !== 'student') {
         await logout().catch(() => {});
         errorMsg =
-          'This account is registered as a lecturer. Please sign in under Lecturer Sign In.';
+          'This account is registered as a lecturer. Please sign in as a lecturer.';
         return;
       }
       if (appState) {
@@ -47,7 +47,7 @@
       errorMsg =
         err instanceof Error
           ? err.message
-          : 'Invalid authentication credentials.';
+          : 'Invalid email or password.';
     } finally {
       isSubmitting = false;
     }
@@ -60,7 +60,7 @@
 
 <section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
-    <p class="eyebrow">STUDENT PERSISTENT ACCESS</p>
+    <p class="eyebrow">STUDENT ACCESS</p>
     <h1 class="title-single-line">Student Sign In</h1>
 
     <form class="join-card panel" onsubmit={handleLogin}>
@@ -80,7 +80,7 @@
       {/if}
 
       <label for="student-signin-email">
-        Student Email
+        Email
         <input
           id="student-signin-email"
           type="email"
@@ -109,7 +109,7 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Authenticating..." /> Authenticating...
+          <ButtonSpinner label="Signing in..." /> Signing in...
         {:else}
           Sign In
         {/if}
@@ -121,7 +121,7 @@
           class="text-link"
           onclick={() => (screen = 'student-register')}
         >
-          Create student account
+          Create account
         </a>
         <a
           href="#/auth/recover-password"
@@ -135,7 +135,7 @@
   </div>
 
   <PublicVisualPanel
-    title="SEARCHABLE LEARNING ARCHIVE"
-    subtitle="Searchable Transcripts · Flashcard Revision · Offline Sync"
+    title="STUDY ARCHIVE"
+    subtitle="Live transcripts · Flashcards · Study notes"
   />
 </section>

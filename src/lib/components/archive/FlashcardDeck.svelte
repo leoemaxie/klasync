@@ -77,8 +77,8 @@
 <div class="panel flashcard-deck">
   <div class="deck-header">
     <div>
-      <p class="eyebrow">REVISION FLASHCARDS</p>
-      <span class="hint">Active Recall · {masteredCount}/{deck.length} Mastered</span>
+      <p class="eyebrow">FLASHCARDS</p>
+      <span class="hint">{masteredCount} of {deck.length} mastered</span>
     </div>
     <div class="header-tools">
       <button type="button" class="tool-btn" title="Shuffle" onclick={shuffleDeck}><Shuffle size={12} /></button>
@@ -94,7 +94,7 @@
     <FlashcardCard card={deck[currentIndex]} {currentIndex} totalCards={deck.length} onToggleMastery={toggleMastery} onSwipeLeft={nextCard} onSwipeRight={prevCard} />
     <div class="deck-actions">
       <button type="button" class="outline" onclick={prevCard} disabled={deck.length <= 1}>Previous</button>
-      <button type="button" class="primary" onclick={nextCard} disabled={deck.length <= 1}>Next Card</button>
+      <button type="button" class="primary" onclick={nextCard} disabled={deck.length <= 1}>Next</button>
     </div>
   {:else}
     <p class="hint">No flashcards available. Generate above.</p>

@@ -59,7 +59,7 @@
   </div>
 
   <h3>{claim.session_title}</h3>
-  <p class="hint">Claimed on {claim.date} · Verified Student Access</p>
+  <p class="hint">Saved {claim.date}</p>
 
   <div class="tab-selector" role="group" aria-label="Archive view options">
     <button
@@ -72,7 +72,7 @@
       type="button"
       class={activeTab === 'chapters' ? 'primary' : 'outline'}
       aria-pressed={activeTab === 'chapters'}
-      onclick={() => (activeTab = 'chapters')}>AI Chapters</button
+      onclick={() => (activeTab = 'chapters')}>Chapters</button
     >
     <button
       type="button"
@@ -84,7 +84,7 @@
       type="button"
       class={activeTab === 'audio' ? 'primary' : 'outline'}
       aria-pressed={activeTab === 'audio'}
-      onclick={() => (activeTab = 'audio')}>Audio Stream</button
+      onclick={() => (activeTab = 'audio')}>Audio</button
     >
   </div>
 

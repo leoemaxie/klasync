@@ -85,9 +85,9 @@
             <Layers
               size={14}
               style="display:inline-block; vertical-align:middle;"
-            /> COURSE OFFERING SWITCHER
+            /> COURSES
           </div>
-          <h2 id="course-modal-title">Manage Course Offerings</h2>
+          <h2 id="course-modal-title">Select Course</h2>
         </div>
         <button
           type="button"
@@ -108,7 +108,7 @@
             <Filter size={13} />
             <span>Session:</span>
             <select bind:value={filterSession} class="filter-select">
-              <option value="all">All Sessions</option>
+              <option value="all">All sessions</option>
               {#each availableSessions as s}<option value={s}>{s}</option
                 >{/each}
             </select>
@@ -118,7 +118,7 @@
             class="primary-bark add-offering-btn"
             onclick={() => (isCreating = true)}
           >
-            <Plus size={14} /> <span>New Course Offering</span>
+            <Plus size={14} /> <span>New Course</span>
           </button>
         </div>
 

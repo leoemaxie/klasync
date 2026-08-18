@@ -18,7 +18,7 @@
     <h1 class="code-404-title">{$page.status ?? 404}</h1>
 
     <h2 class="not-found-heading">
-      {$page.error?.message || 'Room not found.'}
+      {$page.error?.message || 'Page not found.'}
     </h2>
 
     <p class="lede">
@@ -28,7 +28,7 @@
 
     <div class="actions not-found-actions">
       <a href="#/" class="primary" onclick={() => (screen = 'home')}
-        >Return Home</a
+        >Home</a
       >
       <a href="#/join" class="outline" onclick={() => (screen = 'join')}
         >Join Session</a
@@ -36,7 +36,7 @@
       <a
         href="#/auth/lecturer/login"
         class="primary-bark"
-        onclick={() => (screen = 'lecturer-login')}>Lecturer Access</a
+        onclick={() => (screen = 'lecturer-login')}>Lecturer Sign In</a
       >
     </div>
   </section>

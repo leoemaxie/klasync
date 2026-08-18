@@ -41,14 +41,14 @@
 
 <div class="panel lecturer-form-panel">
   <div class="panel-header">
-    <p class="eyebrow">COURSE DETAILS &amp; LECTURER INFO</p>
+    <p class="eyebrow">COURSE &amp; LECTURER</p>
     <button
       type="button"
       class="outline mini-switcher-btn"
       onclick={() => (isSelectorOpen = true)}
     >
       <Layers size={13} />
-      <span>Switch / New Offering</span>
+      <span>Switch Course</span>
     </button>
   </div>
 
@@ -100,7 +100,7 @@
     </div>
     <div class="twocol">
       <label
-        >Academic Session<input
+        >Academic session<input
           bind:value={academicSession}
           placeholder="e.g. 2025/2026"
         /></label
@@ -119,10 +119,9 @@
       <UserCheck size={16} color="var(--color-ember-accent)" />
     </div>
     <div class="info-text">
-      <strong>Calendar-Aware Offerings</strong>
+      <strong>Term Offerings</strong>
       <p class="hint">
-        Rosters, sessions, and attendance metrics are securely isolated per
-        academic session and semester.
+        Rosters and attendance are isolated per academic session and semester.
       </p>
     </div>
   </div>

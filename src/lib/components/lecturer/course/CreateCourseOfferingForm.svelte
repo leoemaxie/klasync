@@ -52,7 +52,7 @@
 </script>
 
 <form class="create-offering-form" onsubmit={handleCreateOffering}>
-  <p class="section-lead">Add a new session/semester instance of a course</p>
+  <p class="section-lead">Add a new course offering</p>
 
   {#if formError}
     <div class="error-banner" role="alert">{formError}</div>
@@ -60,7 +60,7 @@
 
   <div class="twocol">
     <label for="offering-code">
-      Course Code
+      Course code
       <input
         id="offering-code"
         type="text"
@@ -70,7 +70,7 @@
       />
     </label>
     <label for="offering-title">
-      Course Title
+      Course title
       <input
         id="offering-title"
         type="text"
@@ -83,7 +83,7 @@
 
   <div class="twocol">
     <label for="offering-session">
-      Academic Session
+      Academic session
       <select
         id="offering-session"
         bind:value={newSession}
@@ -96,7 +96,7 @@
       </select>
     </label>
     <label for="offering-semester">
-      Semester (Required)
+      Semester
       <select
         id="offering-semester"
         bind:value={newSemester}
@@ -120,7 +120,7 @@
       disabled={isSubmitting}>Cancel</button
     >
     <button type="submit" class="primary" disabled={isSubmitting}>
-      {isSubmitting ? 'Creating...' : 'Create Offering'}
+      {isSubmitting ? 'Creating...' : 'Create Course'}
     </button>
   </div>
 </form>

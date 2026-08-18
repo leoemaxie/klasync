@@ -28,12 +28,11 @@
       <div class="card-header">
         <div class="status-badge">
           <Compass size={15} color="var(--color-ember-accent)" />
-          <span>404 // ROOM UNRESOLVED</span>
+          <span>404 · PAGE NOT FOUND</span>
         </div>
-        <h1 class="card-title">Room or Route Not Found</h1>
+        <h1 class="card-title">Page Not Found</h1>
         <p class="card-desc">
-          The lecture session code, invite link, or requested resource does not
-          exist or has expired.
+          The page, session code, or link you requested does not exist or has expired.
         </p>
       </div>
 
@@ -61,15 +60,15 @@
       </form>
 
       <div class="diagnostic-checklist">
-        <p class="checklist-title">POSSIBLE CAUSES &amp; CHECKS:</p>
+        <p class="checklist-title">POSSIBLE REASONS:</p>
         <ul class="checklist-items">
           <li>
             <AlertCircle size={13} color="var(--color-driftwood)" />
-            <span>The lecturer may have ended the live session.</span>
+            <span>The lecture session has ended.</span>
           </li>
           <li>
             <AlertCircle size={13} color="var(--color-driftwood)" />
-            <span>Check for typos in the 6-character session code.</span>
+            <span>Check for typos in the session code.</span>
           </li>
         </ul>
       </div>
@@ -81,7 +80,7 @@
           onclick={() => (screen = 'home')}
         >
           <Home size={15} />
-          <span>Return Home</span>
+          <span>Home</span>
         </button>
         <button
           type="button"

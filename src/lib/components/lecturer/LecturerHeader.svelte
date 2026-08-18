@@ -5,10 +5,10 @@
 
 <header class="workspace-header">
   <div class="header-badge-row">
-    <span class="eyebrow">LECTURER CONTROL ROOM</span>
+    <span class="eyebrow">LECTURER WORKSPACE</span>
     {#if liveCode}
       <span class="live-status-pill"
-        ><span class="pulse-dot" aria-hidden="true">●</span> SESSION LIVE ({liveCode})</span
+        ><span class="pulse-dot" aria-hidden="true">●</span> LIVE · {liveCode}</span
       >
     {/if}
   </div>

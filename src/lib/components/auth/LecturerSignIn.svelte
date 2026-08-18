@@ -24,7 +24,7 @@
   async function handleLogin(e: SubmitEvent) {
     e.preventDefault();
     if (!email.trim() || !password) {
-      errorMsg = 'Please enter both institutional email and password.';
+      errorMsg = 'Please enter your email and password.';
       return;
     }
     isSubmitting = true;
@@ -38,7 +38,7 @@
       ) {
         await logout().catch(() => {});
         errorMsg =
-          'This account is registered as a student. Please sign in under Student Sign In.';
+          'This account is registered as a student. Please sign in as a student.';
         return;
       }
       if (appState) {
@@ -53,7 +53,7 @@
       errorMsg =
         err instanceof Error
           ? err.message
-          : 'Invalid authentication credentials.';
+          : 'Invalid email or password.';
     } finally {
       isSubmitting = false;
     }
@@ -86,7 +86,7 @@
       {/if}
 
       <label for="signin-email">
-        Institutional Email
+        Email
         <input
           id="signin-email"
           type="email"
@@ -115,7 +115,7 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Authenticating..." /> Authenticating...
+          <ButtonSpinner label="Signing in..." /> Signing in...
         {:else}
           Sign In
         {/if}
@@ -141,7 +141,7 @@
   </div>
 
   <PublicVisualPanel
-    title="LECTURER CONTROL ROOM"
-    subtitle="Wireless Mic Streaming · Live Roster Verification · Caption Publishing"
+    title="LECTURER WORKSPACE"
+    subtitle="Live audio · Roster attendance · Caption publishing"
   />
 </section>

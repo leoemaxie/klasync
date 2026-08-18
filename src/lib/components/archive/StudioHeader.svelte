@@ -19,8 +19,8 @@
 <div class="studio-header">
   <div class="header-left">
     {#if onBack}
-      <button type="button" class="back-btn outline" onclick={onBack} title="Back to explorer">
-        <ArrowLeft size={14} /><span>Explorer</span>
+      <button type="button" class="back-btn outline" onclick={onBack} title="Back">
+        <ArrowLeft size={14} /><span>Back</span>
       </button>
     {/if}
     <div class="meta-tags-row">
@@ -43,10 +43,10 @@
 <div class="studio-title-area">
   <h1 class="session-main-title">{claim.session_title}</h1>
   <div class="session-sub-info">
-    <span class="info-item"><Calendar size={12} /> Claimed on {claim.date}</span>
+    <span class="info-item"><Calendar size={12} /> Saved {claim.date}</span>
     {#if claim.session_code}
       <span class="info-divider">·</span>
-      <span class="info-item">Session Code: <strong>{claim.session_code}</strong></span>
+      <span class="info-item">Code: <strong>{claim.session_code}</strong></span>
     {/if}
   </div>
 </div>

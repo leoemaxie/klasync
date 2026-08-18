@@ -167,7 +167,9 @@
         onSaveToCloud={() => saveToCloudRoster(appState)}
         onRemoveStudent={(matric) => removeStudentFromRoster(appState, matric)}
         onClearRoster={() => clearRoster(appState)}
-        onReloadFromCloud={() => loadCourseRosterFromApi(appState)}
+        onReloadFromCloud={async () => {
+          await loadCourseRosterFromApi(appState);
+        }}
         onCourseSelected={handleCourseSelected}
       />
     {:else if activeTab === 'device'}

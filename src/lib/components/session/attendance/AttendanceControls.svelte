@@ -27,9 +27,9 @@
     <input
       type="search"
       bind:value={searchQuery}
-      placeholder="Search by student name or matric..."
+      placeholder="Search by name or matric..."
       class="attendance-search"
-      aria-label="Search attendance feed"
+      aria-label="Search attendance"
     />
     {#if searchQuery}
       <button
@@ -71,9 +71,9 @@
       class="sort-select"
       aria-label="Sort attendance list"
     >
-      <option value="joined">Sort: Recent Joined</option>
-      <option value="name">Sort: Name (A-Z)</option>
-      <option value="heartbeats">Sort: Active Heartbeats</option>
+      <option value="joined">Recent</option>
+      <option value="name">Name (A-Z)</option>
+      <option value="heartbeats">Most active</option>
     </select>
 
     <button
@@ -81,8 +81,8 @@
       class="control-btn icon-btn"
       onclick={onRefresh}
       disabled={isRefreshing}
-      aria-label="Refresh attendance feed"
-      title="Refresh attendance feed"
+      aria-label="Refresh attendance"
+      title="Refresh attendance"
     >
       <RefreshCw size={13} class={isRefreshing ? 'spinning' : ''} />
     </button>
@@ -92,14 +92,14 @@
       class="control-btn export-btn"
       onclick={onExportCsv}
       disabled={isExporting}
-      title="Export attendance records as CSV"
+      title="Export attendance"
     >
       {#if isExporting}
         <ButtonSpinner />
       {:else}
         <Download size={13} />
       {/if}
-      <span>Export CSV</span>
+      <span>Export</span>
     </button>
   </div>
 </div>

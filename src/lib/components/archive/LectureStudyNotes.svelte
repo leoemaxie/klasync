@@ -50,7 +50,7 @@
 <div class="panel study-notes-panel">
   <div class="notes-header">
     <div class="notes-title-wrap">
-      <p class="eyebrow">STUDENT REVISION NOTES</p>
+      <p class="eyebrow">STUDY NOTES</p>
       <span class="status-pill" class:saved={isSaved}>
         {#if isSaved}<Check size={11} /> Saved{:else}<Save size={11} /> Saving...{/if}
       </span>
@@ -58,10 +58,10 @@
 
     <div class="notes-actions">
       <button type="button" class="outline" onclick={handleCopy} title="Copy notes">
-        {#if showCopied}<Check size={12} /> Copied!{:else}<Copy size={12} /> Copy{/if}
+        {#if showCopied}<Check size={12} /> Copied{:else}<Copy size={12} /> Copy{/if}
       </button>
-      <button type="button" class="outline" onclick={handleDownload} title="Export markdown">
-        <Download size={12} /> Export .md
+      <button type="button" class="outline" onclick={handleDownload} title="Export notes">
+        <Download size={12} /> Export
       </button>
     </div>
   </div>
@@ -70,8 +70,8 @@
     class="notes-editor"
     bind:value={notes}
     oninput={handleInput}
-    placeholder="Take lecture notes, formulas, or summaries..."
-    aria-label="Student lecture notes"
+    placeholder="Write study notes here..."
+    aria-label="Study notes"
     rows="10"
   ></textarea>
 </div>

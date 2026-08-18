@@ -51,10 +51,10 @@
     </button>
   {:else if isStudent}
     <button type="button" class="tab-item" class:active={screen === 'archive'} onclick={() => selectTab('archive')}>
-      <BookOpen size={18} /><span>Courses</span>
+      <BookOpen size={18} /><span>Archive</span>
     </button>
     <button type="button" class="tab-item" class:active={screen === 'join' || screen === 'live'} onclick={() => selectTab(appState?.session?.live ? 'live' : 'join')}>
-      <Radio size={18} /><span>Join Live</span>
+      <Radio size={18} /><span>Join</span>
     </button>
     <button type="button" class="tab-item" onclick={() => { triggerHaptic('light'); onOpenSpotlight?.(); }}>
       <Search size={18} /><span>Search</span>

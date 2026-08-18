@@ -12,7 +12,7 @@ import type { Participant } from './types';
 export async function joinSession(state: SessionState) {
   state.joinError = '';
   if (!state.matric.trim()) {
-    state.joinError = 'Enter your matric or student ID to continue.';
+    state.joinError = 'Enter your matric number to continue.';
     return;
   }
   try {
@@ -70,13 +70,13 @@ export async function refreshCaptions(state: SessionState) {
     const remote = await getCaptions(state.session.code);
     state.captions = remote.length
       ? remote.map((c) => c.text)
-      : ['WAITING FOR LIVE CAPTIONS.'];
+      : ['Waiting for captions...'];
     state.captionIndex = Math.max(state.captions.length - 1, 0);
   } catch (error) {
     state.apiNotice =
       error instanceof Error
         ? error.message
-        : 'Unable to retrieve live captions.';
+        : 'Unable to load captions.';
   }
 }
 
@@ -87,7 +87,7 @@ export function ingestCaption(
   if (!caption.text || !caption.text.trim()) return;
   const text = caption.text.trim();
   const current = state.captions.filter(
-    (c) => c !== 'WAITING FOR LIVE CAPTIONS.'
+    (c) => c !== 'Waiting for captions...' && c !== 'WAITING FOR LIVE CAPTIONS.'
   );
   if (!current.includes(text)) {
     state.captions = [...current, text];

@@ -56,11 +56,11 @@
 
 <section class="join-wrap">
   <div class="join-left-content">
-    <p class="eyebrow">GUEST ACCESS</p>
+    <p class="eyebrow">STUDENT ACCESS</p>
     <h1>Join Session</h1>
     <div class="join-card panel">
       <label for="session-code-input">
-        Session short code
+        Session code
         <input
           id="session-code-input"
           type="text"
@@ -88,7 +88,7 @@
       {/if}
 
       <label for="matric-input">
-        Matric / Student ID
+        Matric number
         <input
           id="matric-input"
           type="text"
@@ -99,7 +99,7 @@
       </label>
 
       <label for="display-name-input">
-        Full name <span>(optional if on roster)</span>
+        Full name <span>(optional)</span>
         <input
           id="display-name-input"
           type="text"
@@ -115,14 +115,14 @@
         onclick={handleJoin}
         disabled={sessionStatus === 'ended' || !matric.trim() || isJoining}
       >
-        {#if isJoining}<ButtonSpinner label="Verifying..." /> Entering...{:else if sessionStatus === 'ended'}Session
-          Ended{:else}Join lecture{/if}
+        {#if isJoining}<ButtonSpinner label="Verifying..." /> Joining...{:else if sessionStatus === 'ended'}Session
+          Ended{:else}Join Session{/if}
       </button>
-      <p class="hint">Matric number verified against course roster.</p>
+      <p class="hint">Attendance is recorded under this matric number.</p>
     </div>
   </div>
   <PublicVisualPanel
-    title="INSTANT GUEST ACCESS"
-    subtitle="Zero barriers · Real-time captions · Fair attendance"
+    title="STUDENT ACCESS"
+    subtitle="Live captions · Fair attendance · Study notes"
   />
 </section>

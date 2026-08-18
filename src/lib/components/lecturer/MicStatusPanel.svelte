@@ -135,11 +135,11 @@
       aria-live="polite"
     >
       {#if isWsStreaming}
-        AUDIO STREAMING
+        STREAMING
       {:else if isUsingDeviceMic}
-        DEVICE MIC ACTIVE
+        MIC ON
       {:else}
-        MIC STANDBY
+        MIC OFF
       {/if}
     </span>
   </div>
@@ -153,12 +153,12 @@
     {#if !isUsingDeviceMic}
       <button type="button" class="outline full" onclick={enableDeviceMic}
         >{sessionCode
-          ? 'Start Live Audio Stream'
-          : 'Test & Enable Microphone'}</button
+          ? 'Start Audio Stream'
+          : 'Test Microphone'}</button
       >
     {:else}
       <button type="button" class="danger full" onclick={stopDeviceMic}
-        >Stop Microphone &amp; Stream</button
+        >Stop Microphone</button
       >
     {/if}
   </div>

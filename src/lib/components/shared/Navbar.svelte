@@ -38,8 +38,8 @@
       if (appState) {
         appState.authNotice =
           role === 'student'
-            ? 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.'
-            : 'Please sign in to access the Lecturer Workspace.';
+            ? 'Please sign in with a lecturer account.'
+            : 'Please sign in to continue.';
       }
       navigate('lecturer-login');
     }
@@ -54,8 +54,8 @@
       if (appState) {
         appState.authNotice =
           role === 'lecturer' || role === 'admin'
-            ? 'Access restricted: Student Archive is only accessible to student accounts.'
-            : 'Please sign in to access your Student Archive.';
+            ? 'Please sign in with a student account.'
+            : 'Please sign in to continue.';
       }
       navigate('student-login');
     }
@@ -129,7 +129,7 @@
         >Join Session</button
       >
       <button class="nav-btn text" onclick={handleStudentArchive}
-        >Courses &amp; Archive</button
+        >Archive</button
       >
     {/if}
 
@@ -142,7 +142,7 @@
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {:else}
       <button class="nav-btn outline" onclick={handleLecturerAccess}
-        >Lecturer Access</button
+        >Lecturer Sign In</button
       >
     {/if}
   </div>

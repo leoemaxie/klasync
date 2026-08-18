@@ -104,7 +104,7 @@
   />
 
   {#if isLoading}
-    <SkeletonTable rows={4} columns={5} />
+    <SkeletonTable rows={4} cols={5} />
   {:else if filteredParticipants.length > 0}
     <AttendanceListTable participants={filteredParticipants} />
   {:else}

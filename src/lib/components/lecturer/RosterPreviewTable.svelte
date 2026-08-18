@@ -21,7 +21,7 @@
         aria-hidden="true"
         style="vertical-align: middle; display: inline-block;"
       />
-      {validCount} Valid Student{validCount === 1 ? '' : 's'}
+      {validCount} valid
     </div>
     {#if invalidCount > 0}
       <div class="summary-badge invalid">
@@ -30,32 +30,32 @@
           aria-hidden="true"
           style="vertical-align: middle; display: inline-block;"
         />
-        {invalidCount} Header/Ignored Row{invalidCount === 1 ? '' : 's'}
+        {invalidCount} ignored
       </div>
     {/if}
   </div>
   <div class="mapping-table-wrap">
     <table class="mapping-table">
       <thead>
-        <tr
-          ><th scope="col">Matric No.</th><th scope="col">Student Name</th><th
-            scope="col">Status</th
-          ></tr
-        >
+        <tr>
+          <th scope="col">Matric</th>
+          <th scope="col">Name</th>
+          <th scope="col">Status</th>
+        </tr>
       </thead>
       <tbody>
         {#each parsedStudents.slice(0, 5) as student}
           <tr>
             <td><code>{student.matric}</code></td>
             <td>{student.name}</td>
-            <td><span class="status-tag match">Verified Match</span></td>
+            <td><span class="status-tag match">Valid</span></td>
           </tr>
         {/each}
       </tbody>
     </table>
     {#if parsedStudents.length > 5}
       <p class="table-more-hint">
-        + {parsedStudents.length - 5} more student records parsed
+        + {parsedStudents.length - 5} more
       </p>
     {/if}
   </div>

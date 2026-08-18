@@ -38,8 +38,8 @@
       <Volume2 size={15} color="var(--color-warm-cream)" />
     </div>
     <div class="dock-info">
-      <span class="dock-label">LECTURE AUDIO REPLAY</span>
-      <span class="dock-title">{sessionTitle || 'Active Lecture Audio'}</span>
+      <span class="dock-label">AUDIO REPLAY</span>
+      <span class="dock-title">{sessionTitle || 'Lecture Audio'}</span>
     </div>
   </div>
 

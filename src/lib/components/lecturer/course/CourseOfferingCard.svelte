@@ -24,7 +24,7 @@
   <div class="card-top-row">
     <span class="course-badge">{course.code}</span>
     {#if isActive}
-      <span class="active-badge"><Check size={11} /> CURRENT</span>
+      <span class="active-badge"><Check size={11} /> ACTIVE</span>
     {/if}
   </div>
 
@@ -38,10 +38,10 @@
 
   <div class="card-footer-row">
     {#if isActive}
-      <span class="active-status">Active offering in workspace</span>
+      <span class="active-status">Active course</span>
     {:else}
       <span class="select-hint"
-        >Switch to this course <ArrowRight size={11} /></span
+        >Select <ArrowRight size={11} /></span
       >
     {/if}
   </div>

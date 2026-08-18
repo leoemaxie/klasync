@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { StudentEnrolledCourse } from '$lib/types';
   import { getStudentCourses } from '$lib/api/courses';
-  import { GraduationCap, Search } from '@lucide/svelte';
+  import { GraduationCap, Search, BookOpen } from '@lucide/svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import StudentCourseCard from './StudentCourseCard.svelte';
 
@@ -36,10 +36,8 @@
 <div class="student-courses-hub">
   <div class="hub-header">
     <div>
-      <div class="eyebrow">
-        <GraduationCap size={13} style="vertical-align:middle;" /> ENROLLED COURSES
-      </div>
-      <h2 class="hub-title">Course Directory</h2>
+      <p class="eyebrow">MY COURSES</p>
+      <h2 class="hub-title">Courses</h2>
     </div>
 
     <div class="search-wrap">
@@ -47,25 +45,32 @@
       <input
         type="search"
         bind:value={searchQuery}
-        placeholder="Filter courses..."
+        placeholder="Search courses..."
         class="course-search-input"
+        aria-label="Search enrolled courses"
       />
     </div>
   </div>
 
   {#if isLoading}
-    <SkeletonCard lines={2} label="Loading enrolled courses..." />
-  {:else if filteredCourses.length > 0}
+    <SkeletonCard lines={2} label="Loading courses..." />
+  {:else if filteredCourses.length === 0}
+    <div class="empty-hub-box">
+      <BookOpen size={28} color="var(--color-driftwood)" />
+      <p class="empty-title">No courses found</p>
+      <p class="hint">
+        {#if searchQuery}
+          Try adjusting your search terms.
+        {:else}
+          Join a live lecture to view your enrolled courses.
+        {/if}
+      </p>
+    </div>
+  {:else}
     <div class="courses-grid">
       {#each filteredCourses as course (course.id)}
         <StudentCourseCard {course} onSelect={onSelectCourseFilter} />
       {/each}
-    </div>
-  {:else}
-    <div class="empty-hub-box">
-      <GraduationCap size={28} color="var(--color-driftwood)" />
-      <p class="empty-title">No Enrolled Courses Found</p>
-      <p class="hint">Join live lectures with your matric number to auto-enroll.</p>
     </div>
   {/if}
 </div>

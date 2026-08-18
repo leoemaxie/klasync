@@ -19,7 +19,7 @@
 
 <aside class="panel presence-card">
   <div class="key-idea-block">
-    <p class="eyebrow-bright">KEY LECTURE CONCEPT</p>
+    <p class="eyebrow-bright">KEY CONCEPT</p>
     <h3>Feedback makes a system responsive.</h3>
   </div>
 
@@ -27,8 +27,8 @@
 
   <div class="presence-block">
     <div class="presence-header">
-      <p class="eyebrow-bright">ATTENDANCE CHECK-INS</p>
-      <span class="heartbeat-count">{heartbeats} Counted</span>
+      <p class="eyebrow-bright">CHECK-INS</p>
+      <span class="heartbeat-count">{heartbeats}</span>
     </div>
 
     <div class="student-action-row">
@@ -39,13 +39,13 @@
         disabled={isCheckingIn}
       >
         {#if isCheckingIn}
-          <ButtonSpinner label="Recording check-in..." /> Checking in...
+          <ButtonSpinner label="Checking in..." /> Checking in...
         {:else}
           <CheckCircle
             size={16}
             aria-hidden="true"
             style="vertical-align: middle; display: inline-block;"
-          /> I'm still here
+          /> Check In
         {/if}
       </button>
 
@@ -60,7 +60,7 @@
           aria-hidden="true"
           style="vertical-align: middle; display: inline-block;"
         />
-        {isHandRaised ? 'Hand Raised (Click to Lower)' : 'Raise Hand'}
+        {isHandRaised ? 'Lower Hand' : 'Raise Hand'}
       </button>
     </div>
   </div>

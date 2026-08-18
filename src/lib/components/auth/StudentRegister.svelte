@@ -25,7 +25,7 @@
   async function handleRegister(e: SubmitEvent) {
     e.preventDefault();
     if (!matric.trim()) {
-      errorMsg = 'Please enter your matric or student ID.';
+      errorMsg = 'Please enter your matric number.';
       return;
     }
     if (password.length < 8) {
@@ -65,12 +65,12 @@
 
 <section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
-    <p class="eyebrow">STUDENT ACCOUNT REGISTRATION</p>
+    <p class="eyebrow">STUDENT SIGN UP</p>
     <h1 class="title-single-line">Create Student Account</h1>
 
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="st-matric">
-        Matric / Student ID
+        Matric number
         <input
           id="st-matric"
           bind:value={matric}
@@ -80,7 +80,7 @@
       </label>
 
       <label for="st-name">
-        Full Name
+        Full name
         <input
           id="st-name"
           bind:value={name}
@@ -91,7 +91,7 @@
       </label>
 
       <label for="st-email">
-        Email Address
+        Email
         <input
           id="st-email"
           type="email"
@@ -103,7 +103,7 @@
       </label>
 
       <label for="st-password">
-        Password <span>(minimum 8 characters)</span>
+        Password <span>(min. 8 characters)</span>
         <input
           id="st-password"
           type="password"
@@ -115,7 +115,7 @@
       </label>
 
       <label for="st-confirm-password">
-        Confirm Password
+        Confirm password
         <input
           id="st-confirm-password"
           type="password"
@@ -132,9 +132,9 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Creating student account..." /> Creating Account...
+          <ButtonSpinner label="Creating account..." /> Creating Account...
         {:else}
-          Create Account & Retain Materials
+          Create Account
         {/if}
       </button>
 
@@ -151,7 +151,7 @@
   </div>
 
   <PublicVisualPanel
-    title="STUDENT LEARNING PERSISTENCE"
-    subtitle="Claimed Lectures · Audio Replay · AI Notes"
+    title="STUDENT ACCESS"
+    subtitle="Live captions · Fair attendance · Study notes"
   />
 </section>

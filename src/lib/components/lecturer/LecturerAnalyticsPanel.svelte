@@ -103,11 +103,11 @@
 <div class="panel analytics-panel">
   <div class="analytics-header">
     <div>
-      <p class="eyebrow">LECTURER AUDIT &amp; ATTENDANCE ANALYTICS</p>
+      <p class="eyebrow">ATTENDANCE ANALYTICS</p>
       <h2>
         {courseCode.trim()
           ? `${courseCode}: ${courseTitle}`
-          : 'Course Attendance & Audit Dashboard'}
+          : 'Course Attendance'}
       </h2>
     </div>
     <button
@@ -116,8 +116,8 @@
       onclick={exportGradebookReport}
       disabled={isExporting}
     >
-      {#if isExporting}<ButtonSpinner label="Generating official report..." /> Exporting...{:else}📄
-        Export Official Gradebook CSV{/if}
+      {#if isExporting}<ButtonSpinner label="Generating report..." /> Exporting...{:else}📄
+        Export Official Gradebook{/if}
     </button>
   </div>
 
@@ -132,7 +132,7 @@
     />
     {#if anomalies.length > 0}
       <div class="anomalies-section">
-        <p class="eyebrow">ATTENDANCE ANOMALY AUDIT LOG</p>
+        <p class="eyebrow">ATTENDANCE ANOMALIES</p>
         <div class="anomalies-list">
           {#each anomalies as a}
             <div class="anomaly-row">

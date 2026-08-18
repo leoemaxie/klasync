@@ -16,11 +16,10 @@
 
 <section class="archive-cta panel">
   <div class="cta-info">
-    <p class="eyebrow">PERSISTENT LECTURE ACCESS</p>
-    <h2>Retain your learning resources.</h2>
+    <p class="eyebrow">SAVE LECTURE</p>
+    <h2>Save lecture materials</h2>
     <p class="hint">
-      Create a student account after class to retain transcripts, AI flashcards,
-      and notes.
+      Create an account to save transcripts, flashcards, and study notes.
     </p>
   </div>
   <div class="cta-action">
@@ -36,9 +35,9 @@
         disabled={isClaiming}
       >
         {#if isClaiming}
-          <ButtonSpinner label="Claiming lecture archive..." /> Claiming...
+          <ButtonSpinner label="Saving..." /> Saving...
         {:else}
-          Create Account to Claim Archive
+          Save to My Account
         {/if}
       </button>
     {/if}

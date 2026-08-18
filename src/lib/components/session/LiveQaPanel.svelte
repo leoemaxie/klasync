@@ -90,13 +90,13 @@
 <div class="panel live-qa-panel">
   <div class="qa-header">
     <div>
-      <p class="eyebrow">ASSISTIVE STUDENT Q&amp;A</p>
+      <p class="eyebrow">QUESTIONS</p>
       <h2>
-        Live Q&amp;A ({questions.filter((q) => !q.is_resolved).length})
+        Questions ({questions.filter((q) => !q.is_resolved).length})
       </h2>
     </div>
     <button type="button" class="text" onclick={loadQuestions}
-      >Refresh Q&amp;A</button
+      >Refresh</button
     >
   </div>
 
@@ -104,8 +104,8 @@
     <form class="qa-submit-form" onsubmit={handleAddQuestion}>
       <input
         bind:value={newQuestionText}
-        placeholder="Ask a quick question linked to live captions..."
-        aria-label="Ask a question linked to live captions"
+        placeholder="Ask a question..."
+        aria-label="Ask a question"
         required
       />
       <button
@@ -114,16 +114,16 @@
         disabled={isSubmitting || !newQuestionText.trim()}
       >
         {#if isSubmitting}
-          <ButtonSpinner label="Submitting question..." /> Submitting...
+          <ButtonSpinner label="Submitting..." /> Submitting...
         {:else}
-          Ask Question
+          Ask
         {/if}
       </button>
     </form>
   {/if}
 
   {#if isLoading}
-    <SkeletonCard lines={2} label="Loading live Q&A feed..." />
+    <SkeletonCard lines={2} label="Loading questions..." />
   {:else if questions.length}
     <div
       class="questions-list"
@@ -177,7 +177,7 @@
                 class="outline"
                 onclick={() => handleResolve(q.id)}
               >
-                Mark Resolved
+                Resolve
               </button>
             {/if}
           </div>
@@ -185,7 +185,7 @@
       {/each}
     </div>
   {:else}
-    <p class="hint">No questions submitted.</p>
+    <p class="hint">No questions yet.</p>
   {/if}
 </div>
 

@@ -28,23 +28,23 @@
             <span class="reverb-ring delay"></span>
             <Mic size={11} aria-hidden="true" class="reverb-mic-icon" />
           </span>
-          LIVE STREAM &amp; CAPTIONS ACTIVE
+          LIVE STREAM
         {:else}
           <span class="pulse-dot" aria-hidden="true">●</span>
-          CAPTIONS CONNECTED
+          LIVE
         {/if}
       </span>
       {#if joinedParticipant?.verified}
-        <span class="verified-badge">VERIFIED STUDENT</span>
+        <span class="verified-badge">VERIFIED</span>
       {:else}
-        <span class="provisional-badge">PROVISIONAL ATTENDEE</span>
+        <span class="provisional-badge">PROVISIONAL</span>
       {/if}
     </div>
-    <h1 class="live-title">{session?.title ?? 'Live Lecture Session'}</h1>
+    <h1 class="live-title">{session?.title ?? 'Live Lecture'}</h1>
     <p class="live-subtitle">
       {joinedParticipant?.verified
-        ? 'Your presence is verified on the course roster.'
-        : 'Provisional attendance recorded. Verification pending.'}
+        ? 'Attendance verified.'
+        : 'Provisional attendance recorded.'}
     </p>
   </div>
 </section>

@@ -74,11 +74,9 @@
         <Users size={18} color="var(--color-ember-accent)" />
       </div>
       <div>
-        <p class="eyebrow">COURSE ROSTER &amp; ENROLLED STUDENTS</p>
+        <p class="eyebrow">ENROLLED STUDENTS</p>
         <h3 class="panel-title">
-          {courseCode
-            ? `Enrolled Students for ${courseCode}`
-            : 'Enrolled Course Roster'}
+          {courseCode ? `${courseCode} Students` : 'Enrolled Students'}
         </h3>
       </div>
     </div>
@@ -87,7 +85,7 @@
       <span class="count-badge">
         <CheckCircle2 size={13} />
         {roster.length}
-        {roster.length === 1 ? 'Student' : 'Students'} Enrolled
+        {roster.length === 1 ? 'Student' : 'Students'}
       </span>
       {#if onReloadFromCloud}
         <button
@@ -95,10 +93,10 @@
           class="outline-btn small"
           onclick={handleReload}
           disabled={isReloading}
-          title="Reload roster from cloud API"
+          title="Reload class list"
         >
           <RefreshCw size={13} class={isReloading ? 'spin' : ''} />
-          {isReloading ? 'Syncing...' : 'Reload Cloud'}
+          {isReloading ? 'Syncing...' : 'Reload'}
         </button>
       {/if}
       {#if roster.length > 0}
@@ -108,14 +106,14 @@
           onclick={exportRosterCsv}
           title="Export roster as CSV"
         >
-          <Download size={13} /> Export CSV
+          <Download size={13} /> Export
         </button>
         {#if onClearRoster}
           <button
             type="button"
             class="danger-btn small"
             onclick={onClearRoster}
-            title="Clear all roster entries"
+            title="Clear class list"
           >
             <Trash2 size={13} /> Clear
           </button>
@@ -131,7 +129,7 @@
         <input
           type="text"
           bind:value={searchQuery}
-          placeholder="Search by student name or matric number..."
+          placeholder="Search by name or matric number..."
           aria-label="Search enrolled students"
         />
         {#if searchQuery}
@@ -153,10 +151,9 @@
       <div class="empty-icon-wrap">
         <FileSpreadsheet size={32} color="var(--color-driftwood)" />
       </div>
-      <h4>No Students Enrolled Yet</h4>
+      <h4>No students yet</h4>
       <p class="hint">
-        Import a <code>.csv</code> or <code>.xlsx</code> file, or paste CSV rows in
-        the panel above to populate the enrolled student list for this course.
+        Import a CSV or Excel file, or paste rows above to add students.
       </p>
     </div>
   {/if}

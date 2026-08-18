@@ -22,7 +22,7 @@
 <div class="panel transcript-viewer">
   <div class="transcript-header">
     <div>
-      <p class="eyebrow">LECTURE TRANSCRIPT</p>
+      <p class="eyebrow">TRANSCRIPT</p>
       <span class="transcript-stats">{lines.length} lines</span>
     </div>
     <div class="header-controls">
@@ -43,7 +43,7 @@
   {#if transcript}
     <div class="search-bar-wrap">
       <Search size={13} class="search-icon" />
-      <input type="search" bind:value={filterTerm} placeholder="Filter transcript keywords..." class="transcript-search" />
+      <input type="search" bind:value={filterTerm} placeholder="Search transcript..." class="transcript-search" />
     </div>
     <div class="transcript-content" style="font-size: {fontSize}px;" role="log">
       {#if lines.length > 0}
@@ -54,11 +54,11 @@
           </div>
         {/each}
       {:else}
-        <p class="hint">No transcript lines match "{filterTerm}".</p>
+        <p class="hint">No matches found for "{filterTerm}".</p>
       {/if}
     </div>
   {:else}
-    <p class="hint">No transcript text recorded for this session.</p>
+    <p class="hint">No transcript available.</p>
   {/if}
 </div>
 

@@ -24,11 +24,11 @@
 >
   <div class="caption-card-header">
     <p class="eyebrow-bright">
-      <span class="eyebrow-accent">●</span> REAL-TIME CAPTION STREAM
+      <span class="eyebrow-accent">●</span> LIVE CAPTIONS
     </p>
     {#if captions.length > 0}
       <span class="caption-counter"
-        >Chunk {captionIndex + 1} of {captions.length}</span
+        >{captionIndex + 1} of {captions.length}</span
       >
     {/if}
   </div>
@@ -36,14 +36,14 @@
   <div class="caption-content">
     {#if captions.length === 0}
       <div class="caption-empty-box">
-        <p class="empty-prompt">WAITING FOR LIVE CAPTIONS...</p>
+        <p class="empty-prompt">Waiting for captions...</p>
         <span class="empty-hint"
-          >Captions will appear automatically as the lecturer speaks.</span
+          >Captions will appear as the lecturer speaks.</span
         >
       </div>
     {:else}
       <p class="caption-text">
-        {captions[captionIndex] ?? 'WAITING FOR LECTURER SPEECH...'}
+        {captions[captionIndex] ?? 'Listening...'}
       </p>
     {/if}
   </div>
@@ -55,7 +55,7 @@
       onclick={onNextCaption}
       disabled={captions.length <= 1}
     >
-      Next Caption Chunk →
+      Next →
     </button>
   </div>
 </article>

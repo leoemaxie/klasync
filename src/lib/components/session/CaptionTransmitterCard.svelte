@@ -25,8 +25,8 @@
 <div class="panel transmitter-card">
   <div class="card-header">
     <div class="header-main">
-      <p class="eyebrow">LIVE CAPTION STREAMING</p>
-      <h2 class="card-title">Broadcast Caption Chunk</h2>
+      <p class="eyebrow">LIVE CAPTIONS</p>
+      <h2 class="card-title">Send Captions</h2>
     </div>
     <span class="live-signal-badge">
       <span class="pulse-dot" aria-hidden="true">●</span> MIC ACTIVE
@@ -34,12 +34,12 @@
   </div>
 
   <div class="input-block">
-    <label for="caption-input" class="sr-only">Broadcast caption chunk</label>
+    <label for="caption-input" class="sr-only">Caption text</label>
     <div class="textarea-wrap">
       <textarea
         id="caption-input"
         bind:value={captionDraft}
-        placeholder="Type or speak a caption chunk for students..."
+        placeholder="Type captions..."
         rows={3}
         onkeydown={handleKeyDown}
         class="caption-textarea"></textarea>
@@ -54,13 +54,13 @@
       disabled={!captionDraft.trim() || isPublishing}
     >
       {#if isPublishing}
-        <ButtonSpinner label="Broadcasting caption..." /> Publishing...
+        <ButtonSpinner label="Sending..." /> Sending...
       {:else}
-        <Send size={14} aria-hidden="true" /> Publish Caption Chunk (Enter ↵)
+        <Send size={14} aria-hidden="true" /> Send (Enter ↵)
       {/if}
     </button>
     <span class="hint-text"
-      >Press Enter to broadcast immediately to all connected students</span
+      >Press Enter to send to students</span
     >
   </div>
 

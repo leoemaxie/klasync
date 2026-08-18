@@ -54,8 +54,8 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
         state.currentUser = null;
       }
       state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to access this page.'
-        : 'Access restricted: Lecturer Workspace is only accessible to lecturer accounts.';
+        ? 'Please sign in to continue.'
+        : 'Please sign in with a lecturer account.';
       const target = SCREEN_TO_PATH['lecturer-login'];
       if (currentLoc !== target) void replace(target);
       return 'lecturer-login';
@@ -72,8 +72,8 @@ export function enforceAuthGuard(path: string, state: SessionState): Screen {
         state.currentUser = null;
       }
       state.authNotice = !hasToken || !state.currentUser
-        ? 'Please sign in to access this page.'
-        : 'Access restricted: Student Archive is only accessible to student accounts.';
+        ? 'Please sign in to continue.'
+        : 'Please sign in with a student account.';
       const target = SCREEN_TO_PATH['student-login'];
       if (currentLoc !== target) void replace(target);
       return 'student-login';

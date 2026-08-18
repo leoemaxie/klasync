@@ -37,7 +37,7 @@ export async function loadCourseRosterFromApi(
 ): Promise<boolean> {
   const courseCodeOrId = state.courseId || state.courseCode?.trim();
   if (!courseCodeOrId) {
-    state.rosterNotice = 'Specify a Course Code to load roster from cloud.';
+    state.rosterNotice = 'Enter a course code to load the class list.';
     return false;
   }
   try {
@@ -62,13 +62,13 @@ export async function loadCourseRosterFromApi(
       persist(state);
       state.rosterNotice =
         remoteStudents.length > 0
-          ? `✓ Loaded ${remoteStudents.length} roster student${remoteStudents.length === 1 ? '' : 's'} from cloud.`
-          : 'Cloud roster for this course is currently empty.';
+          ? `Loaded ${remoteStudents.length} student${remoteStudents.length === 1 ? '' : 's'}.`
+          : 'Class list is empty.';
       return true;
     }
     return false;
   } catch (err) {
-    state.rosterNotice = `Cloud reload failed (${err instanceof Error ? err.message : 'API offline'}).`;
+    state.rosterNotice = 'Could not load class list.';
     return false;
   }
 }
@@ -76,13 +76,13 @@ export async function loadCourseRosterFromApi(
 export async function saveToCloudRoster(state: SessionState): Promise<void> {
   const parsed = parseRosterTextToStudents(state.rosterText);
   if (parsed.length === 0) {
-    state.rosterNotice = 'No student records to save. Add student rows first.';
+    state.rosterNotice = 'No students to save.';
     return;
   }
 
   const courseCode = state.courseCode?.trim();
   if (!courseCode) {
-    state.rosterNotice = 'Course Code is required to save roster to cloud.';
+    state.rosterNotice = 'Course code is required.';
     return;
   }
 
@@ -105,9 +105,9 @@ export async function saveToCloudRoster(state: SessionState): Promise<void> {
 
     const res = await uploadRoster(courseUuid, apiStudents);
     persist(state);
-    state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
+    state.rosterNotice = `Synced ${res.count} student${res.count === 1 ? '' : 's'}.`;
   } catch (err) {
-    state.rosterNotice = `Cloud sync failed (${err instanceof Error ? err.message : 'API offline'}). Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
+    state.rosterNotice = `Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
   }
 }
 
@@ -195,9 +195,9 @@ export async function parseRoster(state: SessionState) {
 
       const targetCourseKey = state.activeCourse?.id || courseId;
       const res = await uploadRoster(targetCourseKey, apiStudents);
-      state.rosterNotice = `✓ Synced ${res.count} student${res.count === 1 ? '' : 's'} to cloud.`;
+      state.rosterNotice = `Synced ${res.count} student${res.count === 1 ? '' : 's'}.`;
     } catch {
-      state.rosterNotice = `✓ Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
+      state.rosterNotice = `Saved ${parsed.length} student${parsed.length === 1 ? '' : 's'} locally.`;
     }
   }
 }
@@ -210,7 +210,7 @@ export function removeStudentFromRoster(state: SessionState, matric: string) {
 export function clearRoster(state: SessionState) {
   state.roster = [];
   state.rosterText = '';
-  state.rosterNotice = 'Roster cleared.';
+  state.rosterNotice = 'Class list cleared.';
   persist(state);
 }
 
@@ -227,7 +227,7 @@ async function decompressDeflate(compressed: Uint8Array): Promise<Uint8Array> {
   try {
     const ds = new DecompressionStream('deflate-raw');
     const writer = ds.writable.getWriter();
-    writer.write(compressed);
+    writer.write(compressed as unknown as BufferSource);
     writer.close();
     const res = new Response(ds.readable);
     const buf = await res.arrayBuffer();
@@ -235,7 +235,7 @@ async function decompressDeflate(compressed: Uint8Array): Promise<Uint8Array> {
   } catch {
     const ds = new DecompressionStream('deflate');
     const writer = ds.writable.getWriter();
-    writer.write(compressed);
+    writer.write(compressed as unknown as BufferSource);
     writer.close();
     const res = new Response(ds.readable);
     const buf = await res.arrayBuffer();
@@ -418,7 +418,7 @@ export async function importFile(
 
   if (!isCsvOrText && !isXlsx) {
     state.rosterNotice =
-      'Unsupported file format. Please upload a .csv, .tsv, or .xlsx file.';
+      'Unsupported file format. Please upload a CSV or Excel file.';
     return;
   }
 
@@ -439,7 +439,7 @@ export async function importFile(
       const targetCourseKey = state.activeCourse?.id || courseId;
       const report = await importRosterFile(targetCourseKey, file);
       if (report && typeof report.imported_count === 'number') {
-        state.rosterNotice = `✓ Imported ${report.imported_count} student${report.imported_count === 1 ? '' : 's'} via API.`;
+        state.rosterNotice = `Imported ${report.imported_count} student${report.imported_count === 1 ? '' : 's'}.`;
       }
     } catch {
       // Fallback to client-side parsing if backend endpoint is unavailable
@@ -455,16 +455,13 @@ export async function importFile(
         const csvText = await parseXlsxToCsv(arrayBuffer);
         state.rosterText = csvText;
         await parseRoster(state);
-        if (!state.rosterNotice.startsWith('✓')) {
-          state.rosterNotice = `✓ Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'} from ${file.name}.`;
-        }
+        state.rosterNotice = `Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'}.`;
       } catch (err) {
-        state.rosterNotice =
-          'Error reading Excel file. Please ensure it is a valid .xlsx spreadsheet.';
+        state.rosterNotice = 'Could not read Excel file.';
       }
     };
     reader.onerror = () => {
-      state.rosterNotice = 'Error loading file from disk.';
+      state.rosterNotice = 'Could not load file.';
     };
     reader.readAsArrayBuffer(file);
   } else {
@@ -473,16 +470,13 @@ export async function importFile(
         const content = String(reader.result ?? '');
         state.rosterText = content.replace(/^\uFEFF/, '');
         await parseRoster(state);
-        if (!state.rosterNotice.startsWith('✓')) {
-          state.rosterNotice = `✓ Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'} from ${file.name}.`;
-        }
+        state.rosterNotice = `Imported ${state.roster.length} student${state.roster.length === 1 ? '' : 's'}.`;
       } catch {
-        state.rosterNotice =
-          'Error reading file contents. Ensure the file contains readable student records.';
+        state.rosterNotice = 'Could not read file.';
       }
     };
     reader.onerror = () => {
-      state.rosterNotice = 'Error loading file from disk.';
+      state.rosterNotice = 'Could not load file.';
     };
     reader.readAsText(file);
   }

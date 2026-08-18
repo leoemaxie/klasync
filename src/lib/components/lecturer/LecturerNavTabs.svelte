@@ -60,7 +60,7 @@
   }
 </script>
 
-<nav class="mobile-native-tabs" aria-label="Lecturer control room navigation">
+<nav class="mobile-native-tabs" aria-label="Lecturer navigation">
   <div class="tabs-scroll-track">
     {#each tabs as tab}
       {@const Icon = tab.icon}

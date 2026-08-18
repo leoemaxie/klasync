@@ -33,11 +33,11 @@
   <table class="attendance-table">
     <thead>
       <tr>
-        <th>STUDENT / GUEST</th>
-        <th>MATRICULATION</th>
-        <th>VERIFICATION</th>
+        <th>NAME</th>
+        <th>MATRIC</th>
+        <th>STATUS</th>
         <th>JOINED</th>
-        <th>HEARTBEATS</th>
+        <th>CHECK-INS</th>
       </tr>
     </thead>
     <tbody>
@@ -98,7 +98,7 @@
         >
         <span class="meta-divider">·</span>
         <span class="meta-item"
-          ><Activity size={11} /> {p.heartbeats || 0} heartbeats</span
+          ><Activity size={11} /> {p.heartbeats || 0} check-ins</span
         >
       </div>
     </div>

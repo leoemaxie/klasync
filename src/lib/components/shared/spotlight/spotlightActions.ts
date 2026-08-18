@@ -21,9 +21,8 @@ export function getShortcutActions(
   const actions: ShortcutAction[] = [
     {
       id: 'join',
-      title: 'Join Live Lecture Session',
-      description:
-        'Enter guest short-code & student ID to access live captions',
+      title: 'Join Session',
+      description: 'Enter session code to join',
       icon: Radio,
       category: 'Navigation',
       action: (state) => ({ screen: 'join', isOpen: false }),
@@ -37,8 +36,8 @@ export function getShortcutActions(
   ) {
     actions.push({
       id: 'lecturer',
-      title: 'Lecturer Control Room',
-      description: 'Course setup, roster management, and broadcasting',
+      title: 'Lecturer Workspace',
+      description: 'Manage courses, roster, and live lectures',
       icon: BookOpen,
       category: 'Navigation',
       action: (state) => ({ screen: 'lecturer', isOpen: false }),
@@ -48,8 +47,8 @@ export function getShortcutActions(
   if (!currentUser || currentUser.role === 'student') {
     actions.push({
       id: 'archive',
-      title: 'Student Archive & Materials',
-      description: 'Review saved lecture notes, slides, and transcripts',
+      title: 'Study Archive',
+      description: 'Review saved notes, transcripts, and flashcards',
       icon: Users,
       category: 'Navigation',
       action: (state) => ({ screen: 'archive', isOpen: false }),

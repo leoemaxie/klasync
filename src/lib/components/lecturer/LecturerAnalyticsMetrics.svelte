@@ -23,7 +23,7 @@
         : `${participants.length}`}</span
     >
     <span class="m-lbl"
-      >{summary ? 'Avg. Room Attendance' : 'Active Attendees'}</span
+      >{summary ? 'Average attendance' : 'Active attendees'}</span
     >
   </div>
   <div class="metric-card">
@@ -33,20 +33,20 @@
         : `${participants.filter((p) => p.verified).length}`}
     </span>
     <span class="m-lbl"
-      >{summary ? 'Roster Match Integrity' : 'Verified Roster Matches'}</span
+      >{summary ? 'Match rate' : 'Verified students'}</span
     >
   </div>
   <div class="metric-card">
     <span class="m-val"
       >{summary ? summary.total_sessions : courseCode ? '1' : '0'}</span
     >
-    <span class="m-lbl">Sessions Tracked</span>
+    <span class="m-lbl">Total sessions</span>
   </div>
   <div class="metric-card">
     <span class="m-val warning"
       >{summary ? summary.total_anomalies_flagged : anomalies.length}</span
     >
-    <span class="m-lbl">Audit Flags</span>
+    <span class="m-lbl">Flags</span>
   </div>
 </div>
 

@@ -23,11 +23,11 @@
     <thead>
       <tr>
         <th scope="col" style="width: 48px;">#</th>
-        <th scope="col">Matric Number</th>
-        <th scope="col">Student Name</th>
-        <th scope="col">Roster Verification</th>
+        <th scope="col">Matric</th>
+        <th scope="col">Name</th>
+        <th scope="col">Status</th>
         {#if onRemoveStudent}<th scope="col" style="text-align: right;"
-            >Action</th
+            ></th
           >{/if}
       </tr>
     </thead>
@@ -37,7 +37,7 @@
           <td class="row-num">{index + 1}</td>
           <td class="matric-cell"><code>{student.matric}</code></td>
           <td class="name-cell">{student.name}</td>
-          <td><span class="status-pill verified">Verified Match</span></td>
+          <td><span class="status-pill verified">Verified</span></td>
           {#if onRemoveStudent}
             <td class="action-cell">
               <button

@@ -42,11 +42,11 @@
     statusNotice = '';
     if (mode === 'request') {
       if (!email.trim())
-        return (errorMsg = 'Please enter your registered email address.');
+        return (errorMsg = 'Please enter your email address.');
       isSubmitting = true;
       try {
         await requestPasswordReset(email.trim(), role);
-        statusNotice = `Recovery instructions dispatched. If an account exists for ${email.trim()}, check your inbox and spam folder.`;
+        statusNotice = `If an account exists for ${email.trim()}, a reset link has been sent.`;
       } catch (err) {
         errorMsg =
           err instanceof Error ? err.message : 'Unable to process request.';
@@ -80,16 +80,16 @@
 
 <section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
-    <p class="eyebrow">ACCOUNT RECOVERY / PASSWORD RESET</p>
+    <p class="eyebrow">PASSWORD RESET</p>
     <h1 class="title-single-line">
       {mode === 'request'
-        ? 'Recover account access.'
-        : 'Complete password reset.'}
+        ? 'Reset Password'
+        : 'New Password'}
     </h1>
     <p class="lede">
       {mode === 'request'
-        ? 'Enter your registered email address to receive reset instructions.'
-        : 'Enter your reset token and your new password.'}
+        ? 'Enter your email to receive a reset link.'
+        : 'Enter your reset token and choose a new password.'}
     </p>
 
     <form class="join-card panel" onsubmit={handleSubmit}>
@@ -113,7 +113,7 @@
           >
         </div>
         <label for="rec-email"
-          >Registered Email
+          >Email
           <input
             id="rec-email"
             type="email"
@@ -125,7 +125,7 @@
         </label>
       {:else}
         <label for="rec-tok"
-          >Reset Token
+          >Reset token
           <input
             id="rec-tok"
             bind:value={resetToken}
@@ -134,7 +134,7 @@
           />
         </label>
         <label for="rec-pw"
-          >New Password <span>(minimum 12 characters)</span>
+          >New password <span>(min. 12 characters)</span>
           <input
             id="rec-pw"
             type="password"
@@ -145,7 +145,7 @@
           />
         </label>
         <label for="rec-cpw"
-          >Confirm New Password
+          >Confirm password
           <input
             id="rec-cpw"
             type="password"
@@ -161,8 +161,8 @@
         <div class="feedback-box" role="status" aria-live="polite">
           <span class="feedback-badge"
             >{mode === 'request'
-              ? 'EMAIL DISPATCHED'
-              : 'PASSWORD UPDATED'}</span
+              ? 'SENT'
+              : 'UPDATED'}</span
           >
           <p class="feedback-msg">{statusNotice}</p>
         </div>
@@ -177,7 +177,7 @@
         disabled={isSubmitting || (!!statusNotice && mode === 'complete')}
       >
         {#if isSubmitting}<ButtonSpinner label="Processing..." /> Processing...{:else if mode === 'request'}Send
-          Reset Link{:else}Complete Password Reset{/if}
+          Reset Link{:else}Reset Password{/if}
       </button>
 
       <div class="auth-footer-links">
@@ -205,8 +205,8 @@
   </div>
 
   <PublicVisualPanel
-    title="SECURE AUTHENTICATION"
-    subtitle="Encrypted Identity · Verification Claims · Password Reset"
+    title="PASSWORD RESET"
+    subtitle="Secure access · Account recovery · Verification"
   />
 </section>
 

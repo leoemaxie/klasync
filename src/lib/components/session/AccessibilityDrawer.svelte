@@ -41,7 +41,7 @@
       size={14}
       aria-hidden="true"
       style="vertical-align: middle; display: inline-block;"
-    /> Accessibility Preferences
+    /> Accessibility
   </button>
 
   {#if drawerOpen}
@@ -51,7 +51,7 @@
       aria-label="Accessibility Settings"
     >
       <div class="drawer-header">
-        <p class="eyebrow">ACCESSIBILITY &amp; READING DISPLAY</p>
+        <p class="eyebrow">DISPLAY &amp; ACCESSIBILITY</p>
         <button type="button" class="text" onclick={toggleDrawer}>
           <X
             size={14}
@@ -63,7 +63,7 @@
 
       <div class="control-group">
         <p id="font-size-label" class="label" style="margin: 0 0 6px;">
-          Caption &amp; Body Font Scale
+          Text size
         </p>
         <div
           class="button-group"
@@ -76,7 +76,7 @@
             aria-pressed={fontSize === '16px'}
             onclick={() => setFontSize('16px')}
           >
-            Standard (16px)
+            16px
           </button>
           <button
             type="button"
@@ -84,7 +84,7 @@
             aria-pressed={fontSize === '20px'}
             onclick={() => setFontSize('20px')}
           >
-            Large (20px)
+            20px
           </button>
           <button
             type="button"
@@ -92,13 +92,13 @@
             aria-pressed={fontSize === '24px'}
             onclick={() => setFontSize('24px')}
           >
-            XL (24px)
+            24px
           </button>
         </div>
       </div>
 
       <div class="control-group">
-        <label for="line-height-range">Line Spacing ({lineHeight}x)</label>
+        <label for="line-height-range">Line spacing ({lineHeight}x)</label>
         <input
           id="line-height-range"
           type="range"
@@ -112,9 +112,9 @@
 
       <div class="control-group toggle-row">
         <div>
-          <p class="toggle-title">High-Contrast Dyslexia Font</p>
+          <p class="toggle-title">Dyslexia-friendly font</p>
           <p class="hint">
-            Increases character spacing and bottom-heavy letter shapes.
+            Improves readability with specialized letter shapes.
           </p>
         </div>
         <button

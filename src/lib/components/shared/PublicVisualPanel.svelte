@@ -93,7 +93,7 @@
       {/each}
     </div>
     <p class="visual-status-pill">
-      <span class="pulse-dot">●</span> REAL-TIME AUDIO CAPTION STREAM
+      <span class="pulse-dot">●</span> LIVE CAPTIONS
     </p>
   </div>
 
@@ -105,7 +105,7 @@
             class="m-bar"
           ></span>
         </span>
-        <span class="tag">KLASYNC ACCESSIBILITY ENGINE</span>
+        <span class="tag">SPEECH TO TEXT</span>
       </div>
       <span class="live-tag"><span class="pulse-dot">●</span> LIVE</span>
     </div>
@@ -115,9 +115,9 @@
     </p>
 
     <div class="preview-metrics">
-      <span>LATENCY: {latency}ms</span>
-      <span>ACCURACY: {accuracy}%</span>
-      <span>SPEECH-TO-TEXT</span>
+      <span>{latency}ms</span>
+      <span>{accuracy}%</span>
+      <span>REAL-TIME</span>
     </div>
   </div>
 

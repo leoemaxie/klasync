@@ -79,7 +79,7 @@
   >
     <div class="panel modal-card">
       <div class="modal-header">
-        <p class="eyebrow">LMS ROSTER AUTOMATION</p>
+        <p class="eyebrow">LMS IMPORT</p>
         <button type="button" class="text" onclick={() => (isOpen = false)}>
           <X
             size={14}
@@ -89,10 +89,9 @@
         </button>
       </div>
 
-      <h2>Sync Roster with University LMS</h2>
+      <h2>Sync with LMS</h2>
       <p class="lede">
-        Connect directly to Canvas or Moodle to pull authoritative student
-        enrollment lists.
+        Import student list from Canvas or Moodle.
       </p>
 
       <form onsubmit={handleSync} class="lms-form">
@@ -107,7 +106,7 @@
             aria-pressed={lmsProvider === 'canvas'}
             onclick={() => (lmsProvider = 'canvas')}
           >
-            Canvas LMS
+            Canvas
           </button>
           <button
             type="button"
@@ -115,12 +114,12 @@
             aria-pressed={lmsProvider === 'moodle'}
             onclick={() => (lmsProvider = 'moodle')}
           >
-            Moodle LMS
+            Moodle
           </button>
         </div>
 
         <label for="lms-course-id">
-          Course Code / LMS External ID
+          Course ID
           <input
             id="lms-course-id"
             bind:value={externalCourseId}
@@ -130,7 +129,7 @@
         </label>
 
         <label for="lms-api-token">
-          LMS Integration Token <span>(Optional)</span>
+          API token (optional)
           <input
             id="lms-api-token"
             type="password"
@@ -149,10 +148,9 @@
           disabled={isSyncing || !externalCourseId.trim()}
         >
           {#if isSyncing}
-            <ButtonSpinner label="Fetching enrollment list from LMS..." /> Syncing
-            Roster...
+            <ButtonSpinner label="Syncing..." /> Syncing...
           {:else}
-            Import &amp; Verify Roster from {lmsProvider.toUpperCase()}
+            Sync from {lmsProvider === 'canvas' ? 'Canvas' : 'Moodle'}
           {/if}
         </button>
       </form>

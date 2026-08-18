@@ -10,23 +10,22 @@
 
 <div class="panel history-card">
   <div class="card-header">
-    <p class="eyebrow">BROADCAST HISTORY ({captions.length})</p>
+    <p class="eyebrow">HISTORY ({captions.length})</p>
   </div>
 
   {#if captions.length === 0}
     <div class="empty-history">
       <MessageSquare size={24} aria-hidden="true" class="empty-icon" />
-      <p class="empty-title">No captions broadcasted yet</p>
+      <p class="empty-title">No captions sent yet</p>
       <p class="hint">
-        Published caption chunks will appear here chronologically for your
-        review.
+        Sent captions will appear here.
       </p>
     </div>
   {:else}
     <div class="caption-list" role="log" aria-label="Published captions">
       {#each captions as caption, index (index)}
         <div class="history-item">
-          <span class="chunk-badge">Chunk {index + 1}</span>
+          <span class="chunk-badge">#{index + 1}</span>
           <p class="caption-text">{caption}</p>
         </div>
       {/each}

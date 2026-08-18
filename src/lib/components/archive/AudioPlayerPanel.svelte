@@ -48,8 +48,7 @@
 
 <div class="panel audio-player-panel">
   <div class="player-header">
-    <p class="eyebrow">LECTURE AUDIO REPLAY</p>
-    <span class="player-format">48kHz PCM STEREOPHONIC</span>
+    <p class="eyebrow">AUDIO REPLAY</p>
   </div>
 
   <audio
@@ -73,7 +72,7 @@
 
     <div class="control-buttons-row">
       <button type="button" class="primary play-btn" onclick={togglePlay}>
-        {isPlaying ? 'PAUSE' : 'PLAY AUDIO'}
+        {isPlaying ? 'Pause' : 'Play'}
       </button>
 
       <div class="speed-selector" role="group" aria-label="Playback speed">

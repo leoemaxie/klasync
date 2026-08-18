@@ -4,13 +4,20 @@
 import { platform } from './platform';
 
 export type HapticImpact =
-  'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'selection';
 
 export function triggerHaptic(type: HapticImpact = 'light'): void {
   if (typeof window === 'undefined' || !platform.hasHaptics) return;
 
   try {
     switch (type) {
+      case 'selection':
       case 'light':
         navigator.vibrate?.(10);
         break;

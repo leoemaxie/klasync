@@ -88,7 +88,7 @@
 
 <div class="panel roster-upload-panel">
   <div class="panel-header">
-    <p class="eyebrow">COURSE ROSTER IMPORT &amp; VALIDATION</p>
+    <p class="eyebrow">CLASS LIST</p>
     <button
       type="button"
       class="text-link-sync"
@@ -119,7 +119,7 @@
     aria-label="Upload class roster file"
   >
     <div class="dropzone-icon"><FileText size={24} aria-hidden="true" /></div>
-    <p class="dropzone-title">Drag &amp; drop CSV or XLSX file</p>
+    <p class="dropzone-title">Upload CSV or Excel file</p>
     <p class="hint">
       Supports <code>.csv</code>, <code>.tsv</code>, or <code>.xlsx</code>
     </p>
@@ -129,7 +129,7 @@
       onclick={(e) => {
         e.stopPropagation();
         triggerFileInput();
-      }}>Browse Files</button
+      }}>Browse</button
     >
     <input
       bind:this={fileInputRef}
@@ -142,7 +142,7 @@
 
   <div class="paste-section">
     <label for="roster-paste-input"
-      >Or paste CSV rows: <code>matric_number, full_name</code>
+      >Or paste rows: <code>matric_number, full_name</code>
       <textarea
         id="roster-paste-input"
         bind:value={rosterText}
@@ -174,9 +174,9 @@
           size={16}
           aria-hidden="true"
           style="vertical-align: middle; display: inline-block; margin-right: 4px;"
-        /> Confirmed ({parsedStudents.length})
+        /> Saved ({parsedStudents.length})
       {:else}
-        Confirm Roster ({parsedStudents.length})
+        Save Roster ({parsedStudents.length})
       {/if}
     </button>
 
@@ -187,19 +187,19 @@
       disabled={parsedStudents.length === 0 || isConfirming || isSavingCloud}
     >
       {#if isSavingCloud}
-        <ButtonSpinner label="Saving to cloud..." /> Save to Cloud
+        <ButtonSpinner label="Syncing..." /> Syncing...
       {:else if isSavedCloud}
         <CheckCircle2
           size={16}
           aria-hidden="true"
           style="vertical-align: middle; display: inline-block; margin-right: 4px;"
-        /> Synced to Cloud
+        /> Synced
       {:else}
         <CloudUpload
           size={16}
           aria-hidden="true"
           style="vertical-align: middle; display: inline-block; margin-right: 4px;"
-        /> Save to Cloud
+        /> Sync to Cloud
       {/if}
     </button>
   </div>

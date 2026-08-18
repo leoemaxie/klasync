@@ -61,12 +61,12 @@
 
 <section class="join-wrap join-wrap-auth">
   <div class="join-left-content">
-    <p class="eyebrow">LECTURER ACCOUNT REGISTRATION</p>
+    <p class="eyebrow">LECTURER SIGN UP</p>
     <h1 class="title-single-line">Create Lecturer Account</h1>
 
     <form class="join-card panel" onsubmit={handleRegister}>
       <label for="reg-name">
-        Full Name &amp; Title
+        Full name
         <input
           id="reg-name"
           bind:value={name}
@@ -77,7 +77,7 @@
       </label>
 
       <label for="reg-email">
-        Institutional Email
+        Email
         <input
           id="reg-email"
           type="email"
@@ -89,7 +89,7 @@
       </label>
 
       <label for="reg-password">
-        Password <span>(minimum 8 characters)</span>
+        Password <span>(min. 8 characters)</span>
         <input
           id="reg-password"
           type="password"
@@ -101,7 +101,7 @@
       </label>
 
       <label for="reg-confirm-password">
-        Confirm Password
+        Confirm password
         <input
           id="reg-confirm-password"
           type="password"
@@ -118,9 +118,9 @@
 
       <button type="submit" class="primary full" disabled={isSubmitting}>
         {#if isSubmitting}
-          <ButtonSpinner label="Creating lecturer account..." /> Creating Account...
+          <ButtonSpinner label="Creating account..." /> Creating Account...
         {:else}
-          Register & Start Courses
+          Create Account
         {/if}
       </button>
 
@@ -130,14 +130,14 @@
           class="text-link"
           onclick={() => (screen = 'lecturer-login')}
         >
-          Already registered? Sign in
+          Already have an account? Sign in
         </a>
       </div>
     </form>
   </div>
 
   <PublicVisualPanel
-    title="INCLUSIVE UNIVERSITY LECTURES"
-    subtitle="Live Captions · Roster Verification · AI Study Summaries"
+    title="LECTURER ACCESS"
+    subtitle="Live audio · Roster attendance · Caption publishing"
   />
 </section>

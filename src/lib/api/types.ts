@@ -27,6 +27,7 @@ export type ApiCaption = {
 
 export type SuccessResponse = {
   success: boolean;
+  message?: string;
 };
 
 export type CountResponse = {

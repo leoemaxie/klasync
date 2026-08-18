@@ -86,7 +86,7 @@
           bind:this={searchInputRef}
           type="text"
           bind:value={searchQuery}
-          placeholder="Search commands or enter 6-digit session code..."
+          placeholder="Search or enter session code..."
           class="spotlight-input"
           onkeydown={(e) => e.key === 'Enter' && handleQuickJoinSubmit()}
         />
@@ -100,7 +100,7 @@
             <X size={14} />
           </button>
         {/if}
-        <span class="cmd-badge">ESC to close</span>
+        <span class="cmd-badge">ESC</span>
       </div>
 
       {#if searchQuery.trim().length >= 4 && searchQuery.trim().length <= 8}
@@ -110,14 +110,14 @@
             class="quick-code-btn"
             onclick={handleQuickJoinSubmit}
           >
-            <span>Join room <strong>{searchQuery.toUpperCase()}</strong></span>
+            <span>Join session <strong>{searchQuery.toUpperCase()}</strong></span>
             <ArrowRight size={14} />
           </button>
         </div>
       {/if}
 
       <div class="spotlight-results">
-        <p class="section-label">QUICK NAVIGATION &amp; ACTIONS</p>
+        <p class="section-label">ACTIONS</p>
         {#each filteredActions as item (item.id)}
           <SpotlightItem
             title={item.title}

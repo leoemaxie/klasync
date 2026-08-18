@@ -29,16 +29,15 @@
         />
       </div>
       <div class="header-text">
-        <p class="eyebrow">CONNECT KLASYNC MIC</p>
+        <p class="eyebrow">BLUETOOTH MIC</p>
       </div>
     </div>
     <p class="hint">
-      Pair your dedicated Klasync lapel microphone via Bluetooth for optimal
-      studio audio quality, ultra-low latency, and enhanced noise suppression.
+      Pair an external Bluetooth lapel microphone for clearer audio.
     </p>
     <div class="bt-actions">
       <button type="button" class="primary full" onclick={handlePairBluetooth}>
-        Pair New Device
+        Pair Device
       </button>
     </div>
   </div>
