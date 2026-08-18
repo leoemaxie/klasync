@@ -16,7 +16,9 @@
   {:else}
     <div class="empty-preview">
       <FileText size={20} color="var(--color-driftwood)" />
-      <p class="empty-text">No notes to preview. Switch to Edit mode to write.</p>
+      <p class="empty-text">
+        No notes to preview. Switch to Edit mode to write.
+      </p>
     </div>
   {/if}
 </div>

@@ -253,7 +253,9 @@
     border: none;
     color: var(--color-warm-cream-dim);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
   .speed-btn:hover {
     color: var(--color-warm-cream);

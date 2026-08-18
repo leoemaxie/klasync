@@ -100,7 +100,10 @@
     white-space: nowrap;
     min-height: 40px;
     flex-shrink: 0;
-    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease,
+      border-color 0.15s ease;
   }
   .tab-btn:hover {
     color: var(--color-warm-cream);

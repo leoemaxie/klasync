@@ -154,7 +154,9 @@
   <div class="deck-header">
     <div class="deck-title-group">
       <h2 class="deck-section-title">Study Flashcards</h2>
-      <span class="mastered-pill">{masteredCount} of {deck.length} Mastered</span>
+      <span class="mastered-pill"
+        >{masteredCount} of {deck.length} Mastered</span
+      >
     </div>
     <div class="header-tools">
       <button
@@ -162,15 +164,15 @@
         class="tool-btn"
         title="Shuffle deck"
         onclick={shuffleDeck}
-        aria-label="Shuffle deck"
-      ><Shuffle size={14} /></button>
+        aria-label="Shuffle deck"><Shuffle size={14} /></button
+      >
       <button
         type="button"
         class="tool-btn"
         title="Reset deck"
         onclick={resetDeck}
-        aria-label="Reset deck"
-      ><RotateCcw size={14} /></button>
+        aria-label="Reset deck"><RotateCcw size={14} /></button
+      >
       {#if deck.length}
         <span class="card-counter">{currentIndex + 1} of {deck.length}</span>
       {/if}
@@ -223,8 +225,8 @@
       </div>
       <h3 class="empty-title">No Flashcards Yet</h3>
       <p class="empty-desc">
-        Flashcards haven't been generated for this lecture session yet.
-        Enter a topic or pick a quick topic above to generate study cards with AI.
+        Flashcards haven't been generated for this lecture session yet. Enter a
+        topic or pick a quick topic above to generate study cards with AI.
       </p>
     </div>
   {/if}

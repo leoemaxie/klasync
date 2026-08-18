@@ -104,8 +104,11 @@
       </div>
 
       <div class="face-bottom">
-        <span class="flip-hint"><RotateCw size={13} /> Tap anywhere to flip</span>
-        <span class="card-num-indicator">{currentIndex + 1} / {totalCards}</span>
+        <span class="flip-hint"
+          ><RotateCw size={13} /> Tap anywhere to flip</span
+        >
+        <span class="card-num-indicator">{currentIndex + 1} / {totalCards}</span
+        >
       </div>
     </div>
 
@@ -141,7 +144,8 @@
 
       <div class="face-bottom">
         <span class="flip-hint"><RotateCw size={13} /> Tap to flip back</span>
-        <span class="card-num-indicator">{currentIndex + 1} / {totalCards}</span>
+        <span class="card-num-indicator">{currentIndex + 1} / {totalCards}</span
+        >
       </div>
     </div>
   </button>
@@ -260,7 +264,10 @@
     align-items: center;
     gap: 5px;
     min-height: 26px;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
   }
   .card-master-btn:hover {
     border-color: var(--color-warm-cream);

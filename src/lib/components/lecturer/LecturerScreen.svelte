@@ -220,8 +220,8 @@
 
 <style>
   .lecturer-workspace-wrap {
-    padding: calc(var(--app-top-offset, var(--nav-height)) + 24px) var(--card-padding)
-      var(--spacing-68);
+    padding: calc(var(--app-top-offset, var(--nav-height)) + 24px)
+      var(--card-padding) var(--spacing-68);
     max-width: 1320px;
     margin: 0 auto;
   }

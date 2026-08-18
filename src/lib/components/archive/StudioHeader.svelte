@@ -68,7 +68,9 @@
     <span class="info-item"><Calendar size={12} /> Saved {claim.date}</span>
     {#if claim.session_code}
       <span class="info-divider">·</span>
-      <span class="info-item">Session Code: <strong>{claim.session_code}</strong></span>
+      <span class="info-item"
+        >Session Code: <strong>{claim.session_code}</strong></span
+      >
     {/if}
   </div>
 </div>
@@ -118,7 +120,10 @@
     min-height: 30px;
     border-radius: var(--radius-controls, 4px);
     color: var(--color-warm-cream-dim);
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
   }
   .back-btn:hover,
   .action-ghost-btn:hover {

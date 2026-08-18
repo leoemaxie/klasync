@@ -164,7 +164,11 @@
     {/if}
 
     {#if isTauri && !isMac}
-      <div class="window-controls app-no-drag" role="group" aria-label="Window controls">
+      <div
+        class="window-controls app-no-drag"
+        role="group"
+        aria-label="Window controls"
+      >
         <button
           type="button"
           class="win-btn"
@@ -309,7 +313,9 @@
     justify-content: center;
     border-radius: 4px;
     padding: 0;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
   .win-btn:hover {
     background: rgba(255, 237, 215, 0.1);

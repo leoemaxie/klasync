@@ -27,12 +27,16 @@
   <div class="transcript-header">
     <div class="transcript-title-group">
       <h2 class="section-title">Lecture Transcript</h2>
-      <span class="lines-pill">{lines.length} {lines.length === 1 ? 'Line' : 'Lines'}</span>
+      <span class="lines-pill"
+        >{lines.length} {lines.length === 1 ? 'Line' : 'Lines'}</span
+      >
     </div>
     <div class="header-controls">
       {#if transcript}
         <button type="button" class="outline copy-btn" onclick={handleCopyAll}>
-          {#if isAllCopied}<Check size={13} /> <span>Copied</span>{:else}<Copy size={13} /> <span>Copy All</span>{/if}
+          {#if isAllCopied}<Check size={13} /> <span>Copied</span>{:else}<Copy
+              size={13}
+            /> <span>Copy All</span>{/if}
         </button>
         <div class="font-controls" role="group" aria-label="Font size">
           <Type size={13} color="var(--color-warm-cream-dim)" />
@@ -77,13 +81,17 @@
         {/each}
       {:else}
         <div class="empty-search-state">
-          <p class="empty-hint">No lines matching <strong>"{filterTerm}"</strong>.</p>
+          <p class="empty-hint">
+            No lines matching <strong>"{filterTerm}"</strong>.
+          </p>
         </div>
       {/if}
     </div>
   {:else}
     <div class="empty-transcript-state">
-      <p class="empty-hint">No transcript available for this lecture session.</p>
+      <p class="empty-hint">
+        No transcript available for this lecture session.
+      </p>
     </div>
   {/if}
 </div>
@@ -163,7 +171,9 @@
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 3px;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
   }
   .font-btn:hover {
     color: var(--color-warm-cream);

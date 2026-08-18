@@ -29,7 +29,8 @@
     <div class="chapter-title-group">
       <h2 class="section-title">Topic Chapters</h2>
       <span class="chapter-count-pill"
-        >{chapters.length} {chapters.length === 1 ? 'Chapter' : 'Chapters'}</span
+        >{chapters.length}
+        {chapters.length === 1 ? 'Chapter' : 'Chapters'}</span
       >
     </div>
   </div>
@@ -43,7 +44,11 @@
           <div class="time-col">
             <span class="time-badge">
               <Clock size={12} />
-              <span>{formatTime(ch.start_timestamp_sec)} – {formatTime(ch.end_timestamp_sec)}</span>
+              <span
+                >{formatTime(ch.start_timestamp_sec)} – {formatTime(
+                  ch.end_timestamp_sec
+                )}</span
+              >
             </span>
           </div>
           <div class="chapter-info">
@@ -116,7 +121,9 @@
     border: 1px solid var(--color-cork-border);
     border-radius: var(--radius-cards, 8px);
     align-items: flex-start;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .chapter-card:hover {
     border-color: rgba(255, 237, 215, 0.25);

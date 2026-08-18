@@ -158,7 +158,9 @@
     color: var(--color-warm-cream-dim);
     border-radius: 3px;
     cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
   }
   .mode-btn:hover {
     color: var(--color-warm-cream);

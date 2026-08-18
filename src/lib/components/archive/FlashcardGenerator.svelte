@@ -86,7 +86,9 @@
     color: var(--color-warm-cream);
     border-radius: var(--radius-controls, 4px);
     box-sizing: border-box;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .generator-input::placeholder {
     color: rgba(255, 237, 215, 0.4);

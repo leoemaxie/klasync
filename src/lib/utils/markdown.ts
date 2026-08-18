@@ -11,7 +11,10 @@ export function renderMarkdown(md: string): string {
     .replace(/>/g, '&gt;');
 
   // Code blocks (```lang ... ```)
-  safe = safe.replace(/```([\s\S]*?)```/g, '<pre class="md-code-block"><code>$1</code></pre>');
+  safe = safe.replace(
+    /```([\s\S]*?)```/g,
+    '<pre class="md-code-block"><code>$1</code></pre>'
+  );
 
   // Inline code (`code`)
   safe = safe.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
@@ -22,7 +25,10 @@ export function renderMarkdown(md: string): string {
   safe = safe.replace(/^# (.*$)/gim, '<h1 class="md-h1">$1</h1>');
 
   // Blockquotes (> quote)
-  safe = safe.replace(/^\> (.*$)/gim, '<blockquote class="md-quote">$1</blockquote>');
+  safe = safe.replace(
+    /^\> (.*$)/gim,
+    '<blockquote class="md-quote">$1</blockquote>'
+  );
 
   // Bold & Italic (**bold**, *italic*)
   safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>');

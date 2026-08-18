@@ -104,10 +104,11 @@
       oninput={handleInput}
       placeholder="Write lecture summary, study notes, or questions here..."
       aria-label="Study notes"
-      rows="12"
-    ></textarea>
+      rows="12"></textarea>
     <div class="editor-footer">
-      <span class="word-counter">{wordCount} {wordCount === 1 ? 'Word' : 'Words'}</span>
+      <span class="word-counter"
+        >{wordCount} {wordCount === 1 ? 'Word' : 'Words'}</span
+      >
       <span class="format-hint">Markdown Supported</span>
     </div>
   </div>
@@ -194,7 +195,9 @@
     resize: vertical;
     outline: none;
     box-sizing: border-box;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
   .notes-editor::placeholder {
     color: rgba(255, 237, 215, 0.45);
