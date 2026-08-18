@@ -105,18 +105,18 @@
 </div>
 
 <style>
-  .card-viewport { perspective: 1000px; display: flex; flex-direction: column; gap: var(--spacing-6); }
-  .flashcard-flipper { position: relative; width: 100%; min-height: 185px; background: rgba(16, 9, 4, 0.65); border: 1px solid var(--color-cork-border); border-radius: var(--radius-cards, 8px); cursor: pointer; text-align: left; padding: var(--spacing-14); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s; transform-style: preserve-3d; user-select: none; }
+  .card-viewport { perspective: 1000px; display: flex; flex-direction: column; gap: var(--spacing-6); width: 100%; }
+  .flashcard-flipper { position: relative; width: 100%; min-height: 180px; background: rgba(16, 9, 4, 0.65); border: 1px solid var(--color-cork-border); border-radius: var(--radius-cards, 8px); cursor: pointer; text-align: left; padding: var(--spacing-12); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s; transform-style: preserve-3d; user-select: none; }
   .flashcard-flipper:hover { border-color: var(--color-warm-cream); }
   .flashcard-flipper.flipped { transform: rotateY(180deg); }
-  .card-face { display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; backface-visibility: hidden; }
-  .card-face.back { position: absolute; inset: var(--spacing-14); transform: rotateY(180deg); }
+  .card-face { display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; backface-visibility: hidden; }
+  .card-face.back { position: absolute; inset: var(--spacing-12); transform: rotateY(180deg); }
   .face-top, .face-bottom { display: flex; justify-content: space-between; align-items: center; }
   .tag { font-size: 10px; font-family: var(--font-mono, monospace); letter-spacing: 0.1em; color: var(--color-driftwood); text-transform: uppercase; }
   .diff-badge { font-size: 9px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-cork-border); color: var(--color-driftwood); }
   .diff-hard { border-color: var(--color-ember-accent); color: var(--color-ember-accent); }
-  .card-prompt { font-size: 15px; color: var(--color-warm-cream); line-height: 1.4; margin: var(--spacing-6) 0; font-weight: 500; }
-  .card-answer { font-size: 13px; color: var(--color-warm-cream); line-height: 1.55; margin: var(--spacing-6) 0; }
+  .card-prompt { font-size: 15px; color: var(--color-warm-cream); line-height: 1.4; margin: var(--spacing-6) 0; font-weight: 500; word-break: break-word; }
+  .card-answer { font-size: 13px; color: var(--color-warm-cream); line-height: 1.55; margin: var(--spacing-6) 0; word-break: break-word; }
   .flip-hint { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-driftwood); }
   .mastered-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #a4c952; }
   .mastery-bar { display: flex; justify-content: flex-end; }

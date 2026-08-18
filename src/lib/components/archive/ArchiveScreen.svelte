@@ -6,11 +6,7 @@
   import ArchiveWelcomeView from './ArchiveWelcomeView.svelte';
   import StudentLectureStudio from './StudentLectureStudio.svelte';
   import StudentCoursesHub from './StudentCoursesHub.svelte';
-  import {
-    getArchiveResources,
-    getStudentArchive,
-    type ClaimRecord,
-  } from '$lib/api';
+  import { getStudentArchive, type ClaimRecord } from '$lib/api';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -23,9 +19,7 @@
   onMount(async () => {
     try {
       claims = await getStudentArchive().catch(() => []);
-      if (claims.length > 0 && window.innerWidth > 960) {
-        selectedClaim = claims[0];
-      }
+      if (claims.length > 0 && window.innerWidth > 960) selectedClaim = claims[0];
     } finally {
       isLoading = false;
     }
@@ -34,9 +28,7 @@
   function handleSelectCourse(code: string) {
     searchQuery = code;
     activeViewMode = 'claims';
-    const first = claims.find(
-      (c) => c.course_code.toLowerCase() === code.toLowerCase()
-    );
+    const first = claims.find((c) => c.course_code.toLowerCase() === code.toLowerCase());
     if (first) selectedClaim = first;
   }
 </script>
@@ -45,14 +37,14 @@
   <title>Student Archive Studio — Klasync</title>
 </svelte:head>
 
-<div
-  class="student-studio-workspace"
-  class:mobile-detail-open={!!selectedClaim}
->
+<div class="student-studio-workspace" class:mobile-detail-open={!!selectedClaim}>
   <ArchiveTopBar claimsCount={claims.length} onNavigate={(s) => (screen = s)} />
 
   <div class="studio-layout">
-    <div class="sidebar-slot" class:hidden-on-mobile={!!selectedClaim}>
+    <div
+      class="sidebar-slot"
+      class:hidden-on-mobile={!!selectedClaim || activeViewMode === 'courses'}
+    >
       <ArchiveSidebar
         bind:activeViewMode
         bind:searchQuery
@@ -65,20 +57,14 @@
 
     <main
       class="studio-detail-canvas panel"
-      class:visible-on-mobile={!!selectedClaim}
+      class:visible-on-mobile={!!selectedClaim || activeViewMode === 'courses'}
     >
       {#if activeViewMode === 'courses' && !selectedClaim}
         <StudentCoursesHub onSelectCourseFilter={handleSelectCourse} />
       {:else if selectedClaim}
-        <StudentLectureStudio
-          claim={selectedClaim}
-          onBack={() => (selectedClaim = null)}
-        />
+        <StudentLectureStudio claim={selectedClaim} onBack={() => (selectedClaim = null)} />
       {:else}
-        <ArchiveWelcomeView
-          {claims}
-          onOpenLatest={(c) => (selectedClaim = c)}
-        />
+        <ArchiveWelcomeView {claims} onOpenLatest={(c) => (selectedClaim = c)} />
       {/if}
     </main>
   </div>
@@ -86,8 +72,7 @@
 
 <style>
   .student-studio-workspace {
-    padding: calc(var(--nav-height) + 16px) var(--card-padding)
-      calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
+    padding: calc(var(--nav-height) + 16px) var(--card-padding) calc(var(--spacing-68) + env(safe-area-inset-bottom, 0px));
     max-width: 1440px;
     margin: 0 auto;
     display: flex;
@@ -109,20 +94,16 @@
     min-height: 600px;
   }
   @media (max-width: 960px) {
-    .studio-layout {
-      grid-template-columns: 1fr;
-    }
-    .hidden-on-mobile {
-      display: none;
-    }
-    .studio-detail-canvas:not(.visible-on-mobile) {
-      display: block;
-    }
+    .studio-layout { grid-template-columns: 1fr; min-height: auto; gap: var(--spacing-10); }
+    .studio-detail-canvas { min-height: auto; padding: var(--spacing-12); }
+    .hidden-on-mobile { display: none; }
+    .studio-detail-canvas:not(.visible-on-mobile) { display: none; }
   }
   @media (max-width: 640px) {
     .student-studio-workspace {
-      padding-top: calc(var(--nav-height) + 10px);
-      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+      padding: calc(var(--nav-height) + 10px) 12px calc(90px + env(safe-area-inset-bottom, 0px));
+      gap: var(--spacing-10);
     }
+    .studio-detail-canvas { padding: 10px; }
   }
 </style>

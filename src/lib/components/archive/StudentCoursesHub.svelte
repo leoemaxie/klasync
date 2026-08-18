@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { StudentEnrolledCourse } from '$lib/types';
   import { getStudentCourses } from '$lib/api/courses';
-  import { GraduationCap, Calendar, Search } from '@lucide/svelte';
+  import { GraduationCap, Search } from '@lucide/svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import StudentCourseCard from './StudentCourseCard.svelte';
 
@@ -65,69 +65,25 @@
     <div class="empty-hub-box">
       <GraduationCap size={28} color="var(--color-driftwood)" />
       <p class="empty-title">No Enrolled Courses Found</p>
-      <p class="hint">
-        Join live lectures with your matric number to auto-enroll.
-      </p>
+      <p class="hint">Join live lectures with your matric number to auto-enroll.</p>
     </div>
   {/if}
 </div>
 
 <style>
-  .student-courses-hub {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-14);
-    margin-bottom: var(--spacing-16);
-  }
-  .hub-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: var(--spacing-10);
-    border-bottom: 1px solid var(--color-cork-border);
-    padding-bottom: var(--spacing-10);
-  }
-  .hub-title {
-    font-family: var(--font-display);
-    font-size: 22px;
-    color: var(--color-warm-cream);
-    margin: 2px 0 0 0;
-  }
-  .search-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  :global(.search-wrap .search-icon) {
-    position: absolute;
-    left: 10px;
-    color: var(--color-driftwood);
-  }
-  .course-search-input {
-    padding-left: 28px !important;
-    font-size: 12px;
-    min-width: 180px;
-    margin: 0;
-  }
-  .courses-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: var(--spacing-12);
-  }
-  .empty-hub-box {
-    padding: var(--spacing-24);
-    text-align: center;
-    border: 1px dashed var(--color-cork-border);
-    border-radius: var(--radius-cards);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .empty-title {
-    font-size: 14px;
-    color: var(--color-warm-cream);
-    margin: 0;
+  .student-courses-hub { display: flex; flex-direction: column; gap: var(--spacing-12); margin-bottom: var(--spacing-14); }
+  .hub-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-10); border-bottom: 1px solid var(--color-cork-border); padding-bottom: var(--spacing-10); }
+  .hub-title { font-family: var(--font-display); font-size: 22px; color: var(--color-warm-cream); margin: 2px 0 0 0; }
+  .search-wrap { position: relative; display: flex; align-items: center; }
+  :global(.search-wrap .search-icon) { position: absolute; left: 10px; color: var(--color-driftwood); }
+  .course-search-input { padding-left: 28px !important; font-size: 12px; min-width: 160px; margin: 0; }
+  .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--spacing-10); }
+  .empty-hub-box { padding: var(--spacing-20); text-align: center; border: 1px dashed var(--color-cork-border); border-radius: var(--radius-cards); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .empty-title { font-size: 14px; color: var(--color-warm-cream); margin: 0; }
+  @media (max-width: 540px) {
+    .hub-header { flex-direction: column; align-items: stretch; }
+    .search-wrap { width: 100%; }
+    .course-search-input { width: 100%; }
+    .courses-grid { grid-template-columns: 1fr; }
   }
 </style>
