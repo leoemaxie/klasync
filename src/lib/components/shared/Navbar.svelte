@@ -252,6 +252,10 @@
     text-transform: uppercase;
     padding: 6px 14px;
     border-radius: 4px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .search-trigger {
     display: flex;
@@ -266,15 +270,25 @@
     border-radius: 4px;
   }
   .user-pill {
-    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    height: 32px;
     border: 1px solid var(--color-cork-border);
     border-radius: 999px;
     background: rgba(255, 237, 215, 0.06);
+    box-sizing: border-box;
   }
   .user-name {
     font-size: 11px;
     font-weight: 500;
     color: var(--color-driftwood);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    letter-spacing: 0.02em;
+    transform: translateY(-0.5px);
   }
   .window-controls {
     display: flex;
