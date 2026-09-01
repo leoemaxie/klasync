@@ -63,22 +63,48 @@
         appState.currentUser = user;
         if (user.name) appState.lecturerName = user.name;
         if (user.email) appState.lecturerEmail = user.email;
+        if (user.matric_number) appState.matric = user.matric_number;
+        if (user.role === 'student' && user.name)
+          appState.displayName = user.name;
       } catch {
         appState.currentUser = null;
       }
     }
 
-    const searchJoin = new URLSearchParams(window.location.search).get('join');
-    const hashJoin =
-      new URLSearchParams(window.location.hash.split('?')[1] || '').get(
-        'join'
-      ) ||
-      new URLSearchParams(window.location.hash.split('?')[1] || '').get('code');
-    const inviteCode = searchJoin || hashJoin;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashQuery = window.location.hash.includes('?')
+      ? window.location.hash.substring(window.location.hash.indexOf('?') + 1)
+      : '';
+    const hashParams = new URLSearchParams(hashQuery);
+
+    const inviteCode =
+      searchParams.get('join') ||
+      hashParams.get('join') ||
+      searchParams.get('code') ||
+      hashParams.get('code');
+
+    const inviteToken =
+      searchParams.get('invite') ||
+      hashParams.get('invite') ||
+      searchParams.get('token') ||
+      hashParams.get('token');
+
     if (inviteCode) {
       appState.sessionCode = inviteCode.toUpperCase();
       appState.screen = 'join';
       void replace('/join');
+    } else if (inviteToken) {
+      import('$lib/api/sessions').then(({ resolveInviteToken }) => {
+        resolveInviteToken(inviteToken)
+          .then((res) => {
+            if (res?.session?.short_code) {
+              appState.sessionCode = res.session.short_code.toUpperCase();
+              appState.screen = 'join';
+              void replace('/join');
+            }
+          })
+          .catch(() => {});
+      });
     }
 
     const unsubLoc = location.subscribe(($loc) => {

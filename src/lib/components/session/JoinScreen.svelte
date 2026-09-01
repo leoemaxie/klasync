@@ -24,12 +24,26 @@
   let isCheckingCode = $state(false);
   let isJoining = $state(false);
 
+  let lastCheckedCode = '';
+  $effect(() => {
+    const code = sessionCode.trim().toUpperCase();
+    if (code.length >= 4 && code !== lastCheckedCode) {
+      lastCheckedCode = code;
+      void checkCode();
+    } else if (!code) {
+      lastCheckedCode = '';
+      sessionTitle = '';
+      sessionStatus = 'idle';
+    }
+  });
+
   async function checkCode() {
-    if (!sessionCode.trim() || sessionCode.trim().length < 4) return;
+    const code = sessionCode.trim().toUpperCase();
+    if (!code || code.length < 4) return;
     triggerHaptic('light');
     isCheckingCode = true;
     try {
-      const info = await lookupSessionByCode(sessionCode.trim().toUpperCase());
+      const info = await lookupSessionByCode(code);
       sessionTitle = info.session.title;
       sessionStatus = info.session.status;
       triggerHaptic('success');
@@ -126,3 +140,39 @@
     subtitle="Live captions · Fair attendance · Study notes"
   />
 </section>
+
+<style>
+  .session-info-badge {
+    padding: 10px 14px;
+    background: rgba(16, 9, 4, 0.5);
+    border: 1px solid var(--color-cork-border, #40372e);
+    border-radius: var(--radius-cards, 6px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: -6px;
+    margin-bottom: 2px;
+  }
+  .session-info-badge .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-driftwood, #6c5f51);
+  }
+  .session-info-badge .eyebrow-accent {
+    font-size: 8px;
+    color: #4ade80;
+  }
+  .session-info-badge h2 {
+    font-family: var(--font-body, sans-serif);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--color-warm-cream, #ffedd7);
+    margin: 0;
+    word-break: break-word;
+  }
+</style>
