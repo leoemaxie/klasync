@@ -44,8 +44,8 @@ pub async fn course_summary(
         CourseAttendanceSummary,
         r#"select $1::uuid as "course_id!",
           count(distinct s.id)::bigint as "total_sessions!",
-          coalesce(avg(coalesce(p.attendance_score, 0)) filter (where p.id is not null), 0)::double precision as "avg_attendance_percentage!",
-          coalesce(100.0 * avg(case when p.verification_status = 'verified' then 1.0 else 0.0 end) filter (where p.id is not null), 0)::double precision as "roster_verification_match_rate!",
+          coalesce(round(avg(coalesce(p.attendance_score, 0)) filter (where p.id is not null)::numeric, 2), 0)::double precision as "avg_attendance_percentage!",
+          coalesce(round((100.0 * avg(case when p.verification_status = 'verified' then 1.0 else 0.0 end) filter (where p.id is not null))::numeric, 2), 0)::double precision as "roster_verification_match_rate!",
           count(*) filter (where p.verification_status = 'provisional')::bigint as "total_provisional_students!",
           (select count(*) from attendance_audit_logs a where a.session_id in (select id from lecture_sessions where course_id = $1::uuid))::bigint as "total_anomalies_flagged!"
          from lecture_sessions s left join session_participants p on p.session_id = s.id

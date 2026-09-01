@@ -13,13 +13,19 @@
     participants?: Participant[];
     courseCode?: string;
   } = $props();
+
+  function formatPercent(val: number | null | undefined): string {
+    if (val === null || val === undefined || isNaN(val)) return '0%';
+    const num = Number(val);
+    return Number.isInteger(num) ? `${num}%` : `${num.toFixed(2)}%`;
+  }
 </script>
 
 <div class="metrics-grid">
   <div class="metric-card">
     <span class="m-val"
       >{summary
-        ? `${summary.avg_attendance_percentage}%`
+        ? formatPercent(summary.avg_attendance_percentage)
         : `${participants.length}`}</span
     >
     <span class="m-lbl"
@@ -29,7 +35,7 @@
   <div class="metric-card">
     <span class="m-val">
       {summary
-        ? `${summary.roster_verification_match_rate}%`
+        ? formatPercent(summary.roster_verification_match_rate)
         : `${participants.filter((p) => p.verified).length}`}
     </span>
     <span class="m-lbl">{summary ? 'Match rate' : 'Verified students'}</span>
