@@ -83,11 +83,6 @@
     <h1 class="title-single-line">
       {mode === 'request' ? 'Reset Password' : 'New Password'}
     </h1>
-    <p class="lede">
-      {mode === 'request'
-        ? 'Enter your email to receive a reset link.'
-        : 'Enter your reset token and choose a new password.'}
-    </p>
 
     <form class="join-card panel" onsubmit={handleSubmit}>
       {#if mode === 'request'}
