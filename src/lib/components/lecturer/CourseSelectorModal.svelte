@@ -115,7 +115,7 @@
           </div>
           <button
             type="button"
-            class="primary-bark add-offering-btn"
+            class="outline add-offering-btn"
             onclick={() => (isCreating = true)}
           >
             <Plus size={14} /> <span>New Course</span>
@@ -161,7 +161,8 @@
     flex-direction: column;
     gap: var(--spacing-16, 16px);
     border-radius: var(--radius-cards, 12px);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    background: var(--color-walnut-shadow, #100904);
+    border: 1px solid var(--color-cork-border, #40372e);
     position: relative;
   }
   .sheet-drag-handle {
@@ -218,7 +219,7 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    padding: 6px 14px;
+    padding: 7px 16px;
   }
   .courses-grid-list {
     display: grid;
