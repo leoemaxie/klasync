@@ -88,29 +88,31 @@
         />
       </label>
 
-      <label for="reg-password">
-        Password <span>(min. 8 characters)</span>
-        <input
-          id="reg-password"
-          type="password"
-          bind:value={password}
-          placeholder="••••••••••••"
-          required
-          autocomplete="new-password"
-        />
-      </label>
+      <div class="twocol">
+        <label for="reg-password">
+          Password <span>(min. 8)</span>
+          <input
+            id="reg-password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
+        </label>
 
-      <label for="reg-confirm-password">
-        Confirm password
-        <input
-          id="reg-confirm-password"
-          type="password"
-          bind:value={confirmPassword}
-          placeholder="••••••••••••"
-          required
-          autocomplete="new-password"
-        />
-      </label>
+        <label for="reg-confirm-password">
+          Confirm password
+          <input
+            id="reg-confirm-password"
+            type="password"
+            bind:value={confirmPassword}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
+        </label>
+      </div>
 
       {#if errorMsg}
         <p class="error" role="alert">{errorMsg}</p>

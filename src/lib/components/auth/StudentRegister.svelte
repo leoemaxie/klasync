@@ -102,29 +102,31 @@
         />
       </label>
 
-      <label for="st-password">
-        Password <span>(min. 8 characters)</span>
-        <input
-          id="st-password"
-          type="password"
-          bind:value={password}
-          placeholder="••••••••••••"
-          required
-          autocomplete="new-password"
-        />
-      </label>
+      <div class="twocol">
+        <label for="st-password">
+          Password <span>(min. 8)</span>
+          <input
+            id="st-password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
+        </label>
 
-      <label for="st-confirm-password">
-        Confirm password
-        <input
-          id="st-confirm-password"
-          type="password"
-          bind:value={confirmPassword}
-          placeholder="••••••••••••"
-          required
-          autocomplete="new-password"
-        />
-      </label>
+        <label for="st-confirm-password">
+          Confirm password
+          <input
+            id="st-confirm-password"
+            type="password"
+            bind:value={confirmPassword}
+            placeholder="••••••••••••"
+            required
+            autocomplete="new-password"
+          />
+        </label>
+      </div>
 
       {#if errorMsg}
         <p class="error" role="alert">{errorMsg}</p>

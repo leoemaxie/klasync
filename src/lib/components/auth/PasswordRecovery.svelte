@@ -125,28 +125,30 @@
             required
           />
         </label>
-        <label for="rec-pw"
-          >New password <span>(min. 12 characters)</span>
-          <input
-            id="rec-pw"
-            type="password"
-            bind:value={newPassword}
-            placeholder="••••••••••••"
-            required
-            autocomplete="new-password"
-          />
-        </label>
-        <label for="rec-cpw"
-          >Confirm password
-          <input
-            id="rec-cpw"
-            type="password"
-            bind:value={confirmPassword}
-            placeholder="••••••••••••"
-            required
-            autocomplete="new-password"
-          />
-        </label>
+        <div class="twocol">
+          <label for="rec-pw"
+            >New password <span>(min. 12)</span>
+            <input
+              id="rec-pw"
+              type="password"
+              bind:value={newPassword}
+              placeholder="••••••••••••"
+              required
+              autocomplete="new-password"
+            />
+          </label>
+          <label for="rec-cpw"
+            >Confirm password
+            <input
+              id="rec-cpw"
+              type="password"
+              bind:value={confirmPassword}
+              placeholder="••••••••••••"
+              required
+              autocomplete="new-password"
+            />
+          </label>
+        </div>
       {/if}
 
       {#if statusNotice}
@@ -177,8 +179,8 @@
           onclick={() => setMode(mode === 'request' ? 'complete' : 'request')}
         >
           {mode === 'request'
-            ? 'Already have a reset token?'
-            : 'Need to request a token?'}
+            ? 'Have a token?'
+            : 'Request a token'}
         </button>
         <a
           href={role === 'lecturer'

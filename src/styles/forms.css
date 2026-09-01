@@ -118,6 +118,7 @@ textarea:focus {
 
 .join-wrap-auth .join-card.panel {
   padding: 26px 28px;
+  margin-top: 0;
 }
 
 .join-wrap-auth .eyebrow {
