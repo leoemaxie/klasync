@@ -30,6 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     tokio::spawn(klasync_backend::ai_worker::run_loop(state.clone()));
+    tokio::spawn(klasync_backend::rolling::run_loop(state.clone()));
+    klasync_backend::realtime::spawn_redis_bridge(state.clone());
 
     let app = klasync_backend::api::router(state);
 

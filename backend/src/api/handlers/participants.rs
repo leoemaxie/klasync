@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     api::{error::ApiError, handlers::sessions::database_session_by_code},
-    auth::guard::AuthenticatedLecturer,
+    auth::guard::{AuthenticatedLecturer, OptionalStudent},
     models::{
         AttendanceSummary, JoinSessionRequest, SessionParticipant, SessionStatus,
         VerificationStatus,
@@ -18,6 +18,7 @@ use crate::{
 pub async fn join(
     State(state): State<AppState>,
     Path(short_code): Path<String>,
+    OptionalStudent(student): OptionalStudent,
     Json(input): Json<JoinSessionRequest>,
 ) -> Result<(StatusCode, Json<SessionParticipant>), ApiError> {
     let pool = state.db_pool();
@@ -76,6 +77,10 @@ pub async fn join(
         tracing::error!(%error, "Failed to insert attendance event 'joined'");
         ApiError::service_unavailable()
     })?;
+    // A signed-in student is matched to the session straight away, on any device.
+    if let Some(student) = student {
+        crate::student_sync::reconcile_student_logged(pool, student.id).await;
+    }
     Ok((StatusCode::CREATED, Json(participant)))
 }
 

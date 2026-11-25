@@ -26,13 +26,16 @@
   let newQuestionText = $state('');
   let isSubmitting = $state(false);
   let activeUpvotingId = $state<string | null>(null);
+  let errorMessage = $state('');
 
   async function loadQuestions() {
     if (!sessionCode) return;
     try {
       questions = await fetchSessionQuestions(sessionCode);
-    } catch {
-      // Fallback state
+      errorMessage = '';
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Unable to load questions.';
     } finally {
       isLoading = false;
     }
@@ -56,6 +59,12 @@
       );
       questions = [q, ...questions];
       newQuestionText = '';
+      errorMessage = '';
+    } catch (error) {
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Unable to send your question.';
     } finally {
       isSubmitting = false;
     }
@@ -69,6 +78,9 @@
       questions = questions.map((q) =>
         q.id === qId ? { ...q, upvote_count: res.new_upvote_count } : q
       );
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Unable to upvote.';
     } finally {
       activeUpvotingId = null;
     }
@@ -81,8 +93,9 @@
       questions = questions.map((q) =>
         q.id === qId ? { ...q, is_resolved: true } : q
       );
-    } catch {
-      // Toggle locally
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Unable to resolve question.';
     }
   }
 </script>
@@ -118,6 +131,10 @@
         {/if}
       </button>
     </form>
+  {/if}
+
+  {#if errorMessage}
+    <p class="qa-error" role="alert">{errorMessage}</p>
   {/if}
 
   {#if isLoading}
@@ -188,6 +205,11 @@
 </div>
 
 <style>
+  .qa-error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-ember-accent, #e0734a);
+  }
   .live-qa-panel {
     display: flex;
     flex-direction: column;

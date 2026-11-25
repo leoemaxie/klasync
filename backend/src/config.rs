@@ -138,7 +138,7 @@ impl AppConfig {
             ai_max_output_tokens: env::var("AI_MAX_OUTPUT_TOKENS")
                 .ok()
                 .and_then(|value| value.parse().ok())
-                .unwrap_or(1200),
+                .unwrap_or(4096),
             ai_max_cost_usd: env::var("AI_MAX_COST_USD")
                 .ok()
                 .and_then(|value| value.parse().ok())

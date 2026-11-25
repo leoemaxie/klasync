@@ -114,3 +114,20 @@ impl FromRequestParts<AppState> for OptionalStudent {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct OptionalLecturer(pub Option<AuthenticatedLecturer>);
+
+impl FromRequestParts<AppState> for OptionalLecturer {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        match AuthenticatedLecturer::from_request_parts(parts, state).await {
+            Ok(lecturer) => Ok(Self(Some(lecturer))),
+            Err(_) => Ok(Self(None)),
+        }
+    }
+}

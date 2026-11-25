@@ -1,6 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fetchSessionChapters, type SessionChapter } from '$lib/api';
+  import {
+    fetchSessionChapters,
+    generateSessionChapters,
+    runStudyJob,
+    type SessionChapter,
+  } from '$lib/api';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import { Bookmark, Clock } from '@lucide/svelte';
 
@@ -8,13 +13,41 @@
 
   let chapters = $state<SessionChapter[]>([]);
   let isLoading = $state(true);
+  let isGenerating = $state(false);
+  let errorMessage = $state('');
+
+  async function load() {
+    try {
+      chapters = await fetchSessionChapters(sessionId);
+      errorMessage = '';
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Unable to load chapters.';
+    }
+  }
+
+  async function generate() {
+    isGenerating = true;
+    errorMessage = '';
+    try {
+      await runStudyJob(() => generateSessionChapters(sessionId));
+      await load();
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Chapter generation failed.';
+    } finally {
+      isGenerating = false;
+    }
+  }
 
   onMount(async () => {
     try {
-      chapters = await fetchSessionChapters(sessionId);
+      await load();
     } finally {
       isLoading = false;
     }
+    // Build chapters automatically the first time a lecture is opened.
+    if (!chapters.length && !errorMessage) void generate();
   });
 
   function formatTime(sec: number): string {
@@ -35,8 +68,15 @@
     </div>
   </div>
 
-  {#if isLoading}
-    <SkeletonCard lines={3} label="Loading chapters..." />
+  {#if errorMessage}
+    <p class="chapter-error" role="alert">{errorMessage}</p>
+  {/if}
+
+  {#if isLoading || (isGenerating && !chapters.length)}
+    <SkeletonCard
+      lines={3}
+      label={isGenerating ? 'Building chapters…' : 'Loading chapters...'}
+    />
   {:else if chapters.length}
     <div class="chapters-list" role="region" aria-label="Lecture chapters">
       {#each chapters as ch, idx (ch.id || idx)}
@@ -63,15 +103,26 @@
       <div class="empty-icon-wrap">
         <Bookmark size={24} color="var(--color-driftwood)" />
       </div>
-      <h3 class="empty-title">No Chapters Generated</h3>
-      <p class="empty-desc">
-        AI chapters for this lecture have not been indexed yet.
-      </p>
+      <h3 class="empty-title">No Chapters Yet</h3>
+      <p class="empty-desc">Chapters are built from the lecture transcript.</p>
+      <button
+        type="button"
+        class="primary"
+        onclick={generate}
+        disabled={isGenerating}
+      >
+        {isGenerating ? 'Generating…' : 'Generate chapters'}
+      </button>
     </div>
   {/if}
 </div>
 
 <style>
+  .chapter-error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-error);
+  }
   .chapter-breakdown-panel {
     display: flex;
     flex-direction: column;

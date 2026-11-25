@@ -22,6 +22,9 @@ use crate::config::AppConfig;
 
 pub type SharedAiAdapter = Arc<dyn AiAdapter>;
 
+/// Amount provisionally held per in-flight request (USD micros).
+const RESERVATION_MICROS: u64 = 1_000;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiWorkItem {
     pub job_id: Uuid,
@@ -76,13 +79,6 @@ impl TaskKind {
             "question_answer" | "question-answer" | "qa" => Self::QuestionAnswer,
             _ => Self::Other,
         }
-    }
-
-    fn is_light(self) -> bool {
-        matches!(
-            self,
-            Self::Summary | Self::Flashcards | Self::Explanation | Self::QuestionAnswer
-        )
     }
 }
 
@@ -143,6 +139,10 @@ impl OpenRouterAdapter {
             .header(reqwest::header::USER_AGENT, "klasync-api/0.1")
     }
 
+    /// Reserves a small amount before the call; `settle_cost` swaps the
+    /// reservation for the real cost. Previously the reservation was never
+    /// released, so after ~20 requests per process every AI call failed with
+    /// `BudgetExceeded` until the server restarted.
     fn reserve_budget(&self) -> Result<(), AiAdapterError> {
         if self.max_cost_usd_micros == 0 {
             return Ok(());
@@ -156,7 +156,7 @@ impl OpenRouterAdapter {
                 .spent_usd_micros
                 .compare_exchange(
                     current,
-                    current.saturating_add(1_000),
+                    current.saturating_add(RESERVATION_MICROS),
                     Ordering::SeqCst,
                     Ordering::Relaxed,
                 )
@@ -167,9 +167,23 @@ impl OpenRouterAdapter {
         }
     }
 
-    fn record_cost(&self, cost: f64) {
-        self.spent_usd_micros
-            .fetch_add((cost.max(0.0) * 1_000_000.0) as u64, Ordering::SeqCst);
+    fn settle_cost(&self, cost: f64) {
+        let actual = (cost.max(0.0) * 1_000_000.0) as u64;
+        // Remove the reservation, then add what was really spent.
+        let _ = self
+            .spent_usd_micros
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |value| {
+                Some(value.saturating_sub(RESERVATION_MICROS))
+            });
+        self.spent_usd_micros.fetch_add(actual, Ordering::SeqCst);
+    }
+
+    fn release_reservation(&self) {
+        let _ = self
+            .spent_usd_micros
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |value| {
+                Some(value.saturating_sub(RESERVATION_MICROS))
+            });
     }
 
     async fn chat(&self, work: &AiWorkItem, model: &str) -> Result<AiWorkResult, AiAdapterError> {
@@ -179,6 +193,11 @@ impl OpenRouterAdapter {
             .and_then(|value| value.as_str())
             .or_else(|| work.input.get("text").and_then(|value| value.as_str()))
             .unwrap_or("");
+        if input.trim().is_empty() {
+            return Err(AiAdapterError::Decode(
+                "there is no lecture text to process yet".to_owned(),
+            ));
+        }
         let system = work
             .input
             .get("system")
@@ -186,98 +205,139 @@ impl OpenRouterAdapter {
             .unwrap_or(
             "You are KLASYNC, an accessibility-first learning assistant. Be concise and accurate.",
         );
+        let max_tokens = work
+            .input
+            .get("max_tokens")
+            .and_then(|value| value.as_u64())
+            .map(|value| value as u32)
+            .unwrap_or(self.max_output_tokens);
+        let temperature = work
+            .input
+            .get("temperature")
+            .and_then(|value| value.as_f64())
+            .unwrap_or(0.2);
+
+        let mut models = vec![model.to_owned()];
+        if self.allow_paid_fallback {
+            if let Some(fallback) = &self.paid_fallback_model {
+                if fallback != model {
+                    models.push(fallback.clone());
+                }
+            }
+        }
+
+        let mut last_error = AiAdapterError::Unavailable;
+        for candidate in models {
+            match self
+                .chat_once(&candidate, system, input, max_tokens, temperature)
+                .await
+            {
+                Ok(result) => return Ok(result),
+                Err(error) => {
+                    tracing::warn!(model = %candidate, %error, "AI chat attempt failed");
+                    last_error = error;
+                }
+            }
+        }
+        Err(last_error)
+    }
+
+    /// One model, with bounded retries for the transient failures that the
+    /// shared free tier produces constantly (429 rate limits, 5xx, timeouts).
+    async fn chat_once(
+        &self,
+        model: &str,
+        system: &str,
+        input: &str,
+        max_tokens: u32,
+        temperature: f64,
+    ) -> Result<AiWorkResult, AiAdapterError> {
         let body = serde_json::json!({
             "model": model,
             "messages": [{"role":"system","content":system},{"role":"user","content":input}],
-            "max_tokens": self.max_output_tokens,
-            "temperature": 0.2,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
         });
-        let response = self
-            .bearer(
-                self.client
-                    .post(format!("{}/chat/completions", self.endpoint))
-                    .json(&body),
-            )
-            .send()
-            .await?;
-        if response.status() == StatusCode::TOO_MANY_REQUESTS && self.allow_paid_fallback {
-            if let Some(fallback) = &self.paid_fallback_model {
-                return self.chat_with_model(work, fallback).await;
+        let backoff = [2u64, 6, 15];
+        let mut attempt = 0usize;
+        loop {
+            let sent = self
+                .bearer(
+                    self.client
+                        .post(format!("{}/chat/completions", self.endpoint))
+                        .json(&body),
+                )
+                .send()
+                .await;
+            let response = match sent {
+                Ok(response) => response,
+                Err(error)
+                    if attempt < backoff.len() && (error.is_timeout() || error.is_connect()) =>
+                {
+                    tokio::time::sleep(Duration::from_secs(backoff[attempt])).await;
+                    attempt += 1;
+                    continue;
+                }
+                Err(error) => return Err(error.into()),
+            };
+            let status = response.status();
+            if (status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error())
+                && attempt < backoff.len()
+            {
+                tokio::time::sleep(Duration::from_secs(backoff[attempt])).await;
+                attempt += 1;
+                continue;
             }
+            if !status.is_success() {
+                let text = response.text().await.unwrap_or_default();
+                return Err(AiAdapterError::Rejected(format!(
+                    "{} {}",
+                    status.as_u16(),
+                    text.chars().take(300).collect::<String>()
+                )));
+            }
+            let payload: serde_json::Value = response
+                .json()
+                .await
+                .map_err(|error| AiAdapterError::Decode(error.to_string()))?;
+            // OpenRouter can answer 200 with an `error` object.
+            if let Some(message) = payload
+                .get("error")
+                .and_then(|error| error.get("message"))
+                .and_then(|message| message.as_str())
+            {
+                if attempt < backoff.len() {
+                    tokio::time::sleep(Duration::from_secs(backoff[attempt])).await;
+                    attempt += 1;
+                    continue;
+                }
+                return Err(AiAdapterError::Rejected(message.to_owned()));
+            }
+            let usage: Option<Usage> = payload
+                .get("usage")
+                .and_then(|value| serde_json::from_value(value.clone()).ok());
+            self.settle_cost(usage.as_ref().and_then(|u| u.cost).unwrap_or(0.0));
+            let content = payload
+                .pointer("/choices/0/message/content")
+                .map(extract_text)
+                .unwrap_or_default();
+            if content.trim().is_empty() {
+                if attempt < backoff.len() {
+                    tokio::time::sleep(Duration::from_secs(backoff[attempt])).await;
+                    attempt += 1;
+                    // The reservation was already settled; re-reserve for the retry.
+                    self.reserve_budget()?;
+                    continue;
+                }
+                return Err(AiAdapterError::Decode(
+                    "the model returned an empty response".to_owned(),
+                ));
+            }
+            return Ok(AiWorkResult {
+                content: serde_json::json!({"text": content}),
+                metadata: serde_json::json!({"model": model, "usage": usage}),
+            });
         }
-        if !response.status().is_success() {
-            return Err(AiAdapterError::Rejected(
-                response.text().await.unwrap_or_default(),
-            ));
-        }
-        let payload: ChatResponse = response
-            .json()
-            .await
-            .map_err(|error| AiAdapterError::Decode(error.to_string()))?;
-        self.record_cost(
-            payload
-                .usage
-                .as_ref()
-                .and_then(|usage| usage.cost)
-                .unwrap_or(0.0),
-        );
-        let content = payload
-            .choices
-            .first()
-            .and_then(|choice| choice.message.content.clone())
-            .unwrap_or_default();
-        Ok(AiWorkResult {
-            content: serde_json::json!({"text": content}),
-            metadata: serde_json::json!({"model": model, "usage": payload.usage}),
-        })
-    }
-
-    async fn chat_with_model(
-        &self,
-        work: &AiWorkItem,
-        model: &str,
-    ) -> Result<AiWorkResult, AiAdapterError> {
-        // Keep the fallback explicit and bounded; this path is never reached unless
-        // OPENROUTER_ALLOW_PAID_FALLBACK=true.
-        let input = work
-            .input
-            .get("prompt")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let body = serde_json::json!({"model":model,"messages":[{"role":"user","content":input}],"max_tokens":self.max_output_tokens,"temperature":0.2});
-        let response = self
-            .bearer(
-                self.client
-                    .post(format!("{}/chat/completions", self.endpoint))
-                    .json(&body),
-            )
-            .send()
-            .await?;
-        if !response.status().is_success() {
-            return Err(AiAdapterError::Rejected(
-                response.text().await.unwrap_or_default(),
-            ));
-        }
-        let payload: ChatResponse = response
-            .json()
-            .await
-            .map_err(|error| AiAdapterError::Decode(error.to_string()))?;
-        self.record_cost(
-            payload
-                .usage
-                .as_ref()
-                .and_then(|usage| usage.cost)
-                .unwrap_or(0.0),
-        );
-        let content = payload
-            .choices
-            .first()
-            .and_then(|c| c.message.content.clone())
-            .unwrap_or_default();
-        Ok(AiWorkResult {
-            content: serde_json::json!({"text": content}),
-            metadata: serde_json::json!({"model": model, "usage": payload.usage}),
-        })
     }
 
     async fn transcribe(&self, work: &AiWorkItem) -> Result<AiWorkResult, AiAdapterError> {
@@ -303,15 +363,18 @@ impl OpenRouterAdapter {
             .send()
             .await?;
         if !response.status().is_success() {
-            return Err(AiAdapterError::Rejected(
-                response.text().await.unwrap_or_default(),
-            ));
+            let status = response.status().as_u16();
+            let text = response.text().await.unwrap_or_default();
+            return Err(AiAdapterError::Rejected(format!(
+                "{status} {}",
+                text.chars().take(300).collect::<String>()
+            )));
         }
         let payload: TranscriptionResponse = response
             .json()
             .await
             .map_err(|error| AiAdapterError::Decode(error.to_string()))?;
-        self.record_cost(
+        self.settle_cost(
             payload
                 .usage
                 .as_ref()
@@ -330,14 +393,14 @@ impl AiAdapter for OpenRouterAdapter {
     async fn execute(&self, work: AiWorkItem) -> Result<AiWorkResult, AiAdapterError> {
         self.reserve_budget()?;
         let task = TaskKind::parse(&work.job_type);
-        if task.is_light() && self.model_for(task) != "openrouter/free" {
-            // A configured model is respected, but the defaults in AppConfig are
-            // free. This branch is intentionally observable in metadata.
-        }
-        match task {
+        let result = match task {
             TaskKind::Transcript => self.transcribe(&work).await,
             _ => self.chat(&work, self.model_for(task)).await,
+        };
+        if result.is_err() {
+            self.release_reservation();
         }
+        result
     }
 
     fn provider_name(&self) -> &'static str {
@@ -355,26 +418,6 @@ impl AiAdapter for UnconfiguredAiAdapter {
     fn provider_name(&self) -> &'static str {
         "unconfigured"
     }
-}
-
-#[derive(Debug, Deserialize, Serialize, Default)]
-#[serde(default)]
-struct ChatResponse {
-    #[serde(default)]
-    choices: Vec<ChatChoice>,
-    usage: Option<Usage>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Default)]
-#[serde(default)]
-struct ChatChoice {
-    message: ChatMessage,
-}
-
-#[derive(Debug, Deserialize, Serialize, Default)]
-#[serde(default)]
-struct ChatMessage {
-    content: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -408,4 +451,58 @@ pub fn transcription_input(
     language: Option<&str>,
 ) -> serde_json::Value {
     serde_json::json!({"data": STANDARD.encode(audio), "format": format, "language": language})
+}
+
+/// Chat `content` is usually a string but some providers return an array of
+/// `{type:"text", text}` parts.
+fn extract_text(content: &serde_json::Value) -> String {
+    match content {
+        serde_json::Value::String(text) => text.clone(),
+        serde_json::Value::Array(parts) => parts
+            .iter()
+            .filter_map(|part| part.get("text").and_then(|text| text.as_str()))
+            .collect::<Vec<_>>()
+            .join(""),
+        _ => String::new(),
+    }
+}
+
+/// Models routinely wrap JSON in markdown fences or add a sentence before it.
+/// Returns the first complete JSON array/object found in `raw`.
+pub fn extract_json(raw: &str) -> Option<serde_json::Value> {
+    let trimmed = raw.trim();
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) {
+        return Some(value);
+    }
+    for (open, close) in [('[', ']'), ('{', '}')] {
+        if let (Some(start), Some(end)) = (trimmed.find(open), trimmed.rfind(close)) {
+            if end > start {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&trimmed[start..=end])
+                {
+                    return Some(value);
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_fenced_and_prefixed_json() {
+        let fenced = "```json\n[{\"a\":1}]\n```";
+        assert!(extract_json(fenced).unwrap().is_array());
+        let prefixed = "Here you go: [{\"a\":1},{\"a\":2}] hope it helps";
+        assert_eq!(extract_json(prefixed).unwrap().as_array().unwrap().len(), 2);
+        assert!(extract_json("no json here").is_none());
+    }
+
+    #[test]
+    fn extracts_text_parts() {
+        let parts = serde_json::json!([{"type":"text","text":"a"},{"type":"text","text":"b"}]);
+        assert_eq!(extract_text(&parts), "ab");
+    }
 }

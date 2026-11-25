@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { ClaimRecord } from '$lib/api';
+  import {
+    fetchSessionTranscript,
+    type TranscriptLine,
+  } from '$lib/api/aiStudy';
   import StudioHeader from './StudioHeader.svelte';
   import StudioNavTabs, { type StudioTab } from './StudioNavTabs.svelte';
   import TranscriptViewer from './TranscriptViewer.svelte';
@@ -7,6 +12,8 @@
   import FlashcardDeck from './FlashcardDeck.svelte';
   import AudioPlayerPanel from './AudioPlayerPanel.svelte';
   import LectureStudyNotes from './LectureStudyNotes.svelte';
+  import VisualsPanel from './VisualsPanel.svelte';
+  import RollingSummaryFeed from '$lib/components/shared/RollingSummaryFeed.svelte';
 
   let {
     claim,
@@ -18,30 +25,53 @@
 
   let activeTab = $state<StudioTab>('transcript');
 
-  const transcriptText = $derived.by(() => {
-    if (typeof localStorage === 'undefined') return '';
+  // The archive record's id is the lecture session UUID, which every study
+  // endpoint is keyed by. (Guest/offline records fall back to the join code.)
+  const sessionKey = $derived(
+    claim.attended === undefined && claim.session_code
+      ? claim.session_code
+      : claim.id || claim.session_code || ''
+  );
+
+  let transcriptLines = $state<TranscriptLine[]>([]);
+  let transcriptLoading = $state(true);
+  let transcriptError = $state('');
+
+  const stamp = (seconds: number | null) =>
+    seconds == null
+      ? ''
+      : `[${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}] `;
+
+  const transcriptText = $derived(
+    transcriptLines.map((l) => `${stamp(l.offset_sec)}${l.text}`).join('\n')
+  );
+
+  async function loadTranscript() {
+    transcriptLoading = true;
+    transcriptError = '';
     try {
-      const stored =
-        localStorage.getItem(`klasync-captions-${claim.id}`) ||
-        localStorage.getItem('klasync-captions');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
-            .map((c: any) =>
-              typeof c === 'string' ? c : c.text || c.content || ''
-            )
-            .filter(Boolean)
-            .join('\n');
-        }
-      }
-    } catch {}
-    return [
-      "[00:01] Welcome everyone to today's lecture session.",
-      '[00:15] Today we are discussing key principles, system architecture, and accessibility.',
-      '[01:30] Make sure to review core formulas and chapter breakdowns provided in your archive.',
-      '[03:45] Any questions asked during class have been synced to your student record.',
-    ].join('\n');
+      const response = await fetchSessionTranscript(sessionKey);
+      transcriptLines = response.lines;
+    } catch (error) {
+      transcriptLines = [];
+      transcriptError =
+        error instanceof Error
+          ? error.message
+          : 'Unable to load the transcript.';
+    } finally {
+      transcriptLoading = false;
+    }
+  }
+
+  onMount(() => {
+    void loadTranscript();
+  });
+
+  // Reload when a different lecture is picked from the list.
+  let lastKey = '';
+  $effect(() => {
+    if (lastKey && lastKey !== sessionKey) void loadTranscript();
+    lastKey = sessionKey;
   });
 </script>
 
@@ -50,20 +80,30 @@
   <StudioNavTabs bind:activeTab />
 
   <div class="studio-content-body">
-    {#if activeTab === 'transcript'}
-      <TranscriptViewer transcript={transcriptText} />
-    {:else if activeTab === 'chapters'}
-      <ChapterBreakdown sessionId={claim.session_code || claim.id} />
-    {:else if activeTab === 'flashcards'}
-      <FlashcardDeck sessionId={claim.session_code || claim.id} />
-    {:else if activeTab === 'audio'}
-      <AudioPlayerPanel sessionCode={claim.session_code || claim.id} />
-    {:else if activeTab === 'notes'}
-      <LectureStudyNotes
-        sessionId={claim.id}
-        sessionTitle={claim.session_title}
-      />
-    {/if}
+    {#key sessionKey}
+      {#if activeTab === 'transcript'}
+        <TranscriptViewer
+          transcript={transcriptText}
+          isLoading={transcriptLoading}
+          errorMessage={transcriptError}
+        />
+      {:else if activeTab === 'summary'}
+        <RollingSummaryFeed sessionId={sessionKey} title="Lecture summary" />
+      {:else if activeTab === 'chapters'}
+        <ChapterBreakdown sessionId={sessionKey} />
+      {:else if activeTab === 'flashcards'}
+        <FlashcardDeck sessionId={sessionKey} />
+      {:else if activeTab === 'visuals'}
+        <VisualsPanel sessionId={sessionKey} />
+      {:else if activeTab === 'audio'}
+        <AudioPlayerPanel sessionCode={sessionKey} />
+      {:else if activeTab === 'notes'}
+        <LectureStudyNotes
+          sessionId={claim.id}
+          sessionTitle={claim.session_title}
+        />
+      {/if}
+    {/key}
   </div>
 </div>
 

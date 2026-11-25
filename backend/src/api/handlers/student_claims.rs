@@ -175,6 +175,18 @@ pub async fn verify(
     .await
     .log_internal_error("Failed to update claim verification status")?;
 
+    // Mirror the link in student_session_claims so the archive query (and the
+    // dynamic resource-access checks) see this claim as well.
+    let _ = sqlx::query(
+        "insert into student_session_claims (participant_id, student_account_id, verified_at)
+         values ($1, $2, now())
+         on conflict (participant_id) do nothing",
+    )
+    .bind(record.participant_id)
+    .bind(student.id)
+    .execute(pool)
+    .await;
+
     let enrollment_id = Uuid::now_v7();
     let _ = sqlx::query!(
         r#"insert into student_course_enrollments (id, student_account_id, course_id, enrollment_type)
@@ -188,6 +200,8 @@ pub async fn verify(
     )
     .execute(pool)
     .await;
+
+    crate::student_sync::reconcile_student_logged(pool, student.id).await;
 
     audit::record_session_event(pool, record.session_id, Some(student.id), Some("student"), AuditEvent {
         event_type: "student_participant_claimed",

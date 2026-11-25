@@ -1,10 +1,16 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getAudioChunkUrl } from '$lib/api';
+  import { onDestroy, onMount } from 'svelte';
+  import {
+    fetchRecordingBlob,
+    fetchRecordings,
+    type RecordingInfo,
+  } from '$lib/api/aiStudy';
   import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
   import { triggerHaptic } from '$lib/native/haptics';
   import { Play, Pause, Volume2, Gauge } from '@lucide/svelte';
+  import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
 
+  /** Session UUID (preferred) or short code. */
   let { sessionCode = '' }: { sessionCode?: string } = $props();
 
   let audioElement: HTMLAudioElement | null = $state(null);
@@ -13,9 +19,14 @@
   let duration = $state(0);
   let playbackRate = $state<'1.0x' | '1.25x' | '1.5x'>('1.0x');
 
-  const chunkUrl = $derived(
-    sessionCode ? getAudioChunkUrl(sessionCode, 1) : ''
-  );
+  let segments = $state<RecordingInfo[]>([]);
+  let segmentIndex = $state(0);
+  let objectUrl = $state('');
+  let isLoadingList = $state(true);
+  let isLoadingAudio = $state(false);
+  let errorMessage = $state('');
+  let autoplayNext = false;
+
   const numericRate = $derived(
     playbackRate === '1.25x' ? 1.25 : playbackRate === '1.5x' ? 1.5 : 1.0
   );
@@ -23,6 +34,66 @@
   $effect(() => {
     if (audioElement) audioElement.playbackRate = numericRate;
   });
+
+  function revoke() {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = '';
+  }
+
+  /**
+   * `<audio src>` cannot send the student's bearer token, so the recording is
+   * downloaded through the authenticated client and played from an object URL.
+   */
+  async function loadSegment(index: number) {
+    const segment = segments[index];
+    if (!segment) return;
+    isLoadingAudio = true;
+    errorMessage = '';
+    try {
+      const blob = await fetchRecordingBlob(sessionCode, segment.resource_id);
+      revoke();
+      objectUrl = URL.createObjectURL(blob);
+      segmentIndex = index;
+      currentTime = 0;
+    } catch (error) {
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'The recording could not be loaded.';
+    } finally {
+      isLoadingAudio = false;
+    }
+  }
+
+  onMount(async () => {
+    try {
+      segments = await fetchRecordings(sessionCode);
+      if (segments.length) await loadSegment(0);
+    } catch (error) {
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Unable to look up the recording.';
+    } finally {
+      isLoadingList = false;
+    }
+  });
+
+  async function handleEnded() {
+    isPlaying = false;
+    void releaseWakeLock();
+    if (segmentIndex + 1 < segments.length) {
+      autoplayNext = true;
+      await loadSegment(segmentIndex + 1);
+    }
+  }
+
+  function handleCanPlay() {
+    if (autoplayNext && audioElement) {
+      autoplayNext = false;
+      void audioElement.play().catch(() => {});
+    }
+  }
 
   function togglePlay() {
     if (!audioElement) return;
@@ -54,6 +125,7 @@
 
   onDestroy(() => {
     void releaseWakeLock();
+    revoke();
   });
 </script>
 
@@ -64,10 +136,22 @@
     </div>
   </div>
 
+  {#if isLoadingList || isLoadingAudio}
+    <SkeletonCard lines={2} label="Loading lecture recording…" />
+  {:else if errorMessage}
+    <p class="audio-error" role="alert">{errorMessage}</p>
+  {:else if segments.length === 0}
+    <p class="audio-empty">
+      No audio recording was captured for this lecture. Recordings are saved
+      when the lecturer records with the microphone turned on.
+    </p>
+  {/if}
+
   <audio
     bind:this={audioElement}
-    src={chunkUrl}
+    src={objectUrl || undefined}
     preload="metadata"
+    oncanplay={handleCanPlay}
     bind:currentTime
     bind:duration
     onplay={() => {
@@ -78,13 +162,21 @@
       isPlaying = false;
       void releaseWakeLock();
     }}
-    onended={() => {
-      isPlaying = false;
-      void releaseWakeLock();
+    onended={handleEnded}
+    onerror={() => {
+      if (objectUrl)
+        errorMessage = 'This recording format cannot be played on this device.';
     }}
   ></audio>
 
-  <div class="player-card">
+  {#if segments.length > 1}
+    <p class="segment-note">
+      Part {segmentIndex + 1} of {segments.length}. Parts play one after
+      another.
+    </p>
+  {/if}
+
+  <div class="player-card" class:disabled={!objectUrl}>
     <div class="progress-wrap">
       <input
         type="range"
@@ -102,7 +194,12 @@
     </div>
 
     <div class="control-buttons-row">
-      <button type="button" class="primary play-btn" onclick={togglePlay}>
+      <button
+        type="button"
+        class="primary play-btn"
+        onclick={togglePlay}
+        disabled={!objectUrl}
+      >
         {#if isPlaying}
           <Pause size={14} />
           <span>Pause</span>
@@ -130,6 +227,20 @@
 </div>
 
 <style>
+  .audio-error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-error);
+  }
+  .audio-empty,
+  .segment-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-warm-cream-dim);
+  }
+  .player-card.disabled {
+    opacity: 0.55;
+  }
   .audio-player-panel {
     display: flex;
     flex-direction: column;

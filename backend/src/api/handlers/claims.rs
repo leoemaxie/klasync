@@ -7,6 +7,12 @@ use crate::{
     state::AppState,
 };
 
+/// Links a guest participation to the signed-in student's account.
+///
+/// Matching is done by matric number on the server (see `student_sync`), so the
+/// result is identical no matter which device the student joined from, and a
+/// single call also picks up every other session the same matric number
+/// attended.
 pub async fn claim_guest_participation(
     State(state): State<AppState>,
     OptionalStudent(student): OptionalStudent,
@@ -17,41 +23,23 @@ pub async fn claim_guest_participation(
         Some(s) => s,
         None => return Ok(StatusCode::OK),
     };
-    let mut transaction = pool
-        .begin()
+    crate::student_sync::reconcile_student(pool, student.id)
         .await
-        .log_internal_error("Failed to start transaction for guest claim")?;
-    let claim_id = sqlx::query_scalar!(
-        "insert into student_session_claims (participant_id, student_account_id, verified_at) \
-         select p.id, sa.id, now() from session_participants p \
-         join student_accounts sa on sa.id = $2 \
-         where p.id = $1 and lower(p.matric_number) = lower(sa.matric_number) \
-         on conflict (participant_id) do update set verified_at = excluded.verified_at \
-         returning id",
-        input.participant_id,
-        student.id
-    )
-    .fetch_optional(&mut *transaction)
-    .await
-    .log_internal_error("Failed to insert student session claim")?;
+        .log_internal_error("Failed to reconcile student sessions")?;
 
-    if claim_id.is_some() {
-        sqlx::query!(
-            "insert into resource_access_grants (resource_id, student_account_id) \
-             select resource.id, $2 from lecture_resources resource \
-             join session_participants participant on participant.session_id = resource.session_id \
-             where participant.id = $1 \
-             on conflict (resource_id, student_account_id) do nothing",
-            input.participant_id,
-            student.id
-        )
-        .execute(&mut *transaction)
-        .await
-        .log_internal_error("Failed to grant resource access for claimed session")?;
-        transaction
-            .commit()
-            .await
-            .log_internal_error("Failed to commit student claim transaction")?;
+    let claimed = sqlx::query_scalar::<_, bool>(
+        "select exists(select 1 from student_session_claims
+                       where participant_id = $1 and student_account_id = $2)",
+    )
+    .bind(input.participant_id)
+    .bind(student.id)
+    .fetch_one(pool)
+    .await
+    .log_internal_error("Failed to verify student session claim")?;
+    if !claimed {
+        return Err(ApiError::forbidden(
+            "This attendance record does not match your matric number. Use university email verification to claim it.",
+        ));
     }
     Ok(StatusCode::OK)
 }

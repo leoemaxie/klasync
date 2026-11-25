@@ -14,6 +14,9 @@
   import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
   import { triggerHaptic } from '$lib/native/haptics';
   import LiveQaPanel from './LiveQaPanel.svelte';
+  import LivePollPanel from './LivePollPanel.svelte';
+  import RaisedHandsList from './RaisedHandsList.svelte';
+  import RollingSummaryFeed from '$lib/components/shared/RollingSummaryFeed.svelte';
 
   let {
     session,
@@ -222,6 +225,13 @@
       onPauseToggle={handlePauseToggle}
       onRecordingToggle={handleRecordingToggle}
       onEndSession={handleEndSession}
+    />
+    <RaisedHandsList sessionCode={session.code} />
+    <LivePollPanel sessionCode={session.code} isLecturer={true} />
+    <RollingSummaryFeed
+      live
+      sessionCode={session.code}
+      title="Rolling summary"
     />
     <LiveQaPanel sessionCode={session.code} isLecturer={true} />
   {:else}

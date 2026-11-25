@@ -1,9 +1,23 @@
 <script lang="ts">
-  import { FileText, Bookmark, Layers, Volume2, Edit3 } from '@lucide/svelte';
+  import {
+    FileText,
+    Bookmark,
+    Layers,
+    Volume2,
+    Edit3,
+    ListChecks,
+    Network,
+  } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
   export type StudioTab =
-    'transcript' | 'chapters' | 'flashcards' | 'audio' | 'notes';
+    | 'transcript'
+    | 'summary'
+    | 'chapters'
+    | 'flashcards'
+    | 'visuals'
+    | 'audio'
+    | 'notes';
 
   let {
     activeTab = $bindable<StudioTab>('transcript'),
@@ -32,6 +46,16 @@
     type="button"
     role="tab"
     class="tab-btn"
+    class:active={activeTab === 'summary'}
+    onclick={() => handleTab('summary')}
+  >
+    <ListChecks size={13} />
+    <span>Summary</span>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="tab-btn"
     class:active={activeTab === 'chapters'}
     onclick={() => handleTab('chapters')}
   >
@@ -47,6 +71,16 @@
   >
     <Layers size={13} />
     <span>Flashcards</span>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="tab-btn"
+    class:active={activeTab === 'visuals'}
+    onclick={() => handleTab('visuals')}
+  >
+    <Network size={13} />
+    <span>Visuals</span>
   </button>
   <button
     type="button"

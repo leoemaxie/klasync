@@ -7,6 +7,7 @@
   import {
     fetchSessionFlashcards,
     generateSessionFlashcards,
+    runStudyJob,
   } from '$lib/api/aiStudy';
   import {
     getStoredDeck,
@@ -27,10 +28,12 @@
   let currentIndex = $state(0);
   let isLoading = $state(true);
   let isGenerating = $state(false);
+  let errorMessage = $state('');
   let masteredCount = $derived(deck.filter((c) => c.mastered).length);
 
   async function loadFlashcards() {
     isLoading = true;
+    errorMessage = '';
     try {
       if (cards.length > 0) {
         deck = [...cards];
@@ -42,7 +45,15 @@
         return;
       }
 
-      const apiCards = await fetchSessionFlashcards(sessionId);
+      const apiCards = await fetchSessionFlashcards(sessionId).catch(
+        (error) => {
+          errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'Unable to load flashcards.';
+          return null;
+        }
+      );
       if (apiCards && apiCards.length > 0) {
         const stored = getStoredDeck(sessionId) || [];
         const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
@@ -92,32 +103,40 @@
     triggerHaptic('selection');
   }
 
-  async function handleGenerate(topic: string) {
+  function applyCards(
+    updated: Awaited<ReturnType<typeof fetchSessionFlashcards>>
+  ) {
+    const stored = getStoredDeck(sessionId) || [];
+    const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
+    deck = updated.map((c) => ({
+      id: c.id,
+      prompt: c.prompt,
+      answer: c.answer,
+      topic_tag: c.topic_tag,
+      difficulty: c.difficulty,
+      mastered: !!masteredMap.get(c.id),
+    }));
+    saveStoredDeck(sessionId, deck);
+  }
+
+  async function handleGenerate(topic?: string) {
     isGenerating = true;
+    errorMessage = '';
+    const before = deck.length;
     try {
-      const job = await generateSessionFlashcards(sessionId).catch(() => null);
-      if (job) {
-        // Poll backend for newly generated AI cards
-        for (let i = 0; i < 5; i++) {
-          await new Promise((res) => setTimeout(res, 2500));
-          const updated = await fetchSessionFlashcards(sessionId);
-          if (updated && updated.length > deck.length) {
-            const stored = getStoredDeck(sessionId) || [];
-            const masteredMap = new Map(stored.map((c) => [c.id, c.mastered]));
-            deck = updated.map((c) => ({
-              id: c.id,
-              prompt: c.prompt,
-              answer: c.answer,
-              topic_tag: c.topic_tag,
-              difficulty: c.difficulty,
-              mastered: !!masteredMap.get(c.id),
-            }));
-            saveStoredDeck(sessionId, deck);
-            currentIndex = 0;
-            return;
-          }
-        }
+      // Waits for the job and surfaces the real failure reason (model busy, no
+      // transcript yet, ...) rather than silently doing nothing.
+      await runStudyJob(() => generateSessionFlashcards(sessionId, topic));
+      const updated = await fetchSessionFlashcards(sessionId);
+      if (updated.length === 0) {
+        errorMessage = 'No flashcards were produced. Please try again.';
+        return;
       }
+      applyCards(updated);
+      currentIndex = Math.min(before, Math.max(updated.length - 1, 0));
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Flashcard generation failed.';
     } finally {
       isGenerating = false;
     }
@@ -179,6 +198,15 @@
 
   <FlashcardGenerator onGenerate={handleGenerate} />
 
+  {#if isGenerating}
+    <p class="gen-status" role="status">
+      Generating flashcards from the lecture. This can take up to a minute…
+    </p>
+  {/if}
+  {#if errorMessage}
+    <p class="gen-error" role="alert">{errorMessage}</p>
+  {/if}
+
   {#if isLoading && deck.length === 0}
     <SkeletonCard lines={3} label="Loading flashcards..." />
   {:else if deck.length > 0}
@@ -221,16 +249,34 @@
       <div class="empty-icon-wrap">
         <Layers size={24} color="var(--color-driftwood)" />
       </div>
-      <h3 class="empty-title">No Flashcards Generated</h3>
+      <h3 class="empty-title">No Flashcards Yet</h3>
       <p class="empty-desc">
-        AI flashcards for this lecture have not been generated yet. Use the topic
-        generator above to create revision flashcards.
+        Generate a deck from the whole lecture, or enter a topic above to focus
+        it.
       </p>
+      <button
+        type="button"
+        class="primary"
+        onclick={() => handleGenerate()}
+        disabled={isGenerating}
+      >
+        {isGenerating ? 'Generating…' : 'Generate flashcards'}
+      </button>
     </div>
   {/if}
 </div>
 
 <style>
+  .gen-status {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-warm-cream-dim);
+  }
+  .gen-error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-error);
+  }
   .flashcard-deck {
     display: flex;
     flex-direction: column;

@@ -71,7 +71,7 @@ pub struct SessionParticipant {
     pub heartbeat_count: i32,
 }
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct CaptionChunk {
     pub id: Uuid,
     pub session_id: Uuid,
@@ -190,13 +190,21 @@ pub struct RosterImportReport {
 
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct StudentArchiveItem {
+    /// Lecture session UUID.
     pub id: Uuid,
+    pub session_code: String,
     pub course_code: String,
     pub course_title: String,
     pub academic_session: String,
     pub semester: String,
     pub session_title: String,
     pub date: String,
+    pub started_at: DateTime<Utc>,
+    pub status: String,
+    /// True when the student was present (claimed participant), false when the
+    /// session is only visible because the student is on the course roster.
+    pub attended: bool,
+    pub has_audio: bool,
 }
 
 #[derive(Deserialize)]

@@ -84,28 +84,67 @@ pub async fn list_student_archive(
         Some(s) => s.id,
         None => return Ok(Json(vec![])),
     };
-    let items = sqlx::query_as!(
-        StudentArchiveItem,
-        r#"select distinct s.id, 
-          c.code as "course_code!", 
-          c.title as "course_title!",
-          c.academic_session as "academic_session!",
-          c.semester as "semester!",
-          s.title as "session_title!",
-          to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') as "date!"
-         from student_session_claims claim
-         join session_participants p on p.id = claim.participant_id
-         join lecture_sessions s on s.id = p.session_id
-         join courses c on c.id = s.course_id
-         where claim.student_account_id = $1
-         order by to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') desc"#,
-        student_id
+    // Every call re-matches the account to its sessions by matric number so a
+    // new device (or a late registration) sees the full archive.
+    crate::student_sync::reconcile_student_logged(pool, student_id).await;
+    let items = fetch_student_archive(pool, student_id)
+        .await
+        .log_internal_error("Failed to list student archive")?;
+    Ok(Json(items))
+}
+
+pub async fn fetch_student_archive(
+    pool: &sqlx::PgPool,
+    student_id: Uuid,
+) -> Result<Vec<StudentArchiveItem>, sqlx::Error> {
+    sqlx::query_as::<_, StudentArchiveItem>(
+        r#"select s.id,
+                  s.short_code as session_code,
+                  c.code as course_code,
+                  c.title as course_title,
+                  c.academic_session,
+                  c.semester,
+                  s.title as session_title,
+                  to_char(coalesce(s.started_at, now()), 'Mon DD, YYYY') as date,
+                  coalesce(s.started_at, now()) as started_at,
+                  s.status::text as status,
+                  exists(
+                    select 1 from session_participants p
+                    where p.session_id = s.id
+                      and (p.student_account_id = $1
+                           or exists(select 1 from student_session_claims cl
+                                     where cl.participant_id = p.id and cl.student_account_id = $1))
+                  ) as attended,
+                  exists(
+                    select 1 from lecture_resources r
+                    where r.session_id = s.id and r.resource_type in ('audio', 'recording')
+                      and r.storage_key is not null
+                  ) as has_audio
+           from lecture_sessions s
+           join courses c on c.id = s.course_id
+           where s.deleted_at is null
+             and (
+               exists(
+                 select 1 from session_participants p
+                 where p.session_id = s.id
+                   and (p.student_account_id = $1
+                        or exists(select 1 from student_session_claims cl
+                                  where cl.participant_id = p.id and cl.student_account_id = $1))
+               )
+               or (
+                 s.status = 'ended'
+                 and exists(
+                   select 1 from student_course_enrollments e
+                   where e.course_id = s.course_id and e.student_account_id = $1
+                     and e.enrollment_type in ('claimed', 'roster_matched')
+                 )
+               )
+             )
+           order by coalesce(s.started_at, now()) desc"#,
     )
+    .bind(student_id)
     .fetch_all(pool)
     .await
-    .log_internal_error("Failed to list student archive")?;
-
-    Ok(Json(items))
 }
 
 fn validate_resource(input: &CreateLectureResourceRequest) -> Result<(), ApiError> {
@@ -142,14 +181,27 @@ pub async fn download_for_student(
     Path(resource_id): Path<Uuid>,
 ) -> Result<Response, ApiError> {
     let pool = state.db_pool();
-    let resource = sqlx::query_as!(
-        DownloadableResource,
+    // Access is derived from attendance/roster rather than from per-resource
+    // grants: grants were only written at claim time, so anything produced
+    // after the claim (the lecture audio, AI outputs) was permanently 404.
+    let resource = sqlx::query_as::<_, DownloadableResource>(
         r#"select r.storage_key, r.content::text as content, r.content_type, r.original_filename
-         from lecture_resources r join resource_access_grants g on g.resource_id = r.id
-         where r.id = $1 and g.student_account_id = $2 and (r.expires_at is null or r.expires_at > now())"#,
-        resource_id,
-        student.id
+           from lecture_resources r
+           where r.id = $1 and (r.expires_at is null or r.expires_at > now())
+             and (
+               exists(select 1 from resource_access_grants g
+                      where g.resource_id = r.id and g.student_account_id = $2)
+               or exists(
+                 select 1 from session_participants p
+                 where p.session_id = r.session_id
+                   and (p.student_account_id = $2
+                        or exists(select 1 from student_session_claims cl
+                                  where cl.participant_id = p.id and cl.student_account_id = $2))
+               )
+             )"#,
     )
+    .bind(resource_id)
+    .bind(student.id)
     .fetch_optional(pool)
     .await
     .log_internal_error("Failed to query downloadable resource for student")?

@@ -5,7 +5,7 @@
   let {
     onGenerate,
   }: {
-    onGenerate: (topic: string) => void | Promise<void>;
+    onGenerate: (topic?: string) => void | Promise<void>;
   } = $props();
 
   let topic = $state('');
@@ -14,11 +14,11 @@
 
   async function handleGenerate(val?: string) {
     const query = (val || topic).trim();
-    if (!query || isGenerating) return;
+    if (isGenerating) return;
     triggerHaptic('medium');
     isGenerating = true;
     try {
-      await onGenerate(query);
+      await onGenerate(query || undefined);
       topic = '';
     } finally {
       isGenerating = false;
@@ -31,7 +31,7 @@
     <input
       type="text"
       bind:value={topic}
-      placeholder="Enter topic (e.g. Memory, Concurrency)..."
+      placeholder="Optional topic (e.g. Memory, Concurrency)..."
       class="generator-input"
       aria-label="Generate flashcards by topic"
       onkeydown={(e) => e.key === 'Enter' && handleGenerate()}
@@ -40,7 +40,7 @@
       type="button"
       class="primary gen-btn"
       onclick={() => handleGenerate()}
-      disabled={isGenerating || !topic.trim()}
+      disabled={isGenerating}
     >
       <Sparkles size={14} />
       <span>{isGenerating ? 'Generating...' : 'Generate'}</span>
