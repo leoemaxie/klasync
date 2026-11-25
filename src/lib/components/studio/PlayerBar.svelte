@@ -8,6 +8,8 @@
     Bookmark,
   } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Spinner from '$lib/components/ui/Spinner.svelte';
   import { useStudio, SPEEDS } from '$lib/studio/lectureStudio.svelte';
   import { clock, spokenClock } from '$lib/studio/time';
 
@@ -55,19 +57,18 @@
 
 <section class="player" aria-label="Lecture player">
   <div class="transport">
-    <button
-      type="button"
-      class="icon-btn"
+    <Button
+      icon
       aria-label="Back 15 seconds"
       title="Back 15 seconds (J)"
       onclick={() => press(() => studio.skip(-15))}
     >
       <RotateCcw size={18} /><span class="skip-n" aria-hidden="true">15</span>
-    </button>
-    <button
-      type="button"
+    </Button>
+    <Button
+      variant="solid"
+      icon
       class="play"
-      class:loading={studio.audioLoading}
       aria-label={studio.playing ? 'Pause' : 'Play'}
       title={studio.hasAudio
         ? `${studio.playing ? 'Pause' : 'Play'} (K)`
@@ -77,22 +78,21 @@
       onclick={() => press(() => studio.toggle())}
     >
       {#if studio.audioLoading}
-        <span class="spinner" aria-hidden="true"></span>
+        <Spinner size={18} />
       {:else if studio.playing}
         <Pause size={20} fill="currentColor" />
       {:else}
         <Play size={20} fill="currentColor" />
       {/if}
-    </button>
-    <button
-      type="button"
-      class="icon-btn"
+    </Button>
+    <Button
+      icon
       aria-label="Forward 15 seconds"
       title="Forward 15 seconds (L)"
       onclick={() => press(() => studio.skip(15))}
     >
       <RotateCw size={18} /><span class="skip-n" aria-hidden="true">15</span>
-    </button>
+    </Button>
   </div>
 
   <div class="scrub">
@@ -145,11 +145,9 @@
       <span class="chapter-now" title={chapterTitle}>{chapterTitle}</span>
     {/if}
     <div class="right">
-      <button
-        type="button"
-        class="icon-btn bookmark"
-        class:on={bookmarked}
-        aria-pressed={bookmarked}
+      <Button
+        icon
+        pressed={bookmarked}
         aria-label={bookmarked ? 'Remove saved moment' : 'Save this moment'}
         title="Save this moment (B)"
         onclick={() => press(() => studio.toggleBookmark())}
@@ -158,16 +156,16 @@
             size={17}
             fill="currentColor"
           />{:else}<BookmarkPlus size={17} />{/if}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        variant="outline"
         class="speed"
         aria-label="Playback speed {studio.rate}×. Press to change."
         title="Playback speed ( &lt; &gt; )"
         onclick={() => press(() => studio.cycleRate(1))}
       >
         {studio.rate}×
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -231,25 +229,16 @@
     color: var(--color-error);
   }
 
-  .icon-btn {
-    position: relative;
-    display: inline-grid;
-    place-items: center;
-    width: var(--control-h);
-    min-width: var(--control-h);
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-    transition:
-      background var(--motion-fast) var(--ease-out),
-      color var(--motion-fast) var(--ease-out);
+  .player :global(.play) {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
-  .icon-btn:hover {
-    background: var(--surface-hover);
+  .player :global(.speed) {
+    min-width: 52px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-variant-numeric: tabular-nums;
     color: var(--text-primary);
   }
   .skip-n {
@@ -259,60 +248,9 @@
     letter-spacing: 0;
     margin-top: 1px;
   }
-  .bookmark.on {
-    color: var(--text-accent);
-  }
-  .play {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: var(--text-primary);
-    color: var(--color-walnut-shadow);
-    box-shadow: var(--elev-2);
-    transition:
-      transform var(--motion-fast) var(--ease-out),
-      background var(--motion-fast) var(--ease-out);
-  }
-  .play:hover:not(:disabled) {
-    transform: scale(1.06);
-  }
-  .play:active:not(:disabled) {
-    transform: scale(0.96);
-  }
-  .play:disabled {
-    background: var(--surface-3);
-    color: var(--text-tertiary);
-    box-shadow: none;
-    opacity: 1;
-  }
-  .icon-btn:focus-visible,
-  .play:focus-visible,
-  .speed:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
   .track-wrap:has(input:focus-visible) .thumb {
     box-shadow: var(--focus-ring);
     transform: scale(1.25);
-  }
-  .spinner {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid rgba(16, 9, 4, 0.25);
-    border-top-color: var(--color-walnut-shadow);
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .time {
@@ -439,26 +377,6 @@
     font-size: 13px;
     color: var(--text-secondary);
   }
-  .speed {
-    min-width: 52px;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 10px;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-primary);
-    font-family: var(--font-mono, ui-monospace, monospace);
-    font-size: 12.5px;
-    font-variant-numeric: tabular-nums;
-    transition:
-      border-color var(--motion-fast) var(--ease-out),
-      background var(--motion-fast) var(--ease-out);
-  }
-  .speed:hover {
-    border-color: var(--border-strong);
-    background: var(--surface-hover);
-  }
 
   /* Medium: drop the chapter title, keep controls. */
   @media (max-width: 1100px) {
@@ -486,12 +404,6 @@
     }
     .transport {
       gap: 2px;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .spinner {
-      animation-duration: 1.6s !important;
-      animation-iteration-count: infinite !important;
     }
   }
 </style>

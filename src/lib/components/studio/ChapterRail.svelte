@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ListTree, Sparkles, Bookmark } from '@lucide/svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import { useStudio } from '$lib/studio/lectureStudio.svelte';
   import { clock } from '$lib/studio/time';
@@ -98,9 +99,8 @@
           {studio.chaptersError ||
             'Chapters are built from the lecture transcript.'}
         </p>
-        <button
-          type="button"
-          class="gen"
+        <Button
+          variant="soft"
           onclick={() => studio.generateChapters()}
           disabled={studio.chaptersStatus === 'generating' ||
             studio.lines.length === 0}
@@ -109,7 +109,7 @@
           {studio.chaptersStatus === 'generating'
             ? 'Generating…'
             : 'Generate chapters'}
-        </button>
+        </Button>
         {#if studio.lines.length === 0 && studio.transcriptStatus === 'ready'}
           <p class="needs">Needs a transcript first.</p>
         {/if}
@@ -299,24 +299,6 @@
   }
   .empty .needs {
     color: var(--text-tertiary);
-  }
-  .gen {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 14px;
-    border: 1px solid var(--border-accent);
-    border-radius: 999px;
-    background: var(--surface-accent);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .gen:hover:not(:disabled) {
-    background: rgba(220, 80, 0, 0.24);
   }
   .moments {
     margin-top: 14px;
