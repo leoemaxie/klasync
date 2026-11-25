@@ -212,7 +212,10 @@ async fn transcript_has_offsets_and_hides_moderated_lines() {
 
 use async_trait::async_trait;
 use klasync_backend::{
-    ai::{AiAdapter, AiAdapterError, AiWorkItem, AiWorkResult},
+    ai::{
+        AiError, AiGateway, GatewayParts, PriceTable, Task, TextOutput, TextProvider, TextRequest,
+        Tier, Usage,
+    },
     ai_worker::process_job,
     config::AppConfig,
     realtime::CaptionHub,
@@ -220,38 +223,75 @@ use klasync_backend::{
 };
 use std::sync::Arc;
 
-struct MockAi(Result<String, String>);
+/// A model chain where each model answers with a scripted result.
+struct MockAi(Vec<(&'static str, Result<String, String>)>);
+
+impl MockAi {
+    fn ok(text: &str) -> Self {
+        Self(vec![("mock", Ok(text.to_owned()))])
+    }
+    fn failing(message: &str) -> Self {
+        Self(vec![("mock", Err(message.to_owned()))])
+    }
+}
 
 #[async_trait]
-impl AiAdapter for MockAi {
-    async fn execute(&self, _: AiWorkItem) -> Result<AiWorkResult, AiAdapterError> {
-        match &self.0 {
-            Ok(text) => Ok(AiWorkResult {
-                content: serde_json::json!({ "text": text }),
-                metadata: serde_json::json!({"model": "mock", "usage": null}),
-            }),
-            Err(message) => Err(AiAdapterError::Rejected(message.clone())),
-        }
-    }
-    fn provider_name(&self) -> &'static str {
+impl TextProvider for MockAi {
+    fn name(&self) -> &'static str {
         "mock"
+    }
+    fn models_for(&self, _: Task, _: Tier) -> Vec<String> {
+        self.0
+            .iter()
+            .map(|(model, _)| (*model).to_owned())
+            .collect()
+    }
+    async fn generate(&self, model: &str, _: &TextRequest) -> Result<TextOutput, AiError> {
+        let (_, result) = self
+            .0
+            .iter()
+            .find(|(m, _)| *m == model)
+            .expect("scripted model");
+        match result {
+            Ok(text) => Ok(TextOutput {
+                text: text.clone(),
+                usage: Usage::default(),
+                model: model.to_owned(),
+                provider: "mock",
+                truncated: false,
+            }),
+            Err(message) => Err(AiError::Rejected(message.clone())),
+        }
     }
 }
 
 fn state_with(pool: PgPool, ai: MockAi) -> AppState {
     let config = AppConfig::from_env();
     AppState {
-        database: pool,
+        database: pool.clone(),
         storage: klasync_backend::storage::adapter_from_config(&config),
         mailer: klasync_backend::email::sender_from_config(&config),
-        ai: Arc::new(ai),
+        ai: Arc::new(AiGateway::new(GatewayParts {
+            text: vec![Arc::new(ai)],
+            transcriber: None,
+            embedder: None,
+            batch: None,
+            prices: PriceTable::defaults(),
+            pool: Some(pool),
+            daily_budget_usd: 0.0,
+        })),
         config: Arc::new(config),
         captions: CaptionHub::default(),
         redis: None,
     }
 }
 
-async fn queue_job(pool: &PgPool, session: Uuid, job_type: &str, params: serde_json::Value) -> (Uuid, Uuid) {
+async fn queue_job(
+    pool: &PgPool,
+    session: Uuid,
+    job_type: &str,
+    params: serde_json::Value,
+) -> (Uuid, Uuid) {
     let requester = Uuid::new_v4(); // students are not lecturers: the FK was dropped in 0011
     let id: Uuid = sqlx::query_scalar(
         "insert into ai_jobs (session_id, requested_by, job_type, params) values ($1, $2, $3, $4) returning id",
@@ -291,16 +331,25 @@ async fn flashcards_job_persists_cards_from_fenced_json() {
     // Models wrap JSON in fences and prose; the old parser silently stored nothing.
     let reply = "Sure!\n```json\n[{\"prompt\":\"What is photosynthesis?\",\"answer\":\"Light to chemical energy\",\"topic_tag\":\"Biology\",\"difficulty\":\"easy\"},\
                  {\"question\":\"Where does it occur?\",\"answer\":\"Chloroplasts\"}]\n```";
-    let state = state_with(pool.clone(), MockAi(Ok(reply.to_owned())));
-    let (job, requester) = queue_job(&pool, f.session_a, "flashcards", serde_json::json!({"topic": null})).await;
+    let state = state_with(pool.clone(), MockAi::ok(reply));
+    let (job, requester) = queue_job(
+        &pool,
+        f.session_a,
+        "flashcards",
+        serde_json::json!({"topic": null}),
+    )
+    .await;
 
-    let result = process_job(&state, job, requester).await.expect("job succeeds");
-    assert_eq!(result.status, "completed");
-    let cards: i64 = sqlx::query_scalar("select count(*) from session_flashcards where session_id = $1")
-        .bind(f.session_a)
-        .fetch_one(&pool)
+    let result = process_job(&state, job, requester)
         .await
-        .unwrap();
+        .expect("job succeeds");
+    assert_eq!(result.status, "completed");
+    let cards: i64 =
+        sqlx::query_scalar("select count(*) from session_flashcards where session_id = $1")
+            .bind(f.session_a)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert_eq!(cards, 2);
 }
 
@@ -311,19 +360,20 @@ async fn failed_job_records_reason_and_empty_transcript_is_explained() {
     let f = seed(&pool, &tag).await;
 
     // 1. No transcript at all.
-    let state = state_with(pool.clone(), MockAi(Ok("[]".into())));
+    let state = state_with(pool.clone(), MockAi::ok("[]"));
     let (job, requester) = queue_job(&pool, f.session_b, "flashcards", serde_json::json!({})).await;
     assert!(process_job(&state, job, requester).await.is_err());
-    let message: Option<String> = sqlx::query_scalar("select error_message from ai_jobs where id = $1")
-        .bind(job)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let message: Option<String> =
+        sqlx::query_scalar("select error_message from ai_jobs where id = $1")
+            .bind(job)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert!(message.unwrap().contains("No transcript"));
 
     // 2. Provider failure text is stored on the job for the UI to show.
     seed_captions(&pool, f.session_b).await;
-    let state = state_with(pool.clone(), MockAi(Err("429 rate limited".into())));
+    let state = state_with(pool.clone(), MockAi::failing("429 rate limited"));
     let (job, requester) = queue_job(&pool, f.session_b, "flashcards", serde_json::json!({})).await;
     assert!(process_job(&state, job, requester).await.is_err());
     let (status, message): (String, Option<String>) =
@@ -342,18 +392,19 @@ async fn chapters_and_visualization_fall_back_when_model_is_down() {
     let tag = format!("h{}", &Uuid::new_v4().simple().to_string()[..8]);
     let f = seed(&pool, &tag).await;
     seed_captions(&pool, f.session_a).await;
-    let state = state_with(pool.clone(), MockAi(Err("provider offline".into())));
+    let state = state_with(pool.clone(), MockAi::failing("provider offline"));
 
     for kind in ["chapters", "visualization"] {
         let (job, requester) = queue_job(&pool, f.session_a, kind, serde_json::json!({})).await;
         let done = process_job(&state, job, requester).await.expect(kind);
         assert_eq!(done.status, "completed");
     }
-    let chapters: i64 = sqlx::query_scalar("select count(*) from session_chapters where session_id = $1")
-        .bind(f.session_a)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let chapters: i64 =
+        sqlx::query_scalar("select count(*) from session_chapters where session_id = $1")
+            .bind(f.session_a)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert!(chapters >= 1);
     let (source, nodes): (String, i64) = sqlx::query_as(
         "select source, jsonb_array_length(spec->'nodes')::bigint from session_visualizations where session_id = $1",
@@ -373,16 +424,48 @@ async fn visualization_job_keeps_model_graph() {
     let f = seed(&pool, &tag).await;
     seed_captions(&pool, f.session_b).await;
     let map = r#"{"title":"Photosynthesis","nodes":[{"id":"a","label":"Light","group":"Inputs","importance":4},{"id":"b","label":"Glucose","group":"Outputs","importance":5}],"edges":[{"from":"a","to":"b","label":"makes"}]}"#;
-    let state = state_with(pool.clone(), MockAi(Ok(map.to_owned())));
-    let (job, requester) = queue_job(&pool, f.session_b, "visualization", serde_json::json!({})).await;
+    let state = state_with(pool.clone(), MockAi::ok(map));
+    let (job, requester) =
+        queue_job(&pool, f.session_b, "visualization", serde_json::json!({})).await;
     process_job(&state, job, requester).await.unwrap();
-    let (title, source): (String, String) = sqlx::query_as(
-        "select title, source from session_visualizations where session_id = $1",
-    )
-    .bind(f.session_b)
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let (title, source): (String, String) =
+        sqlx::query_as("select title, source from session_visualizations where session_id = $1")
+            .bind(f.session_b)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert_eq!(title, "Photosynthesis");
     assert_eq!(source, "ai");
+}
+
+#[tokio::test]
+async fn weak_model_output_escalates_to_the_next_model() {
+    let Some(pool) = pool().await else { return };
+    let tag = format!("x{}", &Uuid::new_v4().simple().to_string()[..8]);
+    let f = seed(&pool, &tag).await;
+    seed_captions(&pool, f.session_a).await;
+    // The cheap model returns prose instead of JSON; the stronger one is right.
+    let state = state_with(
+        pool.clone(),
+        MockAi(vec![
+            (
+                "cheap",
+                Ok("Sorry, here are some thoughts about flashcards.".to_owned()),
+            ),
+            (
+                "strong",
+                Ok(r#"[{"prompt":"Q1","answer":"A1"},{"prompt":"Q2","answer":"A2"}]"#.to_owned()),
+            ),
+        ]),
+    );
+    let (job, requester) = queue_job(&pool, f.session_a, "flashcards", serde_json::json!({})).await;
+    process_job(&state, job, requester)
+        .await
+        .expect("escalated");
+    let model: Option<String> = sqlx::query_scalar("select model from ai_jobs where id = $1")
+        .bind(job)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(model.as_deref(), Some("strong"));
 }

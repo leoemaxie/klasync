@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc};
 
 use async_trait::async_trait;
 use aws_credential_types::Credentials;
-use aws_sdk_s3::{primitives::ByteStream, Client as S3Client};
+use aws_sdk_s3::{error::DisplayErrorContext, primitives::ByteStream, Client as S3Client};
 use aws_types::region::Region;
 use thiserror::Error;
 
@@ -118,7 +118,7 @@ impl StorageAdapter for R2ObjectStore {
             .body(ByteStream::from(data))
             .send()
             .await
-            .map_err(|error| StorageError::Backend(error.to_string()))?;
+            .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
         Ok(StoredObject { key, bytes })
     }
 
@@ -133,12 +133,12 @@ impl StorageAdapter for R2ObjectStore {
             .key(key)
             .send()
             .await
-            .map_err(|error| StorageError::Backend(error.to_string()))?;
+            .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
         let body = object
             .body
             .collect()
             .await
-            .map_err(|error| StorageError::Backend(error.to_string()))?;
+            .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
         Ok(body.into_bytes().to_vec())
     }
 
@@ -152,7 +152,7 @@ impl StorageAdapter for R2ObjectStore {
             .key(key)
             .send()
             .await
-            .map_err(|error| StorageError::Backend(error.to_string()))?;
+            .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
         Ok(())
     }
 

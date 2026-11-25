@@ -32,6 +32,23 @@ pub struct Card {
     pub difficulty: String,
 }
 
+/// `[mm:ss]` at the start of a line, as text (`"01:15"`).
+pub fn leading_stamp(line: &str) -> Option<String> {
+    let line = line.trim_start();
+    let inner = line.strip_prefix('[')?.split(']').next()?;
+    inner.split_once(':')?;
+    Some(inner.to_owned())
+}
+
+/// Seconds of the last `[mm:ss]` marker in a block of text.
+pub fn last_offset(text: &str) -> Option<i32> {
+    text.lines().rev().find_map(|line| {
+        let stamp = leading_stamp(line)?;
+        let (m, s) = stamp.split_once(':')?;
+        Some(m.trim().parse::<i32>().ok()? * 60 + s.trim().parse::<i32>().ok()?)
+    })
+}
+
 pub fn format_offset(seconds: i64) -> String {
     format!("{:02}:{:02}", seconds / 60, seconds % 60)
 }

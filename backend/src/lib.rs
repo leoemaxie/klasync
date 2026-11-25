@@ -1,12 +1,16 @@
+pub mod activity;
 pub mod ai;
 pub mod ai_worker;
 pub mod api;
 pub mod audit;
 pub mod auth;
+pub mod batch;
 pub mod config;
 pub mod database;
 pub mod email;
+pub mod embeddings;
 pub mod models;
+pub mod post_lecture;
 pub mod realtime;
 pub mod redis;
 pub mod rolling;

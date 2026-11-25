@@ -200,3 +200,42 @@ export async function runStudyJob(
       'This is taking longer than expected. The AI model may be busy; try again in a minute.'
   );
 }
+
+export interface AskSource {
+  start_sec: number;
+  end_sec: number;
+  text: string;
+  score: number;
+}
+export interface AskResponse {
+  answer: string;
+  sources: AskSource[];
+}
+export interface SearchHit {
+  session_id: string;
+  session_title: string;
+  course_code: string;
+  start_sec: number;
+  end_sec: number;
+  text: string;
+  score: number;
+}
+
+/** Answers a question from the lecture's own passages (semantic retrieval). */
+export async function askLecture(
+  sessionId: string,
+  question: string
+): Promise<AskResponse> {
+  const id = await sessionUuid(sessionId);
+  return apiRequest<AskResponse>(`${base(id)}/ask`, {
+    method: 'POST',
+    body: JSON.stringify({ question }),
+  });
+}
+
+/** Meaning-based search across every lecture the student can open. */
+export function searchLectures(query: string): Promise<SearchHit[]> {
+  return apiRequest<SearchHit[]>(
+    `/students/search?q=${encodeURIComponent(query)}`
+  );
+}

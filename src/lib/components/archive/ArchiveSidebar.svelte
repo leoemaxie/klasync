@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ClaimRecord } from '$lib/api';
+  import { searchLectures, type SearchHit } from '$lib/api/aiStudy';
+  import { onDestroy } from 'svelte';
   import { Archive, GraduationCap, Search, X } from '@lucide/svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import ArchiveClaimItem from './ArchiveClaimItem.svelte';
@@ -19,6 +21,37 @@
     isLoading: boolean;
     onSelectClaim: (claim: ClaimRecord) => void;
   } = $props();
+
+  // Meaning-based matches inside lectures (debounced), shown under the filter.
+  let hits = $state<SearchHit[]>([]);
+  let searching = $state(false);
+  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const query = searchQuery.trim();
+    clearTimeout(searchTimer);
+    if (query.length < 3) {
+      hits = [];
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      searching = true;
+      try {
+        hits = await searchLectures(query);
+      } catch {
+        hits = [];
+      } finally {
+        searching = false;
+      }
+    }, 600);
+  });
+  onDestroy(() => clearTimeout(searchTimer));
+
+  const clock = (seconds: number) =>
+    `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  function openHit(hit: SearchHit) {
+    const claim = claims.find((c) => c.id === hit.session_id);
+    if (claim) onSelectClaim(claim);
+  }
 
   const filteredClaims = $derived(
     claims.filter(
@@ -75,6 +108,27 @@
   </div>
 
   <div class="sidebar-list-container">
+    {#if searchQuery.trim().length >= 3 && (searching || hits.length)}
+      <section class="semantic-hits" aria-label="Matches inside lectures">
+        <p class="semantic-title">
+          {searching ? 'Searching inside lectures…' : 'Found inside lectures'}
+        </p>
+        {#each hits.slice(0, 5) as hit}
+          <button
+            type="button"
+            class="semantic-hit"
+            onclick={() => openHit(hit)}
+          >
+            <span class="hit-meta"
+              >{hit.course_code} · {hit.session_title} · {clock(
+                hit.start_sec
+              )}</span
+            >
+            <span class="hit-text">{hit.text.slice(0, 140)}…</span>
+          </button>
+        {/each}
+      </section>
+    {/if}
     {#if isLoading}
       <SkeletonCard lines={2} label="Loading lectures..." />
     {:else if activeViewMode === 'claims'}
@@ -117,6 +171,42 @@
 </aside>
 
 <style>
+  .semantic-hits {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: var(--spacing-10);
+  }
+  .semantic-title {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-warm-cream-dim);
+  }
+  .semantic-hit {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    padding: 8px 10px;
+    background: rgba(220, 80, 0, 0.07);
+    border: 1px solid var(--color-cork-border);
+    border-radius: var(--radius-controls, 6px);
+    cursor: pointer;
+    color: var(--color-warm-cream);
+  }
+  .hit-meta {
+    font-size: 10px;
+    color: var(--color-ember-accent);
+    font-weight: 600;
+  }
+  .hit-text {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-warm-cream-dim);
+  }
   .studio-sidebar {
     display: flex;
     flex-direction: column;

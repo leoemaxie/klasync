@@ -1,0 +1,106 @@
+# Local stack that mirrors production: Postgres with pgvector (Neon), TLS Redis
+# (managed Redis), S3-compatible object storage (Cloudflare R2) and the backend.
+#
+#   ./scripts/gen-dev-certs.sh
+#   GEMINI_API_KEY=... docker compose up -d --build
+#
+# With no GEMINI_API_KEY the backend routes to OpenRouter (OPENROUTER_API_KEY),
+# or runs with AI disabled when neither is set.
+
+name: klasync
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: klasync
+      POSTGRES_PASSWORD: klasync-dev
+      POSTGRES_DB: klasync
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Stub pg_cron so the production migration history applies on this image.
+      - ./deploy/postgres/pg_cron.control:/usr/share/postgresql/16/extension/pg_cron.control:ro
+      - ./deploy/postgres/pg_cron--1.0.sql:/usr/share/postgresql/16/extension/pg_cron--1.0.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klasync -d klasync"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    # TLS only: the backend rejects plaintext redis:// URLs.
+    command: >
+      redis-server --port 0 --tls-port 6379
+      --tls-cert-file /certs/redis.crt --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt --tls-auth-clients no
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./deploy/certs:/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --tls --cacert /certs/ca.crt -p 6379 ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # S3-compatible object storage standing in for Cloudflare R2. (MinIO no longer
+  # publishes images to Docker Hub, so the Adobe S3 mock is used; the backend
+  # talks plain path-style S3 either way.)
+  s3:
+    image: adobe/s3mock:latest
+    environment:
+      # Both spellings: the variable was renamed between S3Mock major versions.
+      initialBuckets: klasync-lectures
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: klasync-lectures
+      # Runs as a non-root user, so keep data in /tmp (dev only: lost with the container).
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /tmp/s3mock
+      root: /tmp/s3mock
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/ >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://klasync:klasync-dev@postgres:5432/klasync
+      JWT_SECRET: dev-only-secret-change-me-0123456789abcdef
+      UNIVERSITY_EMAIL_DOMAIN: university.edu
+      PUBLIC_APP_URL: http://localhost:5173
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      REDIS_URL: rediss://redis:6379
+      REDIS_KEY_PREFIX: klasync:compose
+      # Trust the dev CA that signed the Redis certificate.
+      SSL_CERT_FILE: /tmp/certs/ca-bundle.crt
+      R2_ENDPOINT: http://s3:9090
+      R2_BUCKET: klasync-lectures
+      R2_ACCESS_KEY_ID: klasync
+      R2_SECRET_ACCESS_KEY: klasync-dev-secret
+      # AI: a Google key routes to Gemini; otherwise OpenRouter is used.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      AI_DAILY_BUDGET_USD: ${AI_DAILY_BUDGET_USD:-0}
+      RUST_LOG: ${RUST_LOG:-info,klasync_backend=debug}
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./deploy/certs:/certs-src:ro
+      - ./deploy/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+
+volumes:
+  pgdata:

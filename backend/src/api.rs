@@ -105,6 +105,11 @@ pub fn router(state: AppState) -> Router {
             get(handlers::archive::recording_stream),
         )
         .route(
+            "/api/v1/archive/sessions/{session_id}/ask",
+            post(handlers::archive::ask),
+        )
+        .route("/api/v1/students/search", get(handlers::archive::search))
+        .route(
             "/api/v1/archive/jobs/{job_id}",
             get(handlers::ai_study::job_status),
         )
@@ -360,6 +365,7 @@ pub fn router(state: AppState) -> Router {
             state.clone(),
             crate::security::rate_limit,
         ))
+        .layer(middleware::from_fn(crate::activity::track))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
@@ -380,7 +386,7 @@ mod tests {
                 .expect("lazy pool"),
             storage: crate::storage::adapter_from_config(&config),
             mailer: crate::email::sender_from_config(&config),
-            ai: crate::ai::adapter_from_config(&config),
+            ai: crate::ai::gateway_from_config(&config, None),
             config: Arc::new(config),
             captions: crate::realtime::CaptionHub::default(),
             redis: None,

@@ -13,11 +13,13 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
+    ai::{Task, TextRequest, Thinking},
     api::{
         error::{ApiError, LogApiError},
         handlers::ai_study::require_access,
     },
     auth::guard::AuthenticatedStudent,
+    embeddings,
     state::AppState,
     study,
 };
@@ -262,4 +264,138 @@ mod tests {
         assert_eq!(parse_range("bytes=0-999", 100), Some((0, 99)));
         assert_eq!(parse_range("bytes=200-300", 100), None);
     }
+}
+
+// ---- semantic search ---------------------------------------------------------
+
+#[derive(Debug, serde::Deserialize)]
+pub struct AskInput {
+    pub question: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskSource {
+    pub start_sec: i32,
+    pub end_sec: i32,
+    pub text: String,
+    pub score: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskResponse {
+    pub answer: String,
+    pub sources: Vec<AskSource>,
+}
+
+fn clock(seconds: i32) -> String {
+    format!("{:02}:{:02}", seconds / 60, seconds % 60)
+}
+
+/// "Ask this lecture": retrieves the most relevant passages and has the cheap
+/// model answer from them alone, citing timestamps.
+pub async fn ask(
+    State(state): State<AppState>,
+    student: AuthenticatedStudent,
+    Path(session_id): Path<Uuid>,
+    Json(input): Json<AskInput>,
+) -> Result<Json<AskResponse>, ApiError> {
+    let pool = state.db_pool();
+    require_access(pool, &student, session_id).await?;
+    let question = input.question.trim();
+    if question.len() < 3 || question.len() > 500 {
+        return Err(ApiError::bad_request(
+            "Ask a question between 3 and 500 characters.",
+        ));
+    }
+    if !state.ai.supports_embeddings() || !state.ai.is_configured() {
+        return Err(ApiError::conflict(
+            "Asking questions is not available on this server.",
+        ));
+    }
+    let model = state
+        .ai
+        .embedding_model()
+        .map(|(model, _)| model)
+        .unwrap_or_default();
+    // First question on a lecture that has not been indexed yet: index it now.
+    if !embeddings::has_index(pool, session_id, &model).await {
+        embeddings::embed_session(&state, pool, session_id)
+            .await
+            .map_err(|error| {
+                tracing::warn!(%error, %session_id, "On-demand lecture indexing failed");
+                ApiError::conflict("This lecture has no transcript to search yet.")
+            })?;
+    }
+    let hits = embeddings::search_session(&state, pool, session_id, question, 6)
+        .await
+        .map_err(|error| {
+            tracing::warn!(%error, "Lecture search failed");
+            ApiError::conflict("Search is unavailable right now. Please try again.")
+        })?;
+    if hits.is_empty() {
+        return Ok(Json(AskResponse {
+            answer: "I couldn't find that in this lecture.".to_owned(),
+            sources: Vec::new(),
+        }));
+    }
+    let context = hits
+        .iter()
+        .map(|hit| format!("[{}] {}", clock(hit.start_sec), hit.text))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let system = "You answer a student's question about a university lecture using ONLY the lecture excerpts provided. \
+        Each excerpt starts with its time in [mm:ss]. Answer clearly in a few sentences and cite the times you used \
+        like [12:30]. If the excerpts do not contain the answer, say the lecture did not cover it. Never invent facts.";
+    let request = TextRequest::new(
+        Task::Qa,
+        system,
+        format!("Lecture excerpts:\n{context}\n\nQuestion: {question}"),
+    )
+    .thinking(Thinking::Minimal)
+    .max_tokens(900)
+    .for_session(session_id);
+    let output = state.ai.generate(&request).await.map_err(|error| {
+        tracing::warn!(%error, "Lecture question answering failed");
+        ApiError::conflict("The AI model could not answer right now. Please try again in a moment.")
+    })?;
+    Ok(Json(AskResponse {
+        answer: output.text.trim().to_owned(),
+        sources: hits
+            .into_iter()
+            .map(|hit| AskSource {
+                start_sec: hit.start_sec,
+                end_sec: hit.end_sec,
+                text: hit.text,
+                score: hit.score,
+            })
+            .collect(),
+    }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct SearchQuery {
+    pub q: String,
+}
+
+/// Search across every lecture the signed-in student can open.
+pub async fn search(
+    State(state): State<AppState>,
+    student: AuthenticatedStudent,
+    axum::extract::Query(query): axum::extract::Query<SearchQuery>,
+) -> Result<Json<Vec<embeddings::Hit>>, ApiError> {
+    let pool = state.db_pool();
+    let q = query.q.trim();
+    if q.len() < 3 || q.len() > 200 {
+        return Err(ApiError::bad_request(
+            "Search for between 3 and 200 characters.",
+        ));
+    }
+    crate::student_sync::reconcile_student_logged(pool, student.id).await;
+    let hits = embeddings::search_for_student(&state, pool, student.id, q, 12)
+        .await
+        .map_err(|error| {
+            tracing::warn!(%error, "Cross-lecture search failed");
+            ApiError::conflict("Search is unavailable right now. Please try again.")
+        })?;
+    Ok(Json(hits))
 }

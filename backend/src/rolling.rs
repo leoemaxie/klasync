@@ -13,7 +13,8 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
-    ai::{extract_json, AiWorkItem},
+    activity,
+    ai::{extract_json, Task, TextRequest, Thinking},
     state::AppState,
     study,
 };
@@ -48,9 +49,12 @@ struct NewCaption {
 }
 
 pub async fn run_loop(state: AppState) {
-    let mut ticker = tokio::time::interval(TICK);
     loop {
-        ticker.tick().await;
+        activity::sleep(TICK).await;
+        // Idle service (no lecture can be live): leave the database alone.
+        if !activity::db_active() {
+            continue;
+        }
         let pool = state.db_pool();
         let candidates = sqlx::query_as::<_, Candidate>(
             "select id, status::text as status from lecture_sessions
@@ -145,50 +149,49 @@ async fn summarise_session(state: &AppState, candidate: &Candidate) -> Result<()
         \"key_points\": [\"3 to 5 short bullet points: definitions, formulas, examples, instructions\"]}. \
         No markdown fences, no commentary.";
 
-    let ai = state
+    let request = TextRequest::new(Task::RollingSummary, system, user)
+        .json()
+        .max_tokens(900)
+        .thinking(Thinking::Minimal)
+        .for_session(session_id);
+    // The cheap model gets the first try; a stronger one only if its JSON is unusable.
+    let parsed = state
         .ai
-        .execute(AiWorkItem {
-            job_id: Uuid::now_v7(),
-            session_id,
-            job_type: "summarize".to_owned(),
-            input: json!({"text": user, "system": system, "max_tokens": 700}),
+        .generate_validated(&request, |output| {
+            let raw = output.text.as_str();
+            match extract_json(raw) {
+                Some(value) => {
+                    let summary = value
+                        .get("summary")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.trim().to_owned())
+                        .filter(|s| !s.is_empty())
+                        .ok_or_else(|| "the answer had no summary".to_owned())?;
+                    let points: Vec<String> = value
+                        .get("key_points")
+                        .and_then(|p| p.as_array())
+                        .map(|items| {
+                            items
+                                .iter()
+                                .filter_map(|i| i.as_str().map(|s| s.trim().to_owned()))
+                                .filter(|s| !s.is_empty())
+                                .take(6)
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    Ok((summary, points))
+                }
+                // Plain-prose answers are still usable.
+                None if !raw.trim().is_empty() => {
+                    Ok((raw.trim().chars().take(900).collect::<String>(), Vec::new()))
+                }
+                None => Err("empty answer".to_owned()),
+            }
         })
         .await;
 
-    let (summary, key_points, source) = match ai {
-        Ok(output) => {
-            let raw = output
-                .content
-                .get("text")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            match extract_json(raw).and_then(|v| {
-                let summary = v.get("summary")?.as_str()?.trim().to_owned();
-                let points: Vec<String> = v
-                    .get("key_points")
-                    .and_then(|p| p.as_array())
-                    .map(|items| {
-                        items
-                            .iter()
-                            .filter_map(|i| i.as_str().map(|s| s.trim().to_owned()))
-                            .filter(|s| !s.is_empty())
-                            .take(6)
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                (!summary.is_empty()).then_some((summary, points))
-            }) {
-                Some((summary, points)) => (summary, points, "ai"),
-                // Plain-prose answers are still usable.
-                None if !raw.trim().is_empty() && extract_json(raw).is_none() => {
-                    (raw.trim().chars().take(900).collect(), Vec::new(), "ai")
-                }
-                None => {
-                    let (summary, points) = study::heuristic_summary(&transcript);
-                    (summary, points, "heuristic")
-                }
-            }
-        }
+    let (summary, key_points, source) = match parsed {
+        Ok(((summary, points), _output)) => (summary, points, "ai"),
         Err(error) => {
             tracing::debug!(%error, "Rolling summary AI call failed; using extractive fallback");
             let (summary, points) = study::heuristic_summary(&transcript);

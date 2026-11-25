@@ -13,6 +13,7 @@
   import AudioPlayerPanel from './AudioPlayerPanel.svelte';
   import LectureStudyNotes from './LectureStudyNotes.svelte';
   import VisualsPanel from './VisualsPanel.svelte';
+  import AskLecturePanel from './AskLecturePanel.svelte';
   import RollingSummaryFeed from '$lib/components/shared/RollingSummaryFeed.svelte';
 
   let {
@@ -95,6 +96,8 @@
         <FlashcardDeck sessionId={sessionKey} />
       {:else if activeTab === 'visuals'}
         <VisualsPanel sessionId={sessionKey} />
+      {:else if activeTab === 'ask'}
+        <AskLecturePanel sessionId={sessionKey} />
       {:else if activeTab === 'audio'}
         <AudioPlayerPanel sessionCode={sessionKey} />
       {:else if activeTab === 'notes'}

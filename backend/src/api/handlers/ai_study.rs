@@ -285,9 +285,34 @@ async fn enqueue(
     let pool = state.db_pool();
 
     if reuse_inflight {
+        // A batch job that has not been submitted yet is promoted to run now:
+        // someone is waiting for it.
+        let promoted = sqlx::query_scalar::<_, Uuid>(
+            "update ai_jobs set mode = 'interactive', run_after = now()
+             where id = (select id from ai_jobs where session_id = $1 and job_type = $2
+                         and mode = 'batch' and status = 'queued'
+                         order by created_at desc limit 1)
+             returning id",
+        )
+        .bind(session_id)
+        .bind(job_type)
+        .fetch_optional(pool)
+        .await
+        .log_internal_error("Failed to promote a queued batch job")?;
+        if let Some(job_id) = promoted {
+            return Ok((
+                StatusCode::ACCEPTED,
+                Json(StudyJobResponse {
+                    job_id,
+                    status: "processing",
+                }),
+            ));
+        }
+        // Only interactive jobs are reused: a job waiting inside a provider
+        // batch can take hours, so the student gets their own on-demand run.
         let existing = sqlx::query_scalar::<_, Uuid>(
             "select id from ai_jobs where session_id = $1 and job_type = $2
-               and status in ('queued', 'running')
+               and status in ('queued', 'running') and mode = 'interactive'
                and created_at > now() - interval '15 minutes'
              order by created_at desc limit 1",
         )

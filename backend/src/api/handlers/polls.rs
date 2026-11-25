@@ -14,7 +14,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use crate::{
-    ai::{extract_json, AiWorkItem},
+    ai::{extract_json, Task, TextRequest, Thinking},
     api::{
         error::{ApiError, LogApiError},
         handlers::sessions::database_session_by_code,
@@ -308,52 +308,48 @@ pub async fn generate(
         all.chars().skip(count.saturating_sub(3_500)).collect()
     };
     let system = "You are KLASYNC, a teaching assistant writing a quick in-class check. From the lecture excerpt write ONE multiple-choice question with 4 options testing the most important idea just covered. Return ONLY a valid JSON object: {\"question\": string, \"options\": [4 strings], \"correct_index\": integer 0-3, \"explanation\": \"one sentence why\"}. No markdown fences.";
-    let output = state
+    let request = TextRequest::new(Task::Quiz, system, recent)
+        .json()
+        .max_tokens(900)
+        .thinking(Thinking::Low)
+        .temperature(0.4)
+        .for_session(session.id);
+    // A question with a wrong "correct answer" in front of a class is worse than
+    // none, so validate the shape and escalate to a stronger model if it is off.
+    let (input, _) = state
         .ai
-        .execute(AiWorkItem {
-            job_id: Uuid::now_v7(),
-            session_id: session.id,
-            job_type: "explain".to_owned(),
-            input: serde_json::json!({"text": recent, "system": system, "max_tokens": 600, "temperature": 0.4}),
+        .generate_validated(&request, |output| {
+            let parsed = extract_json(&output.text).ok_or("not valid JSON")?;
+            let candidate = CreatePoll {
+                kind: Some(kind.clone()),
+                question: parsed
+                    .get("question")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
+                    .to_owned(),
+                options: parsed
+                    .get("options")
+                    .and_then(|v| v.as_array())
+                    .map(|a| a.iter().filter_map(|o| o.as_str().map(str::to_owned)).collect())
+                    .unwrap_or_default(),
+                correct_index: parsed
+                    .get("correct_index")
+                    .and_then(|v| v.as_i64())
+                    .map(|v| v as i32),
+                explanation: parsed
+                    .get("explanation")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_owned),
+            };
+            validate(&candidate)
+                .map(|_| candidate)
+                .map_err(|error| error.to_string())
         })
         .await
         .map_err(|error| {
             tracing::warn!(%error, "Quiz generation failed");
             ApiError::conflict("The AI model could not write a question right now. Try again in a moment or add one manually.")
         })?;
-    let raw = output
-        .content
-        .get("text")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let parsed = extract_json(raw).ok_or_else(|| {
-        ApiError::conflict("The AI model returned an unusable question. Please try again.")
-    })?;
-    let input = CreatePoll {
-        kind: Some(kind),
-        question: parsed
-            .get("question")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_owned(),
-        options: parsed
-            .get("options")
-            .and_then(|v| v.as_array())
-            .map(|a| {
-                a.iter()
-                    .filter_map(|o| o.as_str().map(str::to_owned))
-                    .collect()
-            })
-            .unwrap_or_default(),
-        correct_index: parsed
-            .get("correct_index")
-            .and_then(|v| v.as_i64())
-            .map(|v| v as i32),
-        explanation: parsed
-            .get("explanation")
-            .and_then(|v| v.as_str())
-            .map(str::to_owned),
-    };
     let row = insert_poll(pool, session.id, &input, "ai")
         .await
         .map_err(|_| {

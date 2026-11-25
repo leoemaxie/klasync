@@ -16,3 +16,5 @@ target/
 DESIGN.md
 .vercel/
 .pnpm-store/
+
+deploy/certs/

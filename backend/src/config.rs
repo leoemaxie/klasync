@@ -29,7 +29,27 @@ pub struct AppConfig {
     pub openrouter_paid_fallback_model: Option<String>,
     pub openrouter_allow_paid_fallback: bool,
     pub ai_max_output_tokens: u32,
-    pub ai_max_cost_usd: f64,
+    /// `auto` (Gemini when a Google key is set, else OpenRouter), `gemini` or `openrouter`.
+    pub ai_provider: String,
+    pub gemini_api_key: Option<String>,
+    pub gemini_base_url: String,
+    /// Ordered model chains per tier; the first is preferred, later ones are
+    /// fallbacks and escalations.
+    pub gemini_models_cheap: Vec<String>,
+    pub gemini_models_mid: Vec<String>,
+    pub gemini_models_strong: Vec<String>,
+    pub gemini_transcribe_model: String,
+    /// Used for recordings longer than the transcribe model can hold.
+    pub gemini_long_audio_model: String,
+    pub gemini_embedding_model: String,
+    pub openrouter_embedding_model: String,
+    pub embedding_dimensions: usize,
+    /// 0 disables the in-app daily cap (use the provider's own cap instead).
+    pub ai_daily_budget_usd: f64,
+    pub ai_batch_enabled: bool,
+    pub ai_pricing_overrides: Option<String>,
+    /// PEM bundle of extra CAs for outbound HTTPS (corporate TLS-inspecting proxies).
+    pub http_extra_ca_file: Option<String>,
     pub redis_url: Option<String>,
     pub redis_key_prefix: String,
     /// Upper bound for the complete managed Redis startup handshake.
@@ -39,6 +59,21 @@ pub struct AppConfig {
     /// remains available to request handlers that must decide whether a Redis
     /// failure should become a 503 response.
     pub redis_required: bool,
+}
+
+/// Comma-separated model list from the environment, or `default`.
+fn model_chain(name: &str, default: &[&str]) -> Vec<String> {
+    env::var(name)
+        .ok()
+        .map(|value| {
+            value
+                .split(',')
+                .map(|model| model.trim().to_owned())
+                .filter(|model| !model.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .filter(|models| !models.is_empty())
+        .unwrap_or_else(|| default.iter().map(|model| (*model).to_owned()).collect())
 }
 
 impl AppConfig {
@@ -139,10 +174,54 @@ impl AppConfig {
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(4096),
-            ai_max_cost_usd: env::var("AI_MAX_COST_USD")
+            ai_provider: env::var("AI_PROVIDER")
+                .map(|value| value.trim().to_ascii_lowercase())
+                .ok()
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| "auto".to_owned()),
+            gemini_api_key: env::var("GEMINI_API_KEY")
+                .or_else(|_| env::var("GOOGLE_API_KEY"))
+                .ok()
+                .map(|value| value.trim().to_owned())
+                .filter(|value| !value.is_empty()),
+            gemini_base_url: env::var("GEMINI_BASE_URL")
+                .unwrap_or_else(|_| "https://generativelanguage.googleapis.com".to_owned())
+                .trim_end_matches('/')
+                .to_owned(),
+            gemini_models_cheap: model_chain(
+                "GEMINI_MODELS_CHEAP",
+                &["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"],
+            ),
+            gemini_models_mid: model_chain(
+                "GEMINI_MODELS_MID",
+                &["gemini-3.5-flash-lite", "gemini-4-hydrogen"],
+            ),
+            gemini_models_strong: model_chain("GEMINI_MODELS_STRONG", &["gemini-4-neon"]),
+            gemini_transcribe_model: env::var("GEMINI_TRANSCRIBE_MODEL")
+                .unwrap_or_else(|_| "gemini-3.5-transcribe".to_owned()),
+            gemini_long_audio_model: env::var("GEMINI_LONG_AUDIO_MODEL")
+                .unwrap_or_else(|_| "gemini-3.5-flash-lite".to_owned()),
+            gemini_embedding_model: env::var("GEMINI_EMBEDDING_MODEL")
+                .unwrap_or_else(|_| "gemini-embedding-2".to_owned()),
+            openrouter_embedding_model: env::var("OPENROUTER_EMBEDDING_MODEL")
+                .unwrap_or_else(|_| "openai/text-embedding-3-small".to_owned()),
+            embedding_dimensions: env::var("EMBEDDING_DIMENSIONS")
                 .ok()
                 .and_then(|value| value.parse().ok())
-                .unwrap_or(0.02),
+                .unwrap_or(1536),
+            ai_daily_budget_usd: env::var("AI_DAILY_BUDGET_USD")
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(0.0),
+            ai_batch_enabled: env::var("AI_BATCH_ENABLED")
+                .map(|value| !value.eq_ignore_ascii_case("false"))
+                .unwrap_or(true),
+            http_extra_ca_file: env::var("HTTP_EXTRA_CA_FILE")
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
+            ai_pricing_overrides: env::var("AI_PRICE_OVERRIDES")
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
             redis_url: env::var("REDIS_URL").ok().filter(|value| !value.is_empty()),
             redis_key_prefix: env::var("REDIS_KEY_PREFIX")
                 .unwrap_or_else(|_| "klasync:development".to_owned())

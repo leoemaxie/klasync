@@ -3,7 +3,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::{
-    ai::{self, SharedAiAdapter},
+    ai::{self, SharedAi},
     config::AppConfig,
     database,
     email::{self, SharedEmailSender},
@@ -29,7 +29,7 @@ pub struct AppState {
     pub captions: CaptionHub,
     pub storage: SharedStorageAdapter,
     pub mailer: SharedEmailSender,
-    pub ai: SharedAiAdapter,
+    pub ai: SharedAi,
     pub redis: Option<Arc<RedisStore>>,
 }
 
@@ -42,7 +42,7 @@ impl AppState {
         let database = database::connect(database_url).await?;
         let storage = storage::adapter_from_config(&config);
         let mailer = email::sender_from_config(&config);
-        let ai = ai::adapter_from_config(&config);
+        let ai = ai::gateway_from_config(&config, Some(database.clone()));
         let redis = RedisStore::connect(&config).await.map(Arc::new).map(Some)?;
         Ok(Self {
             database,

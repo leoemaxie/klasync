@@ -7,6 +7,7 @@
     Edit3,
     ListChecks,
     Network,
+    MessageCircleQuestion,
   } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
@@ -16,6 +17,7 @@
     | 'chapters'
     | 'flashcards'
     | 'visuals'
+    | 'ask'
     | 'audio'
     | 'notes';
 
@@ -81,6 +83,16 @@
   >
     <Network size={13} />
     <span>Visuals</span>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="tab-btn"
+    class:active={activeTab === 'ask'}
+    onclick={() => handleTab('ask')}
+  >
+    <MessageCircleQuestion size={13} />
+    <span>Ask</span>
   </button>
   <button
     type="button"

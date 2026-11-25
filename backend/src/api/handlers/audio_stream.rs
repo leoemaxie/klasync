@@ -24,7 +24,7 @@ use tokio::time::interval;
 use uuid::Uuid;
 
 use crate::{
-    ai::AiWorkItem,
+    ai::TranscribeRequest,
     api::{error::ApiError, handlers::sessions::database_session_by_code},
     auth::{contracts::AccountRole, tokens},
     models::CaptionChunk,
@@ -156,7 +156,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
         started: Instant::now(),
         stored_len: 0,
     };
-    let mut flush_interval = interval(Duration::from_secs(5));
+    let mut flush_interval = interval(Duration::from_secs(10));
     let mut checkpoint_interval = interval(CHECKPOINT_EVERY);
     checkpoint_interval.tick().await;
 
@@ -202,29 +202,29 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
 }
 
 async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<u8>) {
-    let input = crate::ai::transcription_input(&payload, "webm", Some("en"));
-    let work = AiWorkItem {
-        job_id: Uuid::now_v7(),
-        session_id,
-        job_type: "transcribe".to_owned(),
-        input,
-    };
-    let result = match state.ai.execute(work).await {
+    let result = match state
+        .ai
+        .transcribe(&TranscribeRequest {
+            audio: payload,
+            mime: "audio/webm".to_owned(),
+            language: Some("English".to_owned()),
+            duration_sec: None,
+            timestamps: false,
+            session_id: Some(session_id),
+            job_id: None,
+        })
+        .await
+    {
         Ok(result) => result,
         Err(error) => {
             tracing::debug!(%error, "Live transcription chunk failed");
             return;
         }
     };
-    let Some(text) = result
-        .content
-        .get("text")
-        .and_then(|value| value.as_str())
-        .map(str::trim)
-        .filter(|text| !text.is_empty())
-    else {
+    let text = result.text.trim();
+    if text.is_empty() {
         return;
-    };
+    }
     // The lecturer's browser recogniser also posts captions; skip ours while it
     // is actively producing them so the transcript has no duplicates.
     let pool = state.db_pool();
