@@ -19,9 +19,12 @@
   let {
     sessionId = '',
     cards = [],
+    seedTopic = '',
   }: {
     sessionId?: string;
     cards?: FlashcardItem[];
+    /** Pre-fills the generator, e.g. from text selected in the transcript. */
+    seedTopic?: string;
   } = $props();
 
   let deck = $state<FlashcardItem[]>([]);
@@ -196,7 +199,7 @@
     </div>
   </div>
 
-  <FlashcardGenerator onGenerate={handleGenerate} />
+  <FlashcardGenerator onGenerate={handleGenerate} {seedTopic} />
 
   {#if isGenerating}
     <p class="gen-status" role="status">
