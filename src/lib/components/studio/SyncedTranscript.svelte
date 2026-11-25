@@ -125,6 +125,13 @@
     void tick().then(() => !filtering && scrollToActive());
   });
 
+  // Opening at a moment (resume / search hit) happens before the lines exist,
+  // so bring the line into view once they have loaded.
+  $effect(() => {
+    if (studio.transcriptStatus !== 'ready') return;
+    void tick().then(() => !filtering && scrollToActive(false));
+  });
+
   const pauseFollow = () => (follow = false);
 
   function jumpToLive() {

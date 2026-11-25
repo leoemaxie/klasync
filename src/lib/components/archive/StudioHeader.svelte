@@ -97,7 +97,9 @@
           {#if claim.session_code}<span class="pill mono" title="Session code"
               >{claim.session_code}</span
             >{/if}
-          <span class="pill ok"><CheckCircle2 size={12} /> Verified</span>
+          {#if claim.attended !== false}
+            <span class="pill ok"><CheckCircle2 size={12} /> Verified</span>
+          {/if}
         </div>
       {/if}
     </div>

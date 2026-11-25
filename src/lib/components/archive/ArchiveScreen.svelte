@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import type { Screen } from '$lib/types';
   import ArchiveTopBar from './ArchiveTopBar.svelte';
   import ArchiveSidebar from './ArchiveSidebar.svelte';
@@ -7,6 +7,7 @@
   import StudentLectureStudio from './StudentLectureStudio.svelte';
   import StudentCoursesHub from './StudentCoursesHub.svelte';
   import { getStudentArchive, type ClaimRecord } from '$lib/api';
+  import { lastResumed } from '$lib/studio/resume';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
@@ -19,6 +20,14 @@
   let focusMode = $state(false);
   /** Whether the lecture list is open beside an open lecture (desktop). */
   let listOpen = $state(false);
+  /** Moment to open the lecture at (search hit / start over); null = resume. */
+  let openAt = $state<number | null>(null);
+  /** Bumped whenever saved positions may have changed, so lists re-read them. */
+  let resumeVersion = $state(0);
+  $effect(() => {
+    // Read only the two triggers; the bump itself must not be tracked.
+    if (!selectedClaim || listOpen) untrack(() => resumeVersion++);
+  });
 
   onMount(async () => {
     try {
@@ -29,15 +38,20 @@
       ).get('lecture');
       const target = linked ? claims.find((c) => c.id === linked) : undefined;
       if (target) selectedClaim = target;
-      else if (claims.length > 0 && window.innerWidth > 960)
-        selectedClaim = claims[0];
+      else if (claims.length > 0 && window.innerWidth > 960) {
+        // Someone mid-way through a lecture gets the "Continue" welcome;
+        // everyone else lands straight in their latest lecture.
+        const last = lastResumed();
+        if (!claims.some((c) => c.id === last?.id)) selectedClaim = claims[0];
+      }
     } finally {
       isLoading = false;
     }
   });
 
-  function openClaim(claim: ClaimRecord) {
+  function openClaim(claim: ClaimRecord, startAt: number | null = null) {
     selectedClaim = claim;
+    openAt = startAt;
     // Give the lecture the room back once one is chosen.
     listOpen = false;
   }
@@ -81,27 +95,34 @@
         {claims}
         {selectedClaim}
         {isLoading}
+        {resumeVersion}
         onSelectClaim={openClaim}
       />
     </div>
 
     <section
       class="studio-detail-canvas panel"
-      class:immersive={!!selectedClaim}
+      class:immersive={!!selectedClaim && activeViewMode !== 'courses'}
       class:visible-on-mobile={!!selectedClaim || activeViewMode === 'courses'}
     >
-      {#if activeViewMode === 'courses' && !selectedClaim}
+      {#if activeViewMode === 'courses'}
         <StudentCoursesHub onSelectCourseFilter={handleSelectCourse} />
       {:else if selectedClaim}
         <StudentLectureStudio
           claim={selectedClaim}
+          startAt={openAt}
           onBack={() => (selectedClaim = null)}
           bind:focus={focusMode}
           bind:listOpen
           showListToggle
         />
       {:else}
-        <ArchiveWelcomeView {claims} onOpenLatest={openClaim} />
+        <ArchiveWelcomeView
+          {claims}
+          {resumeVersion}
+          onOpenLatest={(c) => openClaim(c)}
+          onOpen={openClaim}
+        />
       {/if}
     </section>
   </div>
@@ -155,10 +176,11 @@
     overflow: visible;
   }
   .studio-detail-canvas {
-    background: rgba(16, 9, 4, 0.5);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-cards);
-    padding: var(--spacing-16);
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--elev-2);
+    padding: 24px;
     min-height: 600px;
     min-width: 0;
     width: 100%;
