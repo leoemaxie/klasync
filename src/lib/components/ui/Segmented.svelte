@@ -11,7 +11,13 @@
     options,
     value = $bindable(),
     label,
-  }: { options: Option[]; value: T; label: string } = $props();
+    onchange,
+  }: {
+    options: Option[];
+    value: T;
+    label: string;
+    onchange?: (value: T) => void;
+  } = $props();
 </script>
 
 <div class="ui-seg" role="group" aria-label={label}>
@@ -21,7 +27,10 @@
       type="button"
       class:on={value === option.value}
       aria-pressed={value === option.value}
-      onclick={() => (value = option.value)}
+      onclick={() => {
+        value = option.value;
+        onchange?.(option.value);
+      }}
     >
       {#if Icon}<Icon size={14} />{/if}
       {option.label}
