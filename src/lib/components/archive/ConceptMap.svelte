@@ -1,20 +1,24 @@
 <script lang="ts">
   import type { SessionVisualization } from '$lib/api/aiStudy';
   import { layoutGraph } from '$lib/utils/graphLayout';
+  import { colorForGroup, groupsOf } from '$lib/utils/conceptPalette';
 
-  let { visualization }: { visualization: SessionVisualization } = $props();
+  let {
+    visualization,
+    selectedId = null,
+    activeIds = new Set<string>(),
+    onSelect,
+  }: {
+    visualization: SessionVisualization;
+    /** Optional shared selection (used by the studio's concept explorer). */
+    selectedId?: string | null;
+    /** Concepts being discussed at the playhead; drawn with a ring. */
+    activeIds?: Set<string>;
+    onSelect?: (id: string | null) => void;
+  } = $props();
 
   const W = 900;
   const H = 560;
-  const PALETTE = [
-    '#dc5000',
-    '#e0a458',
-    '#7fb069',
-    '#6aa6c9',
-    '#b48ead',
-    '#d98880',
-    '#9aa5b1',
-  ];
 
   const nodes = $derived(
     layoutGraph(
@@ -25,10 +29,11 @@
     )
   );
   const byId = $derived(new Map(nodes.map((n) => [n.id, n])));
-  const groups = $derived([...new Set(nodes.map((n) => n.group))]);
-  const colorFor = (group: string) =>
-    PALETTE[Math.max(groups.indexOf(group), 0) % PALETTE.length];
+  const groups = $derived(groupsOf(nodes));
+  const colorFor = (group: string) => colorForGroup(groups, group);
   let hovered = $state<string | null>(null);
+  /** Hover wins, then the shared selection, so the map stays focused. */
+  const focusId = $derived(hovered ?? selectedId);
 
   const edges = $derived(
     (visualization.spec.edges ?? []).filter(
@@ -36,12 +41,12 @@
     )
   );
   const isNeighbour = (id: string) =>
-    hovered === null ||
-    id === hovered ||
+    focusId === null ||
+    id === focusId ||
     edges.some(
       (e) =>
-        (e.from === hovered && e.to === id) ||
-        (e.to === hovered && e.from === id)
+        (e.from === focusId && e.to === id) ||
+        (e.to === focusId && e.from === id)
     );
 
   function words(label: string): string[] {
@@ -64,7 +69,7 @@
 <figure class="concept-map">
   <svg
     viewBox="0 0 {W} {H}"
-    role="img"
+    role="group"
     aria-label="Concept map: {visualization.title}. {nodes.length} concepts."
   >
     {#each edges as edge}
@@ -72,14 +77,14 @@
       {@const b = byId.get(edge.to)!}
       <g
         class="edge"
-        opacity={hovered === null ||
-        edge.from === hovered ||
-        edge.to === hovered
+        opacity={focusId === null ||
+        edge.from === focusId ||
+        edge.to === focusId
           ? 1
           : 0.12}
       >
         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-        {#if edge.label && (hovered === edge.from || hovered === edge.to)}
+        {#if edge.label && (focusId === edge.from || focusId === edge.to)}
           <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 4} text-anchor="middle"
             >{edge.label}</text
           >
@@ -92,12 +97,29 @@
         role="button"
         tabindex="0"
         aria-label={node.label}
+        aria-pressed={onSelect ? selectedId === node.id : undefined}
         opacity={isNeighbour(node.id) ? 1 : 0.25}
         onmouseenter={() => (hovered = node.id)}
         onmouseleave={() => (hovered = null)}
         onfocus={() => (hovered = node.id)}
         onblur={() => (hovered = null)}
+        onclick={() => onSelect?.(selectedId === node.id ? null : node.id)}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect?.(selectedId === node.id ? null : node.id);
+          }
+        }}
       >
+        {#if activeIds.has(node.id) || selectedId === node.id}
+          <circle
+            class="ring"
+            class:active={activeIds.has(node.id)}
+            cx={node.x}
+            cy={node.y}
+            r={node.r + 6}
+          />
+        {/if}
         <circle
           cx={node.x}
           cy={node.y}
@@ -153,6 +175,16 @@
   .node circle {
     stroke: rgba(255, 237, 215, 0.55);
     stroke-width: 1.5;
+  }
+  .node circle.ring {
+    fill: none;
+    stroke: var(--text-primary);
+    stroke-width: 2;
+    opacity: 0.9;
+  }
+  .node circle.ring.active {
+    stroke: #ffb070;
+    stroke-dasharray: 4 4;
   }
   .node:focus circle,
   .node:hover circle {

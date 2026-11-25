@@ -8,7 +8,6 @@
     PanelRightOpen,
   } from '@lucide/svelte';
   import StudioHeader from '$lib/components/archive/StudioHeader.svelte';
-  import VisualsPanel from '$lib/components/archive/VisualsPanel.svelte';
   import {
     LectureStudio,
     provideStudio,
@@ -23,6 +22,7 @@
   import AskPane from './AskPane.svelte';
   import CardsPane from './CardsPane.svelte';
   import SummaryPane from './SummaryPane.svelte';
+  import MapPane from './MapPane.svelte';
   import Splitter from './Splitter.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import type { SelectionAction } from './SelectionToolbar.svelte';
@@ -412,7 +412,7 @@
 
 {#snippet tool(id: ToolId)}
   {#key id}
-    <div class="tool-fill" class:scroll={id === 'visuals' || id === 'chapters'}>
+    <div class="tool-fill" class:scroll={id === 'chapters'}>
       {#if id === 'transcript'}
         <SyncedTranscript onAction={onTranscriptAction} />
       {:else if id === 'notes'}
@@ -422,7 +422,7 @@
       {:else if id === 'summary'}
         <SummaryPane />
       {:else if id === 'visuals'}
-        <VisualsPanel sessionId={sessionKey} />
+        <MapPane />
       {:else if id === 'flashcards'}
         <CardsPane />
       {:else if id === 'chapters'}
@@ -512,50 +512,6 @@
     padding-right: 4px;
     scrollbar-width: thin;
     scrollbar-color: var(--color-cork-border) transparent;
-  }
-  /*
-   * Bridge styles: the concept map panel predates the studio tokens. Until
-   * it is rebuilt on the shared primitives, bring its
-   * controls in line with the rest of the workspace (same radii, accent fill
-   * at AA contrast, same field treatment) without editing the panels.
-   */
-  .tool-fill.scroll :global(button.primary) {
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 16px;
-    border-color: var(--fill-accent);
-    border-radius: 999px;
-    background: var(--fill-accent);
-    color: var(--text-on-accent);
-    font-size: 12.5px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-  }
-  .tool-fill.scroll :global(button.primary:hover:not(:disabled)) {
-    border-color: var(--fill-accent-hover);
-    background: var(--fill-accent-hover);
-  }
-  .tool-fill.scroll :global(button.outline) {
-    border-radius: 999px;
-    border-color: var(--border-default);
-    color: var(--text-secondary);
-  }
-  .tool-fill.scroll :global(input[type='text']),
-  .tool-fill.scroll :global(input:not([type])),
-  .tool-fill.scroll :global(input[type='search']) {
-    border-radius: 999px;
-    border-color: var(--border-default);
-    background: var(--surface-inset);
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .tool-fill.scroll :global(input:focus-visible) {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-  .tool-fill.scroll :global(h2) {
-    font-size: 18px;
-    font-weight: 500;
   }
   @keyframes enter {
     from {
