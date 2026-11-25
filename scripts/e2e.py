@@ -158,6 +158,8 @@ def s_lecturer():
     login = http("POST", "/auth/lecturers/login", {"email": email, "password": "correct-horse-battery"})
     assert login["access_token"]
     state["lec_token"] = login["access_token"]
+    me = http("GET", "/auth/lecturers/me", token=login["access_token"])
+    assert me["name"] == "Dr Test" and me["role"] == "lecturer" and me["email"] == email, me
     course = http("POST", "/courses", {"code": f"BIO{RUN[:3].upper()}", "title": "Plant Biology", "academic_session": "2026/2027", "semester": "First Semester"}, token)
     state["course"] = course
     state["matric"] = f"BIO/{RUN}/001"
@@ -298,6 +300,13 @@ def s_student():
     http("POST", "/auth/students/register", {"matric_number": state["matric"], "display_name": "Ada Student", "email": email, "password": "correct-horse-battery"})
     login = http("POST", "/auth/students/login", {"email": email, "password": "correct-horse-battery"})
     state["stu_token"] = login["access_token"]
+    me = http("GET", "/auth/students/me", token=state["stu_token"])
+    assert me["name"] == "Ada Student" and me["role"] == "student" and me["matric_number"] == state["matric"], me
+    # A student's token must not read the lecturer profile, and vice versa.
+    status, _ = http("GET", "/auth/lecturers/me", token=state["stu_token"], expect=None)
+    assert status == 403, status
+    status, _ = http("GET", "/auth/students/me", expect=None)
+    assert status == 401, status
     archive = http("GET", "/students/archive", token=state["stu_token"])
     mine = [a for a in archive if a["id"] == state["session_id"]]
     assert mine, f"session missing from archive: {archive}"
