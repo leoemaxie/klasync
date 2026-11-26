@@ -25,7 +25,7 @@ aws-config = { version = "1", default-features = false }
 aws-credential-types = "1"
 aws-sdk-s3 = { version = "1", default-features = false, features = ["rt-tokio", "default-https-client", "behavior-version-latest"] }
 aws-types = "1"
-base64 = "0.22"
+base64 = "0.23"
 calamine = { version = "0.26", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["serde", "std", "clock"] }
 csv = "1"
