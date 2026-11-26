@@ -2,7 +2,10 @@
 //! so lecturers get a clean, editable Word file with real heading styles, a
 //! table of contents field and native tables.
 
-use std::io::{Cursor, Write};
+use std::{
+    collections::HashMap,
+    io::{Cursor, Write},
+};
 
 use async_trait::async_trait;
 use zip::{write::SimpleFileOptions, ZipWriter};
@@ -35,8 +38,34 @@ impl Renderer for DocxRenderer {
         "docx"
     }
     async fn render(&self, input: &RenderInput<'_>) -> Result<RenderedFile, RenderError> {
-        let bytes = render_docx(input.doc, input.context, input.template, input.options)
-            .map_err(RenderError::Failed)?;
+        // Draw diagrams to PNG when a browser is around; otherwise the text
+        // outline stays in place.
+        let mut images: HashMap<String, Vec<u8>> = HashMap::new();
+        if let Some(browser) = super::pdf::find_browser() {
+            for block in &input.doc.blocks {
+                if let BlockKind::Figure {
+                    alt,
+                    diagram: Some(diagram),
+                    ..
+                } = &block.kind
+                {
+                    if let Some(svg) = super::svg::render_diagram(diagram, alt) {
+                        if let Some(png) = super::pdf::rasterize_svg(&browser, &svg, 880, 640).await
+                        {
+                            images.insert(block.id.clone(), png);
+                        }
+                    }
+                }
+            }
+        }
+        let bytes = render_docx(
+            input.doc,
+            input.context,
+            input.template,
+            input.options,
+            &images,
+        )
+        .map_err(RenderError::Failed)?;
         Ok(RenderedFile {
             bytes,
             content_type: CONTENT_TYPE,
@@ -147,7 +176,17 @@ fn table(header: &[String], rows: &[Vec<String>]) -> String {
     out
 }
 
-fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
+/// Image relationship id for a block's picture (`word/media/<n>.png`).
+fn image_rid(index: usize) -> String {
+    format!("rIdImg{index}")
+}
+
+fn block_xml(
+    block: &Block,
+    out: &mut String,
+    options: RenderOptions,
+    images: &HashMap<String, usize>,
+) {
     let tag = if block.origin == Origin::Supplemented {
         run(
             " (supplemented)",
@@ -255,16 +294,30 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
             text_fallback,
             ..
         } => {
-            match text_fallback {
-                Some(text) if !text.trim().is_empty() => {
-                    for line in text.lines().filter(|l| !l.trim().is_empty()) {
-                        out.push_str(&list_item(
-                            "\u{2022}",
-                            &runs(line.trim_start_matches(['-', '*', ' ']), false),
-                        ));
+            // 880x640 px drawn at 5.6in x 4.07in (914400 EMU per inch).
+            if let Some(index) = images.get(&block.id) {
+                out.push_str(&para(
+                    None,
+                    "<w:jc w:val=\"center\"/>",
+                    &format!(
+                        "<w:r><w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\"><wp:extent cx=\"5120640\" cy=\"3721608\"/><wp:docPr id=\"{id}\" name=\"Figure {id}\" descr=\"{alt}\"/><a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:nvPicPr><pic:cNvPr id=\"{id}\" name=\"figure{id}.png\" descr=\"{alt}\"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed=\"{rid}\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"5120640\" cy=\"3721608\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>",
+                        id = index + 1,
+                        alt = xml(alt),
+                        rid = image_rid(*index),
+                    ),
+                ));
+            } else {
+                match text_fallback {
+                    Some(text) if !text.trim().is_empty() => {
+                        for line in text.lines().filter(|l| !l.trim().is_empty()) {
+                            out.push_str(&list_item(
+                                "\u{2022}",
+                                &runs(line.trim_start_matches(['-', '*', ' ']), false),
+                            ));
+                        }
                     }
+                    _ => out.push_str(&para(None, "", &runs(alt, false))),
                 }
-                _ => out.push_str(&para(None, "", &runs(alt, false))),
             }
             out.push_str(&para(
                 Some("Caption"),
@@ -390,7 +443,12 @@ fn toc_xml(doc: &MaterialDoc) -> String {
     out
 }
 
-fn document_xml(doc: &MaterialDoc, context: &RenderContext, options: RenderOptions) -> String {
+fn document_xml(
+    doc: &MaterialDoc,
+    context: &RenderContext,
+    options: RenderOptions,
+    images: &HashMap<String, usize>,
+) -> String {
     let mut body = String::new();
     body.push_str(&para(
         Some("Meta"),
@@ -459,10 +517,10 @@ fn document_xml(doc: &MaterialDoc, context: &RenderContext, options: RenderOptio
         body.push_str(&toc_xml(doc));
     }
     for block in &doc.blocks {
-        block_xml(block, &mut body, options);
+        block_xml(block, &mut body, options, images);
     }
     format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><w:body>{body}<w:sectPr><w:footerReference w:type=\"default\" r:id=\"rId2\"/><w:pgSz w:w=\"11906\" w:h=\"16838\"/><w:pgMar w:top=\"1134\" w:right=\"1134\" w:bottom=\"1134\" w:left=\"1134\" w:header=\"567\" w:footer=\"567\" w:gutter=\"0\"/></w:sectPr></w:body></w:document>"
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\"><w:body>{body}<w:sectPr><w:footerReference w:type=\"default\" r:id=\"rId2\"/><w:pgSz w:w=\"11906\" w:h=\"16838\"/><w:pgMar w:top=\"1134\" w:right=\"1134\" w:bottom=\"1134\" w:left=\"1134\" w:header=\"567\" w:footer=\"567\" w:gutter=\"0\"/></w:sectPr></w:body></w:document>"
     )
 }
 
@@ -527,27 +585,42 @@ pub fn render_docx(
     context: &RenderContext,
     template: &Template,
     options: RenderOptions,
+    pictures: &HashMap<String, Vec<u8>>,
 ) -> Result<Vec<u8>, String> {
+    // Stable numbering: pictures in document order.
+    let mut image_index: HashMap<String, usize> = HashMap::new();
+    let mut ordered: Vec<(usize, &Vec<u8>)> = Vec::new();
+    for block in &doc.blocks {
+        if let Some(png) = pictures.get(&block.id) {
+            let n = image_index.len() + 1;
+            image_index.insert(block.id.clone(), n);
+            ordered.push((n, png));
+        }
+    }
+    let mut content_types = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/>");
+    if !ordered.is_empty() {
+        content_types.push_str("<Default Extension=\"png\" ContentType=\"image/png\"/>");
+    }
+    content_types.push_str("<Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/><Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/><Override PartName=\"/word/settings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml\"/><Override PartName=\"/word/footer1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/></Types>");
+    let mut doc_rels = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer\" Target=\"footer1.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings\" Target=\"settings.xml\"/>");
+    for (n, _) in &ordered {
+        doc_rels.push_str(&format!("<Relationship Id=\"{}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/image{n}.png\"/>", image_rid(*n)));
+    }
+    doc_rels.push_str("</Relationships>");
     let parts: Vec<(&str, String)> = vec![
-        (
-            "[Content_Types].xml",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/><Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/><Override PartName=\"/word/settings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml\"/><Override PartName=\"/word/footer1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/></Types>".to_owned(),
-        ),
+        ("[Content_Types].xml", content_types),
         (
             "_rels/.rels",
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/></Relationships>".to_owned(),
         ),
-        (
-            "word/_rels/document.xml.rels",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer\" Target=\"footer1.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings\" Target=\"settings.xml\"/></Relationships>".to_owned(),
-        ),
+        ("word/_rels/document.xml.rels", doc_rels),
         (
             "word/settings.xml",
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:updateFields w:val=\"true\"/></w:settings>".to_owned(),
         ),
         ("word/styles.xml", styles_xml(template)),
         ("word/footer1.xml", footer_xml(template, context)),
-        ("word/document.xml", document_xml(doc, context, options)),
+        ("word/document.xml", document_xml(doc, context, options, &image_index)),
         (
             "docProps/core.xml",
             format!(
@@ -569,6 +642,12 @@ pub fn render_docx(
         writer
             .write_all(content.as_bytes())
             .map_err(|error| error.to_string())?;
+    }
+    for (n, png) in ordered {
+        writer
+            .start_file(format!("word/media/image{n}.png"), file_options)
+            .map_err(|error| error.to_string())?;
+        writer.write_all(png).map_err(|error| error.to_string())?;
     }
     writer
         .finish()
@@ -620,6 +699,7 @@ mod tests {
                 toc: true,
                 chapter_breaks: true,
             },
+            &HashMap::new(),
         )
         .unwrap();
         assert_eq!(&bytes[..2], b"PK");
@@ -647,5 +727,50 @@ mod tests {
     #[test]
     fn control_characters_never_reach_the_xml() {
         assert_eq!(xml("a\u{1}b<"), "ab&lt;");
+    }
+
+    #[test]
+    fn embeds_pictures_for_figures() {
+        use crate::materials::blocks::{Block, BlockKind};
+        let mut doc = sample_doc();
+        doc.blocks.push(Block::new(
+            "fig-1",
+            BlockKind::Figure {
+                caption: "Map".into(),
+                alt: "A concept map".into(),
+                visualization_id: None,
+                text_fallback: Some("A: B".into()),
+                diagram: None,
+            },
+        ));
+        let mut pictures = HashMap::new();
+        pictures.insert("fig-1".to_owned(), vec![0x89, b'P', b'N', b'G']);
+        let bytes = render_docx(
+            &doc,
+            &sample_context(),
+            &builtin_templates()[0],
+            RenderOptions::default(),
+            &pictures,
+        )
+        .unwrap();
+        let document = read_part(&bytes, "word/document.xml");
+        assert!(document.contains("r:embed=\"rIdImg1\""));
+        assert_balanced(&document);
+        assert!(read_part(&bytes, "word/_rels/document.xml.rels").contains("media/image1.png"));
+        assert!(read_part(&bytes, "[Content_Types].xml").contains("image/png"));
+        let mut archive = zip::ZipArchive::new(Cursor::new(&bytes)).unwrap();
+        assert!(archive.by_name("word/media/image1.png").is_ok());
+    }
+
+    #[tokio::test]
+    async fn rasterizes_a_diagram_when_a_browser_exists() {
+        let Some(browser) = crate::materials::render::pdf::find_browser() else {
+            return;
+        };
+        let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><circle cx=\"5\" cy=\"5\" r=\"4\"/></svg>";
+        let png = crate::materials::render::pdf::rasterize_svg(&browser, svg, 200, 200)
+            .await
+            .expect("png");
+        assert_eq!(&png[1..4], b"PNG");
     }
 }

@@ -23,7 +23,9 @@ use crate::{
         blocks::MaterialDoc,
         book::{self, FrontMatter, UnitSpec},
         delivery,
-        registry::{registry, AnalyzerInput, Audience, Target},
+        registry::{
+            is_enabled, pick_setting, registry, AnalyzerInput, Audience, PluginKind, Stage, Target,
+        },
         service::{self, Exported, PublishOptions, ServiceError},
         store::{self, MaterialRow, MaterialSettings, SessionInfo},
     },
@@ -141,6 +143,21 @@ fn file_response(file: Exported) -> Res<Response> {
         .map_err(|e| ServiceError::Internal(e.to_string()).into())
 }
 
+/// Streams the file, or (with `mode=url`) answers with a short-lived signed
+/// URL when the storage backend can sign. `url: null` means: use the bytes.
+async fn deliver_file(state: &AppState, file: Exported, mode: Option<&str>) -> Res<Response> {
+    if mode == Some("url") {
+        let url = service::export_url(state, &file).await;
+        return Ok(Json(json!({
+            "url": url,
+            "filename": file.filename,
+            "expires_in": service::EXPORT_URL_TTL.as_secs(),
+        }))
+        .into_response());
+    }
+    file_response(file)
+}
+
 // ---- capabilities ---------------------------------------------------------------------
 
 /// Which formats, templates, channels and analyzers this server offers.
@@ -203,8 +220,18 @@ pub async fn get_material(
     .bind(material.id)
     .fetch_all(state.db_pool())
     .await?;
+    let slides: Option<(Option<String>, Option<String>)> =
+        sqlx::query_as("select slides_text, slides_name from lecture_materials where id = $1")
+            .bind(material.id)
+            .fetch_optional(state.db_pool())
+            .await?;
+    let (slides_chars, slides_name) = match slides {
+        Some((Some(text), name)) if !text.trim().is_empty() => (text.chars().count(), name),
+        _ => (0, None),
+    };
     Ok(Json(json!({
         "material": material,
+        "slides": {"has_slides": slides_chars > 0, "chars": slides_chars, "name": slides_name},
         "session": {"id": session.id, "title": session.title},
         "versions": versions.iter().map(|v| json!({
             "id": v.id, "version_no": v.version_no, "origin": v.origin, "model": v.model,
@@ -375,6 +402,8 @@ pub struct ExportQuery {
     pub template: Option<String>,
     /// A version id, or `draft` for the working draft. Default: latest version.
     pub version: Option<String>,
+    /// `url`: reply with a short-lived signed URL instead of the bytes.
+    pub mode: Option<String>,
 }
 
 pub async fn export_material(
@@ -411,7 +440,7 @@ pub async fn export_material(
             .await?
         }
     };
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 // ---- lecturer: course-level ----------------------------------------------------------------
@@ -455,23 +484,335 @@ pub async fn put_settings(
     Ok(Json(input))
 }
 
+/// The lecture transcript as `[mm:ss] text` lines, for reviewing a draft
+/// against what was said. Same source the generator reads.
+pub async fn lecture_transcript(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let loaded = crate::study::load_transcript(state.db_pool(), session.id).await?;
+    let lines: Vec<Value> = loaded
+        .text
+        .lines()
+        .map(|line| {
+            let (offset, text) = match line.strip_prefix('[').and_then(|l| l.split_once("] ")) {
+                Some((stamp, rest)) => (crate::materials::blocks::parse_stamp(stamp), rest),
+                None => (None, line),
+            };
+            json!({"offset_sec": offset, "text": text})
+        })
+        .collect();
+    Ok(Json(
+        json!({"session_id": session.id, "duration_sec": loaded.duration_sec, "lines": lines}),
+    ))
+}
+
+// ---- lecturer: slides --------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct SlidesInput {
+    pub text: String,
+    pub name: Option<String>,
+}
+
+/// Slides context for a lecture: pasted text (or `.txt`/`.md` content).
+pub async fn put_slides(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+    Json(input): Json<SlidesInput>,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let material = store::ensure_material(state.db_pool(), &session, lecturer.id).await?;
+    let text = crate::materials::slides::clean_text(&input.text).map_err(bad_request)?;
+    let name: Option<String> = input.name.map(|n| n.chars().take(120).collect());
+    let stored = (!text.is_empty()).then_some(text.as_str());
+    store::save_slides(state.db_pool(), material.id, stored, name.as_deref()).await?;
+    Ok(Json(
+        json!({"has_slides": stored.is_some(), "chars": text.chars().count(), "name": name}),
+    ))
+}
+
+/// Slides context from an uploaded `.pptx` (raw body; `?name=` for display).
+pub async fn upload_slides(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+    Query(query): Query<SlidesNameQuery>,
+    body: axum::body::Bytes,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let material = store::ensure_material(state.db_pool(), &session, lecturer.id).await?;
+    if body.len() > crate::materials::slides::MAX_UPLOAD_BYTES {
+        return Err(bad_request("that file is too large (15 MB at most)"));
+    }
+    let bytes = body.to_vec();
+    // Unzipping and parsing is CPU work: keep it off the async threads.
+    let extracted =
+        tokio::task::spawn_blocking(move || crate::materials::slides::extract_pptx(&bytes))
+            .await
+            .map_err(|e| MatError::from(ServiceError::Internal(e.to_string())))?
+            .map_err(bad_request)?;
+    let text = crate::materials::slides::clean_text(&extracted).map_err(bad_request)?;
+    let name: Option<String> = query.name.map(|n| n.chars().take(120).collect());
+    store::save_slides(state.db_pool(), material.id, Some(&text), name.as_deref()).await?;
+    Ok(Json(
+        json!({"has_slides": true, "chars": text.chars().count(), "name": name}),
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SlidesNameQuery {
+    pub name: Option<String>,
+}
+
+// ---- lecturer: plug-in settings ------------------------------------------------------------
+
+/// Every registered plug-in as `(kind, id, label)`.
+fn all_plugins() -> Vec<(PluginKind, &'static str, &'static str)> {
+    let r = registry();
+    let mut out = Vec::new();
+    for stage in [Stage::Section, Stage::Post] {
+        for g in r.generators(stage) {
+            out.push((PluginKind::Generator, g.id(), g.label()));
+        }
+    }
+    out.extend(
+        r.renderers()
+            .iter()
+            .map(|x| (PluginKind::Renderer, x.id(), x.label())),
+    );
+    out.extend(
+        r.delivery_channels()
+            .iter()
+            .map(|x| (PluginKind::Delivery, x.id(), x.label())),
+    );
+    out.extend(
+        r.analyzers()
+            .iter()
+            .map(|x| (PluginKind::Analyzer, x.id(), x.label())),
+    );
+    out.extend(
+        r.templates()
+            .iter()
+            .map(|t| (PluginKind::Template, t.id, t.name)),
+    );
+    out
+}
+
+fn parse_kind(raw: &str) -> Res<PluginKind> {
+    Ok(match raw {
+        "generator" => PluginKind::Generator,
+        "renderer" => PluginKind::Renderer,
+        "delivery" => PluginKind::Delivery,
+        "analyzer" => PluginKind::Analyzer,
+        "template" => PluginKind::Template,
+        _ => return Err(bad_request("unknown plug-in kind")),
+    })
+}
+
+fn known_plugin(kind: PluginKind, id: &str) -> bool {
+    all_plugins()
+        .iter()
+        .any(|(k, pid, _)| *k == kind && *pid == id)
+}
+
+/// Plug-ins that must stay on: turning them off would make material
+/// unreadable or break the pipeline.
+fn is_protected(kind: PluginKind, id: &str) -> bool {
+    matches!(
+        (kind, id),
+        (PluginKind::Delivery, "in_app") | (PluginKind::Renderer, "html")
+    )
+}
+
+/// The webhook secret is write-only: listings say whether one is set.
+fn redact(kind: PluginKind, id: &str, mut config: Value) -> Value {
+    if kind == PluginKind::Delivery && id == "webhook" {
+        if let Some(map) = config.as_object_mut() {
+            let has = map
+                .get("secret")
+                .and_then(Value::as_str)
+                .is_some_and(|s| !s.is_empty());
+            map.remove("secret");
+            map.insert("has_secret".to_owned(), json!(has));
+        }
+    }
+    config
+}
+
+/// Effective on/off and config for each plug-in, with where it came from
+/// (`course`, `global` or `default`).
+pub async fn list_plugins(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(course_id): Path<Uuid>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let rows = sqlx::query_as::<_, (String, String, String, bool, Value)>(
+        "select scope, kind, plugin_id, enabled, config from material_plugin_settings
+         where scope = 'global' or (scope = 'course' and course_id = $1)",
+    )
+    .bind(course_id)
+    .fetch_all(state.db_pool())
+    .await?;
+    let plugins: Vec<Value> = all_plugins()
+        .into_iter()
+        .map(|(kind, id, label)| {
+            let mine: Vec<(String, bool, Value)> = rows
+                .iter()
+                .filter(|(_, k, pid, _, _)| k == kind.as_str() && pid == id)
+                .map(|(scope, _, _, enabled, config)| (scope.clone(), *enabled, config.clone()))
+                .collect();
+            let source = if mine.iter().any(|(s, _, _)| s == "course") {
+                "course"
+            } else if mine.iter().any(|(s, _, _)| s == "global") {
+                "global"
+            } else {
+                "default"
+            };
+            let (enabled, config) = pick_setting(mine).unwrap_or((true, json!({})));
+            json!({
+                "kind": kind.as_str(), "id": id, "label": label,
+                "enabled": enabled, "config": redact(kind, id, config), "source": source,
+                "protected": is_protected(kind, id),
+            })
+        })
+        .collect();
+    Ok(Json(json!({ "plugins": plugins })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PluginSettingInput {
+    pub enabled: bool,
+    #[serde(default)]
+    pub config: Option<Value>,
+}
+
+/// Set a course-level override for one plug-in.
+pub async fn put_plugin(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path((course_id, kind, plugin_id)): Path<(Uuid, String, String)>,
+    Json(input): Json<PluginSettingInput>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let kind = parse_kind(&kind)?;
+    if !known_plugin(kind, &plugin_id) {
+        return Err(not_found("Plug-in not found"));
+    }
+    if !input.enabled && is_protected(kind, &plugin_id) {
+        return Err(bad_request("This plug-in cannot be turned off"));
+    }
+    let mut config = input.config.unwrap_or_else(|| json!({}));
+    if !config.is_object() || config.to_string().len() > 8 * 1024 {
+        return Err(bad_request("config must be a JSON object under 8 KB"));
+    }
+    if kind == PluginKind::Delivery && plugin_id == "webhook" {
+        if let Some(url) = config
+            .get("url")
+            .and_then(Value::as_str)
+            .filter(|u| !u.is_empty())
+        {
+            crate::materials::lms::validate_destination(url)
+                .await
+                .map_err(bad_request)?;
+        }
+        if config.get("secret").is_some_and(|v| !v.is_string()) {
+            return Err(bad_request("secret must be a string"));
+        }
+        // The secret is write-only, so an update that omits it keeps the old one.
+        if config.get("secret").is_none() {
+            let existing: Option<Value> = sqlx::query_scalar(
+                "select config from material_plugin_settings
+                 where scope = 'course' and course_id = $1 and kind = 'delivery' and plugin_id = 'webhook'",
+            )
+            .bind(course_id)
+            .fetch_optional(state.db_pool())
+            .await?;
+            if let Some(secret) = existing.as_ref().and_then(|c| c.get("secret")).cloned() {
+                if let Some(map) = config.as_object_mut() {
+                    map.insert("secret".to_owned(), secret);
+                }
+            }
+        }
+    }
+    sqlx::query(
+        "insert into material_plugin_settings (scope, course_id, kind, plugin_id, enabled, config)
+         values ('course', $1, $2, $3, $4, $5)
+         on conflict (course_id, kind, plugin_id) where scope = 'course'
+         do update set enabled = excluded.enabled, config = excluded.config, updated_at = now()",
+    )
+    .bind(course_id)
+    .bind(kind.as_str())
+    .bind(&plugin_id)
+    .bind(input.enabled)
+    .bind(&config)
+    .execute(state.db_pool())
+    .await?;
+    Ok(Json(json!({
+        "kind": kind.as_str(), "id": plugin_id, "enabled": input.enabled,
+        "config": redact(kind, &plugin_id, config), "source": "course",
+    })))
+}
+
+/// Remove the course override so the plug-in follows the global/default again.
+pub async fn reset_plugin(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path((course_id, kind, plugin_id)): Path<(Uuid, String, String)>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let kind = parse_kind(&kind)?;
+    sqlx::query(
+        "delete from material_plugin_settings
+         where scope = 'course' and course_id = $1 and kind = $2 and plugin_id = $3",
+    )
+    .bind(course_id)
+    .bind(kind.as_str())
+    .bind(&plugin_id)
+    .execute(state.db_pool())
+    .await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 pub async fn list_course_materials(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     owned_course(&state, &lecturer, course_id).await?;
-    let rows = sqlx::query_as::<_, (Uuid, Uuid, String, String, String, i32, Option<chrono::DateTime<chrono::Utc>>)>(
-        "select m.id, m.session_id, s.title, m.status, m.generation_state, m.draft_rev, s.started_at
-         from lecture_materials m join lecture_sessions s on s.id = m.session_id
-         where m.course_id = $1 order by s.started_at nulls last, s.title",
+    // Every lecture of the course, with its material when one exists, so the
+    // UI can offer to draft handouts for lectures that have none yet.
+    type Row = (
+        Uuid,
+        String,
+        String,
+        String,
+        Option<chrono::DateTime<chrono::Utc>>,
+        Option<Uuid>,
+        Option<String>,
+        Option<String>,
+        Option<i32>,
+    );
+    let rows = sqlx::query_as::<_, Row>(
+        "select s.id, s.title, s.short_code, s.status::text, s.started_at,
+                m.id, m.status, m.generation_state, m.draft_rev
+         from lecture_sessions s
+         left join lecture_materials m on m.session_id = s.id
+         where s.course_id = $1
+         order by s.started_at nulls last, s.title",
     )
     .bind(course_id)
     .fetch_all(state.db_pool())
     .await?;
     Ok(Json(json!({"materials": rows.iter().map(|r| json!({
-        "id": r.0, "session_id": r.1, "title": r.2, "status": r.3,
-        "generation_state": r.4, "draft_rev": r.5, "started_at": r.6})).collect::<Vec<_>>()})))
+        "id": r.5, "session_id": r.0, "title": r.1, "short_code": r.2,
+        "session_status": r.3, "started_at": r.4,
+        "status": r.6, "generation_state": r.7, "draft_rev": r.8,
+        "has_material": r.5.is_some()})).collect::<Vec<_>>()})))
 }
 
 // ---- lecturer: course book -----------------------------------------------------------------
@@ -597,6 +938,7 @@ pub struct BookExportQuery {
     pub format: Option<String>,
     pub template: Option<String>,
     pub version: Option<Uuid>,
+    pub mode: Option<String>,
 }
 
 pub async fn export_book(
@@ -622,7 +964,7 @@ pub async fn export_book(
         query.template.as_deref(),
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 // ---- lecturer: comparison ---------------------------------------------------------------------
@@ -700,13 +1042,16 @@ pub async fn get_comparison(
 
 // ---- students ---------------------------------------------------------------------------------
 
-fn formats_json() -> Value {
-    json!(registry()
-        .renderers()
-        .iter()
-        .filter(|r| r.available())
-        .map(|r| json!({"id": r.id(), "label": r.label()}))
-        .collect::<Vec<_>>())
+/// Export formats a student may use for this course: installed and not turned
+/// off by the lecturer's plug-in settings.
+async fn formats_json(pool: &sqlx::PgPool, course_id: Uuid) -> Value {
+    let mut out = Vec::new();
+    for r in registry().renderers().iter().filter(|r| r.available()) {
+        if is_enabled(pool, PluginKind::Renderer, r.id(), Some(course_id)).await {
+            out.push(json!({"id": r.id(), "label": r.label()}));
+        }
+    }
+    json!(out)
 }
 
 /// The published material for a lecture the student attended or is enrolled for.
@@ -739,15 +1084,22 @@ pub async fn student_material(
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| not_found("Material not found"))?;
+    let course_id: Uuid =
+        sqlx::query_scalar("select course_id from lecture_sessions where id = $1")
+            .bind(session_id)
+            .fetch_one(pool)
+            .await?;
     Ok(Json(json!({
         "session_id": session_id, "lecture_title": row.4, "version_id": row.0, "version_no": row.1,
-        "published_at": row.3, "doc": row.2, "formats": formats_json(),
+        "published_at": row.3, "doc": row.2,
+        "formats": formats_json(pool, course_id).await,
     })))
 }
 
 #[derive(Debug, Deserialize)]
 pub struct StudentExportQuery {
     pub format: Option<String>,
+    pub mode: Option<String>,
 }
 
 pub async fn student_material_export(
@@ -775,7 +1127,7 @@ pub async fn student_material_export(
         None,
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 async fn student_in_course(
@@ -836,7 +1188,7 @@ pub async fn student_course_materials(
     Ok(Json(json!({
         "materials": rows.iter().map(|r| json!({"session_id": r.0, "version_id": r.1, "lecture_title": r.2, "version_no": r.3, "published_at": r.4})).collect::<Vec<_>>(),
         "book_version_id": book_published,
-        "formats": formats_json(),
+        "formats": formats_json(state.db_pool(), course_id).await,
     })))
 }
 
@@ -865,7 +1217,7 @@ pub async fn student_book(
     .await?
     .ok_or_else(|| not_found("The course book has not been published"))?;
     Ok(Json(
-        json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json()}),
+        json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json(state.db_pool(), course_id).await}),
     ))
 }
 
@@ -888,5 +1240,51 @@ pub async fn student_book_export(
         None,
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
+}
+
+#[cfg(test)]
+mod plugin_tests {
+    use super::*;
+
+    #[test]
+    fn plugin_catalogue_is_complete_and_unique() {
+        let all = all_plugins();
+        assert!(all
+            .iter()
+            .any(|(k, id, _)| *k == PluginKind::Renderer && *id == "pdf"));
+        assert!(all
+            .iter()
+            .any(|(k, id, _)| *k == PluginKind::Generator && *id == "summary"));
+        let mut keys: Vec<_> = all.iter().map(|(k, id, _)| (k.as_str(), *id)).collect();
+        keys.sort();
+        let n = keys.len();
+        keys.dedup();
+        assert_eq!(n, keys.len(), "duplicate plug-in ids within a kind");
+    }
+
+    #[test]
+    fn webhook_secret_is_never_echoed() {
+        let shown = redact(
+            PluginKind::Delivery,
+            "webhook",
+            json!({"url": "https://x.example.edu", "secret": "s3cret"}),
+        );
+        assert_eq!(
+            shown,
+            json!({"url": "https://x.example.edu", "has_secret": true})
+        );
+        let other = redact(PluginKind::Renderer, "pdf", json!({"secret": "keep"}));
+        assert_eq!(other, json!({"secret": "keep"}));
+    }
+
+    #[test]
+    fn kinds_parse_and_protected_plugins_are_known() {
+        assert!(parse_kind("renderer").is_ok());
+        assert!(parse_kind("nope").is_err());
+        assert!(known_plugin(PluginKind::Delivery, "in_app"));
+        assert!(is_protected(PluginKind::Delivery, "in_app"));
+        assert!(!is_protected(PluginKind::Renderer, "pdf"));
+        assert!(!known_plugin(PluginKind::Renderer, "zzz"));
+    }
 }

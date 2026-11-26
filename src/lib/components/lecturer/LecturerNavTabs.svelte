@@ -7,6 +7,7 @@
     Users,
     BarChart3,
     ClipboardCheck,
+    FileText,
   } from '@lucide/svelte';
 
   export type TabKey =
@@ -16,6 +17,7 @@
     | 'live'
     | 'attendance'
     | 'assessments'
+    | 'materials'
     | 'analytics';
 
   let {
@@ -58,6 +60,7 @@
         ]
       : []),
     { key: 'assessments', label: 'Assessments', icon: ClipboardCheck },
+    { key: 'materials', label: 'Materials', icon: FileText },
     { key: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]);
   import { triggerHaptic } from '$lib/native/haptics';

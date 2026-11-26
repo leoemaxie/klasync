@@ -34,6 +34,7 @@ impl EmailMessage {
             text: template.text_body(),
             html: super::layout::render(&template.subject(), &template.html_content(), app_url),
             idempotency_key: idempotency_key.into(),
+            attachments: Vec::new(),
         }
     }
 }

@@ -991,7 +991,7 @@ async fn finish(
             .execute(&mut *tx)
             .await?;
     }
-    let hex = format!("{:x}", digest.finalize()).to_uppercase();
+    let hex = crate::utils::hex_lower(digest.finalize()).to_uppercase();
     let receipt = format!("{}-{}-{}", &hex[0..4], &hex[4..8], &hex[8..12]);
     sqlx::query("update assessment_attempts set receipt = $2 where id = $1")
         .bind(attempt.id)

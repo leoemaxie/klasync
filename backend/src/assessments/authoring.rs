@@ -531,7 +531,7 @@ pub async fn publish(
     };
     let value =
         serde_json::to_value(&snapshot).map_err(|e| ServiceError::Internal(e.to_string()))?;
-    let hash = format!("{:x}", Sha256::digest(value.to_string().as_bytes()));
+    let hash = crate::utils::hex_lower(Sha256::digest(value.to_string().as_bytes()));
 
     let mut tx = pool.begin().await?;
     // Serialise publishes of one assessment so version numbers cannot collide.

@@ -7,6 +7,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import StudentCourseCard from './StudentCourseCard.svelte';
+  import StudentBookModal from '$lib/components/materials/StudentBookModal.svelte';
 
   let {
     onSelectCourseFilter,
@@ -15,6 +16,7 @@
   let courses = $state<StudentEnrolledCourse[]>([]);
   let isLoading = $state(true);
   let searchQuery = $state('');
+  let bookCourse = $state<StudentEnrolledCourse | null>(null);
 
   onMount(async () => {
     try {
@@ -78,11 +80,25 @@
   {:else}
     <ul class="grid">
       {#each filteredCourses as course (course.id)}
-        <li><StudentCourseCard {course} onSelect={onSelectCourseFilter} /></li>
+        <li>
+          <StudentCourseCard
+            {course}
+            onSelect={onSelectCourseFilter}
+            onOpenBook={(c) => (bookCourse = c)}
+          />
+        </li>
       {/each}
     </ul>
   {/if}
 </div>
+
+{#if bookCourse}
+  <StudentBookModal
+    courseId={bookCourse.id}
+    courseTitle={bookCourse.title}
+    onClose={() => (bookCourse = null)}
+  />
+{/if}
 
 <style>
   .hub {
