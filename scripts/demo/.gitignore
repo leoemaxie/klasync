@@ -2,3 +2,4 @@ out
 *.wav
 *.webm
 *.mp4
+__pycache__
