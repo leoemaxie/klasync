@@ -374,6 +374,10 @@ async fn execute_claimed_job(
         job_type if job_type.starts_with("material_") => {
             crate::materials::run_job(state, pool, job).await
         }
+        // Assessment question generation and AI grading.
+        job_type if job_type.starts_with("assessment_") => {
+            crate::assessments::run_job(state, pool, job).await
+        }
         "transcribe" => run_transcribe(state, pool, job).await,
         "embed" => embeddings::embed_session(state, pool, job.session_id)
             .await

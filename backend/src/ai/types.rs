@@ -33,6 +33,8 @@ pub enum Task {
     Visualization,
     /// Lecture materials (outline, sections, summary, review questions).
     Material,
+    /// Assessment question generation and grading.
+    Assessment,
 }
 
 impl Task {
@@ -47,6 +49,7 @@ impl Task {
             "question_answer" | "qa" | "lecture_qa_index" => Self::Qa,
             "quiz" => Self::Quiz,
             other if other.starts_with("material") => Self::Material,
+            other if other.starts_with("assessment") => Self::Assessment,
             _ => Self::Summarize,
         }
     }
@@ -64,6 +67,7 @@ impl Task {
             Self::Chapters => "chapters",
             Self::Visualization => "visualization",
             Self::Material => "material",
+            Self::Assessment => "assessment",
         }
     }
 
@@ -76,6 +80,7 @@ impl Task {
             | Self::Chapters
             | Self::Visualization
             | Self::Material
+            | Self::Assessment
             | Self::Transcribe => Tier::Mid,
         }
     }
