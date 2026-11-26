@@ -33,7 +33,7 @@ dotenvy = "0.15"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 thiserror = "2"
 futures-util = { version = "0.3", default-features = false, features = ["alloc", "std"] }
-tower-http = { version = "0.6", default-features = false, features = ["cors", "trace"] }
+tower-http = { version = "0.7", default-features = false, features = ["cors", "trace"] }
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
 uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7", "std"] }
