@@ -370,6 +370,10 @@ pub fn router(state: AppState) -> Router {
             get(handlers::assessments::list_for_course),
         )
         .route(
+            "/api/v1/courses/{course_id}/assessment-lectures",
+            get(handlers::assessments::course_lectures),
+        )
+        .route(
             "/api/v1/assessments/{id}",
             get(handlers::assessments::get).patch(handlers::assessments::patch),
         )
