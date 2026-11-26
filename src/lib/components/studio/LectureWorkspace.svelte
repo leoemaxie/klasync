@@ -8,9 +8,7 @@
     PanelRightOpen,
   } from '@lucide/svelte';
   import StudioHeader from '$lib/components/archive/StudioHeader.svelte';
-  import FlashcardDeck from '$lib/components/archive/FlashcardDeck.svelte';
   import VisualsPanel from '$lib/components/archive/VisualsPanel.svelte';
-  import RollingSummaryFeed from '$lib/components/shared/RollingSummaryFeed.svelte';
   import {
     LectureStudio,
     provideStudio,
@@ -23,6 +21,8 @@
   import SyncedTranscript from './SyncedTranscript.svelte';
   import NotesPane from './NotesPane.svelte';
   import AskPane from './AskPane.svelte';
+  import CardsPane from './CardsPane.svelte';
+  import SummaryPane from './SummaryPane.svelte';
   import Splitter from './Splitter.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import type { SelectionAction } from './SelectionToolbar.svelte';
@@ -412,13 +412,7 @@
 
 {#snippet tool(id: ToolId)}
   {#key id}
-    <div
-      class="tool-fill"
-      class:scroll={id === 'summary' ||
-        id === 'visuals' ||
-        id === 'flashcards' ||
-        id === 'chapters'}
-    >
+    <div class="tool-fill" class:scroll={id === 'visuals' || id === 'chapters'}>
       {#if id === 'transcript'}
         <SyncedTranscript onAction={onTranscriptAction} />
       {:else if id === 'notes'}
@@ -426,14 +420,11 @@
       {:else if id === 'ask'}
         <AskPane />
       {:else if id === 'summary'}
-        <RollingSummaryFeed sessionId={sessionKey} title="Lecture summary" />
+        <SummaryPane />
       {:else if id === 'visuals'}
         <VisualsPanel sessionId={sessionKey} />
       {:else if id === 'flashcards'}
-        <FlashcardDeck
-          sessionId={sessionKey}
-          seedTopic={studio.flashcardSeed}
-        />
+        <CardsPane />
       {:else if id === 'chapters'}
         <ChapterRail variant="page" />
       {/if}
@@ -523,8 +514,8 @@
     scrollbar-color: var(--color-cork-border) transparent;
   }
   /*
-   * Bridge styles: the flashcard, map and summary panels predate the studio
-   * tokens. Until they are rebuilt on the shared primitives, bring their
+   * Bridge styles: the concept map panel predates the studio tokens. Until
+   * it is rebuilt on the shared primitives, bring its
    * controls in line with the rest of the workspace (same radii, accent fill
    * at AA contrast, same field treatment) without editing the panels.
    */
