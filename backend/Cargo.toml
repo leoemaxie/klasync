@@ -40,7 +40,7 @@ uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7
 qrcode = { version = "0.15", default-features = false, features = ["svg"] }
 async-trait = "0.1"
 zip = { version = "2", default-features = false, features = ["deflate"] }
-sha2 = "0.10"
+sha2 = "0.11"
 redis = { version = "1", default-features = false, features = ["aio", "tokio-comp", "streams", "connection-manager", "tokio-native-tls-comp", "tls-native-tls", "script"] }
 subtle = "2"
 rand = { version = "0.8", features = ["std", "getrandom"] }
