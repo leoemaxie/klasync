@@ -31,6 +31,8 @@ pub enum Task {
     Flashcards,
     Chapters,
     Visualization,
+    /// Lecture materials (outline, sections, summary, review questions).
+    Material,
 }
 
 impl Task {
@@ -44,6 +46,7 @@ impl Task {
             "explain" | "explanation" => Self::Explain,
             "question_answer" | "qa" | "lecture_qa_index" => Self::Qa,
             "quiz" => Self::Quiz,
+            other if other.starts_with("material") => Self::Material,
             _ => Self::Summarize,
         }
     }
@@ -60,6 +63,7 @@ impl Task {
             Self::Flashcards => "flashcards",
             Self::Chapters => "chapters",
             Self::Visualization => "visualization",
+            Self::Material => "material",
         }
     }
 
@@ -71,6 +75,7 @@ impl Task {
             | Self::Flashcards
             | Self::Chapters
             | Self::Visualization
+            | Self::Material
             | Self::Transcribe => Tier::Mid,
         }
     }
