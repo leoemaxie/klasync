@@ -236,6 +236,9 @@ impl AiGateway {
         cost
     }
 
+    // Each argument is a distinct fact about one failed call; bundling them
+    // into a struct would only move the same list somewhere else.
+    #[allow(clippy::too_many_arguments)]
     fn record_failure(
         &self,
         task: Task,

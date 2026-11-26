@@ -515,6 +515,11 @@ ALL_STEPS = (
 
 def main():
     skip_ai = os.environ.get("E2E_SKIP_AI") == "1"
+    if skip_ai and not os.path.exists(WEBM):
+        # Without a transcription model the bytes are never decoded, so any
+        # payload exercises recording, storage and Range streaming.
+        with open(WEBM, "wb") as f:
+            f.write(os.urandom(60_000))
     print(f"E2E run {RUN} against {BASE}" + ("  (AI steps skipped)" if skip_ai else "") + "\n")
     for fn in NO_AI_STEPS if skip_ai else ALL_STEPS:
         try:

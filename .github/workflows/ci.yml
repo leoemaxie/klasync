@@ -182,7 +182,9 @@ jobs:
           echo "backend did not become ready"; cat "$RUNNER_TEMP/backend.log"; exit 1
 
       - name: Run lifecycle checks
-        run: python3 scripts/e2e.py
+        run: |
+          python3 -m pip install --quiet websockets
+          python3 scripts/e2e.py
 
       - name: Backend log
         if: failure()

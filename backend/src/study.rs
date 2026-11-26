@@ -429,7 +429,7 @@ fn offset_of(line: &str) -> Option<i32> {
 
 fn first_sentence(text: &str, max_chars: usize) -> String {
     let end = text
-        .find(|c| c == '.' || c == '?' || c == '!')
+        .find(['.', '?', '!'])
         .map(|i| i + 1)
         .unwrap_or(text.len());
     let sentence: String = text[..end].chars().take(max_chars).collect();
@@ -442,8 +442,8 @@ pub fn heuristic_chapters(text: &str, duration_sec: i32) -> Vec<Chapter> {
     if lines.is_empty() {
         return Vec::new();
     }
-    let slices = ((lines.len() + 7) / 8).clamp(1, 6);
-    let per = (lines.len() + slices - 1) / slices;
+    let slices = lines.len().div_ceil(8).clamp(1, 6);
+    let per = lines.len().div_ceil(slices);
     let mut chapters = Vec::new();
     for (index, chunk) in lines.chunks(per).enumerate() {
         let joined = chunk
@@ -484,7 +484,7 @@ pub fn heuristic_summary(text: &str) -> (String, Vec<String>) {
         .collect();
     let joined = cleaned.join(" ");
     let sentences: Vec<String> = joined
-        .split_inclusive(|c| c == '.' || c == '?' || c == '!')
+        .split_inclusive(['.', '?', '!'])
         .map(|s| s.trim().to_owned())
         .filter(|s| s.split_whitespace().count() >= 4)
         .collect();
