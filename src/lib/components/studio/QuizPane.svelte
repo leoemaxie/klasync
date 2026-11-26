@@ -229,8 +229,12 @@
     color: var(--text-primary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    font: inherit;
+    font-family: var(--font-body);
     font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
     cursor: pointer;
   }
   .option:not(:disabled):hover {
