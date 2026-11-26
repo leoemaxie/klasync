@@ -37,7 +37,6 @@
     type Block,
     type MaterialDoc,
   } from '$lib/api/materials';
-  import type { TranscriptLine } from '$lib/api/aiStudy';
 
   let {
     sessionCode,
@@ -51,7 +50,7 @@
     initialDoc: MaterialDoc;
     initialRev: number;
     /** Lines of the lecture transcript, shown beside the selected block. */
-    transcript?: TranscriptLine[];
+    transcript?: { offset_sec: number | null; text: string }[];
     /** A section rewrite was queued; the parent should poll for the result. */
     onRegenerating?: () => void;
     /** The server has a newer draft (another tab, or a regenerate finished). */
@@ -234,7 +233,7 @@
 </script>
 
 <div class="editor-shell">
-  <div class="bar">
+  <div class="mat-bar">
     <div class="status" data-state={saveState} role="status" aria-live="polite">
       {statusText}
     </div>
@@ -468,7 +467,7 @@
     flex-direction: column;
     gap: 10px;
   }
-  .bar {
+  .mat-bar {
     display: flex;
     align-items: center;
     gap: 8px;

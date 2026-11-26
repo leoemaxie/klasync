@@ -47,12 +47,19 @@ export type BlockKind =
       alt: string;
       visualization_id?: string;
       text_fallback?: string;
+      /** Nodes and edges to draw (concept maps). */
+      diagram?: Diagram;
     }
   | { type: 'table'; caption?: string; header: string[]; rows: string[][] }
   | { type: 'callout'; variant: CalloutVariant; text: string }
   | { type: 'review_questions'; questions: ReviewQuestion[] }
   | { type: 'further_reading'; items: ReadingItem[] }
   | { type: 'summary'; points: string[] };
+
+export interface Diagram {
+  nodes: { id: string; label: string; group?: string | null }[];
+  edges: { from: string; to: string; label?: string | null }[];
+}
 
 export type Block = BlockKind & {
   id: string;
@@ -142,7 +149,29 @@ export interface MaterialCapabilities {
   analyzers: { id: string; label: string }[];
 }
 
-export type ExportFormat = 'pdf' | 'docx' | 'md' | 'html';
+/** Format ids come from `/materials/capabilities`; these ship by default. */
+export type ExportFormat = 'pdf' | 'docx' | 'md' | 'html' | 'epub' | 'tex';
+
+/**
+ * Fetch an export. Asks the server for a short-lived signed storage URL first
+ * (the bytes then skip the API); falls back to streaming through the API when
+ * signing is unavailable or the browser cannot reach storage directly.
+ */
+async function exportBlob(path: string): Promise<Blob> {
+  try {
+    const sep = path.includes('?') ? '&' : '?';
+    const signed = await apiRequest<{ url: string | null }>(
+      `${path}${sep}mode=url`
+    );
+    if (signed.url) {
+      const res = await fetch(signed.url);
+      if (res.ok) return await res.blob();
+    }
+  } catch {
+    /* fall through to the streamed download */
+  }
+  return httpBlob(path);
+}
 
 const lecturePath = (code: string) =>
   `/sessions/code/${encodeURIComponent(code)}/materials`;
@@ -154,6 +183,12 @@ export const fetchMaterialCapabilities = () =>
 
 export const fetchMaterial = (sessionCode: string) =>
   apiRequest<MaterialResponse>(lecturePath(sessionCode));
+
+/** Transcript lines (`offset_sec` may be null) for reviewing a draft. */
+export const fetchMaterialTranscript = (sessionCode: string) =>
+  apiRequest<{
+    lines: { offset_sec: number | null; text: string }[];
+  }>(`${lecturePath(sessionCode)}/transcript`);
 
 /** Creates the material if needed and (re)starts generation. */
 export const generateMaterial = (sessionCode: string) =>
@@ -222,7 +257,10 @@ export const downloadMaterial = (
   const params = new URLSearchParams({ format });
   if (version) params.set('version', version);
   if (template) params.set('template', template);
-  return httpBlob(`${lecturePath(sessionCode)}/export?${params}`);
+  // Drafts are rendered on demand and never cached, so they cannot be signed.
+  return version === 'draft'
+    ? httpBlob(`${lecturePath(sessionCode)}/export?${params}`)
+    : exportBlob(`${lecturePath(sessionCode)}/export?${params}`);
 };
 
 // ---- lecturer: course level -----------------------------------------------
@@ -241,13 +279,16 @@ export const saveMaterialSettings = (
 
 export const fetchCourseMaterials = (courseId: string) =>
   apiRequest<{
+    /** Every lecture of the course; `has_material` is false until drafted. */
     materials: {
-      id: string;
+      id: string | null;
+      has_material: boolean;
       session_id: string;
       title: string;
-      status: MaterialStatus;
-      generation_state: GenerationState;
-      draft_rev: number;
+      session_status: string;
+      status: MaterialStatus | null;
+      generation_state: GenerationState | null;
+      draft_rev: number | null;
       started_at: string | null;
       /** Session short code: the key for the per-lecture lecturer routes. */
       short_code: string;
@@ -328,7 +369,7 @@ export const downloadBook = (
 ) => {
   const params = new URLSearchParams({ format });
   if (version) params.set('version', version);
-  return httpBlob(`/courses/${courseId}/book/export?${params}`);
+  return exportBlob(`/courses/${courseId}/book/export?${params}`);
 };
 
 // ---- comparison -----------------------------------------------------------
@@ -396,7 +437,9 @@ export const downloadStudentMaterial = (
   sessionId: string,
   format: ExportFormat
 ) =>
-  httpBlob(`/students/sessions/${sessionId}/material/export?format=${format}`);
+  exportBlob(
+    `/students/sessions/${sessionId}/material/export?format=${format}`
+  );
 
 export const fetchStudentCourseMaterials = (courseId: string) =>
   apiRequest<{
@@ -422,7 +465,7 @@ export const fetchStudentBook = (courseId: string) =>
   }>(`/students/courses/${courseId}/book`);
 
 export const downloadStudentBook = (courseId: string, format: ExportFormat) =>
-  httpBlob(`/students/courses/${courseId}/book/export?format=${format}`);
+  exportBlob(`/students/courses/${courseId}/book/export?format=${format}`);
 
 // ---- plug-in settings -----------------------------------------------------
 

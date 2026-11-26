@@ -15,6 +15,7 @@
     downloadMaterial,
     fetchMaterial,
     fetchMaterialCapabilities,
+    fetchMaterialTranscript,
     generateMaterial,
     publishMaterial,
     unpublishMaterial,
@@ -23,10 +24,6 @@
     type MaterialCapabilities,
     type MaterialResponse,
   } from '$lib/api/materials';
-  import {
-    fetchSessionTranscript,
-    type TranscriptLine,
-  } from '$lib/api/aiStudy';
   import { exportFilename, saveBlob } from '$lib/materials/download';
 
   let {
@@ -48,7 +45,7 @@
   let error = $state('');
   let notice = $state('');
   let busy = $state('');
-  let transcript = $state<TranscriptLine[]>([]);
+  let transcript = $state<{ offset_sec: number | null; text: string }[]>([]);
   let editor = $state<MaterialEditor>();
   let editorKey = $state(0);
   let sendEmail = $state(false);
@@ -93,7 +90,7 @@
     fetchMaterialCapabilities()
       .then((c) => (caps = c))
       .catch(() => {});
-    fetchSessionTranscript(sessionId)
+    fetchMaterialTranscript(sessionCode)
       .then((t) => (transcript = t.lines))
       .catch(() => {});
   });
@@ -192,7 +189,7 @@
   };
 </script>
 
-<div class="panel">
+<div class="mat-panel">
   {#if loading}
     <div class="center"><Spinner /></div>
   {:else if !material}
@@ -222,7 +219,7 @@
           {#if data?.versions?.length}· v{data.versions[0].version_no}{/if}
         </p>
       </div>
-      <div class="actions">
+      <div class="mat-actions">
         <Button
           size="sm"
           variant="outline"
@@ -418,7 +415,7 @@
 </div>
 
 <style>
-  .panel {
+  .mat-panel {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -452,7 +449,7 @@
     font-size: 12.5px;
     color: var(--text-tertiary);
   }
-  .actions,
+  .mat-actions,
   .exports,
   .row {
     display: flex;

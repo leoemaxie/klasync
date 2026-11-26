@@ -388,6 +388,10 @@ pub fn router(state: AppState) -> Router {
             post(handlers::materials::unpublish),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/materials/transcript",
+            get(handlers::materials::lecture_transcript),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/materials/export",
             get(handlers::materials::export_material),
         )

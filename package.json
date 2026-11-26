@@ -21,6 +21,7 @@
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "idb": "^8.0.3",
+    "katex": "^0.19.1",
     "svelte": "^5.56.6",
     "svelte-spa-router": "^4.0.2",
     "three": "0.170.0",

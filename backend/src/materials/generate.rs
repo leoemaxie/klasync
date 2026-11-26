@@ -1022,6 +1022,50 @@ impl Generator for ReviewQuestionsGenerator {
 /// The lecture's concept map as a figure with a generated text alternative.
 pub struct ConceptMapFigureGenerator;
 
+/// Nodes and edges of a concept-map spec, for drawing.
+pub(crate) fn concept_map_diagram(spec: &Value) -> Option<blocks::Diagram> {
+    let text = |v: &Value| {
+        v.as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| v.to_string())
+    };
+    let nodes: Vec<blocks::DiagramNode> = spec
+        .get("nodes")?
+        .as_array()?
+        .iter()
+        .filter_map(|n| {
+            Some(blocks::DiagramNode {
+                id: text(n.get("id")?),
+                label: n.get("label")?.as_str()?.to_owned(),
+                group: n.get("group").and_then(Value::as_str).map(str::to_owned),
+            })
+        })
+        .collect();
+    if nodes.is_empty() {
+        return None;
+    }
+    let edges =
+        spec.get("edges")
+            .and_then(Value::as_array)
+            .map(|edges| {
+                edges
+                    .iter()
+                    .filter_map(|e| {
+                        let from = text(e.get("from").or_else(|| e.get("source"))?);
+                        let to = text(e.get("to").or_else(|| e.get("target"))?);
+                        (nodes.iter().any(|n| n.id == from) && nodes.iter().any(|n| n.id == to))
+                            .then(|| blocks::DiagramEdge {
+                                from,
+                                to,
+                                label: e.get("label").and_then(Value::as_str).map(str::to_owned),
+                            })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+    Some(blocks::Diagram { nodes, edges })
+}
+
 /// Describes a concept map in words: used as alt text and as the text
 /// fallback for formats without graphics.
 pub(crate) fn describe_concept_map(spec: &Value) -> Option<(String, String)> {
@@ -1136,6 +1180,7 @@ impl Generator for ConceptMapFigureGenerator {
                 alt,
                 visualization_id: Some(map.id),
                 text_fallback: Some(fallback),
+                diagram: concept_map_diagram(&map.spec),
             },
         )])
     }

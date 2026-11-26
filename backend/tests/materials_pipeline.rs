@@ -328,9 +328,15 @@ async fn pipeline_publish_book_delivery_and_events() {
             .is_err(),
         "a stale editor must be refused"
     );
-    let mut invalid = doc.clone();
-    invalid.blocks.clear();
-    assert!(service::save_draft(pool, &material, invalid, rev)
+    // Incomplete drafts are saveable (nothing is lost mid-edit) but cannot be
+    // published; an unsupported schema is refused outright.
+    let mut incomplete = doc.clone();
+    incomplete.blocks.clear();
+    assert!(validate(&incomplete).is_err());
+    assert!(klasync_backend::materials::blocks::validate_draft(&incomplete).is_ok());
+    let mut wrong_schema = doc.clone();
+    wrong_schema.schema_version = 99;
+    assert!(service::save_draft(pool, &material, wrong_schema, rev)
         .await
         .is_err());
 
@@ -448,13 +454,33 @@ async fn pipeline_publish_book_delivery_and_events() {
     assert_eq!(pending, 0);
 
     // Exports: HTML and DOCX render from the stored version without any browser.
-    for format in ["html", "md", "docx"] {
+    for format in ["html", "md", "docx", "epub", "tex"] {
         let file = service::export(&state, Target::Version(published.version_id), format, None)
             .await
             .unwrap();
         assert!(!file.bytes.is_empty(), "{format}");
         assert!(file.filename.ends_with(format), "{}", file.filename);
     }
+
+    // A renderer the lecturer turned off for the course refuses to export.
+    sqlx::query(
+        "insert into material_plugin_settings (scope, course_id, kind, plugin_id, enabled)
+         values ('course', $1, 'renderer', 'tex', false)",
+    )
+    .bind(fx.course)
+    .execute(pool)
+    .await
+    .unwrap();
+    let refused = service::export(&state, Target::Version(published.version_id), "tex", None).await;
+    assert!(
+        matches!(refused, Err(service::ServiceError::Invalid(ref m)) if m.contains("turned off")),
+        "disabled renderer must refuse"
+    );
+    // Signed URLs are optional: absent for storage that cannot sign, never an error.
+    let epub = service::export(&state, Target::Version(published.version_id), "epub", None)
+        .await
+        .unwrap();
+    let _ = service::export_url(&state, &epub).await;
 
     // Course book: built from published materials, pinned, stale flag round-trips.
     let book_row = book::ensure_book(pool, fx.course).await.unwrap();

@@ -78,7 +78,7 @@
       description="Your lecturer hasn’t published a handout for this lecture. It will appear here when they do."
     />
   {:else}
-    <div class="bar">
+    <div class="mat-bar">
       <span class="meta"
         >Version {material.version_no}{#if material.published_at}
           · {new Date(material.published_at).toLocaleDateString()}{/if}</span
@@ -108,7 +108,7 @@
     height: 100%;
     min-height: 0;
   }
-  .bar {
+  .mat-bar {
     display: flex;
     justify-content: space-between;
     gap: 8px;

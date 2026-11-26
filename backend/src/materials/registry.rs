@@ -291,6 +291,12 @@ impl Registry {
         registry
             .renderers
             .push(Arc::new(super::render::markdown::MarkdownRenderer));
+        registry
+            .renderers
+            .push(Arc::new(super::render::epub::EpubRenderer));
+        registry
+            .renderers
+            .push(Arc::new(super::render::latex::LatexRenderer));
 
         registry
             .delivery

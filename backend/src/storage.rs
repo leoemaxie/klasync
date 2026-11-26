@@ -30,6 +30,16 @@ pub trait StorageAdapter: Send + Sync {
     async fn put(&self, file_name: &str, data: Vec<u8>) -> Result<StoredObject, StorageError>;
     async fn get(&self, key: &str) -> Result<Vec<u8>, StorageError>;
     async fn delete(&self, key: &str) -> Result<(), StorageError>;
+    /// A time-limited download URL for `key`, or `None` when the backend cannot
+    /// sign URLs (callers then stream the bytes themselves).
+    async fn presign_get(
+        &self,
+        _key: &str,
+        _expires: std::time::Duration,
+        _download_name: Option<&str>,
+    ) -> Result<Option<String>, StorageError> {
+        Ok(None)
+    }
     fn provider_name(&self) -> &'static str;
 }
 
@@ -120,6 +130,40 @@ impl StorageAdapter for R2ObjectStore {
             .await
             .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
         Ok(StoredObject { key, bytes })
+    }
+
+    async fn presign_get(
+        &self,
+        key: &str,
+        expires: std::time::Duration,
+        download_name: Option<&str>,
+    ) -> Result<Option<String>, StorageError> {
+        if key.is_empty() || key.contains("..") {
+            return Err(StorageError::InvalidKey);
+        }
+        let config = aws_sdk_s3::presigning::PresigningConfig::expires_in(expires)
+            .map_err(|error| StorageError::Backend(error.to_string()))?;
+        let mut request = self.client.get_object().bucket(&self.bucket).key(key);
+        if let Some(name) = download_name {
+            // Header-safe: keep to a conservative filename alphabet.
+            let safe: String = name
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
+                .collect();
+            request =
+                request.response_content_disposition(format!("attachment; filename=\"{safe}\""));
+        }
+        let presigned = request
+            .presigned(config)
+            .await
+            .map_err(|error| StorageError::Backend(DisplayErrorContext(&error).to_string()))?;
+        Ok(Some(presigned.uri().to_string()))
     }
 
     async fn get(&self, key: &str) -> Result<Vec<u8>, StorageError> {

@@ -64,7 +64,7 @@
   });
 
   const extra = $derived(
-    currentSession && !rows.some((r) => r.session_id === currentSession.id)
+    currentSession && !rows.some((r) => r.short_code === currentSession.code)
       ? currentSession
       : null
   );
@@ -154,9 +154,13 @@
             >
               <span class="t">{r.title}</span>
               <span class="s">
-                <span class="pill" data-status={r.status}
-                  >{statusLabel[r.status]}</span
-                >
+                {#if r.status}
+                  <span class="pill" data-status={r.status}
+                    >{statusLabel[r.status]}</span
+                  >
+                {:else}
+                  <span class="pill">Not drafted</span>
+                {/if}
                 {#if r.generation_state === 'queued' || r.generation_state === 'generating'}
                   · drafting…
                 {:else if r.generation_state === 'failed'}

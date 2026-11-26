@@ -23,7 +23,9 @@ use crate::{
         blocks::MaterialDoc,
         book::{self, FrontMatter, UnitSpec},
         delivery,
-        registry::{pick_setting, registry, AnalyzerInput, Audience, PluginKind, Stage, Target},
+        registry::{
+            is_enabled, pick_setting, registry, AnalyzerInput, Audience, PluginKind, Stage, Target,
+        },
         service::{self, Exported, PublishOptions, ServiceError},
         store::{self, MaterialRow, MaterialSettings, SessionInfo},
     },
@@ -139,6 +141,21 @@ fn file_response(file: Exported) -> Res<Response> {
         )
         .body(Body::from(file.bytes))
         .map_err(|e| ServiceError::Internal(e.to_string()).into())
+}
+
+/// Streams the file, or (with `mode=url`) answers with a short-lived signed
+/// URL when the storage backend can sign. `url: null` means: use the bytes.
+async fn deliver_file(state: &AppState, file: Exported, mode: Option<&str>) -> Res<Response> {
+    if mode == Some("url") {
+        let url = service::export_url(state, &file).await;
+        return Ok(Json(json!({
+            "url": url,
+            "filename": file.filename,
+            "expires_in": service::EXPORT_URL_TTL.as_secs(),
+        }))
+        .into_response());
+    }
+    file_response(file)
 }
 
 // ---- capabilities ---------------------------------------------------------------------
@@ -375,6 +392,8 @@ pub struct ExportQuery {
     pub template: Option<String>,
     /// A version id, or `draft` for the working draft. Default: latest version.
     pub version: Option<String>,
+    /// `url`: reply with a short-lived signed URL instead of the bytes.
+    pub mode: Option<String>,
 }
 
 pub async fn export_material(
@@ -411,7 +430,7 @@ pub async fn export_material(
             .await?
         }
     };
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 // ---- lecturer: course-level ----------------------------------------------------------------
@@ -453,6 +472,31 @@ pub async fn put_settings(
     }
     store::save_settings(state.db_pool(), course_id, &input).await?;
     Ok(Json(input))
+}
+
+/// The lecture transcript as `[mm:ss] text` lines, for reviewing a draft
+/// against what was said. Same source the generator reads.
+pub async fn lecture_transcript(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let loaded = crate::study::load_transcript(state.db_pool(), session.id).await?;
+    let lines: Vec<Value> = loaded
+        .text
+        .lines()
+        .map(|line| {
+            let (offset, text) = match line.strip_prefix('[').and_then(|l| l.split_once("] ")) {
+                Some((stamp, rest)) => (crate::materials::blocks::parse_stamp(stamp), rest),
+                None => (None, line),
+            };
+            json!({"offset_sec": offset, "text": text})
+        })
+        .collect();
+    Ok(Json(
+        json!({"session_id": session.id, "duration_sec": loaded.duration_sec, "lines": lines}),
+    ))
 }
 
 // ---- lecturer: plug-in settings ------------------------------------------------------------
@@ -627,17 +671,35 @@ pub async fn list_course_materials(
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     owned_course(&state, &lecturer, course_id).await?;
-    let rows = sqlx::query_as::<_, (Uuid, Uuid, String, String, String, i32, Option<chrono::DateTime<chrono::Utc>>, String)>(
-        "select m.id, m.session_id, s.title, m.status, m.generation_state, m.draft_rev, s.started_at, s.short_code
-         from lecture_materials m join lecture_sessions s on s.id = m.session_id
-         where m.course_id = $1 order by s.started_at nulls last, s.title",
+    // Every lecture of the course, with its material when one exists, so the
+    // UI can offer to draft handouts for lectures that have none yet.
+    type Row = (
+        Uuid,
+        String,
+        String,
+        String,
+        Option<chrono::DateTime<chrono::Utc>>,
+        Option<Uuid>,
+        Option<String>,
+        Option<String>,
+        Option<i32>,
+    );
+    let rows = sqlx::query_as::<_, Row>(
+        "select s.id, s.title, s.short_code, s.status::text, s.started_at,
+                m.id, m.status, m.generation_state, m.draft_rev
+         from lecture_sessions s
+         left join lecture_materials m on m.session_id = s.id
+         where s.course_id = $1
+         order by s.started_at nulls last, s.title",
     )
     .bind(course_id)
     .fetch_all(state.db_pool())
     .await?;
     Ok(Json(json!({"materials": rows.iter().map(|r| json!({
-        "id": r.0, "session_id": r.1, "title": r.2, "status": r.3,
-        "generation_state": r.4, "draft_rev": r.5, "started_at": r.6, "short_code": r.7})).collect::<Vec<_>>()})))
+        "id": r.5, "session_id": r.0, "title": r.1, "short_code": r.2,
+        "session_status": r.3, "started_at": r.4,
+        "status": r.6, "generation_state": r.7, "draft_rev": r.8,
+        "has_material": r.5.is_some()})).collect::<Vec<_>>()})))
 }
 
 // ---- lecturer: course book -----------------------------------------------------------------
@@ -763,6 +825,7 @@ pub struct BookExportQuery {
     pub format: Option<String>,
     pub template: Option<String>,
     pub version: Option<Uuid>,
+    pub mode: Option<String>,
 }
 
 pub async fn export_book(
@@ -788,7 +851,7 @@ pub async fn export_book(
         query.template.as_deref(),
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 // ---- lecturer: comparison ---------------------------------------------------------------------
@@ -866,13 +929,16 @@ pub async fn get_comparison(
 
 // ---- students ---------------------------------------------------------------------------------
 
-fn formats_json() -> Value {
-    json!(registry()
-        .renderers()
-        .iter()
-        .filter(|r| r.available())
-        .map(|r| json!({"id": r.id(), "label": r.label()}))
-        .collect::<Vec<_>>())
+/// Export formats a student may use for this course: installed and not turned
+/// off by the lecturer's plug-in settings.
+async fn formats_json(pool: &sqlx::PgPool, course_id: Uuid) -> Value {
+    let mut out = Vec::new();
+    for r in registry().renderers().iter().filter(|r| r.available()) {
+        if is_enabled(pool, PluginKind::Renderer, r.id(), Some(course_id)).await {
+            out.push(json!({"id": r.id(), "label": r.label()}));
+        }
+    }
+    json!(out)
 }
 
 /// The published material for a lecture the student attended or is enrolled for.
@@ -905,15 +971,22 @@ pub async fn student_material(
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| not_found("Material not found"))?;
+    let course_id: Uuid =
+        sqlx::query_scalar("select course_id from lecture_sessions where id = $1")
+            .bind(session_id)
+            .fetch_one(pool)
+            .await?;
     Ok(Json(json!({
         "session_id": session_id, "lecture_title": row.4, "version_id": row.0, "version_no": row.1,
-        "published_at": row.3, "doc": row.2, "formats": formats_json(),
+        "published_at": row.3, "doc": row.2,
+        "formats": formats_json(pool, course_id).await,
     })))
 }
 
 #[derive(Debug, Deserialize)]
 pub struct StudentExportQuery {
     pub format: Option<String>,
+    pub mode: Option<String>,
 }
 
 pub async fn student_material_export(
@@ -941,7 +1014,7 @@ pub async fn student_material_export(
         None,
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 async fn student_in_course(
@@ -1002,7 +1075,7 @@ pub async fn student_course_materials(
     Ok(Json(json!({
         "materials": rows.iter().map(|r| json!({"session_id": r.0, "version_id": r.1, "lecture_title": r.2, "version_no": r.3, "published_at": r.4})).collect::<Vec<_>>(),
         "book_version_id": book_published,
-        "formats": formats_json(),
+        "formats": formats_json(state.db_pool(), course_id).await,
     })))
 }
 
@@ -1031,7 +1104,7 @@ pub async fn student_book(
     .await?
     .ok_or_else(|| not_found("The course book has not been published"))?;
     Ok(Json(
-        json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json()}),
+        json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json(state.db_pool(), course_id).await}),
     ))
 }
 
@@ -1054,7 +1127,7 @@ pub async fn student_book_export(
         None,
     )
     .await?;
-    file_response(file)
+    deliver_file(&state, file, query.mode.as_deref()).await
 }
 
 #[cfg(test)]

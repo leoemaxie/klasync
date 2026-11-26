@@ -7,9 +7,11 @@
   let {
     course,
     onSelect,
+    onOpenBook,
   }: {
     course: StudentEnrolledCourse;
     onSelect?: (code: string) => void;
+    onOpenBook?: (course: StudentEnrolledCourse) => void;
   } = $props();
 
   const n = $derived(course.session_count ?? 0);
@@ -32,6 +34,16 @@
     <span class="count"
       ><BookOpen size={14} /> {n} {n === 1 ? 'lecture' : 'lectures'}</span
     >
+    {#if onOpenBook}
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={() => onOpenBook(course)}
+        aria-label="Open the course book for {course.code}"
+      >
+        Course book
+      </Button>
+    {/if}
     <Button
       variant="soft"
       size="sm"

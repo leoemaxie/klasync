@@ -3,9 +3,12 @@
 //! shared pieces (templates, numbering, escaping) live here.
 
 pub mod docx;
+pub mod epub;
 pub mod html;
+pub mod latex;
 pub mod markdown;
 pub mod pdf;
+pub mod svg;
 
 use super::{
     blocks::{Block, BlockKind, MaterialDoc},

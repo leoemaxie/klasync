@@ -47,7 +47,9 @@
     new Set((book?.structure ?? []).flatMap((u) => u.material_ids))
   );
   const unplaced = $derived(
-    lectures.filter((l) => l.status === 'published' && !placed.has(l.id))
+    lectures.filter(
+      (l) => l.id && l.status === 'published' && !placed.has(l.id)
+    )
   );
 
   async function load() {
@@ -298,7 +300,8 @@
               <Button
                 size="sm"
                 variant="outline"
-                onclick={() => addLecture(l.id)}>Add to last part</Button
+                onclick={() => l.id && addLecture(l.id)}
+                >Add to last part</Button
               >
             </div>
           {/each}

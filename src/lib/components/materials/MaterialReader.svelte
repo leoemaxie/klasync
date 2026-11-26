@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { inlineHtml, formatTime } from '$lib/materials/doc';
+  import { onMount } from 'svelte';
+  import { formatTime } from '$lib/materials/doc';
+  import {
+    layoutDiagram,
+    loadKatex,
+    renderEquation,
+    richInline,
+  } from '$lib/materials/math';
   import type { Block, MaterialDoc } from '$lib/api/materials';
 
   let {
@@ -16,7 +23,14 @@
     highlightId?: string | null;
   } = $props();
 
-  const html = inlineHtml;
+  // KaTeX loads on demand; until then equations show as escaped source.
+  let katex = $state<Awaited<ReturnType<typeof loadKatex>> | null>(null);
+  onMount(() => {
+    loadKatex()
+      .then((k) => (katex = k))
+      .catch(() => {});
+  });
+  const html = (t: string) => richInline(katex, t);
   const calloutLabel: Record<string, string> = {
     note: 'Note',
     tip: 'Tip',
@@ -86,12 +100,12 @@
         </div>
       {:else if b.type === 'key_result'}
         <div class="card key">
-          <span class="label">{b.title ?? 'Key result'}</span>
+          <span class="mat-label">{b.title ?? 'Key result'}</span>
           <p>{@html html(b.text)}</p>
         </div>
       {:else if b.type === 'worked_example'}
         <div class="card example">
-          <span class="label">Worked example · {b.title}</span>
+          <span class="mat-label">Worked example · {b.title}</span>
           <p>{@html html(b.problem)}</p>
           <ol>
             {#each b.steps as step}<li>{@html html(step)}</li>{/each}
@@ -103,13 +117,66 @@
         </div>
       {:else if b.type === 'equation'}
         <figure class="equation">
-          <code>{b.latex}</code>
+          <div class="tex">{@html renderEquation(katex, b.latex)}</div>
           {#if b.number}<span class="eqno">({b.number})</span>{/if}
           {#if b.caption}<figcaption>{@html html(b.caption)}</figcaption>{/if}
         </figure>
       {:else if b.type === 'figure'}
         <figure class="figure" aria-label={b.alt}>
-          <div class="fig-body">{b.text_fallback ?? b.alt}</div>
+          {#if b.diagram?.nodes.length}
+            {@const nodes = layoutDiagram(b.diagram.nodes)}
+            <svg
+              viewBox="-120 0 880 640"
+              role="img"
+              aria-label={b.alt}
+              class="diagram"
+            >
+              <defs>
+                <marker
+                  id="arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M0,0 L10,5 L0,10 z" fill="#8a909c" />
+                </marker>
+              </defs>
+              {#each b.diagram.edges as e}
+                {@const a = nodes.find((n) => n.id === e.from)}
+                {@const z = nodes.find((n) => n.id === e.to)}
+                {#if a && z && a !== z}
+                  {@const len = Math.hypot(z.x - a.x, z.y - a.y) || 1}
+                  {@const ux = (z.x - a.x) / len}
+                  {@const uy = (z.y - a.y) / len}
+                  <line
+                    x1={a.x + ux * 16}
+                    y1={a.y + uy * 16}
+                    x2={z.x - ux * 18}
+                    y2={z.y - uy * 18}
+                    stroke="#8a909c"
+                    stroke-width="1.3"
+                    marker-end="url(#arrow)"
+                  />
+                {/if}
+              {/each}
+              {#each nodes as n}
+                <circle cx={n.x} cy={n.y} r="10" fill={n.color} />
+                <text
+                  x={n.x +
+                    (n.anchor === 'end' ? -14 : n.anchor === 'start' ? 14 : 0)}
+                  y={n.y + (n.anchor === 'middle' ? (n.y < 320 ? -14 : 22) : 4)}
+                  font-size="12"
+                  text-anchor={n.anchor}
+                  fill="currentColor">{n.label}</text
+                >
+              {/each}
+            </svg>
+          {:else}
+            <div class="fig-body">{b.text_fallback ?? b.alt}</div>
+          {/if}
           <figcaption>{@html html(b.caption)}</figcaption>
         </figure>
       {:else if b.type === 'table'}
@@ -132,12 +199,12 @@
         </div>
       {:else if b.type === 'callout'}
         <aside class="card callout" data-variant={b.variant}>
-          <span class="label">{calloutLabel[b.variant] ?? 'Note'}</span>
+          <span class="mat-label">{calloutLabel[b.variant] ?? 'Note'}</span>
           <p>{@html html(b.text)}</p>
         </aside>
       {:else if b.type === 'review_questions'}
         <section class="card">
-          <span class="label">Review questions</span>
+          <span class="mat-label">Review questions</span>
           <ol>
             {#each b.questions as q}
               <li>
@@ -153,7 +220,7 @@
         </section>
       {:else if b.type === 'further_reading'}
         <section class="card">
-          <span class="label">Further reading</span>
+          <span class="mat-label">Further reading</span>
           <ul>
             {#each b.items as it}
               <li>
@@ -166,7 +233,7 @@
         </section>
       {:else if b.type === 'summary'}
         <section class="card key">
-          <span class="label">Summary</span>
+          <span class="mat-label">Summary</span>
           <ul>
             {#each b.points as pt}<li>{@html html(pt)}</li>{/each}
           </ul>
@@ -236,7 +303,7 @@
   .card.callout[data-variant='misconception'] {
     border-color: #c9892b;
   }
-  .label {
+  .mat-label {
     display: block;
     margin-bottom: 4px;
     font-size: 11px;
@@ -253,8 +320,13 @@
     text-align: center;
     overflow-x: auto;
   }
-  .equation code {
-    font-size: 15px;
+  .equation .tex {
+    font-size: 1.1em;
+    color: var(--text-primary);
+  }
+  .diagram {
+    width: 100%;
+    max-width: 520px;
     color: var(--text-primary);
   }
   .eqno {
