@@ -12,7 +12,8 @@ use super::{
     model::{AssessmentSettings, Snapshot},
 };
 
-pub const ASSESSMENT_COLS: &str = "id, course_id, session_id, lecturer_id, title, instructions_md, kind, status, \
+pub const ASSESSMENT_COLS: &str =
+    "id, course_id, session_id, lecturer_id, title, instructions_md, kind, status, \
      settings, draft_rev, published_version_id, opens_at, due_at, closes_at, results_released_at, \
      identity_revealed_at, created_at, updated_at";
 
@@ -52,7 +53,8 @@ impl AssessmentRow {
     }
 }
 
-pub const QUESTION_COLS: &str = "id, assessment_id, position, question_type, prompt_md, points::float8 as points, \
+pub const QUESTION_COLS: &str =
+    "id, assessment_id, position, question_type, prompt_md, points::float8 as points, \
      difficulty, topic_tag, chapter_index, public_payload, key_payload, explanation_md, origin, \
      source_ranges, low_confidence, locked";
 
@@ -78,7 +80,7 @@ pub struct QuestionRow {
 }
 
 pub const ATTEMPT_COLS: &str = "id, assessment_id, version_id, student_account_id, attempt_no, status, grading_alias, \
-     started_at, deadline_at, submitted_at, submitted_offline, claimed_submit_at, late, question_order, \
+     started_at, deadline_at, submitted_at, submitted_offline, auto_submitted, claimed_submit_at, late, question_order, \
      option_orders, seed, device_id, integrity_summary, final_score, max_score, receipt";
 
 #[derive(Debug, Clone, FromRow)]
@@ -94,6 +96,7 @@ pub struct AttemptRow {
     pub deadline_at: Option<DateTime<Utc>>,
     pub submitted_at: Option<DateTime<Utc>>,
     pub submitted_offline: bool,
+    pub auto_submitted: bool,
     pub claimed_submit_at: Option<DateTime<Utc>>,
     pub late: bool,
     pub question_order: Value,
@@ -112,7 +115,10 @@ impl AttemptRow {
     }
 
     pub fn is_submitted(&self) -> bool {
-        matches!(self.status.as_str(), "submitted" | "auto_submitted" | "graded")
+        matches!(
+            self.status.as_str(),
+            "submitted" | "auto_submitted" | "graded"
+        )
     }
 }
 
@@ -163,7 +169,10 @@ pub async fn find_question(
     .await
 }
 
-pub async fn load_snapshot(pool: &PgPool, version_id: Uuid) -> Result<Option<Snapshot>, sqlx::Error> {
+pub async fn load_snapshot(
+    pool: &PgPool,
+    version_id: Uuid,
+) -> Result<Option<Snapshot>, sqlx::Error> {
     let value: Option<Value> =
         sqlx::query_scalar("select snapshot from assessment_versions where id = $1")
             .bind(version_id)
@@ -186,11 +195,13 @@ pub async fn accommodation(
     .fetch_optional(pool)
     .await?;
     Ok(row
-        .map(|(extra_time_pct, extra_attempts, due_override)| Accommodation {
-            extra_time_pct,
-            extra_attempts,
-            due_override,
-        })
+        .map(
+            |(extra_time_pct, extra_attempts, due_override)| Accommodation {
+                extra_time_pct,
+                extra_attempts,
+                due_override,
+            },
+        )
         .unwrap_or_default())
 }
 

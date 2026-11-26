@@ -92,12 +92,11 @@ pub struct AttemptView {
     pub answers: Vec<SavedAnswer>,
     pub receipt: Option<String>,
     pub submitted_at: Option<DateTime<Utc>>,
+    /// The server closed the attempt (time ran out or a limit was reached).
+    pub auto_submitted: bool,
 }
 
-async fn load_context(
-    pool: &PgPool,
-    attempt: &AttemptRow,
-) -> Res<(AssessmentRow, Snapshot)> {
+async fn load_context(pool: &PgPool, attempt: &AttemptRow) -> Res<(AssessmentRow, Snapshot)> {
     let assessment = store::find_assessment(pool, attempt.assessment_id)
         .await?
         .ok_or(ServiceError::NotFound("Assessment not found"))?;
@@ -129,7 +128,8 @@ async fn owned_attempt(pool: &PgPool, student_id: Uuid, attempt_id: Uuid) -> Res
 
 async fn build_view(pool: &PgPool, attempt: &AttemptRow, now: DateTime<Utc>) -> Res<AttemptView> {
     let (assessment, snapshot) = load_context(pool, attempt).await?;
-    let order: Vec<Uuid> = serde_json::from_value(attempt.question_order.clone()).unwrap_or_default();
+    let order: Vec<Uuid> =
+        serde_json::from_value(attempt.question_order.clone()).unwrap_or_default();
     let option_orders: HashMap<String, Vec<String>> =
         serde_json::from_value(attempt.option_orders.clone()).unwrap_or_default();
     let questions = order
@@ -137,7 +137,10 @@ async fn build_view(pool: &PgPool, attempt: &AttemptRow, now: DateTime<Utc>) -> 
         .enumerate()
         .filter_map(|(i, id)| {
             let q = snapshot.question(*id)?;
-            let opts = option_orders.get(&id.to_string()).cloned().unwrap_or_default();
+            let opts = option_orders
+                .get(&id.to_string())
+                .cloned()
+                .unwrap_or_default();
             Some(StudentQuestion::build(q, i, &opts))
         })
         .collect();
@@ -171,6 +174,7 @@ async fn build_view(pool: &PgPool, attempt: &AttemptRow, now: DateTime<Utc>) -> 
         answers,
         receipt: attempt.receipt.clone(),
         submitted_at: attempt.submitted_at,
+        auto_submitted: attempt.auto_submitted,
     })
 }
 
@@ -239,16 +243,17 @@ pub async fn list_for_student(
     .bind(student_id)
     .fetch_all(pool)
     .await?;
-    let attempts = sqlx::query_as::<_, (Uuid, i64, Option<Uuid>, Option<Uuid>, Option<DateTime<Utc>>)>(
-        "select assessment_id, count(*),
+    let attempts =
+        sqlx::query_as::<_, (Uuid, i64, Option<Uuid>, Option<Uuid>, Option<DateTime<Utc>>)>(
+            "select assessment_id, count(*),
                 (array_agg(id order by attempt_no) filter (where status = 'in_progress'))[1],
                 (array_agg(id order by attempt_no desc))[1],
                 max(submitted_at)
          from assessment_attempts where student_account_id = $1 group by assessment_id",
-    )
-    .bind(student_id)
-    .fetch_all(pool)
-    .await?;
+        )
+        .bind(student_id)
+        .fetch_all(pool)
+        .await?;
     let by_assessment: HashMap<Uuid, _> = attempts.into_iter().map(|r| (r.0, r)).collect();
     let accommodations = sqlx::query_as::<_, (Uuid, i32, i32, Option<DateTime<Utc>>)>(
         "select assessment_id, extra_time_pct, extra_attempts, due_override
@@ -259,7 +264,16 @@ pub async fn list_for_student(
     .await?;
     let acc_by: HashMap<Uuid, Accommodation> = accommodations
         .into_iter()
-        .map(|(id, t, a, d)| (id, Accommodation { extra_time_pct: t, extra_attempts: a, due_override: d }))
+        .map(|(id, t, a, d)| {
+            (
+                id,
+                Accommodation {
+                    extra_time_pct: t,
+                    extra_attempts: a,
+                    due_override: d,
+                },
+            )
+        })
         .collect();
 
     let mut out = Vec::new();
@@ -378,7 +392,16 @@ pub async fn start_attempt(
         if !expired {
             return build_view(pool, &open, now).await;
         }
-        finish(pool, &open, &assessment, "auto_submitted", open.deadline_at.unwrap_or(now), false, None).await?;
+        finish(
+            pool,
+            &open,
+            &assessment,
+            "auto_submitted",
+            open.deadline_at.unwrap_or(now),
+            false,
+            None,
+        )
+        .await?;
     }
 
     let accommodation = store::accommodation(pool, assessment.id, student_id).await?;
@@ -407,10 +430,15 @@ pub async fn start_attempt(
     let seed: i64 = rand::random();
     let plan = plan_attempt(seed, &snapshot.questions, &settings);
     let deadline = compute_deadline(now, &assessment.window(), &settings, &accommodation);
-    let order = serde_json::to_value(&plan.question_order).map_err(|e| ServiceError::Internal(e.to_string()))?;
-    let option_orders: HashMap<String, &Vec<String>> =
-        plan.option_orders.iter().map(|(k, v)| (k.to_string(), v)).collect();
-    let option_orders = serde_json::to_value(option_orders).map_err(|e| ServiceError::Internal(e.to_string()))?;
+    let order = serde_json::to_value(&plan.question_order)
+        .map_err(|e| ServiceError::Internal(e.to_string()))?;
+    let option_orders: HashMap<String, &Vec<String>> = plan
+        .option_orders
+        .iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect();
+    let option_orders =
+        serde_json::to_value(option_orders).map_err(|e| ServiceError::Internal(e.to_string()))?;
 
     for _ in 0..6 {
         let alias = format!("Candidate {}", 10_000 + rand::random::<u32>() % 90_000);
@@ -445,10 +473,16 @@ pub async fn start_attempt(
             Err(error) => return Err(error.into()),
         }
     }
-    Err(ServiceError::Internal("could not allocate an attempt".to_owned()))
+    Err(ServiceError::Internal(
+        "could not allocate an attempt".to_owned(),
+    ))
 }
 
-async fn open_attempt(pool: &PgPool, assessment_id: Uuid, student_id: Uuid) -> Res<Option<AttemptRow>> {
+async fn open_attempt(
+    pool: &PgPool,
+    assessment_id: Uuid,
+    student_id: Uuid,
+) -> Res<Option<AttemptRow>> {
     Ok(sqlx::query_as::<_, AttemptRow>(&format!(
         "select {} from assessment_attempts
          where assessment_id = $1 and student_account_id = $2 and status = 'in_progress'",
@@ -592,7 +626,10 @@ pub async fn sync(
     }
 
     let claim = request.submit.as_ref().and_then(|s| {
-        s.elapsed_ms.map(|elapsed_ms| SubmitClaim { elapsed_ms, claimed_at: s.claimed_at })
+        s.elapsed_ms.map(|elapsed_ms| SubmitClaim {
+            elapsed_ms,
+            claimed_at: s.claimed_at,
+        })
     });
     let decision = judge_sync(
         now,
@@ -605,8 +642,19 @@ pub async fn sync(
     if decision == SyncDecision::Reject {
         // Too late: close the attempt with what the server already holds.
         let at = attempt.deadline_at.unwrap_or(now);
-        finish(pool, &attempt, &assessment, "auto_submitted", at, false, None).await?;
-        let done = store::find_attempt(pool, attempt.id).await?.unwrap_or(attempt);
+        finish(
+            pool,
+            &attempt,
+            &assessment,
+            "auto_submitted",
+            at,
+            false,
+            None,
+        )
+        .await?;
+        let done = store::find_attempt(pool, attempt.id)
+            .await?
+            .unwrap_or(attempt);
         response.rejected = request.ops.len();
         response.status = done.status;
         response.receipt = done.receipt;
@@ -615,13 +663,29 @@ pub async fn sync(
     }
     if let SyncDecision::AcceptFlagged(reason) = &decision {
         response.flagged = true;
-        record_event(pool, attempt.id, "late_sync", request.submit.as_ref().and_then(|s| s.claimed_at), json!({"reason": reason}), false).await?;
+        record_event(
+            pool,
+            attempt.id,
+            "late_sync",
+            request.submit.as_ref().and_then(|s| s.claimed_at),
+            json!({"reason": reason}),
+            false,
+        )
+        .await?;
     }
 
     // A second device takes over: allowed, and logged.
     if let (Some(device), Some(existing)) = (&request.device_id, &attempt.device_id) {
         if device != existing {
-            record_event(pool, attempt.id, "device_change", None, json!({"from": existing, "to": device}), true).await?;
+            record_event(
+                pool,
+                attempt.id,
+                "device_change",
+                None,
+                json!({"from": existing, "to": device}),
+                true,
+            )
+            .await?;
             sqlx::query("update assessment_attempts set device_id = $2 where id = $1")
                 .bind(attempt.id)
                 .bind(device)
@@ -687,11 +751,31 @@ pub async fn sync(
                 continue;
             }
             let violation = is_violation(&event.kind);
-            record_event(pool, attempt.id, &event.kind, event.client_at, event.meta.clone(), violation).await?;
+            record_event(
+                pool,
+                attempt.id,
+                &event.kind,
+                event.client_at,
+                event.meta.clone(),
+                violation,
+            )
+            .await?;
             if event.kind == "offline_end" && settings.max_offline_gap_secs > 0 {
-                let gap = event.meta.get("gap_secs").and_then(Value::as_i64).unwrap_or(0);
+                let gap = event
+                    .meta
+                    .get("gap_secs")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
                 if gap > settings.max_offline_gap_secs {
-                    record_event(pool, attempt.id, "offline_gap_exceeded", event.client_at, json!({"gap_secs": gap}), false).await?;
+                    record_event(
+                        pool,
+                        attempt.id,
+                        "offline_gap_exceeded",
+                        event.client_at,
+                        json!({"gap_secs": gap}),
+                        false,
+                    )
+                    .await?;
                 }
             }
             total = Some(());
@@ -717,17 +801,40 @@ pub async fn sync(
     if let Some(submit) = &request.submit {
         let offline = submit.offline || matches!(decision, SyncDecision::AcceptFlagged(_));
         let at = match (&decision, submit.claimed_at) {
-            (SyncDecision::AcceptFlagged(_), Some(claimed)) => claimed.min(attempt.deadline_at.unwrap_or(claimed)),
+            (SyncDecision::AcceptFlagged(_), Some(claimed)) => {
+                claimed.min(attempt.deadline_at.unwrap_or(claimed))
+            }
             _ => now,
         };
-        finish(pool, &attempt, &assessment, "submitted", at, offline, submit.claimed_at).await?;
+        finish(
+            pool,
+            &attempt,
+            &assessment,
+            "submitted",
+            at,
+            offline,
+            submit.claimed_at,
+        )
+        .await?;
     } else if over_limit {
-        finish(pool, &attempt, &assessment, "auto_submitted", now, false, None).await?;
+        finish(
+            pool,
+            &attempt,
+            &assessment,
+            "auto_submitted",
+            now,
+            false,
+            None,
+        )
+        .await?;
         response.auto_submitted = true;
     }
-    let after = store::find_attempt(pool, attempt.id).await?.unwrap_or(attempt);
+    let after = store::find_attempt(pool, attempt.id)
+        .await?
+        .unwrap_or(attempt);
     response.status = after.status;
     response.receipt = after.receipt;
+    response.auto_submitted = response.auto_submitted || after.auto_submitted;
     Ok(response)
 }
 
@@ -774,7 +881,16 @@ pub async fn force_submit(pool: &PgPool, attempt_id: Uuid) -> Res<()> {
         .ok_or(ServiceError::NotFound("Assessment not found"))?;
     let now = Utc::now();
     let at = attempt.deadline_at.map_or(now, |d| d.min(now));
-    finish(pool, &attempt, &assessment, "auto_submitted", at, false, None).await
+    finish(
+        pool,
+        &attempt,
+        &assessment,
+        "auto_submitted",
+        at,
+        false,
+        None,
+    )
+    .await
 }
 
 async fn finish(
@@ -790,26 +906,31 @@ async fn finish(
         .await?
         .ok_or_else(|| ServiceError::Internal("the attempt's version is missing".to_owned()))?;
     let settings = assessment.settings();
-    let accommodation = store::accommodation(pool, assessment.id, attempt.student_account_id).await?;
+    let accommodation =
+        store::accommodation(pool, assessment.id, attempt.student_account_id).await?;
     let due = assessment.window().effective_due(&accommodation);
     let late_secs = due.map_or(0, |d| (submitted_at - d).num_seconds());
     let late = late_outcome(late_secs, &settings);
 
+    let auto = status == "auto_submitted";
     let mut tx = pool.begin().await?;
-    // Only one caller gets to finish an attempt.
+    // Only one caller gets to finish an attempt. An automatic close is stored as
+    // `submitted` plus a flag, so the status can later move on to `graded`
+    // without forgetting how the attempt ended.
     let claimed = sqlx::query(
         "update assessment_attempts
-         set status = $2, submitted_at = $3, submitted_offline = $4, claimed_submit_at = $5, late = $6,
-             integrity_summary = jsonb_set(integrity_summary, '{late_penalty_pct}', to_jsonb($7::float8))
+         set status = 'submitted', auto_submitted = $7, submitted_at = $2, submitted_offline = $3,
+             claimed_submit_at = $4, late = $5,
+             integrity_summary = jsonb_set(integrity_summary, '{late_penalty_pct}', to_jsonb($6::float8))
          where id = $1 and status = 'in_progress'",
     )
     .bind(attempt.id)
-    .bind(status)
     .bind(submitted_at)
     .bind(offline)
     .bind(claimed_at)
     .bind(late.late)
     .bind(late.penalty_pct)
+    .bind(auto)
     .execute(&mut *tx)
     .await?
     .rows_affected();
@@ -839,7 +960,9 @@ async fn finish(
     for (answer_id, question_id, response) in &answers {
         digest.update(question_id.as_bytes());
         digest.update(response.to_string().as_bytes());
-        let Some(question) = snapshot.question(*question_id) else { continue };
+        let Some(question) = snapshot.question(*question_id) else {
+            continue;
+        };
         let scored = score_answer(question, response, &settings);
         if scored.needs_review {
             continue; // waits for the lecturer or AI
@@ -890,7 +1013,11 @@ pub async fn submit(
         student_id,
         attempt_id,
         SyncRequest {
-            submit: Some(submit.unwrap_or(SubmitRequest { elapsed_ms: None, claimed_at: None, offline: false })),
+            submit: Some(submit.unwrap_or(SubmitRequest {
+                elapsed_ms: None,
+                claimed_at: None,
+                offline: false,
+            })),
             ..SyncRequest::default()
         },
         now,
@@ -928,14 +1055,34 @@ pub async fn result_view(
 ) -> Res<StudentResult> {
     let attempt = owned_attempt(pool, student_id, attempt_id).await?;
     if !attempt.is_submitted() {
-        return Err(ServiceError::Conflict("Submit the attempt to see a result".to_owned()));
+        return Err(ServiceError::Conflict(
+            "Submit the attempt to see a result".to_owned(),
+        ));
     }
     let (assessment, snapshot) = load_context(pool, &attempt).await?;
     let settings = assessment.settings();
-    if !results_released(&assessment.status, assessment.results_released_at, assessment.due_at, &settings, now) {
-        return Err(ServiceError::Forbidden("Results have not been released yet"));
+    if !results_released(
+        &assessment.status,
+        assessment.results_released_at,
+        assessment.due_at,
+        &settings,
+        now,
+    ) {
+        return Err(ServiceError::Forbidden(
+            "Results have not been released yet",
+        ));
     }
-    let rows = sqlx::query_as::<_, (Uuid, Value, Option<f64>, Option<String>, Option<String>, Option<String>)>(
+    let rows = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            Value,
+            Option<f64>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ),
+    >(
         "select aa.question_id, aa.response, g.score, g.status, g.source, g.feedback_md
          from attempt_answers aa left join answer_grades g on g.id = aa.current_grade_id
          where aa.attempt_id = $1",
@@ -944,21 +1091,28 @@ pub async fn result_view(
     .fetch_all(pool)
     .await?;
     let by_q: HashMap<Uuid, _> = rows.into_iter().map(|r| (r.0, r)).collect();
-    let order: Vec<Uuid> = serde_json::from_value(attempt.question_order.clone()).unwrap_or_default();
+    let order: Vec<Uuid> =
+        serde_json::from_value(attempt.question_order.clone()).unwrap_or_default();
     let option_orders: HashMap<String, Vec<String>> =
         serde_json::from_value(attempt.option_orders.clone()).unwrap_or_default();
     let visibility = settings.visibility;
     let mut ai_assisted = false;
     let mut questions = Vec::new();
     for (i, id) in order.iter().enumerate() {
-        let Some(question) = snapshot.question(*id) else { continue };
+        let Some(question) = snapshot.question(*id) else {
+            continue;
+        };
         let row = by_q.get(id);
-        let confirmed = row.is_some_and(|r| matches!(r.3.as_deref(), Some("confirmed" | "overridden")));
+        let confirmed =
+            row.is_some_and(|r| matches!(r.3.as_deref(), Some("confirmed" | "overridden")));
         let score = row.and_then(|r| r.2).filter(|_| confirmed);
         if row.is_some_and(|r| r.4.as_deref() == Some("ai") && confirmed) {
             ai_assisted = true;
         }
-        let opts = option_orders.get(&id.to_string()).cloned().unwrap_or_default();
+        let opts = option_orders
+            .get(&id.to_string())
+            .cloned()
+            .unwrap_or_default();
         let options = super::model::student_options(question, &opts);
         questions.push(ResultQuestion {
             id: *id,
@@ -968,18 +1122,25 @@ pub async fn result_view(
             points: question.points,
             options,
             response: row.map_or(json!({}), |r| r.1.clone()),
-            score: if visibility >= Visibility::Correctness { score } else { None },
+            score: if visibility >= Visibility::Correctness {
+                score
+            } else {
+                None
+            },
             correct: if visibility >= Visibility::Correctness {
                 score.map(|s| s >= question.points - 0.001)
             } else {
                 None
             },
-            correct_answer: (visibility >= Visibility::Answers).then(|| revealable_answer(question)).flatten(),
+            correct_answer: (visibility >= Visibility::Answers)
+                .then(|| revealable_answer(question))
+                .flatten(),
             feedback_md: (visibility >= Visibility::Feedback)
                 .then(|| row.and_then(|r| r.5.clone()).filter(|f| !f.is_empty()))
                 .flatten(),
-            explanation_md: (visibility >= Visibility::Feedback && !question.explanation_md.is_empty())
-                .then(|| question.explanation_md.clone()),
+            explanation_md: (visibility >= Visibility::Feedback
+                && !question.explanation_md.is_empty())
+            .then(|| question.explanation_md.clone()),
             source_ranges: question.source_ranges.clone(),
             ai_assisted: row.is_some_and(|r| r.4.as_deref() == Some("ai")),
         });
@@ -1006,7 +1167,9 @@ pub async fn result_view(
         penalty_pct: penalty,
         score,
         max_score: max,
-        percent: score.filter(|_| max > 0.0).map(|s| ((s / max) * 1000.0).round() / 10.0),
+        percent: score
+            .filter(|_| max > 0.0)
+            .map(|s| ((s / max) * 1000.0).round() / 10.0),
         complete,
         visibility,
         ai_assisted,

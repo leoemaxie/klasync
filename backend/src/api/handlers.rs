@@ -1,6 +1,7 @@
 pub mod ai_study;
 pub mod analytics;
 pub mod archive;
+pub mod assessments;
 pub mod attendance;
 pub mod attendance_scoring;
 pub mod audio;

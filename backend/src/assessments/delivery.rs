@@ -72,16 +72,22 @@ pub fn plan_attempt(
         let options = declared_options(&question.public_payload);
         let ids: Vec<String> = if settings.shuffle_options {
             // Each question gets its own stream, so one option list's size cannot shift another's.
-            seeded_permutation(seed ^ ((index as u64 + 1).wrapping_mul(0xA24B_AED4_963E_E407)), options.len())
-                .into_iter()
-                .map(|i| options[i].id.clone())
-                .collect()
+            seeded_permutation(
+                seed ^ ((index as u64 + 1).wrapping_mul(0xA24B_AED4_963E_E407)),
+                options.len(),
+            )
+            .into_iter()
+            .map(|i| options[i].id.clone())
+            .collect()
         } else {
             options.iter().map(|o| o.id.clone()).collect()
         };
         option_orders.insert(question.id, ids);
     }
-    AttemptPlan { question_order, option_orders }
+    AttemptPlan {
+        question_order,
+        option_orders,
+    }
 }
 
 // ---- time ----------------------------------------------------------------------------
@@ -180,11 +186,13 @@ pub struct StartContext<'a> {
 
 pub fn can_start(ctx: &StartContext<'_>) -> Result<(), StartDenied> {
     if ctx.status != "published" {
-        return Err(if matches!(ctx.status, "closed" | "finalized" | "archived") {
-            StartDenied::Closed
-        } else {
-            StartDenied::NotPublished
-        });
+        return Err(
+            if matches!(ctx.status, "closed" | "finalized" | "archived") {
+                StartDenied::Closed
+            } else {
+                StartDenied::NotPublished
+            },
+        );
     }
     if let Some(opens) = ctx.window.opens_at {
         if ctx.now < opens {
@@ -204,7 +212,9 @@ pub fn can_start(ctx: &StartContext<'_>) -> Result<(), StartDenied> {
         if let Some(last) = ctx.last_submitted_at {
             let ready = last + Duration::seconds(ctx.settings.cooldown_secs);
             if ctx.now < ready {
-                return Err(StartDenied::Cooldown((ready - ctx.now).num_seconds().max(1)));
+                return Err(StartDenied::Cooldown(
+                    (ready - ctx.now).num_seconds().max(1),
+                ));
             }
         }
     }
@@ -256,9 +266,7 @@ pub fn judge_sync(
     // given) must not be after the deadline either.
     let allowed_ms = (deadline - started_at).num_milliseconds() + grace.num_milliseconds();
     let fits_elapsed = claim.elapsed_ms >= 0 && claim.elapsed_ms <= allowed_ms;
-    let fits_wall = claim
-        .claimed_at
-        .map_or(true, |at| at <= deadline + grace);
+    let fits_wall = claim.claimed_at.is_none_or(|at| at <= deadline + grace);
     if fits_elapsed && fits_wall {
         SyncDecision::AcceptFlagged("submitted offline, synced after the deadline")
     } else {
@@ -286,6 +294,7 @@ pub fn is_known_event(kind: &str) -> bool {
 }
 
 #[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use chrono::TimeZone;
 
@@ -334,11 +343,18 @@ mod tests {
             plain.question_order,
             vec![Uuid::from_u128(1), Uuid::from_u128(2), Uuid::from_u128(3)]
         );
-        assert_eq!(plain.option_orders[&Uuid::from_u128(1)], vec!["a", "b", "c", "d"]);
+        assert_eq!(
+            plain.option_orders[&Uuid::from_u128(1)],
+            vec!["a", "b", "c", "d"]
+        );
         s.shuffle_questions = true;
         s.shuffle_options = true;
         let one = plan_attempt(7, &questions, &s);
-        assert_eq!(one, plan_attempt(7, &questions, &s), "a resume must look identical");
+        assert_eq!(
+            one,
+            plan_attempt(7, &questions, &s),
+            "a resume must look identical"
+        );
         assert_ne!(one, plan_attempt(8, &questions, &s));
         let mut ids = one.option_orders[&Uuid::from_u128(2)].clone();
         ids.sort();
@@ -349,16 +365,27 @@ mod tests {
     fn deadline_is_the_earlier_of_limit_and_hard_close() {
         let mut s = AssessmentSettings::default();
         s.time_limit_secs = 1800;
-        let w = Window { opens_at: None, due_at: None, closes_at: Some(t(10, 20)) };
+        let w = Window {
+            opens_at: None,
+            due_at: None,
+            closes_at: Some(t(10, 20)),
+        };
         let none = Accommodation::default();
         // Started at 10:00: limit says 10:30, close says 10:20.
         assert_eq!(compute_deadline(t(10, 0), &w, &s, &none), Some(t(10, 20)));
         // Extra time stretches the limit but never past the close.
-        let extra = Accommodation { extra_time_pct: 50, ..Accommodation::default() };
+        let extra = Accommodation {
+            extra_time_pct: 50,
+            ..Accommodation::default()
+        };
         assert_eq!(compute_deadline(t(9, 0), &w, &s, &extra), Some(t(9, 45)));
         assert_eq!(compute_deadline(t(10, 0), &w, &s, &extra), Some(t(10, 20)));
         // No limit and no close: no deadline.
-        let open = Window { opens_at: None, due_at: None, closes_at: None };
+        let open = Window {
+            opens_at: None,
+            due_at: None,
+            closes_at: None,
+        };
         s.time_limit_secs = 0;
         assert_eq!(compute_deadline(t(10, 0), &open, &s, &none), None);
     }
@@ -367,9 +394,16 @@ mod tests {
     fn reject_policy_makes_due_the_hard_close_and_accommodations_move_it() {
         let mut s = AssessmentSettings::default();
         s.late_policy = LatePolicy::Reject;
-        let w = Window { opens_at: None, due_at: Some(t(12, 0)), closes_at: Some(t(18, 0)) };
+        let w = Window {
+            opens_at: None,
+            due_at: Some(t(12, 0)),
+            closes_at: Some(t(18, 0)),
+        };
         assert_eq!(w.hard_close(&s, &Accommodation::default()), Some(t(12, 0)));
-        let ext = Accommodation { due_override: Some(t(14, 0)), ..Accommodation::default() };
+        let ext = Accommodation {
+            due_override: Some(t(14, 0)),
+            ..Accommodation::default()
+        };
         assert_eq!(w.hard_close(&s, &ext), Some(t(14, 0)));
         s.late_policy = LatePolicy::Flag;
         assert_eq!(w.hard_close(&s, &Accommodation::default()), Some(t(18, 0)));
@@ -378,7 +412,11 @@ mod tests {
     #[test]
     fn start_rules() {
         let s = AssessmentSettings::default();
-        let window = Window { opens_at: Some(t(9, 0)), due_at: Some(t(12, 0)), closes_at: Some(t(13, 0)) };
+        let window = Window {
+            opens_at: Some(t(9, 0)),
+            due_at: Some(t(12, 0)),
+            closes_at: Some(t(13, 0)),
+        };
         let base = |now, status, used, last| StartContext {
             now,
             status,
@@ -389,11 +427,26 @@ mod tests {
             last_submitted_at: last,
         };
         assert!(can_start(&base(t(10, 0), "published", 0, None)).is_ok());
-        assert_eq!(can_start(&base(t(10, 0), "draft", 0, None)), Err(StartDenied::NotPublished));
-        assert_eq!(can_start(&base(t(10, 0), "closed", 0, None)), Err(StartDenied::Closed));
-        assert_eq!(can_start(&base(t(8, 0), "published", 0, None)), Err(StartDenied::NotOpenYet(t(9, 0))));
-        assert_eq!(can_start(&base(t(13, 0), "published", 0, None)), Err(StartDenied::Closed));
-        assert_eq!(can_start(&base(t(10, 0), "published", 1, None)), Err(StartDenied::NoAttemptsLeft));
+        assert_eq!(
+            can_start(&base(t(10, 0), "draft", 0, None)),
+            Err(StartDenied::NotPublished)
+        );
+        assert_eq!(
+            can_start(&base(t(10, 0), "closed", 0, None)),
+            Err(StartDenied::Closed)
+        );
+        assert_eq!(
+            can_start(&base(t(8, 0), "published", 0, None)),
+            Err(StartDenied::NotOpenYet(t(9, 0)))
+        );
+        assert_eq!(
+            can_start(&base(t(13, 0), "published", 0, None)),
+            Err(StartDenied::Closed)
+        );
+        assert_eq!(
+            can_start(&base(t(10, 0), "published", 1, None)),
+            Err(StartDenied::NoAttemptsLeft)
+        );
     }
 
     #[test]
@@ -401,19 +454,32 @@ mod tests {
         let mut s = AssessmentSettings::default();
         s.max_attempts = 2;
         s.cooldown_secs = 600;
-        let window = Window { opens_at: None, due_at: None, closes_at: None };
+        let window = Window {
+            opens_at: None,
+            due_at: None,
+            closes_at: None,
+        };
         let ctx = |used, last, extra| StartContext {
             now: t(10, 5),
             status: "published",
             window,
             settings: &s,
-            accommodation: Accommodation { extra_attempts: extra, ..Accommodation::default() },
+            accommodation: Accommodation {
+                extra_attempts: extra,
+                ..Accommodation::default()
+            },
             attempts_used: used,
             last_submitted_at: last,
         };
-        assert_eq!(can_start(&ctx(1, Some(t(10, 0)), 0)), Err(StartDenied::Cooldown(300)));
+        assert_eq!(
+            can_start(&ctx(1, Some(t(10, 0)), 0)),
+            Err(StartDenied::Cooldown(300))
+        );
         assert!(can_start(&ctx(1, Some(t(9, 0)), 0)).is_ok());
-        assert_eq!(can_start(&ctx(2, None, 0)), Err(StartDenied::NoAttemptsLeft));
+        assert_eq!(
+            can_start(&ctx(2, None, 0)),
+            Err(StartDenied::NoAttemptsLeft)
+        );
         assert!(can_start(&ctx(2, None, 1)).is_ok());
     }
 
@@ -422,10 +488,18 @@ mod tests {
         let d = judge_sync(t(10, 30), t(10, 0), Some(t(10, 30)), 30, true, None);
         assert_eq!(d, SyncDecision::Accept);
         let d = judge_sync(
-            t(10, 30) + Duration::seconds(20), t(10, 0), Some(t(10, 30)), 30, true, None,
+            t(10, 30) + Duration::seconds(20),
+            t(10, 0),
+            Some(t(10, 30)),
+            30,
+            true,
+            None,
         );
         assert_eq!(d, SyncDecision::Accept);
-        assert_eq!(judge_sync(t(11, 0), t(10, 0), None, 30, true, None), SyncDecision::Accept);
+        assert_eq!(
+            judge_sync(t(11, 0), t(10, 0), None, 30, true, None),
+            SyncDecision::Accept
+        );
     }
 
     #[test]
@@ -434,24 +508,51 @@ mod tests {
         let deadline = Some(t(10, 30));
         let late = t(11, 15);
         // No claim: rejected.
-        assert_eq!(judge_sync(late, started, deadline, 30, true, None), SyncDecision::Reject);
+        assert_eq!(
+            judge_sync(late, started, deadline, 30, true, None),
+            SyncDecision::Reject
+        );
         // The device measured 29 minutes: it was submitted in time while offline.
-        let fits = SubmitClaim { elapsed_ms: 29 * 60_000, claimed_at: Some(t(10, 29)) };
+        let fits = SubmitClaim {
+            elapsed_ms: 29 * 60_000,
+            claimed_at: Some(t(10, 29)),
+        };
         assert!(matches!(
             judge_sync(late, started, deadline, 30, true, Some(fits)),
             SyncDecision::AcceptFlagged(_)
         ));
         // Claims 45 minutes of a 30 minute assessment: rejected.
-        let over = SubmitClaim { elapsed_ms: 45 * 60_000, claimed_at: None };
-        assert_eq!(judge_sync(late, started, deadline, 30, true, Some(over)), SyncDecision::Reject);
+        let over = SubmitClaim {
+            elapsed_ms: 45 * 60_000,
+            claimed_at: None,
+        };
+        assert_eq!(
+            judge_sync(late, started, deadline, 30, true, Some(over)),
+            SyncDecision::Reject
+        );
         // Elapsed fits but the claimed wall time is after the deadline: rejected.
-        let skew = SubmitClaim { elapsed_ms: 10 * 60_000, claimed_at: Some(t(11, 10)) };
-        assert_eq!(judge_sync(late, started, deadline, 30, true, Some(skew)), SyncDecision::Reject);
+        let skew = SubmitClaim {
+            elapsed_ms: 10 * 60_000,
+            claimed_at: Some(t(11, 10)),
+        };
+        assert_eq!(
+            judge_sync(late, started, deadline, 30, true, Some(skew)),
+            SyncDecision::Reject
+        );
         // Offline continue disabled: rejected regardless.
-        assert_eq!(judge_sync(late, started, deadline, 30, false, Some(fits)), SyncDecision::Reject);
+        assert_eq!(
+            judge_sync(late, started, deadline, 30, false, Some(fits)),
+            SyncDecision::Reject
+        );
         // A negative elapsed is nonsense.
-        let neg = SubmitClaim { elapsed_ms: -5, claimed_at: None };
-        assert_eq!(judge_sync(late, started, deadline, 30, true, Some(neg)), SyncDecision::Reject);
+        let neg = SubmitClaim {
+            elapsed_ms: -5,
+            claimed_at: None,
+        };
+        assert_eq!(
+            judge_sync(late, started, deadline, 30, true, Some(neg)),
+            SyncDecision::Reject
+        );
     }
 
     #[test]

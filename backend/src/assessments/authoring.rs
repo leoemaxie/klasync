@@ -47,11 +47,15 @@ pub async fn create(
 ) -> Res<AssessmentRow> {
     let title = input.title.trim();
     if title.is_empty() || title.chars().count() > 200 {
-        return Err(ServiceError::Invalid("Give the assessment a title (up to 200 characters)".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Give the assessment a title (up to 200 characters)".to_owned(),
+        ));
     }
     let kind = input.kind.as_deref().unwrap_or("quiz");
     if !matches!(kind, "quiz" | "homework" | "practice") {
-        return Err(ServiceError::Invalid("Kind must be quiz, homework or practice".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Kind must be quiz, homework or practice".to_owned(),
+        ));
     }
     let settings = serde_json::to_value(AssessmentSettings::default())
         .map_err(|e| ServiceError::Internal(e.to_string()))?;
@@ -103,14 +107,18 @@ pub async fn update(
     ensure_editable(assessment)?;
     let title = match patch.title {
         Some(t) if t.trim().is_empty() => {
-            return Err(ServiceError::Invalid("The title cannot be empty".to_owned()))
+            return Err(ServiceError::Invalid(
+                "The title cannot be empty".to_owned(),
+            ))
         }
         Some(t) => t.trim().to_owned(),
         None => assessment.title.clone(),
     };
     let kind = patch.kind.unwrap_or_else(|| assessment.kind.clone());
     if !matches!(kind.as_str(), "quiz" | "homework" | "practice") {
-        return Err(ServiceError::Invalid("Kind must be quiz, homework or practice".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Kind must be quiz, homework or practice".to_owned(),
+        ));
     }
     let settings = match patch.settings {
         Some(value) => {
@@ -126,17 +134,23 @@ pub async fn update(
     let closes_at = patch.closes_at.unwrap_or(assessment.closes_at);
     if let (Some(o), Some(d)) = (opens_at, due_at) {
         if d <= o {
-            return Err(ServiceError::Invalid("The due time must be after the opening time".to_owned()));
+            return Err(ServiceError::Invalid(
+                "The due time must be after the opening time".to_owned(),
+            ));
         }
     }
     if let (Some(d), Some(c)) = (due_at, closes_at) {
         if c < d {
-            return Err(ServiceError::Invalid("The closing time cannot be before the due time".to_owned()));
+            return Err(ServiceError::Invalid(
+                "The closing time cannot be before the due time".to_owned(),
+            ));
         }
     }
     if let (Some(o), Some(c)) = (opens_at, closes_at) {
         if c <= o {
-            return Err(ServiceError::Invalid("The closing time must be after the opening time".to_owned()));
+            return Err(ServiceError::Invalid(
+                "The closing time must be after the opening time".to_owned(),
+            ));
         }
     }
     let rev: Option<i32> = sqlx::query_scalar(
@@ -156,13 +170,17 @@ pub async fn update(
     .fetch_optional(pool)
     .await?;
     rev.ok_or_else(|| {
-        ServiceError::Conflict("The assessment changed since you opened it. Reload to see the latest.".to_owned())
+        ServiceError::Conflict(
+            "The assessment changed since you opened it. Reload to see the latest.".to_owned(),
+        )
     })
 }
 
 fn ensure_editable(assessment: &AssessmentRow) -> Res<()> {
     if matches!(assessment.status.as_str(), "finalized" | "archived") {
-        return Err(ServiceError::Conflict("This assessment is finalised and can no longer be edited".to_owned()));
+        return Err(ServiceError::Conflict(
+            "This assessment is finalised and can no longer be edited".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -195,7 +213,9 @@ fn check_difficulty(value: &str) -> Res<()> {
     if matches!(value, "easy" | "medium" | "hard") {
         Ok(())
     } else {
-        Err(ServiceError::Invalid("Difficulty must be easy, medium or hard".to_owned()))
+        Err(ServiceError::Invalid(
+            "Difficulty must be easy, medium or hard".to_owned(),
+        ))
     }
 }
 
@@ -250,13 +270,17 @@ fn validate_lenient(
     key: &Value,
 ) -> Res<()> {
     if !(0.0..=1000.0).contains(&points) {
-        return Err(ServiceError::Invalid("Points must be between 0 and 1000".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Points must be between 0 and 1000".to_owned(),
+        ));
     }
     if kind.has_options() && !public.get("options").is_some_and(Value::is_array) {
         return Err(ServiceError::Invalid("Options must be a list".to_owned()));
     }
     if !public.is_object() || !key.is_object() {
-        return Err(ServiceError::Invalid("Question payloads must be objects".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Question payloads must be objects".to_owned(),
+        ));
     }
     let _ = prompt;
     Ok(())
@@ -289,7 +313,9 @@ pub async fn update_question(
         .ok_or(ServiceError::NotFound("Question not found"))?;
     let kind = QuestionType::parse(&current.question_type)
         .ok_or_else(|| ServiceError::Internal("stored question type is unknown".to_owned()))?;
-    let public = patch.public_payload.unwrap_or(current.public_payload.clone());
+    let public = patch
+        .public_payload
+        .unwrap_or(current.public_payload.clone());
     let key = patch.key_payload.unwrap_or(current.key_payload.clone());
     let points = patch.points.unwrap_or(current.points);
     let difficulty = patch.difficulty.unwrap_or(current.difficulty.clone());
@@ -297,7 +323,11 @@ pub async fn update_question(
     let prompt = patch.prompt_md.unwrap_or(current.prompt_md.clone());
     validate_lenient(kind, &prompt, points, &public, &key)?;
     // Editing an AI question makes it the lecturer's: it stops counting as unreviewed.
-    let origin = if current.origin == "ai" { "ai_edited" } else { current.origin.as_str() };
+    let origin = if current.origin == "ai" {
+        "ai_edited"
+    } else {
+        current.origin.as_str()
+    };
     let row = sqlx::query_as::<_, QuestionRow>(&format!(
         "update assessment_questions set prompt_md = $3, points = $4::float8::numeric, difficulty = $5,
                 topic_tag = $6, chapter_index = $7, public_payload = $8, key_payload = $9,
@@ -346,16 +376,20 @@ pub async fn reorder_questions(pool: &PgPool, assessment: &AssessmentRow, ids: &
     have.sort();
     want.sort();
     if have != want {
-        return Err(ServiceError::Invalid("The new order must list every question exactly once".to_owned()));
+        return Err(ServiceError::Invalid(
+            "The new order must list every question exactly once".to_owned(),
+        ));
     }
     let mut tx = pool.begin().await?;
     for (position, id) in ids.iter().enumerate() {
-        sqlx::query("update assessment_questions set position = $3 where assessment_id = $1 and id = $2")
-            .bind(assessment.id)
-            .bind(id)
-            .bind(position as i32)
-            .execute(&mut *tx)
-            .await?;
+        sqlx::query(
+            "update assessment_questions set position = $3 where assessment_id = $1 and id = $2",
+        )
+        .bind(assessment.id)
+        .bind(id)
+        .bind(position as i32)
+        .execute(&mut *tx)
+        .await?;
     }
     tx.commit().await?;
     bump_rev(pool, assessment.id).await?;
@@ -363,10 +397,12 @@ pub async fn reorder_questions(pool: &PgPool, assessment: &AssessmentRow, ids: &
 }
 
 async fn bump_rev(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-    sqlx::query("update assessments set draft_rev = draft_rev + 1, updated_at = now() where id = $1")
-        .bind(id)
-        .execute(pool)
-        .await?;
+    sqlx::query(
+        "update assessments set draft_rev = draft_rev + 1, updated_at = now() where id = $1",
+    )
+    .bind(id)
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
@@ -414,10 +450,12 @@ pub async fn insert_generated(
         .await?;
         position += 1;
     }
-    sqlx::query("update assessments set draft_rev = draft_rev + 1, updated_at = now() where id = $1")
-        .bind(assessment_id)
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query(
+        "update assessments set draft_rev = draft_rev + 1, updated_at = now() where id = $1",
+    )
+    .bind(assessment_id)
+    .execute(&mut *tx)
+    .await?;
     tx.commit().await?;
     Ok(questions.len())
 }
@@ -434,7 +472,11 @@ pub struct Published {
 
 /// Validates everything strictly and cuts an immutable version. Publishing an
 /// unchanged assessment again is a no-op; attempts already started keep their version.
-pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uuid) -> Res<Published> {
+pub async fn publish(
+    pool: &PgPool,
+    assessment: &AssessmentRow,
+    lecturer_id: Uuid,
+) -> Res<Published> {
     if !matches!(assessment.status.as_str(), "draft" | "published") {
         return Err(ServiceError::Conflict(
             "Only a draft or published assessment can be published".to_owned(),
@@ -444,14 +486,22 @@ pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uui
     settings.validate().map_err(ServiceError::Invalid)?;
     let rows = store::questions(pool, assessment.id).await?;
     if rows.is_empty() {
-        return Err(ServiceError::Invalid("Add at least one question before publishing".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Add at least one question before publishing".to_owned(),
+        ));
     }
     let mut questions = Vec::with_capacity(rows.len());
     for (index, row) in rows.iter().enumerate() {
         let kind = QuestionType::parse(&row.question_type)
             .ok_or_else(|| ServiceError::Internal("stored question type is unknown".to_owned()))?;
-        validate_question(kind, &row.prompt_md, row.points, &row.public_payload, &row.key_payload)
-            .map_err(|m| ServiceError::Invalid(format!("Question {}: {m}", index + 1)))?;
+        validate_question(
+            kind,
+            &row.prompt_md,
+            row.points,
+            &row.public_payload,
+            &row.key_payload,
+        )
+        .map_err(|m| ServiceError::Invalid(format!("Question {}: {m}", index + 1)))?;
         questions.push(SnapshotQuestion {
             id: row.id,
             position: index as i32,
@@ -468,7 +518,9 @@ pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uui
         });
     }
     if questions.iter().map(|q| q.points).sum::<f64>() <= 0.0 {
-        return Err(ServiceError::Invalid("The questions must be worth some points".to_owned()));
+        return Err(ServiceError::Invalid(
+            "The questions must be worth some points".to_owned(),
+        ));
     }
     let snapshot = Snapshot {
         title: assessment.title.clone(),
@@ -477,7 +529,8 @@ pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uui
         settings,
         questions,
     };
-    let value = serde_json::to_value(&snapshot).map_err(|e| ServiceError::Internal(e.to_string()))?;
+    let value =
+        serde_json::to_value(&snapshot).map_err(|e| ServiceError::Internal(e.to_string()))?;
     let hash = format!("{:x}", Sha256::digest(value.to_string().as_bytes()));
 
     let mut tx = pool.begin().await?;
@@ -528,7 +581,11 @@ pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uui
         .await?;
     }
     tx.commit().await?;
-    Ok(Published { version_id, version_no, new_version })
+    Ok(Published {
+        version_id,
+        version_no,
+        new_version,
+    })
 }
 
 // ---- close -----------------------------------------------------------------------------------------
@@ -537,7 +594,9 @@ pub async fn publish(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uui
 /// when the assessment uses it.
 pub async fn close(pool: &PgPool, assessment: &AssessmentRow, requested_by: Uuid) -> Res<usize> {
     if assessment.status != "published" {
-        return Err(ServiceError::Conflict("Only a published assessment can be closed".to_owned()));
+        return Err(ServiceError::Conflict(
+            "Only a published assessment can be closed".to_owned(),
+        ));
     }
     sqlx::query("update assessments set status = 'closed', updated_at = now() where id = $1")
         .bind(assessment.id)
@@ -555,9 +614,16 @@ pub async fn close(pool: &PgPool, assessment: &AssessmentRow, requested_by: Uuid
             forced += 1;
         }
     }
-    store::emit(pool, "assessment.closed", json!({"assessment_id": assessment.id})).await?;
+    store::emit(
+        pool,
+        "assessment.closed",
+        json!({"assessment_id": assessment.id}),
+    )
+    .await?;
     if assessment.settings().scoring_mode != super::model::ScoringMode::Manual {
-        super::generate::enqueue_grading(pool, assessment, requested_by, None).await.ok();
+        super::generate::enqueue_grading(pool, assessment, requested_by, None)
+            .await
+            .ok();
     }
     Ok(forced)
 }
@@ -584,10 +650,20 @@ pub async fn set_accommodation(
     input: AccommodationInput,
 ) -> Res<()> {
     if !(0..=300).contains(&input.extra_time_pct) || !(0..=10).contains(&input.extra_attempts) {
-        return Err(ServiceError::Invalid("Extra time is 0-300% and extra attempts 0-10".to_owned()));
+        return Err(ServiceError::Invalid(
+            "Extra time is 0-300% and extra attempts 0-10".to_owned(),
+        ));
     }
-    if !crate::materials::store::student_enrolled(pool, input.student_account_id, assessment.course_id).await? {
-        return Err(ServiceError::NotFound("That student is not enrolled in this course"));
+    if !crate::materials::store::student_enrolled(
+        pool,
+        input.student_account_id,
+        assessment.course_id,
+    )
+    .await?
+    {
+        return Err(ServiceError::NotFound(
+            "That student is not enrolled in this course",
+        ));
     }
     sqlx::query(
         "insert into assessment_accommodations
@@ -609,7 +685,11 @@ pub async fn set_accommodation(
     Ok(())
 }
 
-pub async fn remove_accommodation(pool: &PgPool, assessment: &AssessmentRow, student_id: Uuid) -> Res<()> {
+pub async fn remove_accommodation(
+    pool: &PgPool,
+    assessment: &AssessmentRow,
+    student_id: Uuid,
+) -> Res<()> {
     sqlx::query("delete from assessment_accommodations where assessment_id = $1 and student_account_id = $2")
         .bind(assessment.id)
         .bind(student_id)

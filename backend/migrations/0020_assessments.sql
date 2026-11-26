@@ -13,18 +13,28 @@ do $$
 declare
   def text;
   merged text[];
+  braces text;
 begin
   select pg_get_constraintdef(oid) into def
     from pg_constraint
    where conname = 'ai_jobs_job_type_check' and conrelid = 'ai_jobs'::regclass;
+  -- Postgres prints the allowed set either as ARRAY['a'::text, 'b'::text] or
+  -- as a single '{a,b}'::text[] literal; read both so a re-run never loses types.
   select coalesce(array_agg(distinct m[1]), '{}'::text[]) into merged
     from regexp_matches(coalesce(def, ''), '''([a-z_]+)''', 'g') as m;
+  braces := substring(coalesce(def, '') from '''\{([^}]*)\}''');
+  if braces is not null then
+    select array_agg(distinct x) into merged
+      from unnest(merged || string_to_array(braces, ',')) as x;
+  end if;
   select array_agg(distinct x) into merged
-    from unnest(merged || array['assessment_generate', 'assessment_grade']) as x;
+    from unnest(merged || array['assessment_generate', 'assessment_grade']) as x
+   where x <> '';
   alter table ai_jobs drop constraint if exists ai_jobs_job_type_check;
+  -- Written as ARRAY['a', 'b'] so the next reader (including this block) sees one literal per type.
   execute format(
-    'alter table ai_jobs add constraint ai_jobs_job_type_check check (job_type = any (%L::text[]))',
-    merged
+    'alter table ai_jobs add constraint ai_jobs_job_type_check check (job_type = any (array[%s]))',
+    (select string_agg(quote_literal(x), ', ' order by x) from unnest(merged) as x)
   );
 end $$;
 
@@ -142,6 +152,8 @@ create table if not exists assessment_attempts (
   deadline_at timestamptz,
   submitted_at timestamptz,
   submitted_offline boolean not null default false,
+  -- Closed by the server (time ran out, assessment closed, violation limit) rather than submitted.
+  auto_submitted boolean not null default false,
   claimed_submit_at timestamptz,
   late boolean not null default false,
   question_order jsonb not null default '[]'::jsonb,

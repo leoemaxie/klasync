@@ -153,15 +153,19 @@ pub fn normalise_text(text: &str, case_sensitive: bool) -> String {
     let mut out = String::with_capacity(text.len());
     let mut last_space = true;
     for ch in text.chars() {
-        let ch = if case_sensitive { ch } else { ch.to_ascii_lowercase() };
+        let ch = if case_sensitive {
+            ch
+        } else {
+            ch.to_ascii_lowercase()
+        };
         if ch.is_alphanumeric() || matches!(ch, '.' | '-') {
             out.push(ch);
             last_space = false;
-        } else if ch.is_whitespace() || matches!(ch, ',' | ';' | ':' | '!' | '?' | '"' | '\'') {
-            if !last_space {
-                out.push(' ');
-                last_space = true;
-            }
+        } else if (ch.is_whitespace() || matches!(ch, ',' | ';' | ':' | '!' | '?' | '"' | '\''))
+            && !last_space
+        {
+            out.push(' ');
+            last_space = true;
         }
     }
     out.trim().trim_matches('.').trim().to_owned()
@@ -186,7 +190,10 @@ pub struct LateOutcome {
 /// `late_secs` is how long after the due time the work was submitted (<= 0 means on time).
 pub fn late_outcome(late_secs: i64, settings: &AssessmentSettings) -> LateOutcome {
     if late_secs <= 0 {
-        return LateOutcome { late: false, penalty_pct: 0.0 };
+        return LateOutcome {
+            late: false,
+            penalty_pct: 0.0,
+        };
     }
     let penalty_pct = match settings.late_policy {
         LatePolicy::Penalty => {
@@ -195,7 +202,10 @@ pub fn late_outcome(late_secs: i64, settings: &AssessmentSettings) -> LateOutcom
         }
         _ => 0.0,
     };
-    LateOutcome { late: true, penalty_pct }
+    LateOutcome {
+        late: true,
+        penalty_pct,
+    }
 }
 
 pub fn apply_penalty(score: f64, penalty_pct: f64) -> f64 {
@@ -257,46 +267,103 @@ mod tests {
 
     #[test]
     fn single_choice_scores_and_negative_marking() {
-        let question = q(QuestionType::McqSingle, opts(), json!({"correct": ["b"]}), 3.0);
+        let question = q(
+            QuestionType::McqSingle,
+            opts(),
+            json!({"correct": ["b"]}),
+            3.0,
+        );
         let s = AssessmentSettings::default();
-        assert_eq!(score_answer(&question, &json!({"selected": ["b"]}), &s).score, 3.0);
-        assert_eq!(score_answer(&question, &json!({"selected": ["a"]}), &s).score, 0.0);
-        assert_eq!(score_answer(&question, &json!({"selected": []}), &s).correct, Some(false));
+        assert_eq!(
+            score_answer(&question, &json!({"selected": ["b"]}), &s).score,
+            3.0
+        );
+        assert_eq!(
+            score_answer(&question, &json!({"selected": ["a"]}), &s).score,
+            0.0
+        );
+        assert_eq!(
+            score_answer(&question, &json!({"selected": []}), &s).correct,
+            Some(false)
+        );
         let mut neg = s.clone();
         neg.negative_marking = true;
         // 3 points / (4 options - 1) = 1 point off for a wrong answer, nothing for a blank.
-        assert_eq!(score_answer(&question, &json!({"selected": ["a"]}), &neg).score, -1.0);
-        assert_eq!(score_answer(&question, &json!({"selected": []}), &neg).score, 0.0);
+        assert_eq!(
+            score_answer(&question, &json!({"selected": ["a"]}), &neg).score,
+            -1.0
+        );
+        assert_eq!(
+            score_answer(&question, &json!({"selected": []}), &neg).score,
+            0.0
+        );
         // A single-choice answer that ticks two options is wrong.
-        assert_eq!(score_answer(&question, &json!({"selected": ["b", "a"]}), &s).score, 0.0);
+        assert_eq!(
+            score_answer(&question, &json!({"selected": ["b", "a"]}), &s).score,
+            0.0
+        );
     }
 
     #[test]
     fn multi_choice_all_or_nothing_and_proportional() {
-        let aon = q(QuestionType::McqMulti, opts(), json!({"correct": ["a", "c"]}), 4.0);
+        let aon = q(
+            QuestionType::McqMulti,
+            opts(),
+            json!({"correct": ["a", "c"]}),
+            4.0,
+        );
         let s = AssessmentSettings::default();
-        assert_eq!(score_answer(&aon, &json!({"selected": ["c", "a"]}), &s).score, 4.0);
-        assert_eq!(score_answer(&aon, &json!({"selected": ["a"]}), &s).score, 0.0);
+        assert_eq!(
+            score_answer(&aon, &json!({"selected": ["c", "a"]}), &s).score,
+            4.0
+        );
+        assert_eq!(
+            score_answer(&aon, &json!({"selected": ["a"]}), &s).score,
+            0.0
+        );
         let prop = q(
             QuestionType::McqMulti,
             opts(),
             json!({"correct": ["a", "c"], "partial": "proportional"}),
             4.0,
         );
-        assert_eq!(score_answer(&prop, &json!({"selected": ["a"]}), &s).score, 2.0);
+        assert_eq!(
+            score_answer(&prop, &json!({"selected": ["a"]}), &s).score,
+            2.0
+        );
         // One right, one wrong cancels out.
-        assert_eq!(score_answer(&prop, &json!({"selected": ["a", "b"]}), &s).score, 0.0);
+        assert_eq!(
+            score_answer(&prop, &json!({"selected": ["a", "b"]}), &s).score,
+            0.0
+        );
         // Never below zero.
-        assert_eq!(score_answer(&prop, &json!({"selected": ["b", "d"]}), &s).score, 0.0);
+        assert_eq!(
+            score_answer(&prop, &json!({"selected": ["b", "d"]}), &s).score,
+            0.0
+        );
     }
 
     #[test]
     fn true_false() {
-        let question = q(QuestionType::TrueFalse, json!({}), json!({"correct": false}), 1.0);
+        let question = q(
+            QuestionType::TrueFalse,
+            json!({}),
+            json!({"correct": false}),
+            1.0,
+        );
         let s = AssessmentSettings::default();
-        assert_eq!(score_answer(&question, &json!({"value": false}), &s).score, 1.0);
-        assert_eq!(score_answer(&question, &json!({"value": true}), &s).score, 0.0);
-        assert_eq!(score_answer(&question, &json!({}), &s).feedback, "No answer");
+        assert_eq!(
+            score_answer(&question, &json!({"value": false}), &s).score,
+            1.0
+        );
+        assert_eq!(
+            score_answer(&question, &json!({"value": true}), &s).score,
+            0.0
+        );
+        assert_eq!(
+            score_answer(&question, &json!({}), &s).feedback,
+            "No answer"
+        );
     }
 
     #[test]
@@ -308,19 +375,36 @@ mod tests {
             2.0,
         );
         let s = AssessmentSettings::default();
-        let hit = score_answer(&question, &json!({"text": "  thermal   CONDUCTIVITY. "}), &s);
-        assert_eq!((hit.score, hit.correct, hit.needs_review), (2.0, Some(true), false));
+        let hit = score_answer(
+            &question,
+            &json!({"text": "  thermal   CONDUCTIVITY. "}),
+            &s,
+        );
+        assert_eq!(
+            (hit.score, hit.correct, hit.needs_review),
+            (2.0, Some(true), false)
+        );
         let miss = score_answer(&question, &json!({"text": "heat flow"}), &s);
         assert!(miss.needs_review && miss.correct.is_none() && miss.score == 0.0);
         // Case sensitivity is a per-question choice.
-        let cs = q(QuestionType::ShortAnswer, json!({}), json!({"accepted": ["Fe"], "case_sensitive": true}), 1.0);
+        let cs = q(
+            QuestionType::ShortAnswer,
+            json!({}),
+            json!({"accepted": ["Fe"], "case_sensitive": true}),
+            1.0,
+        );
         assert!(score_answer(&cs, &json!({"text": "fe"}), &s).needs_review);
         assert_eq!(score_answer(&cs, &json!({"text": "Fe"}), &s).score, 1.0);
     }
 
     #[test]
     fn long_answers_always_wait_and_blanks_score_zero() {
-        let question = q(QuestionType::LongAnswer, json!({}), json!({"rubric": []}), 5.0);
+        let question = q(
+            QuestionType::LongAnswer,
+            json!({}),
+            json!({"rubric": []}),
+            5.0,
+        );
         let s = AssessmentSettings::default();
         assert!(score_answer(&question, &json!({"text": "An essay"}), &s).needs_review);
         let blank = score_answer(&question, &json!({"text": "   "}), &s);
@@ -343,9 +427,21 @@ mod tests {
     #[test]
     fn late_policy_outcomes() {
         let mut s = AssessmentSettings::default();
-        assert_eq!(late_outcome(-5, &s), LateOutcome { late: false, penalty_pct: 0.0 });
+        assert_eq!(
+            late_outcome(-5, &s),
+            LateOutcome {
+                late: false,
+                penalty_pct: 0.0
+            }
+        );
         s.late_policy = LatePolicy::Flag;
-        assert_eq!(late_outcome(3600, &s), LateOutcome { late: true, penalty_pct: 0.0 });
+        assert_eq!(
+            late_outcome(3600, &s),
+            LateOutcome {
+                late: true,
+                penalty_pct: 0.0
+            }
+        );
         s.late_policy = LatePolicy::Penalty;
         s.late_penalty_pct_per_day = 10.0;
         // One hour late costs a whole day; 25 hours costs two.
@@ -359,9 +455,21 @@ mod tests {
     #[test]
     fn keep_policy_picks_the_counted_attempt() {
         let attempts = [
-            AttemptScore { attempt_no: 1, score: 5.0, max: 10.0 },
-            AttemptScore { attempt_no: 2, score: 9.0, max: 10.0 },
-            AttemptScore { attempt_no: 3, score: 7.0, max: 10.0 },
+            AttemptScore {
+                attempt_no: 1,
+                score: 5.0,
+                max: 10.0,
+            },
+            AttemptScore {
+                attempt_no: 2,
+                score: 9.0,
+                max: 10.0,
+            },
+            AttemptScore {
+                attempt_no: 3,
+                score: 7.0,
+                max: 10.0,
+            },
         ];
         assert_eq!(counted_fraction(&attempts, KeepPolicy::Best), Some(0.9));
         assert_eq!(counted_fraction(&attempts, KeepPolicy::Last), Some(0.7));

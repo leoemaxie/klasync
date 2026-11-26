@@ -152,8 +152,7 @@ pub fn item_analysis(
     });
     let group = ((ranked.len() as f64) * 0.27).round().max(1.0) as usize;
     let can_discriminate = ranked.len() >= MIN_FOR_DISCRIMINATION;
-    let top: std::collections::HashSet<Uuid> =
-        ranked.iter().take(group).map(|r| r.0).collect();
+    let top: std::collections::HashSet<Uuid> = ranked.iter().take(group).map(|r| r.0).collect();
     let bottom: std::collections::HashSet<Uuid> =
         ranked.iter().rev().take(group).map(|r| r.0).collect();
 
@@ -166,7 +165,13 @@ pub fn item_analysis(
     for question in questions {
         let answers = by_question.get(&question.id).cloned().unwrap_or_default();
         let attempts = answers.len();
-        let fraction = |row: &&AnswerRow| if row.max > 0.0 { row.score / row.max } else { 0.0 };
+        let fraction = |row: &&AnswerRow| {
+            if row.max > 0.0 {
+                row.score / row.max
+            } else {
+                0.0
+            }
+        };
         let difficulty = if attempts == 0 {
             0.0
         } else {
@@ -189,7 +194,11 @@ pub fn item_analysis(
             None
         };
         let skipped = answers.iter().filter(|a| !a.answered).count();
-        let skip_rate = if attempts == 0 { 0.0 } else { skipped as f64 / attempts as f64 };
+        let skip_rate = if attempts == 0 {
+            0.0
+        } else {
+            skipped as f64 / attempts as f64
+        };
         let avg_time = if attempts == 0 {
             0.0
         } else {
@@ -198,16 +207,27 @@ pub fn item_analysis(
 
         let mut options = Vec::new();
         if question.is_choice {
-            let top_answers: Vec<&&AnswerRow> =
-                answers.iter().filter(|a| top.contains(&a.attempt)).collect();
+            let top_answers: Vec<&&AnswerRow> = answers
+                .iter()
+                .filter(|a| top.contains(&a.attempt))
+                .collect();
             for option in &question.option_ids {
-                let picked = answers.iter().filter(|a| a.selected.contains(option)).count();
-                let top_picked =
-                    top_answers.iter().filter(|a| a.selected.contains(option)).count();
+                let picked = answers
+                    .iter()
+                    .filter(|a| a.selected.contains(option))
+                    .count();
+                let top_picked = top_answers
+                    .iter()
+                    .filter(|a| a.selected.contains(option))
+                    .count();
                 options.push(OptionStat {
                     option: option.clone(),
                     picked,
-                    share: if attempts == 0 { 0.0 } else { round3(picked as f64 / attempts as f64) },
+                    share: if attempts == 0 {
+                        0.0
+                    } else {
+                        round3(picked as f64 / attempts as f64)
+                    },
                     correct: question.correct_options.contains(option),
                     top_share: if top_answers.is_empty() {
                         0.0
@@ -281,14 +301,22 @@ pub fn topic_mastery(questions: &[QuestionInfo], rows: &[AnswerRow]) -> Vec<Topi
     let info: HashMap<Uuid, &QuestionInfo> = questions.iter().map(|q| (q.id, q)).collect();
     let mut acc: BTreeMap<String, (f64, usize, usize, Option<i32>)> = BTreeMap::new();
     for row in rows {
-        let Some(question) = info.get(&row.question) else { continue };
+        let Some(question) = info.get(&row.question) else {
+            continue;
+        };
         let topic = question
             .topic_tag
             .clone()
             .filter(|t| !t.trim().is_empty())
             .unwrap_or_else(|| "Untagged".to_owned());
-        let fraction = if row.max > 0.0 { row.score / row.max } else { 0.0 };
-        let entry = acc.entry(topic).or_insert((0.0, 0, 0, question.chapter_index));
+        let fraction = if row.max > 0.0 {
+            row.score / row.max
+        } else {
+            0.0
+        };
+        let entry = acc
+            .entry(topic)
+            .or_insert((0.0, 0, 0, question.chapter_index));
         entry.0 += fraction;
         entry.1 += 1;
     }
@@ -380,7 +408,11 @@ mod tests {
             max: 1.0,
             time_spent_ms: 4000,
             answered: !pick.is_empty(),
-            selected: if pick.is_empty() { vec![] } else { vec![pick.to_owned()] },
+            selected: if pick.is_empty() {
+                vec![]
+            } else {
+                vec![pick.to_owned()]
+            },
         }
     }
 
@@ -413,7 +445,11 @@ mod tests {
             rows.push(row(s, 1, "b")); // nobody right: too hard, no discrimination
             rows.push(row(s, 2, "a")); // everybody right: too easy, no discrimination
         }
-        let stats = item_analysis(&[mcq_question(1, "t"), mcq_question(2, "t")], &rows, &totals);
+        let stats = item_analysis(
+            &[mcq_question(1, "t"), mcq_question(2, "t")],
+            &rows,
+            &totals,
+        );
         assert!(stats[0].flags.contains(&FLAG_TOO_HARD));
         assert!(stats[0].flags.contains(&FLAG_NON_DISCRIMINATING));
         assert!(stats[1].flags.contains(&FLAG_TOO_EASY));
@@ -429,7 +465,11 @@ mod tests {
             rows.push(row(s, 1, if s > 5 { "c" } else { "a" }));
         }
         let stats = item_analysis(&[mcq_question(1, "t")], &rows, &totals);
-        assert!(stats[0].flags.contains(&FLAG_POSSIBLY_MISKEYED), "{:?}", stats[0].flags);
+        assert!(
+            stats[0].flags.contains(&FLAG_POSSIBLY_MISKEYED),
+            "{:?}",
+            stats[0].flags
+        );
     }
 
     #[test]
@@ -456,7 +496,12 @@ mod tests {
     #[test]
     fn topic_mastery_orders_weakest_first() {
         let questions = vec![mcq_question(1, "conduction"), mcq_question(2, "radiation")];
-        let rows = vec![row(1, 1, "a"), row(2, 1, "a"), row(1, 2, "b"), row(2, 2, "a")];
+        let rows = vec![
+            row(1, 1, "a"),
+            row(2, 1, "a"),
+            row(1, 2, "b"),
+            row(2, 2, "a"),
+        ];
         let topics = topic_mastery(&questions, &rows);
         assert_eq!(topics[0].topic, "radiation");
         assert_eq!(topics[0].mastery, 0.5);

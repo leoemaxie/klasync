@@ -136,9 +136,9 @@ pub async fn queue(
 
     let mut snapshots: HashMap<Uuid, Snapshot> = HashMap::new();
     for row in &rows {
-        if !snapshots.contains_key(&row.version_id) {
+        if let std::collections::hash_map::Entry::Vacant(slot) = snapshots.entry(row.version_id) {
             if let Some(s) = store::load_snapshot(pool, row.version_id).await? {
-                snapshots.insert(row.version_id, s);
+                slot.insert(s);
             }
         }
     }
@@ -147,13 +147,20 @@ pub async fn queue(
     let mut total = 0;
     let mut pending = 0;
     for row in rows {
-        let Some(snapshot) = snapshots.get(&row.version_id) else { continue };
-        let Some(q) = snapshot.question(row.question_id) else { continue };
+        let Some(snapshot) = snapshots.get(&row.version_id) else {
+            continue;
+        };
+        let Some(q) = snapshot.question(row.question_id) else {
+            continue;
+        };
         if q.question_type.is_objective() {
             continue;
         }
         total += 1;
-        let confirmed = matches!(row.grade_status.as_deref(), Some("confirmed" | "overridden"));
+        let confirmed = matches!(
+            row.grade_status.as_deref(),
+            Some("confirmed" | "overridden")
+        );
         if !confirmed {
             pending += 1;
             *per_question.entry(q.id).or_default() += 1;
@@ -209,7 +216,12 @@ pub async fn queue(
                 .collect()
         })
         .unwrap_or_default();
-    Ok(GradingQueue { answers, pending, total, questions })
+    Ok(GradingQueue {
+        answers,
+        pending,
+        total,
+        questions,
+    })
 }
 
 // ---- lecturer grades -----------------------------------------------------------------------------
@@ -227,9 +239,13 @@ fn ensure_gradable(assessment: &AssessmentRow) -> Res<()> {
     if matches!(assessment.status.as_str(), "published" | "closed") {
         Ok(())
     } else if assessment.status == "finalized" {
-        Err(ServiceError::Conflict("Grades are locked: this assessment is finalised".to_owned()))
+        Err(ServiceError::Conflict(
+            "Grades are locked: this assessment is finalised".to_owned(),
+        ))
     } else {
-        Err(ServiceError::Conflict("Publish the assessment before grading it".to_owned()))
+        Err(ServiceError::Conflict(
+            "Publish the assessment before grading it".to_owned(),
+        ))
     }
 }
 
@@ -252,7 +268,12 @@ async fn answer_ref(pool: &PgPool, assessment: &AssessmentRow, answer_id: Uuid) 
     .await?;
     let (attempt_id, version_id, question_id, current_grade_id) =
         row.ok_or(ServiceError::NotFound("Answer not found"))?;
-    Ok(AnswerRef { attempt_id, version_id, question_id, current_grade_id })
+    Ok(AnswerRef {
+        attempt_id,
+        version_id,
+        question_id,
+        current_grade_id,
+    })
 }
 
 /// A lecturer's score. It supersedes whatever grade was current: a confirmed
@@ -311,7 +332,11 @@ pub async fn set_grade(
 }
 
 /// Accepts an AI proposal as it stands.
-pub async fn confirm_proposal(pool: &PgPool, assessment: &AssessmentRow, answer_id: Uuid) -> Res<()> {
+pub async fn confirm_proposal(
+    pool: &PgPool,
+    assessment: &AssessmentRow,
+    answer_id: Uuid,
+) -> Res<()> {
     ensure_gradable(assessment)?;
     let target = answer_ref(pool, assessment, answer_id).await?;
     let done = sqlx::query(
@@ -321,13 +346,19 @@ pub async fn confirm_proposal(pool: &PgPool, assessment: &AssessmentRow, answer_
     .execute(pool)
     .await?;
     if done.rows_affected() == 0 {
-        return Err(ServiceError::Conflict("There is no proposal to confirm for this answer".to_owned()));
+        return Err(ServiceError::Conflict(
+            "There is no proposal to confirm for this answer".to_owned(),
+        ));
     }
     recompute_attempt(pool, target.attempt_id).await
 }
 
 /// Accepts every AI proposal at or above a confidence. Returns how many.
-pub async fn bulk_confirm(pool: &PgPool, assessment: &AssessmentRow, min_confidence: f64) -> Res<usize> {
+pub async fn bulk_confirm(
+    pool: &PgPool,
+    assessment: &AssessmentRow,
+    min_confidence: f64,
+) -> Res<usize> {
     ensure_gradable(assessment)?;
     let attempts: Vec<Uuid> = sqlx::query_scalar(
         "with updated as (
@@ -389,7 +420,9 @@ pub async fn finalize(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uu
     .execute(&mut *tx)
     .await?;
     if done.rows_affected() == 0 {
-        return Err(ServiceError::Conflict("The assessment was already finalised".to_owned()));
+        return Err(ServiceError::Conflict(
+            "The assessment was already finalised".to_owned(),
+        ));
     }
     store::emit(
         &mut *tx,
@@ -401,9 +434,18 @@ pub async fn finalize(pool: &PgPool, assessment: &AssessmentRow, lecturer_id: Uu
     Ok(())
 }
 
-pub async fn set_release(pool: &PgPool, assessment: &AssessmentRow, release: bool) -> Res<Option<DateTime<Utc>>> {
-    if !matches!(assessment.status.as_str(), "published" | "closed" | "finalized") {
-        return Err(ServiceError::Conflict("Publish the assessment before releasing results".to_owned()));
+pub async fn set_release(
+    pool: &PgPool,
+    assessment: &AssessmentRow,
+    release: bool,
+) -> Res<Option<DateTime<Utc>>> {
+    if !matches!(
+        assessment.status.as_str(),
+        "published" | "closed" | "finalized"
+    ) {
+        return Err(ServiceError::Conflict(
+            "Publish the assessment before releasing results".to_owned(),
+        ));
     }
     let at: Option<DateTime<Utc>> = sqlx::query_scalar(
         "update assessments set results_released_at = case when $2 then now() else null end, updated_at = now()
@@ -456,7 +498,11 @@ pub async fn named_results(pool: &PgPool, assessment: &AssessmentRow) -> Res<Vec
     .await?;
     let mut by_student: Vec<(Uuid, String, String, Vec<AttemptScore>, bool)> = Vec::new();
     for (id, name, matric, no, score, max, late) in rows {
-        let entry = AttemptScore { attempt_no: no, score: score.unwrap_or(0.0), max: max.unwrap_or(0.0) };
+        let entry = AttemptScore {
+            attempt_no: no,
+            score: score.unwrap_or(0.0),
+            max: max.unwrap_or(0.0),
+        };
         match by_student.iter_mut().find(|s| s.0 == id) {
             Some(existing) => {
                 existing.3.push(entry);

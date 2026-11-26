@@ -33,7 +33,11 @@ const GRADE_CONCURRENCY: usize = 4;
 /// Objective questions independently re-solved per generation.
 const MAX_SOLVE_BACK: usize = 12;
 
-pub async fn run_job(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<Option<Uuid>, String> {
+pub async fn run_job(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+) -> Result<Option<Uuid>, String> {
     match job.job_type.as_str() {
         "assessment_generate" => run_generate(state, pool, job).await,
         "assessment_grade" => run_grade(state, pool, job).await,
@@ -51,7 +55,9 @@ pub async fn enqueue_generation(
     spec: &GenerationSpecInput,
 ) -> Res<Uuid> {
     if matches!(assessment.status.as_str(), "finalized" | "archived") {
-        return Err(ServiceError::Conflict("This assessment can no longer be edited".to_owned()));
+        return Err(ServiceError::Conflict(
+            "This assessment can no longer be edited".to_owned(),
+        ));
     }
     let params = json!({
         "assessment_id": assessment.id,
@@ -71,7 +77,11 @@ pub async fn enqueue_generation(
         &format!("gen:{}", assessment.id),
     )
     .await?
-    .ok_or_else(|| ServiceError::Conflict("Question generation is already running for this assessment".to_owned()))
+    .ok_or_else(|| {
+        ServiceError::Conflict(
+            "Question generation is already running for this assessment".to_owned(),
+        )
+    })
 }
 
 /// Queues AI grading of the answers that have no grade yet. A repeat while
@@ -139,12 +149,20 @@ fn spec_from_params(params: &Value) -> GenerationSpec {
     spec.topics = params
         .get("topics")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_owned))
+                .collect()
+        })
         .unwrap_or_default();
     spec.chapters = params
         .get("chapters")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|v| v.as_i64().map(|i| i as i32)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_i64().map(|i| i as i32))
+                .collect()
+        })
         .unwrap_or_default();
     if let Some(p) = params.get("points").and_then(Value::as_f64) {
         spec.points_per_question = p.clamp(0.0, 100.0);
@@ -172,9 +190,9 @@ pub fn slice_transcript(text: &str, ranges: &[(i32, i32)]) -> String {
     let mut out = Vec::new();
     for line in text.lines() {
         if let Some(stamp) = study::leading_stamp(line) {
-            let seconds = stamp
-                .split_once(':')
-                .and_then(|(m, s)| Some(m.trim().parse::<i32>().ok()? * 60 + s.trim().parse::<i32>().ok()?));
+            let seconds = stamp.split_once(':').and_then(|(m, s)| {
+                Some(m.trim().parse::<i32>().ok()? * 60 + s.trim().parse::<i32>().ok()?)
+            });
             if let Some(sec) = seconds {
                 keep = ranges.iter().any(|(a, b)| sec >= *a && sec <= *b);
             }
@@ -186,7 +204,11 @@ pub fn slice_transcript(text: &str, ranges: &[(i32, i32)]) -> String {
     out.join("\n")
 }
 
-async fn run_generate(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<Option<Uuid>, String> {
+async fn run_generate(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+) -> Result<Option<Uuid>, String> {
     if !state.ai.is_configured() {
         return Err("AI is not configured".to_owned());
     }
@@ -243,7 +265,8 @@ async fn run_generate(state: &AppState, pool: &PgPool, job: &PendingJob) -> Resu
     let ((mut generated, report), output) = state
         .ai
         .generate_validated(&request, |output| {
-            let json = extract_json(&output.text).ok_or_else(|| "the answer contained no JSON".to_owned())?;
+            let json = extract_json(&output.text)
+                .ok_or_else(|| "the answer contained no JSON".to_owned())?;
             let (questions, report) = parse_generated(&json, &allowed, points, duration);
             if questions.is_empty() {
                 Err("no valid questions could be read from the answer".to_owned())
@@ -272,12 +295,18 @@ async fn run_generate(state: &AppState, pool: &PgPool, job: &PendingJob) -> Resu
         .take(MAX_SOLVE_BACK)
     {
         let probe = probe_question(question);
-        let request = TextRequest::new(Task::Assessment, solve_system(), solve_input(&probe, &text))
-            .json()
-            .thinking(Thinking::Minimal)
-            .max_tokens(200)
-            .for_job(job.id, job.session_id);
-        let answer = state.ai.generate(&request).await.ok().and_then(|o| extract_json(&o.text));
+        let request =
+            TextRequest::new(Task::Assessment, solve_system(), solve_input(&probe, &text))
+                .json()
+                .thinking(Thinking::Minimal)
+                .max_tokens(200)
+                .for_job(job.id, job.session_id);
+        let answer = state
+            .ai
+            .generate(&request)
+            .await
+            .ok()
+            .and_then(|o| extract_json(&o.text));
         if let Some(answer) = answer {
             if !solve_agrees(&probe, &answer) {
                 question.low_confidence = true;
@@ -336,7 +365,11 @@ struct Graded {
     model: String,
 }
 
-async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<Option<Uuid>, String> {
+async fn run_grade(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+) -> Result<Option<Uuid>, String> {
     if !state.ai.is_configured() {
         return Err("AI is not configured".to_owned());
     }
@@ -349,7 +382,9 @@ async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<
         return Ok(None);
     }
     let settings = assessment.settings();
-    if settings.scoring_mode == ScoringMode::Manual && job.params.get("force").and_then(Value::as_bool) != Some(true) {
+    if settings.scoring_mode == ScoringMode::Manual
+        && job.params.get("force").and_then(Value::as_bool) != Some(true)
+    {
         return Ok(None);
     }
     let only_question = job
@@ -377,20 +412,33 @@ async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<
     }
     let mut snapshots = HashMap::new();
     for row in &pending {
-        if !snapshots.contains_key(&row.version_id) {
-            if let Some(s) = store::load_snapshot(pool, row.version_id).await.map_err(|e| e.to_string())? {
-                snapshots.insert(row.version_id, s);
+        if let std::collections::hash_map::Entry::Vacant(slot) = snapshots.entry(row.version_id) {
+            if let Some(s) = store::load_snapshot(pool, row.version_id)
+                .await
+                .map_err(|e| e.to_string())?
+            {
+                slot.insert(s);
             }
         }
     }
 
     let mut work = Vec::new();
     for row in &pending {
-        let Some(q) = snapshots.get(&row.version_id).and_then(|s| s.question(row.question_id)) else { continue };
+        let Some(q) = snapshots
+            .get(&row.version_id)
+            .and_then(|s| s.question(row.question_id))
+        else {
+            continue;
+        };
         if !may_ai_grade(q, &settings) {
             continue;
         }
-        let text = row.response.get("text").and_then(Value::as_str).unwrap_or("").to_owned();
+        let text = row
+            .response
+            .get("text")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
         if text.trim().is_empty() {
             continue;
         }
@@ -401,15 +449,17 @@ async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<
     let mut graded: Vec<Graded> = Vec::new();
     for chunk in work.chunks(GRADE_CONCURRENCY) {
         let results = join_all(chunk.iter().map(|(row, q, text)| async move {
-            let request = TextRequest::new(Task::Assessment, grading_system(), grading_input(q, text))
-                .json()
-                .thinking(Thinking::Low)
-                .max_tokens(1500)
-                .for_job(job.id, job.session_id);
+            let request =
+                TextRequest::new(Task::Assessment, grading_system(), grading_input(q, text))
+                    .json()
+                    .thinking(Thinking::Low)
+                    .max_tokens(1500)
+                    .for_job(job.id, job.session_id);
             let (proposal, output) = state
                 .ai
                 .generate_validated(&request, |output| {
-                    let json = extract_json(&output.text).ok_or_else(|| "no JSON in the grade".to_owned())?;
+                    let json = extract_json(&output.text)
+                        .ok_or_else(|| "no JSON in the grade".to_owned())?;
                     parse_grade(&json, q)
                 })
                 .await
@@ -449,15 +499,19 @@ async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<
         }
         // Confirmed on the spot only when the lecturer chose AI-final, the
         // model was confident, and nothing about the answer looked like an attack.
-        let confirm = settings.scoring_mode == ScoringMode::AiAuto && flag.is_none() && g.proposal.confidence >= 0.5;
+        let confirm = settings.scoring_mode == ScoringMode::AiAuto
+            && flag.is_none()
+            && g.proposal.confidence >= 0.5;
         let status = if confirm { "confirmed" } else { "proposed" };
         let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
         // The lecturer may have graded this answer while the model was working.
-        let current: Option<Uuid> = sqlx::query_scalar("select current_grade_id from attempt_answers where id = $1 for update")
-            .bind(g.answer_id)
-            .fetch_one(&mut *tx)
-            .await
-            .map_err(|e| e.to_string())?;
+        let current: Option<Uuid> = sqlx::query_scalar(
+            "select current_grade_id from attempt_answers where id = $1 for update",
+        )
+        .bind(g.answer_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
         if current.is_some() {
             continue;
         }
@@ -490,7 +544,9 @@ async fn run_grade(state: &AppState, pool: &PgPool, job: &PendingJob) -> Result<
         attempts.insert(g.attempt_id);
     }
     for id in attempts {
-        super::grading::recompute_attempt(pool, id).await.map_err(|e| e.to_string())?;
+        super::grading::recompute_attempt(pool, id)
+            .await
+            .map_err(|e| e.to_string())?;
     }
     Ok(None)
 }
@@ -503,7 +559,11 @@ fn may_ai_grade(question: &SnapshotQuestion, settings: &AssessmentSettings) -> b
         QuestionType::LongAnswer => true,
         QuestionType::ShortAnswer => {
             settings.ai_short_answer
-                || question.key_payload.get("ai_fallback").and_then(Value::as_bool) == Some(true)
+                || question
+                    .key_payload
+                    .get("ai_fallback")
+                    .and_then(Value::as_bool)
+                    == Some(true)
         }
         _ => false,
     }
@@ -519,13 +579,18 @@ mod tests {
         assert_eq!(slice_transcript(text, &[]), text);
         let out = slice_transcript(text, &[(40, 100)]);
         assert_eq!(out, "[00:50] two\ncontinued\n[01:30] three");
-        assert_eq!(slice_transcript(text, &[(0, 20), (150, 160)]), "[00:10] one\n[02:30] four");
+        assert_eq!(
+            slice_transcript(text, &[(0, 20), (150, 160)]),
+            "[00:10] one\n[02:30] four"
+        );
     }
 
     #[test]
     fn reads_a_generation_spec_with_safe_defaults() {
-        let spec = spec_from_params(&json!({"count": 99, "types": ["mcq_single", "bogus"], "difficulty_mix": [1, 0, 3],
-                                            "topics": ["heat"], "chapters": [0, 2], "points": 2.5}));
+        let spec = spec_from_params(
+            &json!({"count": 99, "types": ["mcq_single", "bogus"], "difficulty_mix": [1, 0, 3],
+                                            "topics": ["heat"], "chapters": [0, 2], "points": 2.5}),
+        );
         assert_eq!(spec.count, 30);
         assert_eq!(spec.types, vec![QuestionType::McqSingle]);
         assert_eq!(spec.difficulty_mix, (1.0, 0.0, 3.0));
@@ -552,7 +617,10 @@ mod tests {
             explanation_md: String::new(),
             source_ranges: Value::Null,
         };
-        assert!(!may_ai_grade(&q, &s), "short answers use the accepted list unless AI is enabled");
+        assert!(
+            !may_ai_grade(&q, &s),
+            "short answers use the accepted list unless AI is enabled"
+        );
         q.key_payload = json!({"accepted": ["x"], "ai_fallback": true});
         assert!(may_ai_grade(&q, &s));
         q.question_type = QuestionType::McqSingle;

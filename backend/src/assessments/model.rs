@@ -314,8 +314,14 @@ impl StudentQuestion {
             prompt_md: question.prompt_md.clone(),
             points: question.points,
             options,
-            max_chars: question.public_payload.get("max_chars").and_then(Value::as_i64),
-            max_words: question.public_payload.get("max_words").and_then(Value::as_i64),
+            max_chars: question
+                .public_payload
+                .get("max_chars")
+                .and_then(Value::as_i64),
+            max_words: question
+                .public_payload
+                .get("max_words")
+                .and_then(Value::as_i64),
         }
     }
 }
@@ -324,8 +330,14 @@ impl StudentQuestion {
 pub fn student_options(question: &SnapshotQuestion, option_order: &[String]) -> Vec<StudentOption> {
     match question.question_type {
         QuestionType::TrueFalse => vec![
-            StudentOption { id: "true".to_owned(), text: "True".to_owned() },
-            StudentOption { id: "false".to_owned(), text: "False".to_owned() },
+            StudentOption {
+                id: "true".to_owned(),
+                text: "True".to_owned(),
+            },
+            StudentOption {
+                id: "false".to_owned(),
+                text: "False".to_owned(),
+            },
         ],
         QuestionType::McqSingle | QuestionType::McqMulti => {
             let all = declared_options(&question.public_payload);
@@ -470,13 +482,20 @@ pub fn validate_question(
             }
         }
         QuestionType::TrueFalse => {
-            if key_payload.get("correct").and_then(Value::as_bool).is_none() {
+            if key_payload
+                .get("correct")
+                .and_then(Value::as_bool)
+                .is_none()
+            {
                 return Err("A true/false question needs a correct value".to_owned());
             }
         }
         QuestionType::ShortAnswer => {
             // Accepted answers may be empty: then every answer is reviewed by hand or AI.
-            if string_list(key_payload.get("accepted")).iter().any(|a| a.trim().is_empty()) {
+            if string_list(key_payload.get("accepted"))
+                .iter()
+                .any(|a| a.trim().is_empty())
+            {
                 return Err("Accepted answers cannot be empty".to_owned());
             }
         }
@@ -535,6 +554,7 @@ pub fn blank_payloads(question_type: QuestionType) -> (Value, Value) {
 }
 
 #[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
 
@@ -581,7 +601,9 @@ mod tests {
     fn strict_implies_its_controls() {
         let mut s = AssessmentSettings::default();
         s.integrity = IntegrityLevel::Strict;
-        assert!(s.effective_fullscreen() && s.effective_block_paste() && s.effective_one_per_page());
+        assert!(
+            s.effective_fullscreen() && s.effective_block_paste() && s.effective_one_per_page()
+        );
         assert!(!s.effective_backtracking());
         assert!(s.records_integrity());
         assert!(!AssessmentSettings::default().records_integrity());
@@ -592,8 +614,18 @@ mod tests {
         let q = mcq();
         let view = StudentQuestion::build(&q, 0, &["c".to_owned(), "a".to_owned(), "b".to_owned()]);
         let text = serde_json::to_string(&view).unwrap();
-        for forbidden in ["correct", "key_payload", "accepted", "rubric", "explanation", "Fourier's law"] {
-            assert!(!text.contains(forbidden), "student view leaked `{forbidden}`: {text}");
+        for forbidden in [
+            "correct",
+            "key_payload",
+            "accepted",
+            "rubric",
+            "explanation",
+            "Fourier's law",
+        ] {
+            assert!(
+                !text.contains(forbidden),
+                "student view leaked `{forbidden}`: {text}"
+            );
         }
         // The stored shuffle is honoured.
         assert_eq!(view.options[0].id, "c");
@@ -611,14 +643,53 @@ mod tests {
     #[test]
     fn validates_question_shapes() {
         let q = mcq();
-        assert!(validate_question(q.question_type, &q.prompt_md, q.points, &q.public_payload, &q.key_payload).is_ok());
-        assert!(validate_question(QuestionType::McqSingle, "x", 1.0, &q.public_payload, &json!({"correct": ["a", "b"]})).is_err());
-        assert!(validate_question(QuestionType::McqSingle, "x", 1.0, &q.public_payload, &json!({"correct": ["z"]})).is_err());
-        assert!(validate_question(QuestionType::McqSingle, "  ", 1.0, &q.public_payload, &q.key_payload).is_err());
-        assert!(validate_question(QuestionType::TrueFalse, "x", 1.0, &json!({}), &json!({})).is_err());
-        assert!(validate_question(QuestionType::TrueFalse, "x", 1.0, &json!({}), &json!({"correct": false})).is_ok());
+        assert!(validate_question(
+            q.question_type,
+            &q.prompt_md,
+            q.points,
+            &q.public_payload,
+            &q.key_payload
+        )
+        .is_ok());
+        assert!(validate_question(
+            QuestionType::McqSingle,
+            "x",
+            1.0,
+            &q.public_payload,
+            &json!({"correct": ["a", "b"]})
+        )
+        .is_err());
+        assert!(validate_question(
+            QuestionType::McqSingle,
+            "x",
+            1.0,
+            &q.public_payload,
+            &json!({"correct": ["z"]})
+        )
+        .is_err());
+        assert!(validate_question(
+            QuestionType::McqSingle,
+            "  ",
+            1.0,
+            &q.public_payload,
+            &q.key_payload
+        )
+        .is_err());
+        assert!(
+            validate_question(QuestionType::TrueFalse, "x", 1.0, &json!({}), &json!({})).is_err()
+        );
+        assert!(validate_question(
+            QuestionType::TrueFalse,
+            "x",
+            1.0,
+            &json!({}),
+            &json!({"correct": false})
+        )
+        .is_ok());
         let bad_rubric = json!({"rubric": [{"id": "r1", "criterion": "Clarity", "points": 1.0}]});
-        assert!(validate_question(QuestionType::LongAnswer, "x", 5.0, &json!({}), &bad_rubric).is_err());
+        assert!(
+            validate_question(QuestionType::LongAnswer, "x", 5.0, &json!({}), &bad_rubric).is_err()
+        );
     }
 
     #[test]
