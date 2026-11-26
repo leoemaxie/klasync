@@ -224,14 +224,16 @@ async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<
     };
     let text = result.text.trim();
     tracing::debug!(bytes = payload_len, chars = text.len(), "Live transcription chunk");
-    if text.is_empty() {
+    // Models sometimes answer silence with a placeholder such as `<noise>`.
+    let placeholder = (text.starts_with('<') && text.ends_with('>')) || (text.starts_with('[') && text.ends_with(']'));
+    if text.is_empty() || placeholder {
         return;
     }
     // The lecturer's browser recogniser also posts captions; skip ours while it
     // is actively producing them so the transcript has no duplicates.
     let pool = state.db_pool();
     let browser_active = sqlx::query_scalar::<_, bool>(
-        "select exists(select 1 from caption_chunks where session_id = $1 and created_at > now() - interval '20 seconds')",
+        "select exists(select 1 from caption_chunks where session_id = $1 and source = 'client' and created_at > now() - interval '20 seconds')",
     )
     .bind(session_id)
     .fetch_one(pool)
@@ -241,7 +243,7 @@ async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<
         return;
     }
     if let Ok(caption) =
-        crate::api::handlers::captions::store_caption(&state, session_id, text).await
+        crate::api::handlers::captions::store_caption(&state, session_id, text, "server").await
     {
         crate::api::handlers::captions::broadcast_caption(&state, &caption).await;
     }

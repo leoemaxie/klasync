@@ -109,10 +109,12 @@
       wsCleanup?.();
       wsCleanup = connectCaptionWebSocket(code, (cap) => {
         if (cap.text) {
-          ingestCaption(appState, {
-            text: cap.text,
-            timestamp: cap.created_at,
-          });
+          // Broadcast captions are already stored: display only.
+          ingestCaption(
+            appState,
+            { text: cap.text, timestamp: cap.created_at },
+            false
+          );
         }
       });
     } else {
@@ -175,7 +177,8 @@
     {:else if activeTab === 'device'}
       <DeviceSetupTab
         sessionCode={appState.session?.code}
-        onCaptionIngested={(cap) => ingestCaption(appState, cap)}
+        onCaptionIngested={(cap) =>
+          ingestCaption(appState, cap, cap.origin !== 'server')}
       />
     {:else if activeTab === 'live' && appState.session?.live}
       <CaptionControlPanel
@@ -217,7 +220,8 @@
           onCopyInvite={() => copyInvite(appState)}
           onEndSession={() => endSession(appState)}
           onStartSession={() => startSession(appState)}
-          onCaptionIngested={(cap) => ingestCaption(appState, cap)}
+          onCaptionIngested={(cap) =>
+            ingestCaption(appState, cap, cap.origin !== 'server')}
         />
       </div>
     {/if}

@@ -23,6 +23,8 @@ export async function uploadSessionAudio(
 }
 
 export interface IngestedCaption {
+  /** 'server' captions were produced by the backend and are already stored. */
+  origin?: 'server' | 'browser';
   text: string;
   speaker?: string;
   timestamp?: string;
@@ -72,6 +74,7 @@ export function connectAudioWebSocket(options: AudioWebSocketOptions) {
           options.onCaptionIngested?.({
             text: payload.text ?? payload.caption,
             speaker: payload.speaker ?? 'AI Live STT',
+            origin: 'server',
             timestamp: payload.timestamp ?? new Date().toISOString(),
           });
         }
