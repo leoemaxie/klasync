@@ -112,7 +112,7 @@
           onclick={() => pick(i)}
         >
           <span class="letter">{letters[i]}</span>
-          <span class="text">{option}</span>
+          <span class="opt-text">{option}</span>
           {#if quiz.picked !== null && i === q.correct_index}
             <Check size={16} aria-label="Correct" />
           {:else if quiz.picked === i}
@@ -247,7 +247,7 @@
   .option:disabled {
     cursor: default;
   }
-  .option .text {
+  .option .opt-text {
     flex: 1;
   }
   .letter {
