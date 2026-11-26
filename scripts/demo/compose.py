@@ -13,7 +13,7 @@ FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 FONTB = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 SERIF = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'
 BG, ACC = '0x0e0905', '0xff8c3c'
-NAR_TEMPO = 1.15   # narration is sped up slightly (pitch preserved) to keep the cut tight
+NAR_TEMPO = 1.25   # narration is sped up slightly (pitch preserved) to keep the cut tight
 TOOLS = ['Transcript and audio', 'Chapters', 'Summary', 'Concept map', 'Flashcards', 'Quiz  (new)', 'Ask the lecture']
 
 LM = json.load(open('out/live_marks.json'))
