@@ -48,7 +48,7 @@ impl PdfRenderer {
     }
 }
 
-fn find_browser() -> Option<PathBuf> {
+pub(crate) fn find_browser() -> Option<PathBuf> {
     if let Ok(path) = std::env::var("MATERIALS_PDF_BROWSER") {
         let path = PathBuf::from(path);
         if path.is_file() {
@@ -172,6 +172,60 @@ async fn run_browser(browser: &Path, work: &Path, html: &str) -> Result<Vec<u8>,
         ));
     }
     Ok(bytes)
+}
+
+/// Renders an SVG to a PNG with the same headless browser used for PDFs, so
+/// formats that cannot embed SVG (DOCX) still get the picture. `None` when
+/// there is no browser or the render fails; callers keep the text outline.
+pub(crate) async fn rasterize_svg(
+    browser: &Path,
+    svg: &str,
+    width: u32,
+    height: u32,
+) -> Option<Vec<u8>> {
+    let _permit = permits().acquire().await.ok()?;
+    let work = std::env::temp_dir().join(format!("klasync-svg-{}", Uuid::now_v7()));
+    tokio::fs::create_dir_all(&work).await.ok()?;
+    let result =
+        async {
+            let input = work.join("figure.html");
+            let output = work.join("figure.png");
+            let page =
+                format!(
+            "<!doctype html><html><body style=\"margin:0;background:#fff\">{}</body></html>",
+            svg.replacen("<svg ", &format!("<svg width=\"{width}\" height=\"{height}\" "), 1)
+        );
+            tokio::fs::write(&input, page).await.ok()?;
+            let child = Command::new(browser)
+                .arg("--headless")
+                .arg("--no-sandbox")
+                .arg("--disable-gpu")
+                .arg("--disable-dev-shm-usage")
+                .arg("--hide-scrollbars")
+                .arg(format!(
+                    "--user-data-dir={}",
+                    work.join("profile").display()
+                ))
+                .arg(format!("--window-size={width},{height}"))
+                .arg(format!("--screenshot={}", output.display()))
+                .arg(format!("file://{}", input.display()))
+                .kill_on_drop(true)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .ok()?;
+            tokio::time::timeout(Duration::from_secs(30), child.wait_with_output())
+                .await
+                .ok()?
+                .ok()?;
+            let bytes = tokio::fs::read(&output).await.ok()?;
+            bytes
+                .starts_with(&[0x89, b'P', b'N', b'G'])
+                .then_some(bytes)
+        }
+        .await;
+    let _ = tokio::fs::remove_dir_all(&work).await;
+    result
 }
 
 #[cfg(test)]

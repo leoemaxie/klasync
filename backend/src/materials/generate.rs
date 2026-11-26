@@ -109,7 +109,7 @@ pub async fn run_job(
         "material_section" if params.mode.as_deref() == Some("regenerate") => {
             run_regenerate(state, pool, job, &params).await
         }
-        "material_section" => run_section(state, pool, job, &params).await,
+        "material_section" => run_section(state, pool, job, &params, None).await,
         "material_assemble" => run_assemble(state, pool, job, &params).await,
         "material_embed" => {
             super::compare::run_embed_job(state, pool, job, params.version_id).await
@@ -484,6 +484,7 @@ async fn generate_section_blocks(
     duration: i32,
     instruction: Option<&str>,
     current_doc: Option<&MaterialDoc>,
+    precomputed: Option<&str>,
 ) -> Result<Vec<Block>, String> {
     let transcript = lecture_text(state, pool, material.session_id, job.input_resource_id).await?;
     let session = store::session_info(pool, material.session_id)
@@ -505,6 +506,7 @@ async fn generate_section_blocks(
         doc: current_doc,
         previous: previous.as_ref(),
         instruction,
+        precomputed,
     };
     let mut blocks: Vec<Block> = Vec::new();
     for generator in enabled_generators(pool, Stage::Section, material.course_id).await {
@@ -525,11 +527,142 @@ async fn generate_section_blocks(
     Ok(blocks)
 }
 
+/// The model input for one section: `(input, transcript excerpt)`.
+fn section_writer_input(cx: &GenerationContext<'_>, plan: &SectionPlan) -> (String, String) {
+    let limit = cx.state.ai.max_input_chars();
+    let excerpt = prompts::slice_transcript(
+        &cx.transcript.text,
+        plan.start_sec,
+        plan.end_sec,
+        30,
+        limit / 2,
+    );
+    let mut input =
+        format!(
+        "Handout: {}\nSection: {}\nWhat this section should teach: {}\nTranscript window: {}-{}\n",
+        cx.outline.title,
+        plan.title,
+        if plan.objective.is_empty() { "(not specified)" } else { &plan.objective },
+        study::format_offset(plan.start_sec as i64),
+        study::format_offset(plan.end_sec as i64),
+    );
+    if let Some(previous) = cx.previous {
+        input.push_str(&format!(
+            "\nLast time this topic was taught (for structure only):\n{}\n",
+            previous_context(previous, 1_200)
+        ));
+    }
+    if let (Some(instruction), Some(doc)) = (cx.instruction, cx.doc) {
+        if let Some(section) = doc.sections().into_iter().find(|s| s.heading == plan.title) {
+            input.push_str(&format!(
+                "\nCurrent text of this section (rewrite it):\n{}\n",
+                section.body_text().chars().take(4_000).collect::<String>()
+            ));
+        }
+        input.push_str(&format!("\nLecturer's instruction: {instruction}\n"));
+    }
+    input.push_str(&format!("\nTranscript:\n{excerpt}"));
+    (input, excerpt)
+}
+
+/// Should new section jobs be sent through the provider batch API (about half
+/// price, minutes to hours of latency)? Opt in with `MATERIALS_BATCH=1`.
+pub fn batch_sections_enabled() -> bool {
+    matches!(
+        std::env::var("MATERIALS_BATCH").as_deref(),
+        Ok("1") | Ok("true")
+    )
+}
+
+/// The model request for a queued `material_section` job, for batch
+/// submission. `None` means the job cannot be batched (regeneration, a stale
+/// generation) and should run interactively.
+pub async fn prepare_section_request(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+) -> Result<Option<TextRequest>, String> {
+    let params: JobParams = serde_json::from_value(job.params.clone())
+        .map_err(|e| format!("bad material job parameters: {e}"))?;
+    if params.mode.as_deref() == Some("regenerate") {
+        return Ok(None);
+    }
+    let Some(material) = load_current(pool, &params).await? else {
+        return Ok(None);
+    };
+    let index = params
+        .section
+        .ok_or_else(|| "no section index".to_owned())?;
+    let (outline, _) = outline_from_state(&material.gen_state)?;
+    let Some(plan) = outline.sections.get(index) else {
+        return Ok(None);
+    };
+    let settings = store::load_settings(pool, material.course_id).await;
+    let transcript = lecture_text(state, pool, material.session_id, job.input_resource_id).await?;
+    let session = store::session_info(pool, material.session_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    let previous = match (&session, settings.seed_from_previous) {
+        (Some(session), true) => find_previous_material(pool, &material, &session.title).await,
+        _ => None,
+    };
+    let cx = GenerationContext {
+        state,
+        pool,
+        job,
+        material: &material,
+        settings: &settings,
+        transcript: &transcript,
+        outline: &outline,
+        section: Some(plan),
+        doc: None,
+        previous: previous.as_ref(),
+        instruction: None,
+        precomputed: None,
+    };
+    let (input, _) = section_writer_input(&cx, plan);
+    Ok(Some(
+        TextRequest::new(Task::Material, prompts::section_system(&settings), input)
+            .json()
+            .thinking(Thinking::Low)
+            .max_tokens(8_000)
+            .for_job(job.id, job.session_id),
+    ))
+}
+
+/// Does this batch answer hold usable blocks?
+pub fn check_section_answer(text: &str) -> Result<(), String> {
+    let json = extract_json(&prompts::fix_json_latex_escapes(text))
+        .ok_or_else(|| "the answer contained no JSON".to_owned())?;
+    let (blocks, dropped) = prompts::parse_blocks(&json);
+    if blocks.is_empty() || dropped > blocks.len() {
+        Err("no usable blocks in the answer".to_owned())
+    } else {
+        Ok(())
+    }
+}
+
+/// Stores a section from a provider batch answer and queues assembly when it
+/// was the last one, exactly like an interactive section job.
+pub async fn finish_section_job(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+    answer: &str,
+) -> Result<(), String> {
+    let params: JobParams = serde_json::from_value(job.params.clone())
+        .map_err(|e| format!("bad material job parameters: {e}"))?;
+    run_section(state, pool, job, &params, Some(answer))
+        .await
+        .map(|_| ())
+}
+
 async fn run_section(
     state: &AppState,
     pool: &PgPool,
     job: &PendingJob,
     params: &JobParams,
+    precomputed: Option<&str>,
 ) -> Result<Option<Uuid>, String> {
     let Some(material) = load_current(pool, params).await? else {
         return Ok(None);
@@ -544,7 +677,17 @@ async fn run_section(
         .ok_or_else(|| format!("the outline has no section {index}"))?;
     let settings = store::load_settings(pool, material.course_id).await;
     let mut blocks = generate_section_blocks(
-        state, pool, job, &material, &outline, plan, &settings, duration, None, None,
+        state,
+        pool,
+        job,
+        &material,
+        &outline,
+        plan,
+        &settings,
+        duration,
+        None,
+        None,
+        precomputed,
     )
     .await?;
     prompts::assign_section_ids(&mut blocks, index);
@@ -653,6 +796,7 @@ async fn run_regenerate(
         transcript.duration_sec,
         params.instruction.as_deref(),
         Some(&doc),
+        None,
     )
     .await?;
     if fresh.is_empty() {
@@ -721,6 +865,7 @@ async fn run_assemble(
         doc: Some(&snapshot),
         previous: None,
         instruction: None,
+        precomputed: None,
     };
     for generator in enabled_generators(pool, Stage::Post, material.course_id).await {
         match generator.generate(&cx).await {
@@ -843,57 +988,35 @@ impl Generator for SectionWriter {
         let plan = cx
             .section
             .ok_or_else(|| PluginError::failed("no section to write"))?;
-        let limit = cx.state.ai.max_input_chars();
-        let excerpt = prompts::slice_transcript(
-            &cx.transcript.text,
-            plan.start_sec,
-            plan.end_sec,
-            30,
-            limit / 2,
-        );
-        let mut input = format!(
-            "Handout: {}\nSection: {}\nWhat this section should teach: {}\nTranscript window: {}-{}\n",
-            cx.outline.title,
-            plan.title,
-            if plan.objective.is_empty() { "(not specified)" } else { &plan.objective },
-            study::format_offset(plan.start_sec as i64),
-            study::format_offset(plan.end_sec as i64),
-        );
-        if let Some(previous) = cx.previous {
-            input.push_str(&format!(
-                "\nLast time this topic was taught (for structure only):\n{}\n",
-                previous_context(previous, 1_200)
-            ));
-        }
-        if let (Some(instruction), Some(doc)) = (cx.instruction, cx.doc) {
-            if let Some(section) = doc.sections().into_iter().find(|s| s.heading == plan.title) {
-                input.push_str(&format!(
-                    "\nCurrent text of this section (rewrite it):\n{}\n",
-                    section.body_text().chars().take(4_000).collect::<String>()
-                ));
+        let (input, excerpt) = section_writer_input(cx, plan);
+        let parse = |value: &Value| {
+            let (blocks, dropped) = prompts::parse_blocks(value);
+            if blocks.is_empty() {
+                Err("no usable blocks in the answer".to_owned())
+            } else if dropped > blocks.len() {
+                Err("most blocks did not fit the schema".to_owned())
+            } else {
+                Ok(blocks)
             }
-            input.push_str(&format!("\nLecturer's instruction: {instruction}\n"));
-        }
-        input.push_str(&format!("\nTranscript:\n{excerpt}"));
-
-        let asked = ask(
-            cx.state,
-            cx.job,
-            prompts::section_system(cx.settings),
-            input,
-            8_000,
-            |value| {
-                let (blocks, dropped) = prompts::parse_blocks(value);
-                if blocks.is_empty() {
-                    Err("no usable blocks in the answer".to_owned())
-                } else if dropped > blocks.len() {
-                    Err("most blocks did not fit the schema".to_owned())
-                } else {
-                    Ok(blocks)
-                }
-            },
-        )
-        .await;
+        };
+        let asked = match cx.precomputed {
+            // A provider batch already answered: parse it like a live answer.
+            Some(text) => extract_json(&prompts::fix_json_latex_escapes(text))
+                .ok_or_else(|| "the answer contained no JSON".to_owned())
+                .and_then(|json| parse(&json))
+                .map(|blocks| (blocks, "batch".to_owned())),
+            None => {
+                ask(
+                    cx.state,
+                    cx.job,
+                    prompts::section_system(cx.settings),
+                    input,
+                    8_000,
+                    parse,
+                )
+                .await
+            }
+        };
         match asked {
             Ok((blocks, model)) => {
                 note_model(cx.pool, cx.material.id, cx.material.generation, &model).await;
@@ -1366,5 +1489,13 @@ mod tests {
         let ctx = previous_context(&doc, 500);
         assert!(ctx.starts_with("- Topic: "));
         assert!(ctx.len() < 400);
+    }
+
+    #[test]
+    fn batch_answers_are_checked_like_live_ones() {
+        let good = r#"{"blocks":[{"type":"paragraph","text":"Hello **world**","source_ranges":[{"start_sec":0,"end_sec":5}]}]}"#;
+        assert!(check_section_answer(good).is_ok());
+        assert!(check_section_answer("not json at all").is_err());
+        assert!(check_section_answer(r#"{"blocks":[]}"#).is_err());
     }
 }

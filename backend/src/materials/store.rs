@@ -380,9 +380,19 @@ pub async fn enqueue_job(
         .get("delay_secs")
         .and_then(Value::as_f64)
         .unwrap_or(0.0);
+    // Section writing is the bulk of the tokens and nobody waits on it
+    // second by second: send it through the provider batch API when enabled.
+    let mode = if job_type == "material_section"
+        && params.get("mode").and_then(Value::as_str) != Some("regenerate")
+        && super::generate::batch_sections_enabled()
+    {
+        "batch"
+    } else {
+        "interactive"
+    };
     let inserted = sqlx::query(
         "insert into ai_jobs (id, session_id, requested_by, job_type, mode, params, run_after)
-         select $1, $2, $3, $4, 'interactive', $5, now() + make_interval(secs => $10::double precision)
+         select $1, $2, $3, $4, $11, $5, now() + make_interval(secs => $10::double precision)
          where not exists (
            select 1 from ai_jobs j
            where j.session_id = $2 and j.job_type = $4
@@ -403,6 +413,7 @@ pub async fn enqueue_job(
     .bind(section)
     .bind(nonce)
     .bind(delay)
+    .bind(mode)
     .execute(pool)
     .await?;
     Ok(inserted.rows_affected() > 0)

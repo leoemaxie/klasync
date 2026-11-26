@@ -72,6 +72,9 @@ pub struct GenerationContext<'a> {
     pub previous: Option<&'a MaterialDoc>,
     /// Instruction from the lecturer when regenerating one section.
     pub instruction: Option<&'a str>,
+    /// Raw model answer for the section writer, when a provider batch already
+    /// produced it (the writer then parses it instead of calling the model).
+    pub precomputed: Option<&'a str>,
 }
 
 #[derive(Debug, thiserror::Error)]
