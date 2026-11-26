@@ -7,6 +7,45 @@
 
 pub mod delivery;
 pub mod model;
+pub mod store;
 pub mod prompts;
 pub mod report;
 pub mod scoring;
+
+use std::fmt;
+
+/// Errors from the assessment services; the HTTP layer maps these to status codes.
+#[derive(Debug)]
+pub enum ServiceError {
+    NotFound(&'static str),
+    Invalid(String),
+    Conflict(String),
+    Forbidden(&'static str),
+    Unavailable(String),
+    Internal(String),
+}
+
+impl fmt::Display for ServiceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NotFound(m) | Self::Forbidden(m) => write!(f, "{m}"),
+            Self::Invalid(m) | Self::Conflict(m) | Self::Unavailable(m) | Self::Internal(m) => {
+                write!(f, "{m}")
+            }
+        }
+    }
+}
+
+impl From<sqlx::Error> for ServiceError {
+    fn from(error: sqlx::Error) -> Self {
+        Self::Internal(error.to_string())
+    }
+}
+
+impl From<String> for ServiceError {
+    fn from(message: String) -> Self {
+        Self::Internal(message)
+    }
+}
+
+pub type Res<T> = Result<T, ServiceError>;
