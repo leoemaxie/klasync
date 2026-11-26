@@ -71,12 +71,13 @@ def narration():
         # The safety filter now and then rejects harmless lines for a given prompt
         # wording; fall back to simpler accent wording rather than failing.
         styles = [cfg["style"], "Say in a warm Nigerian English accent:", "Say in a Nigerian English accent:"]
-        for attempt in range(6):
+        for attempt in range(8):
             style = styles[min(attempt // 2, len(styles) - 1)]
             try:
                 secs = speak(text, cfg["voice"], out, style, NARRATION_MODEL, retries=1)
             except Exception as error:
                 print(f"{key}: attempt {attempt + 1} failed ({error}), trying again")
+                time.sleep(20 if "429" in str(error) else 3)  # back off when rate limited
                 continue
             if secs <= limit:
                 break

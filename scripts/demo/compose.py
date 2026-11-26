@@ -13,6 +13,7 @@ FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 FONTB = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 SERIF = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'
 BG, ACC = '0x0e0905', '0xff8c3c'
+NAR_TEMPO = 1.15   # narration is sped up slightly (pitch preserved) to keep the cut tight
 TOOLS = ['Transcript and audio', 'Chapters', 'Summary', 'Concept map', 'Flashcards', 'Quiz  (new)', 'Ask the lecture']
 
 LM = json.load(open('out/live_marks.json'))
@@ -45,7 +46,7 @@ def ndur(name):
     if not os.path.exists(p):
         return 0.0
     out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', p], capture_output=True, text=True).stdout
-    return float(out.strip())
+    return float(out.strip()) / NAR_TEMPO
 
 
 def audio_chain(name, dur, first_idx, lecture=None, nd=0.0):
@@ -72,7 +73,7 @@ def audio_chain(name, dur, first_idx, lecture=None, nd=0.0):
         idx += 1
     if nd:
         ins += ['-i', f'out/narr/{name}.wav']
-        parts.append(f'[{idx}:a]aresample=48000,adelay=300|300,volume=1.5[a2]')
+        parts.append(f'[{idx}:a]aresample=48000,atempo={NAR_TEMPO},adelay=300|300,volume=1.5[a2]')
         mix.append('[a2]')
         idx += 1
     parts.append(''.join(mix) + f'amix=inputs={len(mix)}:duration=first:normalize=0,alimiter=limit=0.95[aout]')
@@ -86,6 +87,7 @@ def seg(name, layout, d_rng, p_rng, vp, caption, speed=1.0, lecture=None, tool=N
     span = rng[1] - rng[0]
     nd = ndur(name)
     dur = max(span / speed, nd + tail) if nd else span / speed
+    print(f'  {name:7} span {span:5.1f}s  speed {speed:.1f}  footage {span/speed:5.1f}s  narration {nd:4.1f}s  -> scene {dur:5.1f}s')
     eff = max(span / dur, 0.8)
     pad = max(0.0, dur - span / eff)
     if eff < 0.95:
@@ -167,35 +169,35 @@ def both(a, b): return d(a, b), p(a, b)   # same moment on the two live videos
 
 TAG = 'Assistive Platform for Inclusive and Accessible Education'
 segs = []
-segs.append(card('c_intro', 'KLASYNC', TAG, ['Live captions for every student', 'Searchable transcripts and study tools', 'Attendance and insight for lecturers'], dur=8.0))
-segs.append(seg('s1a', 'D', d(L['login_start'] - 0.8, L['device_start']), None, None, 'Lecturer signs in and loads the class roster', speed=1.0))
-segs.append(seg('s1b', 'D', d(L['device_start'], L['room_start']), None, None, 'Microphone options: laptop mic or a dedicated wireless mic', speed=1.0))
-segs.append(seg('s1c', 'D', d(L['room_start'], L['session_started'] + 2.5), None, None, 'One tap starts a live session with a join code and QR code', speed=1.0))
+segs.append(card('c_intro', 'KLASYNC', TAG, ['Live captions for every student', 'Searchable transcripts and study tools', 'Attendance and insight for lecturers'], dur=7.0))
+segs.append(seg('s1a', 'D', d(L['login_start'] - 0.8, L['device_start']), None, None, 'Lecturer signs in and loads the class roster', speed=1.4))
+segs.append(seg('s1b', 'D', d(L['device_start'], L['room_start']), None, None, 'Microphone options: laptop mic or a dedicated wireless mic', speed=1.1))
+segs.append(seg('s1c', 'D', d(L['room_start'], L['session_started'] + 2.5), None, None, 'One tap starts a live session with a join code and QR code', speed=1.4))
 D_, P_ = both(L['join_start'] - 0.5, L['phone_joined'] + 1.5)
 segs.append(seg('s2a', 'S', D_, P_, VP, 'Students join with the code: no account, no app, works on limited data', speed=1.0))
 D_, P_ = both(L['audio_start'], L['access_end'] + 0.8)
-segs.append(seg('s2b', 'S', D_, P_, VP, 'Larger text and a dyslexia-friendly font for easier reading', speed=1.0, lecture='bed'))
-D_, P_ = both(L['access_end'] + 0.8, L['audio_start'] + 30)
+segs.append(seg('s2b', 'S', D_, P_, VP, 'Larger text and a dyslexia-friendly font for easier reading', speed=1.3, lecture='bed'))
+D_, P_ = both(L['access_end'] + 0.8, L['audio_start'] + 25)
 segs.append(seg('s3', 'S', D_, P_, VP, 'The lecture is captioned live, word for word', speed=1.0, lecture='duck'))
-D_, P_ = both(L['audio_start'] + 30, L['lect_question_view'] + 1)
-segs.append(seg('s4', 'S', D_, P_, VP, 'Check in, raise a hand, ask a question: the lecturer sees it instantly', speed=2.6))
+D_, P_ = both(L['audio_start'] + 25, L['lect_question_view'] + 1)
+segs.append(seg('s4', 'S', D_, P_, VP, 'Check in, raise a hand, ask a question: the lecturer sees it instantly', speed=3.0))
 D_, P_ = both(L['lect_question_view'] + 1, L['ai_quiz_click'] - 19)
-segs.append(seg('s5', 'S', D_, P_, VP, 'A live summary lets anyone catch up without losing the thread', speed=3.0))
+segs.append(seg('s5', 'S', D_, P_, VP, 'A live summary lets anyone catch up without losing the thread', speed=3.4))
 D_, P_ = both(L['ai_quiz_click'] - 18, L['ai_quiz_click'] - 0.5)
-segs.append(seg('s6a', 'S', D_, P_, VP, 'Checking understanding on the spot', speed=4.0))
+segs.append(seg('s6a', 'S', D_, P_, VP, 'Checking understanding on the spot', speed=4.5))
 D_, P_ = both(L['quiz_live_lecturer'] - 0.5, L['lect_results'] + 3)
-segs.append(seg('s6b', 'S', D_, P_, VP, 'A quick quiz from what was just taught: answers and results arrive live', speed=1.0))
-segs.append(seg('s7', 'D', d(L['audio_done'] + 1, L['analytics']), None, None, 'Attendance is scored automatically and rolled into course analytics', speed=1.3))
-segs.append(card('c_mid', 'After class', 'The student archive, on mobile', dur=2.5))
-segs.append(seg('t1', 'P', None, s(S['signin_start'], S['transcript_start']), VS, 'A student who missed class signs in to their archive', speed=1.0, tool=0))
-segs.append(seg('t2', 'P', None, s(S['transcript_start'], S['chapters_start']), VS, 'Searchable transcript, synced to the recording', speed=1.1, tool=0))
-segs.append(seg('t3', 'P', None, s(S['chapters_start'], S['summary_start']), VS, 'Chapters jump to any moment in the lecture', speed=1.0, tool=1))
-segs.append(seg('t3b', 'P', None, s(S['summary_start'], S['map_start']), VS, 'A summary of the key points', speed=1.0, tool=2))
-segs.append(seg('t4', 'P', None, s(S['map_start'], S['cards_start']), VS, 'An interactive concept map: see how the ideas connect', speed=1.8, tool=3))
-segs.append(seg('t5', 'P', None, s(S['cards_start'], S['quiz_start']), VS, 'Flashcards for short, repeatable practice', speed=1.5, tool=4))
-segs.append(seg('t6', 'P', None, s(S['quiz_start'], S['ask_start']), VS, 'New: a quiz with instant feedback and an explanation for every answer', speed=2.4, tool=5))
-segs.append(seg('t7', 'P', None, s(S['ask_start'], S['study_end']), VS, 'Ask the lecture: answers cite the exact moment', speed=1.2, tool=6))
-segs.append(card('c_out', 'KLASYNC', TAG, ['Every lecture, for every learner.'], dur=5.0))
+segs.append(seg('s6b', 'S', D_, P_, VP, 'A quick quiz from what was just taught: answers and results arrive live', speed=1.3))
+segs.append(seg('s7', 'D', d(L['audio_done'] + 1, L['analytics']), None, None, 'Attendance is scored automatically and rolled into course analytics', speed=1.8))
+segs.append(card('c_mid', 'After class', 'The student archive, on mobile', dur=2.0))
+segs.append(seg('t1', 'P', None, s(S['signin_start'], S['transcript_start']), VS, 'A student who missed class signs in to their archive', speed=1.3, tool=0))
+segs.append(seg('t2', 'P', None, s(S['transcript_start'], S['chapters_start']), VS, 'Searchable transcript, synced to the recording', speed=1.5, tool=0))
+segs.append(seg('t3', 'P', None, s(S['chapters_start'], S['summary_start']), VS, 'Chapters jump to any moment in the lecture', speed=1.1, tool=1))
+segs.append(seg('t3b', 'P', None, s(S['summary_start'], S['map_start']), VS, 'A summary of the key points', speed=1.4, tool=2))
+segs.append(seg('t4', 'P', None, s(S['map_start'], S['cards_start']), VS, 'An interactive concept map: see how the ideas connect', speed=2.6, tool=3))
+segs.append(seg('t5', 'P', None, s(S['cards_start'], S['quiz_start']), VS, 'Flashcards for short, repeatable practice', speed=2.1, tool=4))
+segs.append(seg('t6', 'P', None, s(S['quiz_start'], S['ask_start']), VS, 'New: a quiz with instant feedback and an explanation for every answer', speed=3.4, tool=5))
+segs.append(seg('t7', 'P', None, s(S['ask_start'], S['study_end']), VS, 'Ask the lecture: answers cite the exact moment', speed=1.5, tool=6))
+segs.append(card('c_out', 'KLASYNC', TAG, ['Every lecture, for every learner.'], dur=4.5))
 
 open('out/concat.txt', 'w').write(''.join(f"file 'seg/{os.path.basename(x)}'\n" for x in segs))
 run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', 'out/concat.txt', '-c', 'copy', 'out/klasync_demo_raw.mp4'])
