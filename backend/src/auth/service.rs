@@ -25,7 +25,7 @@ pub fn hash_token_secret(secret: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"klasync-token-v1:");
     hasher.update(secret.as_bytes());
-    format!("{:x}", hasher.finalize())
+    crate::utils::hex_lower(hasher.finalize())
 }
 
 pub fn verify_token_hash(candidate_secret: &str, stored_hash: &str) -> bool {

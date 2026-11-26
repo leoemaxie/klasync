@@ -35,24 +35,17 @@ pub fn issue_access_token(
         iat: now.timestamp(),
         exp: (now + Duration::minutes(config.access_token_minutes)).timestamp(),
     };
-    encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
-    )
+    let key = EncodingKey::from_secret(secret.as_bytes())?;
+    encode(&Header::default(), &claims, &key)
 }
 
 pub fn validate_access_token(
     config: &AppConfig,
     token: &str,
 ) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let check_secret = |secret: &str| {
-        decode::<Claims>(
-            token,
-            &DecodingKey::from_secret(secret.as_bytes()),
-            &Validation::default(),
-        )
-        .map(|data| data.claims)
+    let check_secret = |secret: &str| -> Result<Claims, jsonwebtoken::errors::Error> {
+        let key = DecodingKey::from_secret(secret.as_bytes())?;
+        decode::<Claims>(token, &key, &Validation::default()).map(|data| data.claims)
     };
 
     if !config.jwt_secrets.is_empty() {

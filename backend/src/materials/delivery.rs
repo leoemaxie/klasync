@@ -3,8 +3,8 @@
 //! * **in_app** and **link** are passive: publishing already makes the
 //!   material visible in the student archive and downloadable, so these only
 //!   leave a record in `material_deliveries`.
-//! * **email** sends a link to every student enrolled in the course offering
-//!   (the sender has no attachment support, so links are the only mode).
+//! * **email** sends a link to every student enrolled in the course offering,
+//!   with the handout attached as PDF/DOCX when it is under 8 MB.
 //!   Every send is logged per delivery with recipient and success counts.
 //!
 //! Deliveries are requested through [`request`], which writes the row and an
@@ -24,7 +24,7 @@ use super::{
     store,
 };
 use crate::{
-    email::{escape::escape_html, layout, EmailMessage},
+    email::{escape::escape_html, layout, EmailAttachment, EmailMessage, MAX_ATTACHMENT_BYTES},
     state::AppState,
 };
 
@@ -151,6 +151,33 @@ pub fn build_email(
     (subject, text, html)
 }
 
+/// The published lecture handout as a PDF (or DOCX without a browser), sent
+/// with the email. Books and oversized files go link-only.
+async fn lecture_attachment(
+    state: &AppState,
+    request: &DeliveryRequest,
+) -> Option<EmailAttachment> {
+    if !matches!(request.target, Target::Version(_)) {
+        return None;
+    }
+    let format = if registry().renderer("pdf").is_some_and(|r| r.available()) {
+        "pdf"
+    } else {
+        "docx"
+    };
+    match super::service::export(state, request.target, format, None).await {
+        Ok(file) if file.bytes.len() <= MAX_ATTACHMENT_BYTES => Some(EmailAttachment {
+            filename: file.filename,
+            content: std::sync::Arc::new(file.bytes),
+        }),
+        Ok(_) => None,
+        Err(error) => {
+            tracing::warn!(%error, "Handout attachment skipped");
+            None
+        }
+    }
+}
+
 #[async_trait]
 impl DeliveryChannel for EmailChannel {
     fn id(&self) -> &'static str {
@@ -170,6 +197,7 @@ impl DeliveryChannel for EmailChannel {
         let pool = state.db_pool();
         let people = recipients(pool, request).await?;
         let link = material_link(&state.config.public_app_url, request.target);
+        let attachment = lecture_attachment(state, request).await;
         let mut delivered = 0;
         let mut last_error: Option<String> = None;
         for person in &people {
@@ -185,6 +213,7 @@ impl DeliveryChannel for EmailChannel {
                 text,
                 html,
                 idempotency_key: format!("material-{}-{}", request.delivery_id, person.id),
+                attachments: attachment.iter().cloned().collect(),
             };
             match state.mailer.send(message).await {
                 Ok(()) => delivered += 1,

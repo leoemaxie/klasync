@@ -10,35 +10,69 @@ doc. This file is the map for whoever builds on top.
 ## Status
 
 Built and tested end to end: schema, block document, plug-in registry, the
-generation pipeline, review/edit/publish, four renderers, course book, email
+generation pipeline, review/edit/publish, six renderers, course book, email
 and passive delivery channels, comparison analyzer, event outbox, HTTP API,
 post-lecture trigger, typed TypeScript client (`src/lib/api/materials.ts`).
 
+**Frontend** (`src/lib/components/materials/`, `src/lib/materials/`):
+lecturer *Materials* tab (every lecture of the course, review/edit with the
+transcript side-by-side, autosave with `base_rev` conflict handling,
+per-section rewrite, lock, publish with optional email, export, versions,
+deliveries), course book builder, offering comparison, course settings and
+per-course plug-in toggles; student *Handout* tool in the lecture studio and a
+*Course book* viewer on each course card. Equations and inline `$math$` render
+with KaTeX (lazy-loaded); concept-map figures are drawn as SVG. Pure edit and
+validation logic is in `src/lib/materials/doc.ts` (mirrors `blocks.rs`) and is
+unit-tested.
+
+**Also built:**
+
+- **Plug-in settings API** (`GET /courses/{id}/materials/plugins`,
+  `PUT|DELETE .../plugins/{kind}/{plugin_id}`). A course can turn a renderer
+  off: export then refuses it and students no longer see it. `in_app` delivery
+  and the `html` renderer are protected.
+- **EPUB 3 and LaTeX exports** (`render/epub.rs`, `render/latex.rs`).
+- **Signed export URLs**: `?mode=url` on every export route answers
+  `{url, filename, expires_in}` (5 min) when the storage backend can sign
+  (R2/S3); `url: null` means stream the bytes. The web client uses it and falls
+  back to streaming.
+- **Email attachments**: `EmailMessage.attachments`; lecture emails carry the
+  PDF (DOCX without a browser) up to 8 MB. Books stay link-only.
+- **Concept-map graphics**: `Figure.diagram` (nodes/edges) is drawn as SVG in
+  HTML, PDF and EPUB (`render/svg.rs`), and as PNG in DOCX. Markdown and LaTeX keep the text outline.
+- **Separate worker process**: `KLASYNC_ROLE=worker` runs only the job loops
+  (no HTTP), `api` only HTTP, `all` (default) both.
+- **Drafts may be incomplete**: saving a draft only checks schema and size;
+  the full validation runs on publish, so a new empty block never loses edits.
+- `GET .../materials/transcript` (lecturer transcript for review) and the
+  course materials list now returns every lecture, with `has_material`.
+- **Provider batch mode** (`MATERIALS_BATCH=1`): section jobs go through the
+  provider batch API (about half price, minutes to hours of latency). Answers
+  are validated and stored through the same path as live ones; anything
+  unusable is re-queued interactively. Outline, assembly, summary and the other
+  post-stage generators stay interactive. Verified with a real Gemini batch.
+- **Diagrams in DOCX**: concept-map figures are rasterised to PNG with the
+  headless browser (the one used for PDF) and embedded; without a browser the
+  text outline stays.
+- **LMS push**: the `webhook` delivery channel posts a signed JSON message
+  (`X-Klasync-Signature: sha256=…`, HMAC of the body) with 24-hour download
+  links to a per-course URL (plug-in `config` `{url, secret}`; the secret is
+  write-only). https only, private/loopback addresses refused, no redirects
+  (`MATERIALS_WEBHOOK_ALLOW_HTTP` / `_ALLOW_PRIVATE` relax this for local
+  development). A connector, Zapier/Make flow or script turns it into a Canvas
+  page, Moodle resource and so on.
+- **Slides & notes**: a lecturer can upload a `.pptx` (text read from the
+  OOXML), a `.txt`/`.md`, or paste text; it is added to the outline and section
+  prompts as context (`PUT .../materials/slides[/pptx]`, migration 0017).
+
 **Not built (do not assume it exists):**
 
-- **Frontend UI.** Only the typed API client exists. Still to build: the
-  lecturer *Materials* tab (list, review/edit view with transcript side-by-side,
-  publish and export menu, book builder, settings, Compare screen) and the
-  student reading view with export buttons.
-- **Separate worker process** (spec Phase 0). Material jobs run in the API
-  process through the existing `ai_worker::run_loop`, like every other job.
-- **Provider batch mode** for materials. Jobs run interactively, ordered after
-  other work, with the first draft delayed 4 minutes after the lecture so
-  chapters and the concept map exist. `batch.rs` would need a materials-aware
-  path (`prepare_text_job` does not know these job types).
-- **Signed export URLs.** `StorageAdapter` has no presign, so
-  `GET .../materials/export` streams the file (cached in object storage).
-- **Email attachments.** The email module has no attachment support; email is
-  link-only.
-- **Plug-in settings API.** `material_plugin_settings` and
-  `registry::resolve_setting` / `is_enabled` exist and are honoured by the
-  generator loop, but no endpoint edits them yet.
-- **Real graphics for the concept-map figure.** Figures carry alt text and a
-  text outline; the 3D map is not drawn into PDF/DOCX.
-- **EPUB, LaTeX export, LMS push, slide upload** (spec Phase 6).
-- **pgvector paths** (`material_embed` job, vector alignment) are unit-tested
-  with synthetic vectors but were not run against a real pgvector/embedding
-  provider; the lexical comparison path was run for real.
+- **Native LMS integrations** (Canvas/Moodle/Blackboard APIs): the webhook is
+  the generic hook; each LMS needs its own connector on the receiving side.
+- **PDF and legacy `.ppt` slides**: no text extractor; export to `.pptx` or
+  paste the text. Slides are text only (images are not read).
+- **Institution-wide plug-in settings UI**: course overrides have an API and
+  UI; `scope = 'global'` rows are managed in the database.
 
 ## Map
 
@@ -48,7 +82,7 @@ post-lecture trigger, typed TypeScript client (`src/lib/api/materials.ts`).
 | `registry.rs` | Plug-in traits (`Generator`, `Renderer`, `DeliveryChannel`, `Analyzer`, `Template`) and `Registry::builtin()` |
 | `prompts.rs` | Pure generation logic: prompts, tolerant parsing, grounding check, repair, locked-block merge |
 | `generate.rs` | The `ai_jobs` pipeline and built-in generators |
-| `render/` | `html`, `markdown`, `docx` (hand-built OOXML), `pdf` (headless Chromium) |
+| `render/` | `html`, `markdown`, `docx` (hand-built OOXML), `pdf` (headless Chromium), `epub`, `latex`, `svg` (diagrams) |
 | `book.rs` | Course book assembly (pure) and persistence |
 | `delivery.rs` | `in_app`, `link`, `email` channels; delivery requests and processing |
 | `compare.rs` | Alignment, block diff, report, `material_embed` job, analyzer |
@@ -102,11 +136,14 @@ Lecturer, per lecture (`{code}` = session short code):
 | `POST .../materials/sections/{block_id}/regenerate` | rewrite one section with an instruction |
 | `POST .../materials/publish` | publish; `{deliver: ["email"], message}` |
 | `POST .../materials/unpublish` | hide (`{archive: true}` to archive) |
-| `GET .../materials/export?format=pdf&version=<id or draft>` | download |
+| `GET .../materials/export?format=pdf&version=<id or draft>[&mode=url]` | download, or a signed URL |
+| `GET .../materials/transcript` | transcript lines for review |
+| `PUT .../materials/slides`, `PUT .../materials/slides/pptx` | slides/notes as text, or a `.pptx` upload |
 | `GET .../materials/versions/{id}` | one version |
 
 Course level: `GET /materials/capabilities`, `GET /courses/{id}/materials`,
-`GET/PUT /courses/{id}/materials/settings`, `GET/PUT /courses/{id}/book`,
+`GET/PUT /courses/{id}/materials/settings`,
+`GET /courses/{id}/materials/plugins`, `PUT|DELETE /courses/{id}/materials/plugins/{kind}/{plugin_id}`, `GET/PUT /courses/{id}/book`,
 `POST .../book/rebuild`, `POST .../book/publish`, `GET .../book/export`,
 `POST /courses/{id}/compare?a=&b=&narrative=`, `GET /courses/{id}/comparisons`,
 `GET /comparisons/{id}`.
@@ -129,7 +166,7 @@ level, depth, language, tone, template, seed from previous offering.
 ## Testing
 
 ```
-cargo test                                   # 80 unit tests, no database needed
+cargo test                                   # 89 unit tests, no database needed
 TEST_DATABASE_URL=postgres://... cargo test --test materials_pipeline
 GEMINI_API_KEY=... HTTP_EXTRA_CA_FILE=... TEST_DATABASE_URL=... \
   cargo test --test materials_pipeline real_model -- --ignored --nocapture

@@ -90,6 +90,27 @@ async fn submit_queued(state: &AppState) -> Result<(), String> {
 
     let mut groups: HashMap<String, Vec<(PendingJob, BatchItem)>> = HashMap::new();
     for job in jobs {
+        // Lecture-material sections have their own request builder.
+        if job.job_type == "material_section" {
+            match crate::materials::generate::prepare_section_request(state, pool, &job).await {
+                Ok(Some(request)) => {
+                    let model = provider.model_for(request.task, request.tier);
+                    groups.entry(model).or_default().push((
+                        job.clone(),
+                        BatchItem {
+                            key: job.id.to_string(),
+                            request,
+                        },
+                    ));
+                }
+                // Not batchable (regeneration, stale generation): run it live.
+                Ok(None) => requeue_interactive(pool, job.id, "not batchable").await,
+                Err(message) => {
+                    let _ = mark_failed(pool, job.id, &message).await;
+                }
+            }
+            continue;
+        }
         match prepare_text_job(state, pool, &job).await {
             Ok(prepared) => {
                 let model = provider.model_for(prepared.request.task, prepared.request.tier);
@@ -222,6 +243,32 @@ async fn handle_results(
         .flatten();
         let Some(job) = job else { continue };
         handled.push(job.id);
+        if job.job_type == "material_section" {
+            match outcome {
+                Ok(output) => {
+                    match crate::materials::generate::check_section_answer(&output.text) {
+                        Ok(()) => {
+                            match crate::materials::generate::finish_section_job(
+                                state,
+                                pool,
+                                &job,
+                                &output.text,
+                            )
+                            .await
+                            {
+                                Ok(()) => {
+                                    let _ = mark_completed(pool, job.id, None).await;
+                                }
+                                Err(message) => requeue_interactive(pool, job.id, &message).await,
+                            }
+                        }
+                        Err(reason) => requeue_interactive(pool, job.id, &reason).await,
+                    }
+                }
+                Err(error) => requeue_interactive(pool, job.id, &error.to_string()).await,
+            }
+            continue;
+        }
         match outcome {
             Ok(output) => match check_output(&job.job_type, &output.text) {
                 Ok(_) => {

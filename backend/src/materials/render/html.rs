@@ -123,7 +123,7 @@ code {{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9em; 
     )
 }
 
-fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool) {
+pub(crate) fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool) {
     let id = anchor(block);
     let badge = if block.origin == Origin::Supplemented {
         "<span class=\"badge\" title=\"Added by the AI beyond the lecture\">supplemented</span>"
@@ -206,13 +206,21 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             caption,
             alt,
             text_fallback,
+            diagram,
             ..
         } => {
             out.push_str(&format!(
                 "<figure id=\"{id}\" role=\"group\" aria-label=\"{}\">",
                 escape(alt)
             ));
+            let drawn = diagram
+                .as_ref()
+                .and_then(|d| super::svg::render_diagram(d, alt));
+            if let Some(svg) = &drawn {
+                out.push_str(svg);
+            }
             match text_fallback {
+                _ if drawn.is_some() => {}
                 Some(text) if !text.trim().is_empty() => {
                     out.push_str("<ul>");
                     for line in text.lines().filter(|l| !l.trim().is_empty()) {
@@ -288,7 +296,7 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             for item in items {
                 out.push_str(&format!("<li>{}", inline(&item.title)));
                 if let Some(note) = &item.note {
-                    out.push_str(&format!(" &mdash; {}", inline(note)));
+                    out.push_str(&format!(" &#8212; {}", inline(note)));
                 }
                 out.push_str("</li>");
             }

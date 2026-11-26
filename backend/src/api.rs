@@ -531,6 +531,19 @@ pub fn router(state: AppState) -> Router {
             post(handlers::materials::unpublish),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides",
+            axum::routing::put(handlers::materials::put_slides),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides/pptx",
+            axum::routing::put(handlers::materials::upload_slides)
+                .layer(axum::extract::DefaultBodyLimit::max(16 * 1024 * 1024)),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/materials/transcript",
+            get(handlers::materials::lecture_transcript),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/materials/export",
             get(handlers::materials::export_material),
         )
@@ -541,6 +554,15 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/courses/{course_id}/materials",
             get(handlers::materials::list_course_materials),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/materials/plugins",
+            get(handlers::materials::list_plugins),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/materials/plugins/{kind}/{plugin_id}",
+            axum::routing::put(handlers::materials::put_plugin)
+                .delete(handlers::materials::reset_plugin),
         )
         .route(
             "/api/v1/courses/{course_id}/materials/settings",
