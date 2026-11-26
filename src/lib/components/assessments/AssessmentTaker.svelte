@@ -278,13 +278,13 @@
   }}
 />
 
-<div class="taker" style="--ok:#5fae7a;--bad:#d9715c;--warn:#e3a23c;">
+<div class="taker as-scope" style="--ok:#5fae7a;--bad:#d9715c;--warn:#e3a23c;">
   {#if stage === 'rules' || stage === 'starting' || stage === 'error'}
-    <div class="panel rules">
+    <div class="surface rules">
       <button class="back" type="button" onclick={() => onExit()}>
         <ArrowLeft size={15} /> Assessments
       </button>
-      <p class="eyebrow">
+      <p class="eyebrow-line">
         {assessment.course_code} · {assessment.kind}
       </p>
       <h2>{assessment.title}</h2>
@@ -350,7 +350,7 @@
       </ul>
 
       {#if stage === 'error'}
-        <p class="error" role="alert">{errorMessage}</p>
+        <p class="oops" role="alert">{errorMessage}</p>
       {/if}
 
       <div class="actions">
@@ -370,7 +370,7 @@
     </div>
   {:else if engine && es}
     {#if finished}
-      <div class="panel done">
+      <div class="surface done">
         <span class="done-icon" data-state={es.phase}>
           {#if es.phase === 'submitted'}<CheckCircle2
               size={34}
@@ -411,7 +411,7 @@
         >
       </div>
     {:else}
-      <header class="bar">
+      <header class="topbar">
         <div class="bar-left">
           <strong>{engine.view.title}</strong>
           <span class="muted">Attempt {engine.view.attempt_no}</span>
@@ -460,7 +460,7 @@
       {/if}
 
       {#if settings.require_fullscreen && !fullscreenOk}
-        <div class="panel gate">
+        <div class="surface gate">
           <Maximize size={22} />
           <h3>Fullscreen is required</h3>
           <p>
@@ -499,7 +499,7 @@
             {#each questions as q, i (q.id)}
               {#if !settings.one_per_page || i === current}
                 <fieldset
-                  class="q panel"
+                  class="q surface"
                   id={`q-${q.id}`}
                   onfocusin={() => touch(q)}
                 >
@@ -546,7 +546,7 @@
                       {/each}
                     </div>
                   {:else if q.question_type === 'mcq_multi'}
-                    <p class="hint">Select all that apply.</p>
+                    <p class="help">Select all that apply.</p>
                     <div class="options">
                       {#each q.options as option (option.id)}
                         {@const selected =
@@ -564,7 +564,7 @@
                     </div>
                   {:else if q.question_type === 'short_answer'}
                     <input
-                      class="text"
+                      class="inp"
                       type="text"
                       maxlength={q.max_chars ?? 300}
                       value={responses[q.id]?.text ?? ''}
@@ -575,14 +575,14 @@
                     />
                   {:else}
                     <textarea
-                      class="text long"
+                      class="inp long"
                       rows="8"
                       value={responses[q.id]?.text ?? ''}
                       placeholder="Write your answer"
                       oninput={(e) =>
                         answer(q, { text: e.currentTarget.value })}></textarea>
                     <p
-                      class="hint"
+                      class="help"
                       class:over={q.max_words &&
                         words(responses[q.id]?.text) > q.max_words}
                     >
@@ -636,7 +636,7 @@
       {#if confirming}
         <div class="scrim" role="presentation">
           <div
-            class="dialog panel"
+            class="dialog surface"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="sub-title"
@@ -677,7 +677,7 @@
     margin: 0 auto;
     width: 100%;
   }
-  .panel {
+  .surface {
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -701,7 +701,7 @@
     cursor: pointer;
     padding: 0;
   }
-  .eyebrow {
+  .eyebrow-line {
     margin: 0;
     font-size: 11px;
     font-weight: 600;
@@ -761,7 +761,7 @@
     margin-top: 3px;
     color: var(--text-accent);
   }
-  .error {
+  .oops {
     color: var(--bad);
     margin: 0;
   }
@@ -771,7 +771,7 @@
     justify-content: flex-end;
     flex-wrap: wrap;
   }
-  .bar {
+  .topbar {
     position: sticky;
     top: calc(var(--app-top-offset, 0px) + 4px);
     z-index: 5;
@@ -930,7 +930,7 @@
     margin-top: 3px;
     accent-color: var(--fill-accent);
   }
-  .text {
+  .inp {
     width: 100%;
     padding: 11px 13px;
     border-radius: var(--radius-md);
@@ -942,22 +942,22 @@
     text-transform: none;
     letter-spacing: 0;
   }
-  .text.long {
+  .inp.long {
     resize: vertical;
     min-height: 160px;
     line-height: 1.5;
   }
-  .text:focus {
+  .inp:focus {
     outline: none;
     border-color: var(--border-strong);
     box-shadow: var(--focus-ring);
   }
-  .hint {
+  .help {
     margin: 0;
     font-size: 12.5px;
     color: var(--text-tertiary);
   }
-  .hint.over {
+  .help.over {
     color: var(--warn);
   }
   .q-actions {

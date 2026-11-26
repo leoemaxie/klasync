@@ -92,7 +92,7 @@
 {#if loading && !report}
   <Spinner />
 {:else if error && !report}
-  <p class="error" role="alert">{error}</p>
+  <p class="oops" role="alert">{error}</p>
 {:else if report}
   <div class="rep">
     {#if report.provisional}
@@ -116,7 +116,7 @@
     </section>
 
     {#if report.summary}
-      <section class="panel">
+      <section class="surface">
         <h4>Scores</h4>
         <dl class="stats">
           <div>
@@ -147,7 +147,7 @@
               title={`${pct(bin.from)}–${pct(bin.to)}: ${bin.count}`}
             >
               <span class="count">{bin.count || ''}</span>
-              <span class="bar" style={`height:${(bin.count / maxBin) * 100}%`}
+              <span class="hbar" style={`height:${(bin.count / maxBin) * 100}%`}
               ></span>
               <span class="lab">{Math.round(bin.from * 100)}</span>
             </div>
@@ -158,7 +158,7 @@
       <p class="empty">No fully marked attempts yet.</p>
     {/if}
 
-    <section class="panel">
+    <section class="surface">
       <h4>Questions</h4>
       <div class="tablewrap">
         <table>
@@ -207,14 +207,14 @@
           </tbody>
         </table>
       </div>
-      <p class="hint">
+      <p class="help">
         “Separates” compares the top and bottom 27% of the class; it needs at
         least 10 attempts.
       </p>
     </section>
 
     {#if report.topics.length}
-      <section class="panel">
+      <section class="surface">
         <h4>Topics, weakest first</h4>
         <ul class="topics">
           {#each report.topics as t (t.topic)}
@@ -231,9 +231,9 @@
       </section>
     {/if}
 
-    <section class="panel">
+    <section class="surface">
       <h4>Who has taken it</h4>
-      <p class="hint">Status only. Scores stay blind until you finalise.</p>
+      <p class="help">Status only. Scores stay blind until you finalise.</p>
       <div class="tablewrap">
         <table>
           <thead
@@ -260,9 +260,9 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="surface">
       <h4>Integrity signals</h4>
-      <p class="hint">
+      <p class="help">
         {report.integrity.attempts_with_flags} with flags · {report.integrity
           .offline_submits} submitted offline ·
         {report.integrity.late_submits} late. Flags are for you to review, never penalties.
@@ -297,7 +297,7 @@
     </section>
 
     {#if revealed}
-      <section class="panel">
+      <section class="surface">
         <div class="named-head">
           <h4>Results by student</h4>
           <Button variant="outline" size="sm" onclick={csv}
@@ -329,7 +329,7 @@
         </div>
       </section>
     {/if}
-    {#if error}<p class="error" role="alert">{error}</p>{/if}
+    {#if error}<p class="oops" role="alert">{error}</p>{/if}
   </div>
 {/if}
 
@@ -339,7 +339,7 @@
     flex-direction: column;
     gap: 14px;
   }
-  .panel {
+  .surface {
     padding: 16px;
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
@@ -411,7 +411,7 @@
     gap: 3px;
     min-width: 0;
   }
-  .bar {
+  .hbar {
     width: 100%;
     background: var(--fill-accent);
     border-radius: 4px 4px 0 0;
@@ -473,7 +473,7 @@
   .st[data-s='not_started'] {
     color: var(--text-tertiary);
   }
-  .hint {
+  .help {
     margin: 8px 0 0;
     font-size: 12.5px;
     color: var(--text-tertiary);
@@ -517,7 +517,7 @@
   .empty {
     color: var(--text-tertiary);
   }
-  .error {
+  .oops {
     color: #d9715c;
   }
 </style>

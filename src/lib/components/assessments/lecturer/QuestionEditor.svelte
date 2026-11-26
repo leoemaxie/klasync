@@ -163,7 +163,7 @@
     `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 </script>
 
-<article class="q" class:invalid={!!problem}>
+<article class="q as-scope" class:invalid={!!problem}>
   <header>
     <span class="num">{index + 1}</span>
     <span class="type">{QUESTION_TYPE_LABEL[type]}</span>
@@ -221,7 +221,7 @@
       >
       <button
         type="button"
-        class="icon danger"
+        class="icon is-danger"
         aria-label="Delete question"
         onclick={onDelete}><Trash2 size={15} /></button
       >
@@ -260,7 +260,7 @@
             onchange={(e) => setCorrect(option.id, e.currentTarget.checked)}
           />
           <input
-            class="text"
+            class="inp"
             type="text"
             bind:value={option.text}
             disabled={!editable}
@@ -363,7 +363,7 @@
       {#each rubric as criterion (criterion.id)}
         <div class="opt">
           <input
-            class="text"
+            class="inp"
             type="text"
             bind:value={criterion.criterion}
             disabled={!editable}
@@ -560,7 +560,7 @@
     opacity: 0.35;
     cursor: default;
   }
-  .icon.danger:hover {
+  .icon.is-danger:hover {
     color: #d9715c;
   }
   .field {
@@ -589,7 +589,7 @@
     color: #e3a23c;
   }
   textarea,
-  input.text,
+  input.inp,
   input[type='number'],
   input[type='text'],
   select {
@@ -616,7 +616,7 @@
     gap: 8px;
     align-items: center;
   }
-  .opt .text {
+  .opt .inp {
     flex: 1;
   }
   .num-in {

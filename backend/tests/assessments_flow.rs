@@ -271,6 +271,22 @@ async fn full_flow_with_offline_sync_blind_grading_and_reports() {
     )
     .await;
 
+    // ---- the lecturer can pick this lecture to create from ----
+    let lectures = authoring::lecturer_lectures(pool, fx.course, fx.lecturer)
+        .await
+        .unwrap();
+    assert_eq!(lectures.len(), 1);
+    assert_eq!(lectures[0].id, fx.session.id);
+    assert!(!lectures[0].has_transcript, "the fixture has no captions");
+    assert_eq!(lectures[0].assessments, 1);
+    // Another lecturer sees none of them.
+    assert!(
+        authoring::lecturer_lectures(pool, fx.course, Uuid::now_v7())
+            .await
+            .unwrap()
+            .is_empty()
+    );
+
     // ---- publish is versioned and idempotent ----
     let a = reload(pool, a.id).await;
     let p1 = authoring::publish(pool, &a, fx.lecturer).await.unwrap();

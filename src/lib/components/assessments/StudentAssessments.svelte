@@ -164,7 +164,7 @@
         <h3>Saved on this device</h3>
         <ul class="list">
           {#each savedHere as a (a.id)}
-            <li class="row panel">
+            <li class="row surface">
               <div class="main">
                 <strong>{a.view.title}</strong>
                 <span class="meta">
@@ -199,7 +199,7 @@
       {#each groups as group (group.id)}
         <section class="course">
           <div class="course-head">
-            <h3><span class="code">{group.code}</span> {group.title}</h3>
+            <h3><span class="course-code">{group.code}</span> {group.title}</h3>
             <button
               type="button"
               class="link"
@@ -215,7 +215,7 @@
           {/if}
           <ul class="list">
             {#each group.items as item (item.id)}
-              <li class="row panel">
+              <li class="row surface">
                 <div class="main">
                   <strong>{item.title}</strong>
                   <span class="meta">
@@ -294,7 +294,7 @@
     font-size: 15px;
     font-weight: 500;
   }
-  .code {
+  .course-code {
     color: var(--text-accent);
     font-weight: 600;
     margin-right: 6px;
@@ -331,7 +331,7 @@
     flex-direction: column;
     gap: 8px;
   }
-  .panel {
+  .surface {
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);

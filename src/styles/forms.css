@@ -181,3 +181,44 @@ textarea:focus {
     margin-top: var(--spacing-20);
   }
 }
+
+/* ── Assessments ─────────────────────────────────────────────
+   The global input rules above give every input full width, a top margin
+   and an underline-only look. Inside assessment screens, radios and
+   checkboxes keep their natural size and fields sit flush in flex rows. */
+.as-scope input[type='radio'],
+.as-scope input[type='checkbox'] {
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--fill-accent);
+}
+.as-scope input:not([type='radio']):not([type='checkbox']),
+.as-scope textarea,
+.as-scope select {
+  margin: 0;
+}
+.as-scope input,
+.as-scope textarea,
+.as-scope select {
+  text-decoration: none;
+}
+/* Sentences in checkbox, radio and option labels read in normal case; only short field labels stay uppercase. */
+.as-scope label.check,
+.as-scope label.inline,
+.as-scope label.level,
+.as-scope label.level *,
+.as-scope label.option,
+.as-scope label.chip,
+.as-scope .seg label {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.as-scope label.check,
+.as-scope label.inline,
+.as-scope label.option {
+  font-size: 14px;
+}

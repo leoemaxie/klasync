@@ -98,10 +98,10 @@
     }}
   />
 {:else}
-  <div class="tab">
+  <div class="tab as-scope">
     <header class="head">
       <div>
-        <p class="eyebrow">Quizzes and homework</p>
+        <p class="eyebrow-line">Quizzes and homework</p>
         <h2>Assessments</h2>
         {#if course}<p class="sub">{course.code} · {course.title}</p>{/if}
       </div>
@@ -173,7 +173,7 @@
         </form>
       {/if}
 
-      {#if error}<p class="error" role="alert">{error}</p>{/if}
+      {#if error}<p class="oops" role="alert">{error}</p>{/if}
 
       {#if loading}
         <SkeletonCard lines={3} label="Loading assessments…" />
@@ -224,7 +224,7 @@
     padding-bottom: 14px;
     border-bottom: 1px solid var(--border-subtle);
   }
-  .eyebrow {
+  .eyebrow-line {
     margin: 0 0 2px;
     font-size: 11px;
     font-weight: 600;
@@ -278,7 +278,7 @@
     justify-content: flex-end;
   }
   .note,
-  .error {
+  .oops {
     grid-column: 1 / -1;
     margin: 0;
     font-size: 13px;
@@ -286,7 +286,7 @@
   .note {
     color: var(--text-tertiary);
   }
-  .error {
+  .oops {
     color: #d9715c;
   }
   .list {

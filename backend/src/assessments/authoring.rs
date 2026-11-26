@@ -754,3 +754,37 @@ pub async fn roster_status(pool: &PgPool, assessment: &AssessmentRow) -> Res<Vec
     .fetch_all(pool)
     .await?)
 }
+
+// ---- lectures to create from ------------------------------------------------------------------------
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct LectureOption {
+    pub id: Uuid,
+    pub title: String,
+    pub short_code: String,
+    pub status: String,
+    pub started_at: Option<DateTime<Utc>>,
+    pub has_transcript: bool,
+    /// How many assessments already hang off this lecture.
+    pub assessments: i64,
+}
+
+/// A lecturer's lectures in a course, newest first.
+pub async fn lecturer_lectures(
+    pool: &PgPool,
+    course_id: Uuid,
+    lecturer_id: Uuid,
+) -> Res<Vec<LectureOption>> {
+    Ok(sqlx::query_as::<_, LectureOption>(
+        "select s.id, s.title, s.short_code, s.status::text as status, s.started_at,
+                exists(select 1 from caption_chunks c where c.session_id = s.id and not c.is_hidden) as has_transcript,
+                (select count(*) from assessments a where a.session_id = s.id) as assessments
+         from lecture_sessions s
+         where s.course_id = $1 and s.deleted_at is null and s.lecturer_id = $2
+         order by s.started_at desc nulls last, s.id desc limit 100",
+    )
+    .bind(course_id)
+    .bind(lecturer_id)
+    .fetch_all(pool)
+    .await?)
+}

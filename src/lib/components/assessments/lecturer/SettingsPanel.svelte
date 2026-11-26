@@ -67,8 +67,7 @@
         due_at: fromLocalInput(due),
         closes_at: fromLocalInput(closes),
       });
-      ok = true;
-      message = 'Settings saved.';
+      // The parent confirms: this panel is rebuilt on save, which would erase its own message.
       onSaved();
     } catch (e) {
       message = e instanceof Error ? e.message : 'Could not save';
@@ -79,7 +78,7 @@
 </script>
 
 <form
-  class="settings"
+  class="settings as-scope"
   onsubmit={(e) => {
     e.preventDefault();
     void save();
@@ -332,7 +331,7 @@
     </div>
   </fieldset>
 
-  <div class="bar">
+  <div class="savebar">
     {#if message}<span class:ok role="status">{message}</span>{/if}
     <Button variant="accent" type="submit" disabled={!editable || saving}>
       {saving ? 'Saving…' : 'Save settings'}
@@ -459,17 +458,17 @@
     font-size: 12.5px;
     color: var(--text-tertiary);
   }
-  .bar {
+  .savebar {
     display: flex;
     gap: 14px;
     justify-content: flex-end;
     align-items: center;
   }
-  .bar .ok {
+  .savebar .ok {
     color: #5fae7a;
     font-size: 13px;
   }
-  .bar span:not(.ok) {
+  .savebar span:not(.ok) {
     color: #d9715c;
     font-size: 13px;
   }

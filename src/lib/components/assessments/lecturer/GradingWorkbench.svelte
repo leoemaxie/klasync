@@ -173,7 +173,7 @@
   const rows = $derived(pendingOnly ? shown.filter((a) => !graded(a)) : shown);
 </script>
 
-<div class="wb">
+<div class="wb as-scope">
   <p class="blind">
     <EyeOff size={15} /> You're marking blind. Answers carry a code, not a name, and
     names appear only after you finalise.
@@ -221,10 +221,10 @@
     </div>
 
     {#if job?.status === 'failed'}
-      <p class="error" role="alert">AI marking failed: {job.error}</p>
+      <p class="oops" role="alert">AI marking failed: {job.error}</p>
     {/if}
     {#if notice}<p class="notice" role="status">{notice}</p>{/if}
-    {#if error}<p class="error" role="alert">{error}</p>{/if}
+    {#if error}<p class="oops" role="alert">{error}</p>{/if}
 
     {#if question}
       <section class="qcard">
@@ -534,7 +534,7 @@
     color: var(--text-tertiary);
     font-size: 14px;
   }
-  .error {
+  .oops {
     margin: 0;
     color: #d9715c;
     font-size: 13.5px;

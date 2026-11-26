@@ -70,9 +70,9 @@
   {:else if !result}
     <Spinner />
   {:else}
-    <header class="head panel">
+    <header class="head surface">
       <div>
-        <p class="eyebrow">Attempt {result.attempt_no}</p>
+        <p class="eyebrow-line">Attempt {result.attempt_no}</p>
         <h2>{result.title || title}</h2>
       </div>
       <div class="score">
@@ -101,7 +101,7 @@
     {/if}
 
     {#each result.questions as q, i (q.id)}
-      <article class="q panel" data-correct={q.correct}>
+      <article class="q surface" data-correct={q.correct}>
         <div class="q-head">
           <span class="num">Question {i + 1}</span>
           {#if q.correct === true}
@@ -149,7 +149,7 @@
     margin: 0 auto;
     width: 100%;
   }
-  .panel {
+  .surface {
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -175,7 +175,7 @@
     flex-wrap: wrap;
     align-items: center;
   }
-  .eyebrow {
+  .eyebrow-line {
     margin: 0;
     font-size: 11px;
     font-weight: 600;

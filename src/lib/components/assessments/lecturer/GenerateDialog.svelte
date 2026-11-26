@@ -99,7 +99,7 @@
 
 <div class="scrim" role="presentation">
   <div
-    class="dialog"
+    class="dialog as-scope"
     role="dialog"
     aria-modal="true"
     aria-labelledby="gen-title"
@@ -179,7 +179,7 @@
           placeholder="e.g. Fourier's law, convection"
         />
       </label>
-      {#if message}<p class="error" role="alert">{message}</p>{/if}
+      {#if message}<p class="oops" role="alert">{message}</p>{/if}
       <div class="actions">
         <Button variant="ghost" onclick={onClose}>Cancel</Button>
         <Button variant="accent" onclick={start}
@@ -210,8 +210,9 @@
             </li>{/if}
           {#if job?.result?.solve_back_disagreements}
             <li>
-              {job.result.solve_back_disagreements} are marked “Check this”: an independent
-              read of the transcript didn't agree with the key.
+              {job.result.solve_back_disagreements}
+              {job.result.solve_back_disagreements === 1 ? 'is' : 'are'} marked “Check
+              this”: an independent read of the transcript didn't agree with the key.
             </li>
           {/if}
         </ul>
@@ -219,7 +220,7 @@
       </div>
     {:else}
       <div class="status col">
-        <p class="error" role="alert">{message}</p>
+        <p class="oops" role="alert">{message}</p>
         <div class="actions">
           <Button variant="ghost" onclick={onClose}>Close</Button>
           <Button variant="outline" onclick={() => (phase = 'form')}
@@ -379,7 +380,7 @@
     color: var(--text-secondary);
     font-size: 13.5px;
   }
-  .error {
+  .oops {
     color: #d9715c;
     margin: 0;
     font-size: 13.5px;

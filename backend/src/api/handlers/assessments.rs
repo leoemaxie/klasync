@@ -144,32 +144,13 @@ pub async fn course_lectures(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
     Path(course_id): Path<Uuid>,
-) -> Res<Json<Value>> {
+) -> Res<Json<Vec<authoring::LectureOption>>> {
     if !material_store::lecturer_owns_course(state.db_pool(), lecturer.id, course_id).await? {
         return Err(not_found("Course not found"));
     }
-    let rows = sqlx::query_as::<
-        _,
-        (Uuid, String, String, String, Option<chrono::DateTime<Utc>>, bool, i64),
-    >(
-        "select s.id, s.title, s.short_code, s.status::text, s.started_at,
-                exists(select 1 from caption_chunks c where c.session_id = s.id and not c.is_hidden),
-                (select count(*) from assessments a where a.session_id = s.id)
-         from lecture_sessions s
-         where s.course_id = $1 and s.deleted_at is null and s.lecturer_id = $2
-         order by s.started_at desc nulls last, s.created_at desc limit 100",
-    )
-    .bind(course_id)
-    .bind(lecturer.id)
-    .fetch_all(state.db_pool())
-    .await?;
-    Ok(Json(json!(rows
-        .into_iter()
-        .map(|(id, title, short_code, status, started_at, has_transcript, assessments)| json!({
-            "id": id, "title": title, "short_code": short_code, "status": status,
-            "started_at": started_at, "has_transcript": has_transcript, "assessments": assessments,
-        }))
-        .collect::<Vec<_>>())))
+    Ok(Json(
+        authoring::lecturer_lectures(state.db_pool(), course_id, lecturer.id).await?,
+    ))
 }
 
 pub async fn get(

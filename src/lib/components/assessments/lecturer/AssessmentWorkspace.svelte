@@ -209,7 +209,7 @@
   >
 
   {#if loadError}
-    <p class="error" role="alert">{loadError}</p>
+    <p class="oops" role="alert">{loadError}</p>
   {:else if !detail || !a}
     <Spinner />
   {:else}
@@ -331,7 +331,10 @@
           assessment={a}
           settings={detail.settings}
           {editable}
-          onSaved={load}
+          onSaved={async () => {
+            await load();
+            say('Settings saved.');
+          }}
         />
       {/key}
     {:else if tab === 'grading'}
@@ -468,7 +471,7 @@
     color: var(--text-tertiary);
     font-size: 14px;
   }
-  .error {
+  .oops {
     color: #d9715c;
   }
 </style>

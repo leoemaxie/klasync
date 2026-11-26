@@ -43,7 +43,7 @@
                 <span class="val">{a.percent ?? '–'}%</span>
               </div>
               <div
-                class="bar"
+                class="meter"
                 role="img"
                 aria-label={`${a.title}: ${a.percent ?? 0} percent`}
               >
@@ -63,7 +63,7 @@
                 <span class="val">{pct(t.mastery)}</span>
               </div>
               <div
-                class="bar topic"
+                class="meter topic"
                 class:weak={t.mastery < 0.5}
                 role="img"
                 aria-label={`${t.topic}: ${pct(t.mastery)}`}
@@ -118,22 +118,22 @@
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
   }
-  .bar {
+  .meter {
     height: 8px;
     border-radius: 99px;
     background: var(--surface-inset);
     overflow: hidden;
   }
-  .bar span {
+  .meter span {
     display: block;
     height: 100%;
     background: var(--fill-accent);
     border-radius: 99px;
   }
-  .bar.topic span {
+  .meter.topic span {
     background: #5fae7a;
   }
-  .bar.weak span {
+  .meter.weak span {
     background: #e3a23c;
   }
 </style>
