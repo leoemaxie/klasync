@@ -77,7 +77,7 @@ pub async fn queue_study_jobs(
         "interactive"
     };
     let mut created = 0;
-    for job_type in ["chapters", "flashcards", "visualization"] {
+    for job_type in ["chapters", "flashcards", "quiz", "visualization"] {
         if insert_job(pool, session_id, lecturer_id, job_type, mode)
             .await
             .map_err(|error| error.to_string())?
