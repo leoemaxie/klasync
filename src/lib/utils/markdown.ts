@@ -18,18 +18,20 @@ export function renderMarkdown(md: string): string {
   }
 
   function inlineFormat(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>')
-      // [mm:ss] stamps become buttons that replay that moment of the lecture.
-      .replace(
-        /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g,
-        '<button type="button" class="md-time" data-seek="$1" title="Play from $1">$1</button>'
-      );
+    return (
+      text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>')
+        // [mm:ss] stamps become buttons that replay that moment of the lecture.
+        .replace(
+          /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g,
+          '<button type="button" class="md-time" data-seek="$1" title="Play from $1">$1</button>'
+        )
+    );
   }
 
   for (const rawLine of lines) {
@@ -39,7 +41,9 @@ export function renderMarkdown(md: string): string {
     if (trimmed.startsWith('```')) {
       closeList();
       if (inCodeBlock) {
-        out.push(`<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`);
+        out.push(
+          `<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`
+        );
         codeBuffer = [];
         inCodeBlock = false;
       } else {
@@ -48,7 +52,12 @@ export function renderMarkdown(md: string): string {
       continue;
     }
     if (inCodeBlock) {
-      codeBuffer.push(rawLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      codeBuffer.push(
+        rawLine
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+      );
       continue;
     }
 
@@ -70,7 +79,9 @@ export function renderMarkdown(md: string): string {
       out.push(`<h3 class="md-h3">${inlineFormat(trimmed.slice(4))}</h3>`);
     } else if (trimmed.startsWith('> ')) {
       closeList();
-      out.push(`<blockquote class="md-quote">${inlineFormat(trimmed.slice(2))}</blockquote>`);
+      out.push(
+        `<blockquote class="md-quote">${inlineFormat(trimmed.slice(2))}</blockquote>`
+      );
     } else if (/^[-*]\s+/.test(trimmed)) {
       // Unordered list (skip if content is empty)
       const content = trimmed.replace(/^[-*]\s+/, '').trim();
@@ -80,7 +91,9 @@ export function renderMarkdown(md: string): string {
           out.push('<ul class="md-ul">');
           inList = 'ul';
         }
-        out.push(`<li class="md-li"><span class="md-bullet"></span><span class="md-li-content">${inlineFormat(content)}</span></li>`);
+        out.push(
+          `<li class="md-li"><span class="md-bullet"></span><span class="md-li-content">${inlineFormat(content)}</span></li>`
+        );
       }
     } else if (/^\d+\.\s+/.test(trimmed)) {
       // Ordered list
@@ -92,7 +105,9 @@ export function renderMarkdown(md: string): string {
           out.push('<ol class="md-ol">');
           inList = 'ol';
         }
-        out.push(`<li class="md-li-num"><span class="md-num-badge">${num}</span><span class="md-li-content">${inlineFormat(content)}</span></li>`);
+        out.push(
+          `<li class="md-li-num"><span class="md-num-badge">${num}</span><span class="md-li-content">${inlineFormat(content)}</span></li>`
+        );
       }
     } else {
       closeList();
@@ -102,7 +117,9 @@ export function renderMarkdown(md: string): string {
 
   closeList();
   if (inCodeBlock && codeBuffer.length) {
-    out.push(`<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`);
+    out.push(
+      `<pre class="md-code-block"><code>${codeBuffer.join('\n')}</code></pre>`
+    );
   }
 
   return out.join('\n');
