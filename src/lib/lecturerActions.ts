@@ -3,6 +3,7 @@ import {
   endSession as apiEndSession,
   getParticipants,
   publishCaption as apiPublishCaption,
+  reconcileAttendance,
 } from './api';
 import { persist } from './rosterUtils';
 import { refreshCaptions } from './studentActions';
@@ -102,6 +103,8 @@ export async function endSession(state: SessionState) {
   state.isSaving = true;
   try {
     await apiEndSession(state.session.code);
+    // Score attendance from heartbeats so course analytics are current.
+    await reconcileAttendance(state.session.code).catch(() => undefined);
     state.session = { ...state.session, live: false };
     persist(state);
   } catch (error) {
