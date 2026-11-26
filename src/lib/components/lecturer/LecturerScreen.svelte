@@ -5,6 +5,7 @@
   import CourseSetupTab from './CourseSetupTab.svelte';
   import DeviceSetupTab from './DeviceSetupTab.svelte';
   import LecturerAnalyticsPanel from './LecturerAnalyticsPanel.svelte';
+  import LecturerAssessmentsTab from '$lib/components/assessments/LecturerAssessmentsTab.svelte';
   import SessionPanel from '$lib/components/session/SessionPanel.svelte';
   import CaptionControlPanel from '$lib/components/session/CaptionControlPanel.svelte';
   import AttendancePanel from '$lib/components/session/AttendancePanel.svelte';
@@ -36,6 +37,7 @@
     'session',
     ...(appState.session?.live ? (['live'] as TabKey[]) : []),
     ...(appState.session ? (['attendance'] as TabKey[]) : []),
+    'assessments',
     'analytics',
   ]);
 
@@ -204,6 +206,8 @@
         participants={appState.session.participants}
         onRefreshAttendance={() => refreshAttendance(appState)}
       />
+    {:else if activeTab === 'assessments'}
+      <LecturerAssessmentsTab course={appState.activeCourse} />
     {:else if activeTab === 'analytics'}
       <LecturerAnalyticsPanel
         courseId={appState.courseId || appState.activeCourse?.id || ''}
