@@ -10,7 +10,9 @@ use zip::{write::SimpleFileOptions, ZipWriter};
 use super::outline;
 use crate::materials::{
     blocks::{parse_inline, Block, BlockKind, CalloutVariant, MaterialDoc, Origin},
-    registry::{RenderContext, RenderError, RenderInput, RenderOptions, RenderedFile, Renderer, Template},
+    registry::{
+        RenderContext, RenderError, RenderInput, RenderOptions, RenderedFile, Renderer, Template,
+    },
 };
 
 pub struct DocxRenderer;
@@ -101,7 +103,10 @@ fn list_item(marker: &str, content: &str) -> String {
     para(
         Some("ListItem"),
         "",
-        &format!("{}{content}", run(&format!("{marker}\u{a0}"), false, false, false, "")),
+        &format!(
+            "{}{content}",
+            run(&format!("{marker}\u{a0}"), false, false, false, "")
+        ),
     )
 }
 
@@ -144,7 +149,13 @@ fn table(header: &[String], rows: &[Vec<String>]) -> String {
 
 fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
     let tag = if block.origin == Origin::Supplemented {
-        run(" (supplemented)", false, true, false, "<w:color w:val=\"6B7280\"/>")
+        run(
+            " (supplemented)",
+            false,
+            true,
+            false,
+            "<w:color w:val=\"6B7280\"/>",
+        )
     } else {
         String::new()
     };
@@ -156,7 +167,11 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
             } else {
                 ""
             };
-            out.push_str(&para(Some(&format!("Heading{level}")), brk, &runs(text, false)));
+            out.push_str(&para(
+                Some(&format!("Heading{level}")),
+                brk,
+                &runs(text, false),
+            ));
         }
         BlockKind::Paragraph { text } => {
             out.push_str(&para(None, "", &format!("{}{tag}", runs(text, false))))
@@ -164,14 +179,24 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
         BlockKind::Definition { term, text } => out.push_str(&para(
             Some("Definition"),
             "",
-            &format!("{}{}{tag}", runs(term, true), run(": ", true, false, false, "") + &runs(text, false)),
+            &format!(
+                "{}{}{tag}",
+                runs(term, true),
+                run(": ", true, false, false, "") + &runs(text, false)
+            ),
         )),
         BlockKind::KeyResult { title, text } => out.push_str(&para(
             Some("Callout"),
             "",
             &format!(
                 "{}{}{tag}",
-                run(&format!("{}. ", title.as_deref().unwrap_or("Key result")), true, false, false, ""),
+                run(
+                    &format!("{}. ", title.as_deref().unwrap_or("Key result")),
+                    true,
+                    false,
+                    false,
+                    ""
+                ),
                 runs(text, false)
             ),
         )),
@@ -184,7 +209,10 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
             out.push_str(&para(
                 Some("ExampleTitle"),
                 "",
-                &format!("{}{tag}", run(&format!("Worked example: {title}"), true, false, false, "")),
+                &format!(
+                    "{}{tag}",
+                    run(&format!("Worked example: {title}"), true, false, false, "")
+                ),
             ));
             out.push_str(&para(None, "", &runs(problem, false)));
             for (i, step) in steps.iter().enumerate() {
@@ -194,7 +222,11 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
                 out.push_str(&para(
                     None,
                     "",
-                    &format!("{}{}", run("Answer: ", true, false, false, ""), runs(answer, false)),
+                    &format!(
+                        "{}{}",
+                        run("Answer: ", true, false, false, ""),
+                        runs(answer, false)
+                    ),
                 ));
             }
         }
@@ -210,7 +242,11 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
                 &run(&format!("{latex}{num}"), false, false, false, ""),
             ));
             if let Some(caption) = caption {
-                out.push_str(&para(Some("Caption"), "<w:jc w:val=\"center\"/>", &runs(caption, false)));
+                out.push_str(&para(
+                    Some("Caption"),
+                    "<w:jc w:val=\"center\"/>",
+                    &runs(caption, false),
+                ));
             }
         }
         BlockKind::Figure {
@@ -230,7 +266,11 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
                 }
                 _ => out.push_str(&para(None, "", &runs(alt, false))),
             }
-            out.push_str(&para(Some("Caption"), "", &runs(&format!("Figure. {caption}"), false)));
+            out.push_str(&para(
+                Some("Caption"),
+                "",
+                &runs(&format!("Figure. {caption}"), false),
+            ));
         }
         BlockKind::Table {
             caption,
@@ -252,24 +292,43 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
             out.push_str(&para(
                 Some("Callout"),
                 "",
-                &format!("{}{}{tag}", run(&format!("{label}. "), true, false, false, ""), runs(text, false)),
+                &format!(
+                    "{}{}{tag}",
+                    run(&format!("{label}. "), true, false, false, ""),
+                    runs(text, false)
+                ),
             ));
         }
         BlockKind::ReviewQuestions { questions } => {
-            out.push_str(&para(Some("Heading3"), "", &run("Review questions", false, false, false, "")));
+            out.push_str(&para(
+                Some("Heading3"),
+                "",
+                &run("Review questions", false, false, false, ""),
+            ));
             for (i, q) in questions.iter().enumerate() {
-                out.push_str(&list_item(&format!("{}.", i + 1), &runs(&q.question, false)));
+                out.push_str(&list_item(
+                    &format!("{}.", i + 1),
+                    &runs(&q.question, false),
+                ));
                 if let Some(answer) = &q.answer {
                     out.push_str(&para(
                         Some("ListItem"),
                         "<w:ind w:left=\"1080\"/>",
-                        &format!("{}{}", run("Answer: ", false, true, false, ""), runs(answer, false)),
+                        &format!(
+                            "{}{}",
+                            run("Answer: ", false, true, false, ""),
+                            runs(answer, false)
+                        ),
                     ));
                 }
             }
         }
         BlockKind::FurtherReading { items } => {
-            out.push_str(&para(Some("Heading3"), "", &run("Further reading", false, false, false, "")));
+            out.push_str(&para(
+                Some("Heading3"),
+                "",
+                &run("Further reading", false, false, false, ""),
+            ));
             for item in items {
                 let note = item
                     .note
@@ -287,7 +346,11 @@ fn block_xml(block: &Block, out: &mut String, options: RenderOptions) {
             }
         }
         BlockKind::Summary { points } => {
-            out.push_str(&para(Some("Heading3"), "", &run("Summary", false, false, false, "")));
+            out.push_str(&para(
+                Some("Heading3"),
+                "",
+                &run("Summary", false, false, false, ""),
+            ));
             for point in points {
                 out.push_str(&list_item("\u{2022}", &runs(point, false)));
             }
@@ -300,7 +363,11 @@ fn toc_xml(doc: &MaterialDoc) -> String {
     if entries.is_empty() {
         return String::new();
     }
-    let mut out = para(Some("TocHeading"), "", &run("Contents", false, false, false, ""));
+    let mut out = para(
+        Some("TocHeading"),
+        "",
+        &run("Contents", false, false, false, ""),
+    );
     let last = entries.len() - 1;
     for (i, (level, text, _)) in entries.iter().enumerate() {
         let mut content = String::new();
@@ -328,11 +395,25 @@ fn document_xml(doc: &MaterialDoc, context: &RenderContext, options: RenderOptio
     body.push_str(&para(
         Some("Meta"),
         "",
-        &run(&format!("{} \u{b7} {}", context.course_code, context.course_title), false, false, false, ""),
+        &run(
+            &format!("{} \u{b7} {}", context.course_code, context.course_title),
+            false,
+            false,
+            false,
+            "",
+        ),
     ));
-    body.push_str(&para(Some("Title"), "", &run(&doc.title, false, false, false, "")));
+    body.push_str(&para(
+        Some("Title"),
+        "",
+        &run(&doc.title, false, false, false, ""),
+    ));
     if let Some(subtitle) = &doc.subtitle {
-        body.push_str(&para(Some("Subtitle"), "", &run(subtitle, false, false, false, "")));
+        body.push_str(&para(
+            Some("Subtitle"),
+            "",
+            &run(subtitle, false, false, false, ""),
+        ));
     }
     let mut meta: Vec<String> = Vec::new();
     if let Some(name) = &context.lecturer_name {
@@ -345,17 +426,31 @@ fn document_xml(doc: &MaterialDoc, context: &RenderContext, options: RenderOptio
         meta.push(semester.clone());
     }
     if !meta.is_empty() {
-        body.push_str(&para(Some("Meta"), "", &run(&meta.join(" \u{b7} "), false, false, false, "")));
+        body.push_str(&para(
+            Some("Meta"),
+            "",
+            &run(&meta.join(" \u{b7} "), false, false, false, ""),
+        ));
     }
     if doc.meta.ai_drafted {
         body.push_str(&para(
             Some("Meta"),
             "",
-            &run("AI-drafted; not yet reviewed by the lecturer.", false, true, false, ""),
+            &run(
+                "AI-drafted; not yet reviewed by the lecturer.",
+                false,
+                true,
+                false,
+                "",
+            ),
         ));
     }
     if !doc.meta.objectives.is_empty() {
-        body.push_str(&para(Some("Heading3"), "", &run("Learning objectives", false, false, false, "")));
+        body.push_str(&para(
+            Some("Heading3"),
+            "",
+            &run("Learning objectives", false, false, false, ""),
+        ));
         for objective in &doc.meta.objectives {
             body.push_str(&list_item("\u{2022}", &runs(objective, false)));
         }
@@ -521,7 +616,10 @@ mod tests {
             &sample_doc(),
             &sample_context(),
             &builtin_templates()[0],
-            RenderOptions { toc: true, chapter_breaks: true },
+            RenderOptions {
+                toc: true,
+                chapter_breaks: true,
+            },
         )
         .unwrap();
         assert_eq!(&bytes[..2], b"PK");

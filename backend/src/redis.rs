@@ -189,6 +189,34 @@ impl RedisStore {
         Ok(())
     }
 
+    /// Appends a lecture-materials event to the `materials-events` stream, so
+    /// other services can react to publishes without polling the database.
+    pub async fn publish_material_event(
+        &self,
+        event_type: &str,
+        payload: &str,
+    ) -> Result<(), RedisError> {
+        let stream = self.key("materials-events", "stream");
+        let mut manager = self.manager.clone();
+        tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("XADD")
+                .arg(stream)
+                .arg("MAXLEN")
+                .arg("~")
+                .arg(10000)
+                .arg("*")
+                .arg("type")
+                .arg(event_type)
+                .arg("payload")
+                .arg(payload)
+                .query_async::<String>(&mut manager),
+        )
+        .await
+        .map_err(|_| RedisError::from((redis::ErrorKind::Io, "Redis command timed out")))??;
+        Ok(())
+    }
+
     pub async fn ensure_ai_consumer_group(&self) -> Result<(), RedisError> {
         let stream = self.key("ai-jobs", "stream");
         let mut manager = self.manager.clone();

@@ -306,7 +306,8 @@ impl MaterialDoc {
     pub fn sections(&self) -> Vec<Section<'_>> {
         let mut sections: Vec<Section<'_>> = Vec::new();
         for block in &self.blocks {
-            let starts_section = matches!(&block.kind, BlockKind::Heading { level, .. } if *level <= 2);
+            let starts_section =
+                matches!(&block.kind, BlockKind::Heading { level, .. } if *level <= 2);
             if starts_section || sections.is_empty() {
                 let heading = match &block.kind {
                     BlockKind::Heading { text, .. } if starts_section => strip_inline(text),
@@ -494,7 +495,7 @@ fn validate_block(block: &Block, problems: &mut Vec<String>) {
 
 /// Code fences (```) must open and close.
 pub fn fences_closed(text: &str) -> bool {
-    text.matches("```").count() % 2 == 0
+    text.matches("```").count() & 1 == 0
 }
 
 /// A cheap structural LaTeX check: balanced braces, `\left`/`\right` and
@@ -751,7 +752,10 @@ mod tests {
         assert_eq!(doc.number_equations(5), 7);
         assert!(matches!(
             doc.blocks[1].kind,
-            BlockKind::Equation { number: Some(6), .. }
+            BlockKind::Equation {
+                number: Some(6),
+                ..
+            }
         ));
     }
 

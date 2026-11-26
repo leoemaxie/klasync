@@ -93,6 +93,8 @@ pub async fn queue_study_jobs(
         created += 1;
     }
     tracing::info!(%session_id, created, mode, "Queued post-lecture study jobs");
+    // The lecturer's structured material is drafted after the study jobs, so it can use their chapters.
+    crate::materials::queue_after_lecture(state, pool, session_id, lecturer_id).await;
     Ok(created)
 }
 

@@ -34,6 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(klasync_backend::batch::run_loop(state.clone()));
     tokio::spawn(klasync_backend::post_lecture::run_loop(state.clone()));
     tokio::spawn(klasync_backend::rolling::run_loop(state.clone()));
+    klasync_backend::materials::spawn_workers(state.clone());
     klasync_backend::realtime::spawn_redis_bridge(state.clone());
 
     let app = klasync_backend::api::router(state);
