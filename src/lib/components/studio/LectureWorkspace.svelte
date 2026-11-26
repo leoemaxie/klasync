@@ -22,6 +22,7 @@
   import AskPane from './AskPane.svelte';
   import CardsPane from './CardsPane.svelte';
   import SummaryPane from './SummaryPane.svelte';
+  import HandoutPane from './HandoutPane.svelte';
   import MapPane from './MapPane.svelte';
   import Splitter from './Splitter.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
@@ -429,6 +430,8 @@
         <MapPane />
       {:else if id === 'flashcards'}
         <CardsPane />
+      {:else if id === 'handout'}
+        <HandoutPane />
       {:else if id === 'chapters'}
         <ChapterRail variant="page" />
       {/if}

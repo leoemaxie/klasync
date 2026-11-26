@@ -249,6 +249,8 @@ export const fetchCourseMaterials = (courseId: string) =>
       generation_state: GenerationState;
       draft_rev: number;
       started_at: string | null;
+      /** Session short code: the key for the per-lecture lecturer routes. */
+      short_code: string;
     }[];
   }>(`/courses/${courseId}/materials`);
 
@@ -421,3 +423,47 @@ export const fetchStudentBook = (courseId: string) =>
 
 export const downloadStudentBook = (courseId: string, format: ExportFormat) =>
   httpBlob(`/students/courses/${courseId}/book/export?format=${format}`);
+
+// ---- plug-in settings -----------------------------------------------------
+
+export type PluginKind =
+  'generator' | 'renderer' | 'delivery' | 'analyzer' | 'template';
+
+export interface PluginSetting {
+  kind: PluginKind;
+  id: string;
+  label: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  /** Where the effective value comes from. */
+  source: 'course' | 'global' | 'default';
+  /** Protected plug-ins cannot be turned off. */
+  protected: boolean;
+}
+
+export const fetchPluginSettings = (courseId: string) =>
+  apiRequest<{ plugins: PluginSetting[] }>(
+    `/courses/${courseId}/materials/plugins`
+  );
+
+export const setPluginSetting = (
+  courseId: string,
+  kind: PluginKind,
+  pluginId: string,
+  setting: { enabled: boolean; config?: Record<string, unknown> }
+) =>
+  apiRequest<{ enabled: boolean }>(
+    `/courses/${courseId}/materials/plugins/${kind}/${encodeURIComponent(pluginId)}`,
+    { method: 'PUT', body: JSON.stringify(setting) }
+  );
+
+/** Drop the course override; the plug-in follows the global setting again. */
+export const resetPluginSetting = (
+  courseId: string,
+  kind: PluginKind,
+  pluginId: string
+) =>
+  apiRequest<{ ok: boolean }>(
+    `/courses/${courseId}/materials/plugins/${kind}/${encodeURIComponent(pluginId)}`,
+    { method: 'DELETE' }
+  );

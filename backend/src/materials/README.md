@@ -14,12 +14,30 @@ generation pipeline, review/edit/publish, four renderers, course book, email
 and passive delivery channels, comparison analyzer, event outbox, HTTP API,
 post-lecture trigger, typed TypeScript client (`src/lib/api/materials.ts`).
 
+**Frontend** (`src/lib/components/materials/`, `src/lib/materials/`):
+lecturer *Materials* tab (lecture list, review/edit with transcript
+side-by-side, autosave with `base_rev` conflict handling, per-section rewrite,
+lock, publish with optional email, export, versions, deliveries), course book
+builder, offering comparison, course settings and per-course plug-in toggles;
+student *Handout* tool in the lecture studio with export buttons. Pure edit and
+validation logic lives in `src/lib/materials/doc.ts` (mirrors `blocks.rs`
+validation) and is unit-tested.
+
+**Plug-in settings API** (`GET /courses/{id}/materials/plugins`,
+`PUT|DELETE /courses/{id}/materials/plugins/{kind}/{plugin_id}`): course
+overrides of the global/default enabled state. `in_app` delivery and the `html`
+renderer are protected and cannot be disabled.
+
 **Not built (do not assume it exists):**
 
-- **Frontend UI.** Only the typed API client exists. Still to build: the
-  lecturer *Materials* tab (list, review/edit view with transcript side-by-side,
-  publish and export menu, book builder, settings, Compare screen) and the
-  student reading view with export buttons.
+- **Student course-book UI.** The student book endpoints and client exist
+  (`fetchStudentBook`, `downloadStudentBook`) but no screen uses them; only the
+  per-lecture handout is in the UI.
+- **Lecture picker for lectures without a material.** The Materials tab lists
+  lectures that already have a material, plus the lecture open in the Room tab.
+  There is no course-wide session list API to offer older lectures.
+- **KaTeX in the browser.** Equations render as monospace LaTeX in the app
+  (HTML/PDF exports render them when `MATERIALS_KATEX_URL` is set).
 - **Separate worker process** (spec Phase 0). Material jobs run in the API
   process through the existing `ai_worker::run_loop`, like every other job.
 - **Provider batch mode** for materials. Jobs run interactively, ordered after
@@ -30,9 +48,6 @@ post-lecture trigger, typed TypeScript client (`src/lib/api/materials.ts`).
   `GET .../materials/export` streams the file (cached in object storage).
 - **Email attachments.** The email module has no attachment support; email is
   link-only.
-- **Plug-in settings API.** `material_plugin_settings` and
-  `registry::resolve_setting` / `is_enabled` exist and are honoured by the
-  generator loop, but no endpoint edits them yet.
 - **Real graphics for the concept-map figure.** Figures carry alt text and a
   text outline; the 3D map is not drawn into PDF/DOCX.
 - **EPUB, LaTeX export, LMS push, slide upload** (spec Phase 6).
@@ -106,7 +121,8 @@ Lecturer, per lecture (`{code}` = session short code):
 | `GET .../materials/versions/{id}` | one version |
 
 Course level: `GET /materials/capabilities`, `GET /courses/{id}/materials`,
-`GET/PUT /courses/{id}/materials/settings`, `GET/PUT /courses/{id}/book`,
+`GET/PUT /courses/{id}/materials/settings`,
+`GET /courses/{id}/materials/plugins`, `PUT|DELETE /courses/{id}/materials/plugins/{kind}/{plugin_id}`, `GET/PUT /courses/{id}/book`,
 `POST .../book/rebuild`, `POST .../book/publish`, `GET .../book/export`,
 `POST /courses/{id}/compare?a=&b=&narrative=`, `GET /courses/{id}/comparisons`,
 `GET /comparisons/{id}`.
@@ -129,7 +145,7 @@ level, depth, language, tone, template, seed from previous offering.
 ## Testing
 
 ```
-cargo test                                   # 80 unit tests, no database needed
+cargo test                                   # 82 unit tests, no database needed
 TEST_DATABASE_URL=postgres://... cargo test --test materials_pipeline
 GEMINI_API_KEY=... HTTP_EXTRA_CA_FILE=... TEST_DATABASE_URL=... \
   cargo test --test materials_pipeline real_model -- --ignored --nocapture

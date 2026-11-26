@@ -23,7 +23,7 @@ use crate::{
         blocks::MaterialDoc,
         book::{self, FrontMatter, UnitSpec},
         delivery,
-        registry::{registry, AnalyzerInput, Audience, Target},
+        registry::{pick_setting, registry, AnalyzerInput, Audience, PluginKind, Stage, Target},
         service::{self, Exported, PublishOptions, ServiceError},
         store::{self, MaterialRow, MaterialSettings, SessionInfo},
     },
@@ -455,14 +455,180 @@ pub async fn put_settings(
     Ok(Json(input))
 }
 
+// ---- lecturer: plug-in settings ------------------------------------------------------------
+
+/// Every registered plug-in as `(kind, id, label)`.
+fn all_plugins() -> Vec<(PluginKind, &'static str, &'static str)> {
+    let r = registry();
+    let mut out = Vec::new();
+    for stage in [Stage::Section, Stage::Post] {
+        for g in r.generators(stage) {
+            out.push((PluginKind::Generator, g.id(), g.label()));
+        }
+    }
+    out.extend(
+        r.renderers()
+            .iter()
+            .map(|x| (PluginKind::Renderer, x.id(), x.label())),
+    );
+    out.extend(
+        r.delivery_channels()
+            .iter()
+            .map(|x| (PluginKind::Delivery, x.id(), x.label())),
+    );
+    out.extend(
+        r.analyzers()
+            .iter()
+            .map(|x| (PluginKind::Analyzer, x.id(), x.label())),
+    );
+    out.extend(
+        r.templates()
+            .iter()
+            .map(|t| (PluginKind::Template, t.id, t.name)),
+    );
+    out
+}
+
+fn parse_kind(raw: &str) -> Res<PluginKind> {
+    Ok(match raw {
+        "generator" => PluginKind::Generator,
+        "renderer" => PluginKind::Renderer,
+        "delivery" => PluginKind::Delivery,
+        "analyzer" => PluginKind::Analyzer,
+        "template" => PluginKind::Template,
+        _ => return Err(bad_request("unknown plug-in kind")),
+    })
+}
+
+fn known_plugin(kind: PluginKind, id: &str) -> bool {
+    all_plugins()
+        .iter()
+        .any(|(k, pid, _)| *k == kind && *pid == id)
+}
+
+/// Plug-ins that must stay on: turning them off would make material
+/// unreadable or break the pipeline.
+fn is_protected(kind: PluginKind, id: &str) -> bool {
+    matches!(
+        (kind, id),
+        (PluginKind::Delivery, "in_app") | (PluginKind::Renderer, "html")
+    )
+}
+
+/// Effective on/off and config for each plug-in, with where it came from
+/// (`course`, `global` or `default`).
+pub async fn list_plugins(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(course_id): Path<Uuid>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let rows = sqlx::query_as::<_, (String, String, String, bool, Value)>(
+        "select scope, kind, plugin_id, enabled, config from material_plugin_settings
+         where scope = 'global' or (scope = 'course' and course_id = $1)",
+    )
+    .bind(course_id)
+    .fetch_all(state.db_pool())
+    .await?;
+    let plugins: Vec<Value> = all_plugins()
+        .into_iter()
+        .map(|(kind, id, label)| {
+            let mine: Vec<(String, bool, Value)> = rows
+                .iter()
+                .filter(|(_, k, pid, _, _)| k == kind.as_str() && pid == id)
+                .map(|(scope, _, _, enabled, config)| (scope.clone(), *enabled, config.clone()))
+                .collect();
+            let source = if mine.iter().any(|(s, _, _)| s == "course") {
+                "course"
+            } else if mine.iter().any(|(s, _, _)| s == "global") {
+                "global"
+            } else {
+                "default"
+            };
+            let (enabled, config) = pick_setting(mine).unwrap_or((true, json!({})));
+            json!({
+                "kind": kind.as_str(), "id": id, "label": label,
+                "enabled": enabled, "config": config, "source": source,
+                "protected": is_protected(kind, id),
+            })
+        })
+        .collect();
+    Ok(Json(json!({ "plugins": plugins })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PluginSettingInput {
+    pub enabled: bool,
+    #[serde(default)]
+    pub config: Option<Value>,
+}
+
+/// Set a course-level override for one plug-in.
+pub async fn put_plugin(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path((course_id, kind, plugin_id)): Path<(Uuid, String, String)>,
+    Json(input): Json<PluginSettingInput>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let kind = parse_kind(&kind)?;
+    if !known_plugin(kind, &plugin_id) {
+        return Err(not_found("Plug-in not found"));
+    }
+    if !input.enabled && is_protected(kind, &plugin_id) {
+        return Err(bad_request("This plug-in cannot be turned off"));
+    }
+    let config = input.config.unwrap_or_else(|| json!({}));
+    if !config.is_object() || config.to_string().len() > 8 * 1024 {
+        return Err(bad_request("config must be a JSON object under 8 KB"));
+    }
+    sqlx::query(
+        "insert into material_plugin_settings (scope, course_id, kind, plugin_id, enabled, config)
+         values ('course', $1, $2, $3, $4, $5)
+         on conflict (course_id, kind, plugin_id) where scope = 'course'
+         do update set enabled = excluded.enabled, config = excluded.config, updated_at = now()",
+    )
+    .bind(course_id)
+    .bind(kind.as_str())
+    .bind(&plugin_id)
+    .bind(input.enabled)
+    .bind(&config)
+    .execute(state.db_pool())
+    .await?;
+    Ok(Json(json!({
+        "kind": kind.as_str(), "id": plugin_id, "enabled": input.enabled,
+        "config": config, "source": "course",
+    })))
+}
+
+/// Remove the course override so the plug-in follows the global/default again.
+pub async fn reset_plugin(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path((course_id, kind, plugin_id)): Path<(Uuid, String, String)>,
+) -> Res<Json<Value>> {
+    owned_course(&state, &lecturer, course_id).await?;
+    let kind = parse_kind(&kind)?;
+    sqlx::query(
+        "delete from material_plugin_settings
+         where scope = 'course' and course_id = $1 and kind = $2 and plugin_id = $3",
+    )
+    .bind(course_id)
+    .bind(kind.as_str())
+    .bind(&plugin_id)
+    .execute(state.db_pool())
+    .await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 pub async fn list_course_materials(
     State(state): State<AppState>,
     lecturer: AuthenticatedLecturer,
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     owned_course(&state, &lecturer, course_id).await?;
-    let rows = sqlx::query_as::<_, (Uuid, Uuid, String, String, String, i32, Option<chrono::DateTime<chrono::Utc>>)>(
-        "select m.id, m.session_id, s.title, m.status, m.generation_state, m.draft_rev, s.started_at
+    let rows = sqlx::query_as::<_, (Uuid, Uuid, String, String, String, i32, Option<chrono::DateTime<chrono::Utc>>, String)>(
+        "select m.id, m.session_id, s.title, m.status, m.generation_state, m.draft_rev, s.started_at, s.short_code
          from lecture_materials m join lecture_sessions s on s.id = m.session_id
          where m.course_id = $1 order by s.started_at nulls last, s.title",
     )
@@ -471,7 +637,7 @@ pub async fn list_course_materials(
     .await?;
     Ok(Json(json!({"materials": rows.iter().map(|r| json!({
         "id": r.0, "session_id": r.1, "title": r.2, "status": r.3,
-        "generation_state": r.4, "draft_rev": r.5, "started_at": r.6})).collect::<Vec<_>>()})))
+        "generation_state": r.4, "draft_rev": r.5, "started_at": r.6, "short_code": r.7})).collect::<Vec<_>>()})))
 }
 
 // ---- lecturer: course book -----------------------------------------------------------------
@@ -889,4 +1055,35 @@ pub async fn student_book_export(
     )
     .await?;
     file_response(file)
+}
+
+#[cfg(test)]
+mod plugin_tests {
+    use super::*;
+
+    #[test]
+    fn plugin_catalogue_is_complete_and_unique() {
+        let all = all_plugins();
+        assert!(all
+            .iter()
+            .any(|(k, id, _)| *k == PluginKind::Renderer && *id == "pdf"));
+        assert!(all
+            .iter()
+            .any(|(k, id, _)| *k == PluginKind::Generator && *id == "summary"));
+        let mut keys: Vec<_> = all.iter().map(|(k, id, _)| (k.as_str(), *id)).collect();
+        keys.sort();
+        let n = keys.len();
+        keys.dedup();
+        assert_eq!(n, keys.len(), "duplicate plug-in ids within a kind");
+    }
+
+    #[test]
+    fn kinds_parse_and_protected_plugins_are_known() {
+        assert!(parse_kind("renderer").is_ok());
+        assert!(parse_kind("nope").is_err());
+        assert!(known_plugin(PluginKind::Delivery, "in_app"));
+        assert!(is_protected(PluginKind::Delivery, "in_app"));
+        assert!(!is_protected(PluginKind::Renderer, "pdf"));
+        assert!(!known_plugin(PluginKind::Renderer, "zzz"));
+    }
 }

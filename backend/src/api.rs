@@ -400,6 +400,15 @@ pub fn router(state: AppState) -> Router {
             get(handlers::materials::list_course_materials),
         )
         .route(
+            "/api/v1/courses/{course_id}/materials/plugins",
+            get(handlers::materials::list_plugins),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/materials/plugins/{kind}/{plugin_id}",
+            axum::routing::put(handlers::materials::put_plugin)
+                .delete(handlers::materials::reset_plugin),
+        )
+        .route(
             "/api/v1/courses/{course_id}/materials/settings",
             get(handlers::materials::get_settings).put(handlers::materials::put_settings),
         )

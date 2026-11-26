@@ -6,6 +6,7 @@ import {
   PenLine,
   Layers,
   MessageCircleQuestion,
+  BookOpenText,
 } from '@lucide/svelte';
 import type { Component } from 'svelte';
 
@@ -16,7 +17,8 @@ export type ToolId =
   | 'visuals'
   | 'notes'
   | 'ask'
-  | 'flashcards';
+  | 'flashcards'
+  | 'handout';
 
 export type ToolDef = {
   id: ToolId;
@@ -33,6 +35,7 @@ export const TOOLS: ToolDef[] = [
   { id: 'visuals', label: 'Map', key: '5', icon: Network },
   { id: 'flashcards', label: 'Cards', key: '6', icon: Layers },
   { id: 'chapters', label: 'Chapters', key: '7', icon: ListTree },
+  { id: 'handout', label: 'Handout', key: '8', icon: BookOpenText },
 ];
 
 export const toolById = (id: ToolId) => TOOLS.find((t) => t.id === id)!;
