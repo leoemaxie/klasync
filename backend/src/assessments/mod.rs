@@ -5,12 +5,17 @@
 //! The lecturer grades blind, manually or with AI, then reads class reports.
 //! Design: the "Assessments: Design Spec" doc and `tasks/assessments-v1.md`.
 
+pub mod attempts;
+pub mod authoring;
 pub mod delivery;
+pub mod generate;
+pub mod grading;
 pub mod model;
-pub mod store;
 pub mod prompts;
 pub mod report;
+pub mod reports;
 pub mod scoring;
+pub mod store;
 
 use std::fmt;
 
@@ -49,3 +54,16 @@ impl From<String> for ServiceError {
 }
 
 pub type Res<T> = Result<T, ServiceError>;
+
+use sqlx::PgPool;
+
+use crate::{ai_worker::PendingJob, state::AppState};
+
+/// Executes an `assessment_*` job (called by the AI worker).
+pub async fn run_job(
+    state: &AppState,
+    pool: &PgPool,
+    job: &PendingJob,
+) -> Result<Option<uuid::Uuid>, String> {
+    generate::run_job(state, pool, job).await
+}
