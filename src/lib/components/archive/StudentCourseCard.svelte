@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { StudentEnrolledCourse } from '$lib/types';
-  import { User, BookOpen, CheckCircle2 } from '@lucide/svelte';
+  import { User, BookOpen, ArrowRight } from '@lucide/svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import { triggerHaptic } from '$lib/native/haptics';
 
   let {
@@ -10,126 +11,103 @@
     course: StudentEnrolledCourse;
     onSelect?: (code: string) => void;
   } = $props();
+
+  const n = $derived(course.session_count ?? 0);
 </script>
 
-<div class="student-course-card panel">
-  <div class="card-head">
-    <span class="course-code-badge">{course.code}</span>
-    <span class="semester-pill">{course.semester || 'Semester'}</span>
-  </div>
+<article class="course">
+  <header>
+    <span class="code">{course.code}</span>
+    <span class="term">{course.semester || 'Semester'}</span>
+  </header>
 
-  <h3 class="course-name">{course.title}</h3>
+  <h3>{course.title}</h3>
 
-  <div class="lecturer-row">
-    <User size={13} color="var(--color-driftwood)" />
-    <span class="lecturer-name">{course.lecturer_name || 'Faculty Member'}</span
+  <p class="lecturer">
+    <User size={14} />
+    {course.lecturer_name || 'Faculty member'}
+  </p>
+
+  <div class="foot">
+    <span class="count"
+      ><BookOpen size={14} /> {n} {n === 1 ? 'lecture' : 'lectures'}</span
     >
+    <Button
+      variant="soft"
+      size="sm"
+      onclick={() => {
+        triggerHaptic('selection');
+        onSelect?.(course.code);
+      }}
+      aria-label="View lectures for {course.code}"
+    >
+      View <ArrowRight size={14} />
+    </Button>
   </div>
-
-  <div class="stats-row">
-    <div class="stat-pill">
-      <BookOpen size={12} />
-      <span
-        >{course.session_count}
-        {course.session_count === 1 ? 'Lecture' : 'Lectures'}</span
-      >
-    </div>
-    <div class="stat-pill success">
-      <CheckCircle2 size={12} />
-      <span>Enrolled</span>
-    </div>
-  </div>
-
-  <button
-    type="button"
-    class="primary outline full view-btn"
-    onclick={() => {
-      triggerHaptic('selection');
-      onSelect?.(course.code);
-    }}
-  >
-    View Lectures
-  </button>
-</div>
+</article>
 
 <style>
-  .student-course-card {
+  .course {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-10);
-    padding: var(--spacing-14);
-    background: rgba(16, 9, 4, 0.55);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-cards);
-    transition: border-color 0.2s ease;
+    gap: 10px;
+    height: 100%;
+    padding: 16px;
+    background: var(--surface-inset);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color var(--motion-fast) var(--ease-out),
+      background var(--motion-fast) var(--ease-out);
   }
-  .student-course-card:hover {
-    border-color: var(--color-warm-cream);
+  .course:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-1);
   }
-  .card-head {
+  header {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    align-items: center;
+    gap: 8px;
   }
-  .course-code-badge {
-    font-family: var(--font-mono, monospace);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-ember-accent);
-    letter-spacing: 0.05em;
-  }
-  .semester-pill {
-    font-size: 10px;
-    font-weight: 500;
-    background: rgba(255, 237, 215, 0.09);
-    color: var(--color-warm-cream-dim);
-    padding: 2px 7px;
-    border-radius: 4px;
-    text-transform: uppercase;
-  }
-  .course-name {
-    font-size: 16px;
+  .code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 12.5px;
     font-weight: 600;
-    margin: 0;
-    color: var(--color-warm-cream);
-    line-height: 1.35;
-    word-break: break-word;
+    letter-spacing: 0.08em;
+    color: var(--text-accent);
   }
-  .lecturer-row {
+  .term {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  .lecturer {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--color-driftwood);
+    gap: 7px;
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
   }
-  .stats-row {
+  .foot {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
     margin-top: auto;
-    flex-wrap: wrap;
+    padding-top: 6px;
   }
-  .stat-pill {
+  .count {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: var(--color-driftwood);
-    background: rgba(16, 9, 4, 0.4);
-    border: 1px solid var(--color-cork-border);
-    padding: 3px 8px;
-    border-radius: 4px;
-  }
-  .stat-pill.success {
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.2);
-    background: rgba(74, 222, 128, 0.08);
-  }
-  .view-btn {
-    padding: 8px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    min-height: 38px;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
   }
 </style>

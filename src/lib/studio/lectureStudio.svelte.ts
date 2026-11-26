@@ -12,6 +12,7 @@ import {
 } from '$lib/api/aiStudy';
 import { requestWakeLock, releaseWakeLock } from '$lib/native/wakelock';
 import { clock } from './time';
+import { getResume, saveResume } from './resume';
 
 export const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
 export type Bookmark = { t: number; label: string };
@@ -98,7 +99,16 @@ export class LectureStudio {
   #destroyed = false;
   #chaptersRequested = false;
 
-  constructor(opts: { sessionKey: string; lectureId: string; title: string }) {
+  readonly startAt: number | null;
+
+  constructor(opts: {
+    sessionKey: string;
+    lectureId: string;
+    title: string;
+    /** Open at this moment (e.g. from a search hit) instead of resuming. */
+    startAt?: number | null;
+  }) {
+    this.startAt = opts.startAt ?? null;
     this.sessionKey = opts.sessionKey;
     this.lectureId = opts.lectureId;
     this.title = opts.title;
@@ -177,6 +187,9 @@ export class LectureStudio {
   init() {
     this.#destroyed = false;
     this.#loadNotesAndBookmarks();
+    const resume = this.startAt == null ? getResume(this.lectureId) : null;
+    const at = this.startAt ?? resume?.t ?? null;
+    if (at != null) this.restore(at);
     void this.loadTranscript();
     void this.loadChapters();
     void this.loadRecordings();
@@ -188,6 +201,7 @@ export class LectureStudio {
     this.#destroyed = true;
     cancelAnimationFrame(this.#raf);
     clearTimeout(this.#announceTimer);
+    this.#saveResume(true);
     this.#flushNotes();
     if (this.#el) {
       this.#el.pause();
@@ -313,6 +327,24 @@ export class LectureStudio {
     }
   }
 
+  /**
+   * Puts the playhead at `t` without touching audio (it is fetched lazily on
+   * play and starts from `time`). Used to resume or to open at a moment.
+   */
+  restore(t: number) {
+    this.time = Math.max(t, 0);
+    this.engaged = true;
+    this.seekTick++;
+  }
+
+  #lastSaved = 0;
+  #saveResume(force = false) {
+    const now = Date.now();
+    if (!force && now - this.#lastSaved < 4000) return;
+    this.#lastSaved = now;
+    if (this.engaged) saveResume(this.lectureId, this.time, this.duration);
+  }
+
   // ── Playback ──────────────────────────────────────────────
   #segIndexFor(t: number): number {
     const offs = this.#offsets;
@@ -334,6 +366,7 @@ export class LectureStudio {
     el.addEventListener('pause', () => {
       this.playing = false;
       this.#syncTime();
+      this.#saveResume(true);
       void releaseWakeLock();
       this.#syncMediaState();
     });
@@ -357,6 +390,7 @@ export class LectureStudio {
   #syncTime() {
     if (!this.#el || this.#loadedIdx < 0) return;
     this.time = (this.#offsets[this.#loadedIdx] ?? 0) + this.#el.currentTime;
+    this.#saveResume();
   }
 
   #startTicker() {
@@ -471,6 +505,7 @@ export class LectureStudio {
     this.time = target;
     this.engaged = true;
     this.seekTick++;
+    this.#saveResume();
     if (!this.hasAudio) return;
     const idx = this.#segIndexFor(target);
     if (idx === this.#loadedIdx && this.#el) {

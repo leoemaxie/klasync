@@ -34,8 +34,11 @@
     focus = $bindable(false),
     listOpen = $bindable(false),
     showListToggle = false,
+    startAt = null,
   }: {
     claim: ClaimRecord;
+    /** Open at this moment (seconds), e.g. from a search hit. */
+    startAt?: number | null;
     onBack?: () => void;
     focus?: boolean;
     listOpen?: boolean;
@@ -56,6 +59,7 @@
         sessionKey: key,
         lectureId: claim.id,
         title: claim.session_title,
+        startAt,
       }),
     };
   });

@@ -1,135 +1,174 @@
 <script lang="ts">
   import type { ClaimRecord } from '$lib/api';
-  import { CheckCircle2, ChevronRight } from '@lucide/svelte';
+  import { Headphones, Play, CircleCheck } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
+  import { clock } from '$lib/studio/time';
+  import { getResume, progressOf } from '$lib/studio/resume';
 
   let {
     claim,
     isSelected = false,
+    resumeVersion = 0,
     onSelect,
   }: {
     claim: ClaimRecord;
     isSelected?: boolean;
+    /** Bump to re-read the saved position (it changes while a lecture is open). */
+    resumeVersion?: number;
     onSelect: (claim: ClaimRecord) => void;
   } = $props();
 
-  function handleClick() {
-    triggerHaptic('light');
-    onSelect(claim);
-  }
+  const resume = $derived.by(() => {
+    void resumeVersion;
+    return getResume(claim.id);
+  });
+  const progress = $derived(progressOf(resume));
 </script>
 
 <button
   type="button"
-  class="claim-item-card"
+  class="claim"
   class:selected={isSelected}
-  onclick={handleClick}
   aria-current={isSelected ? 'true' : undefined}
+  onclick={() => {
+    triggerHaptic('light');
+    onSelect(claim);
+  }}
 >
-  <div class="item-head">
-    <span class="course-code-tag">{claim.course_code}</span>
-    <span class="date-tag">{claim.date}</span>
-  </div>
+  <span class="top">
+    <span class="course">{claim.course_code}</span>
+    <span class="date">{claim.date}</span>
+  </span>
 
-  <h3 class="item-title">{claim.session_title}</h3>
+  <span class="title">{claim.session_title}</span>
 
-  <div class="item-footer">
-    <div class="item-badges">
-      <span class="badge verified"><CheckCircle2 size={11} /> Verified</span>
-      {#if claim.academic_session}
-        <span class="badge session">{claim.academic_session}</span>
-      {/if}
-    </div>
-    <ChevronRight size={14} class="item-arrow" />
-  </div>
+  <span class="chips">
+    {#if claim.attended === true}
+      <span class="chip ok"><CircleCheck size={12} /> Attended</span>
+    {:else if claim.attended === false}
+      <span class="chip">Not attended</span>
+    {/if}
+    {#if claim.has_audio}
+      <span class="chip"><Headphones size={12} /> Audio</span>
+    {/if}
+    {#if resume}
+      <span class="chip resume"
+        ><Play size={11} fill="currentColor" /> Resume {clock(resume.t)}</span
+      >
+    {/if}
+  </span>
+
+  {#if progress != null}
+    <span class="progress" aria-hidden="true"
+      ><i style:width="{progress * 100}%"></i></span
+    >
+  {/if}
 </button>
 
 <style>
-  .claim-item-card {
+  .claim {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: var(--spacing-12);
-    background: rgba(16, 9, 4, 0.55);
-    border: 1px solid var(--color-cork-border);
-    border-radius: var(--radius-controls, 6px);
-    text-align: left;
-    cursor: pointer;
-    transition:
-      border-color 0.15s ease,
-      background 0.15s ease;
+    gap: 8px;
     width: 100%;
-    min-height: 52px;
-    box-sizing: border-box;
+    min-height: 0;
+    padding: 14px 14px 12px;
+    background: var(--surface-inset);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    text-align: left;
+    font-family: var(--font-body);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    overflow: hidden;
+    transition:
+      border-color var(--motion-fast) var(--ease-out),
+      background var(--motion-fast) var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
-  .claim-item-card:hover {
-    border-color: rgba(255, 237, 215, 0.3);
-    background: rgba(255, 237, 215, 0.04);
+  .claim:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-1);
   }
-  .claim-item-card.selected {
-    border-color: var(--color-ember-accent);
-    background: rgba(220, 80, 0, 0.12);
+  .claim:active {
+    transform: scale(0.992);
   }
-  .item-head {
+  .claim.selected {
+    border-color: var(--border-accent);
+    background: var(--surface-accent);
+  }
+  .claim:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  .top {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    align-items: center;
+    gap: 8px;
   }
-  .course-code-tag {
-    font-family: var(--font-mono, monospace);
+  .course {
+    font-family: var(--font-mono, ui-monospace, monospace);
     font-size: 12px;
-    font-weight: 700;
-    color: var(--color-ember-accent);
-    letter-spacing: 0.05em;
-  }
-  .date-tag {
-    font-size: 11px;
-    color: var(--color-warm-cream-dim);
-  }
-  .item-title {
-    font-size: 15px;
     font-weight: 600;
-    margin: 2px 0 0 0;
-    color: var(--color-warm-cream);
-    line-height: 1.35;
-    word-break: break-word;
+    letter-spacing: 0.08em;
+    color: var(--text-accent);
   }
-  .item-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 4px;
+  .date {
+    font-size: 12px;
+    color: var(--text-secondary);
   }
-  .item-badges {
+  .title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    line-height: 1.25;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .chips {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
   }
-  .badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 4px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-  .badge.verified {
-    background: rgba(74, 222, 128, 0.12);
-    border: 1px solid rgba(74, 222, 128, 0.25);
-    color: #4ade80;
+  .chip {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    height: 22px;
+    padding: 0 9px;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
   }
-  .badge.session {
+  .chip.ok {
+    color: #7ddc9f;
+    border-color: rgba(125, 220, 159, 0.3);
+  }
+  .chip.resume {
+    color: var(--text-primary);
+    border-color: var(--border-accent);
+    background: var(--surface-accent);
+  }
+  .chip.resume :global(svg) {
+    color: var(--text-accent);
+  }
+  .progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
     background: rgba(255, 237, 215, 0.08);
-    border: 1px solid rgba(255, 237, 215, 0.1);
-    color: var(--color-warm-cream);
   }
-  :global(.item-arrow) {
-    color: var(--color-warm-cream-dim);
-  }
-  .claim-item-card.selected :global(.item-arrow) {
-    color: var(--color-ember-accent);
+  .progress i {
+    display: block;
+    height: 100%;
+    background: var(--color-ember-accent);
   }
 </style>
