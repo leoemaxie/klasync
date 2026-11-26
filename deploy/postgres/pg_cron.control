@@ -1,0 +1,4 @@
+comment = 'Local-dev stub of pg_cron so the production migration history applies unchanged'
+default_version = '1.0'
+relocatable = false
+schema = cron

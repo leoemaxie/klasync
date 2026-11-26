@@ -1,7 +1,15 @@
 <script lang="ts">
   import { Search, Copy, Check, Type } from '@lucide/svelte';
 
-  let { transcript = '' }: { transcript?: string } = $props();
+  let {
+    transcript = '',
+    isLoading = false,
+    errorMessage = '',
+  }: {
+    transcript?: string;
+    isLoading?: boolean;
+    errorMessage?: string;
+  } = $props();
   let fontSize = $state(15);
   let filterTerm = $state('');
   let isAllCopied = $state(false);
@@ -60,7 +68,15 @@
     </div>
   </div>
 
-  {#if transcript}
+  {#if isLoading}
+    <div class="empty-transcript-state">
+      <p class="empty-hint">Loading transcript…</p>
+    </div>
+  {:else if errorMessage}
+    <div class="empty-transcript-state">
+      <p class="empty-hint" role="alert">{errorMessage}</p>
+    </div>
+  {:else if transcript}
     <div class="search-bar-wrap">
       <Search size={14} class="search-ico" />
       <input

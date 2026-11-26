@@ -1,5 +1,5 @@
 import type { Resource } from './archive';
-import { API_BASE, WS_BASE } from './http';
+import { API_BASE, WS_BASE, getAccessToken } from './http';
 
 export async function uploadSessionAudio(
   shortCode: string,
@@ -22,28 +22,6 @@ export async function uploadSessionAudio(
   return response.json() as Promise<Resource>;
 }
 
-export function getAudioChunkUrl(shortCode: string, seq: number): string {
-  return `${API_BASE}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk/${seq}`;
-}
-
-export async function uploadAudioChunk(
-  shortCode: string,
-  chunk: Blob,
-  seq: number
-): Promise<void> {
-  const formData = new FormData();
-  formData.append('chunk', chunk);
-  formData.append('seq', seq.toString());
-  await fetch(
-    `${API_BASE}/sessions/code/${encodeURIComponent(shortCode)}/audio/chunk`,
-    {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    }
-  );
-}
-
 export interface IngestedCaption {
   text: string;
   speaker?: string;
@@ -64,7 +42,12 @@ export interface AudioStreamer {
 }
 
 export function connectAudioWebSocket(options: AudioWebSocketOptions) {
-  const wsUrl = `${WS_BASE}/sessions/code/${encodeURIComponent(options.shortCode)}/audio/ws`;
+  // Browsers cannot set headers on a WebSocket, so the lecturer's token goes
+  // in the query string; the server rejects unauthenticated sockets.
+  const token = getAccessToken();
+  const wsUrl = `${WS_BASE}/sessions/code/${encodeURIComponent(options.shortCode)}/audio/ws${
+    token ? `?token=${encodeURIComponent(token)}` : ''
+  }`;
 
   const ws = new WebSocket(wsUrl);
   ws.binaryType = 'arraybuffer';

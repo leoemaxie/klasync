@@ -1,5 +1,6 @@
 pub mod ai_study;
 pub mod analytics;
+pub mod archive;
 pub mod attendance;
 pub mod attendance_scoring;
 pub mod audio;
@@ -15,9 +16,11 @@ pub mod invites;
 pub mod jobs;
 pub mod lifecycle;
 pub mod live_controls;
+pub mod live_extras;
 pub mod lms_sync;
 pub mod not_found;
 pub mod participants;
+pub mod polls;
 pub mod presence;
 pub mod questions;
 pub mod readiness;

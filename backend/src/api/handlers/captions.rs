@@ -118,18 +118,63 @@ pub async fn publish(
         ApiError::service_unavailable()
     })?;
 
-    let payload = serde_json::to_string(&caption)
-        .log_internal_error("Failed to serialize caption payload")?;
-    if let Some(redis) = &state.redis {
-        if let Err(error) = redis
-            .publish_caption(&session.id.to_string(), &payload)
-            .await
-        {
-            tracing::warn!(%error, "Redis caption publish failed; using local broadcast");
-            state.captions.publish(caption.clone()).await;
-        }
-    } else {
-        state.captions.publish(caption.clone()).await;
-    }
+    broadcast_caption(&state, &caption).await;
     Ok((StatusCode::CREATED, Json(caption)))
+}
+
+/// Persists a caption (transcript line) and returns it. Shared by the REST
+/// publisher and the live audio transcriber so both write the same archive.
+pub async fn store_caption(
+    state: &AppState,
+    session_id: Uuid,
+    text: &str,
+) -> Result<CaptionChunk, ApiError> {
+    let pool = state.db_pool();
+    let mut tx = pool
+        .begin()
+        .await
+        .log_internal_error("Failed to start caption transaction")?;
+    let lock_key = session_id.to_string();
+    sqlx::query("select pg_advisory_xact_lock(hashtext($1::text))")
+        .bind(lock_key)
+        .execute(&mut *tx)
+        .await
+        .log_internal_error("Failed to lock caption sequence")?;
+    let caption = sqlx::query_as::<_, CaptionChunk>(
+        "insert into caption_chunks (id, session_id, sequence_number, text, created_at)
+         values ($1, $2, (select coalesce(max(sequence_number), 0) + 1 from caption_chunks where session_id = $2), $3, now())
+         returning id, session_id, text, created_at",
+    )
+    .bind(Uuid::now_v7())
+    .bind(session_id)
+    .bind(text)
+    .fetch_one(&mut *tx)
+    .await
+    .log_internal_error("Failed to insert caption chunk")?;
+    tx.commit()
+        .await
+        .log_internal_error("Failed to commit caption chunk")?;
+    Ok(caption)
+}
+
+/// Fans a caption out to every connected student.
+///
+/// The local hub is always updated so students connected to *this* instance get
+/// the caption immediately. Redis additionally carries it to other instances;
+/// `realtime::spawn_redis_bridge` feeds those back into the hub and
+/// de-duplicates. Previously a successful Redis publish skipped the local hub,
+/// and nothing subscribed to Redis, so with Redis configured (it is mandatory)
+/// no student ever received a live caption.
+pub async fn broadcast_caption(state: &AppState, caption: &CaptionChunk) {
+    state.captions.publish(caption.clone()).await;
+    if let Some(redis) = &state.redis {
+        if let Ok(payload) = serde_json::to_string(caption) {
+            if let Err(error) = redis
+                .publish_caption(&caption.session_id.to_string(), &payload)
+                .await
+            {
+                tracing::warn!(%error, "Redis caption publish failed; local broadcast only");
+            }
+        }
+    }
 }

@@ -81,6 +81,71 @@ pub fn router(state: AppState) -> Router {
             get(handlers::ai_study::flashcards),
         )
         .route(
+            "/api/v1/archive/sessions/{session_id}/ai/generate-visualization",
+            post(handlers::ai_study::generate_visualization),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/visualizations",
+            get(handlers::ai_study::visualizations),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/transcript",
+            get(handlers::archive::transcript),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/summaries",
+            get(handlers::archive::summaries),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/recordings",
+            get(handlers::archive::recording_info),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/recordings/{resource_id}/stream",
+            get(handlers::archive::recording_stream),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/ask",
+            post(handlers::archive::ask),
+        )
+        .route("/api/v1/students/search", get(handlers::archive::search))
+        .route(
+            "/api/v1/archive/jobs/{job_id}",
+            get(handlers::ai_study::job_status),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/summaries",
+            get(handlers::live_extras::summaries_by_code),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/presence",
+            post(handlers::live_extras::presence_by_code),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/hand-raises",
+            get(handlers::live_extras::raised_hands),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/participants/{participant_id}/hand-raise",
+            post(handlers::live_extras::raise_hand).delete(handlers::live_extras::lower_hand),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/polls",
+            get(handlers::polls::list).post(handlers::polls::create),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/polls/generate",
+            post(handlers::polls::generate),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/polls/{poll_id}/respond",
+            post(handlers::polls::respond),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/polls/{poll_id}/close",
+            post(handlers::polls::close),
+        )
+        .route(
             "/api/v1/analytics/courses/{course_id}/attendance-summary",
             get(handlers::analytics::course_summary),
         )
@@ -300,6 +365,32 @@ pub fn router(state: AppState) -> Router {
             state.clone(),
             crate::security::rate_limit,
         ))
+        .layer(middleware::from_fn(crate::activity::track))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    /// Building the router panics on conflicting routes; this keeps that from
+    /// reaching production. No database connection is made (lazy pool).
+    #[tokio::test]
+    async fn router_builds_without_route_conflicts() {
+        let config = crate::config::AppConfig::from_env();
+        let state = AppState {
+            database: sqlx::postgres::PgPoolOptions::new()
+                .connect_lazy("postgres://u:p@127.0.0.1:1/none")
+                .expect("lazy pool"),
+            storage: crate::storage::adapter_from_config(&config),
+            mailer: crate::email::sender_from_config(&config),
+            ai: crate::ai::gateway_from_config(&config, None),
+            config: Arc::new(config),
+            captions: crate::realtime::CaptionHub::default(),
+            redis: None,
+        };
+        let _ = router(state);
+    }
 }

@@ -171,3 +171,34 @@ export async function http<T>(
 }
 
 export const apiRequest = http;
+
+/**
+ * Authenticated binary fetch (audio). `<audio src>` cannot send an
+ * Authorization header, so the player downloads through here and plays an
+ * object URL. Shares the 401 -> refresh -> retry behaviour of `http`.
+ */
+export async function httpBlob(path: string): Promise<Blob> {
+  const send = () => {
+    const headers: Record<string, string> = {};
+    const token = getAccessToken();
+    if (token) headers['authorization'] = `Bearer ${token}`;
+    return fetch(`${API_BASE}${path}`, { credentials: 'include', headers });
+  };
+  let response = await send();
+  if (response.status === 401) {
+    if (!isRefreshingPromise) isRefreshingPromise = doRefreshToken();
+    if (await isRefreshingPromise) response = await send();
+  }
+  if (!response.ok) {
+    const payload = (await response
+      .json()
+      .catch(() => ({}))) as ApiErrorPayload;
+    throw new Error(
+      (payload.error ?? payload.message ?? 'Service request failed').replaceAll(
+        '_',
+        ' '
+      )
+    );
+  }
+  return response.blob();
+}

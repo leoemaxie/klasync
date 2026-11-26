@@ -78,6 +78,7 @@ pub async fn register_student(
     .fetch_one(pool)
     .await
     .map_err(|_| ApiError::conflict("A student account with this matriculation number or email already exists"))?;
+    crate::student_sync::reconcile_student_logged(pool, account_id).await;
     let tokens = issue_tokens(pool, &state.config, account_id, AccountRole::Student).await?;
     Ok((StatusCode::CREATED, Json(tokens)))
 }
@@ -183,6 +184,9 @@ async fn login(
     .ok_or_else(|| ApiError::unauthorized("Invalid email or password"))?;
     if !passwords::verify_async(input.password, account.password_hash).await {
         return Err(ApiError::unauthorized("Invalid email or password"));
+    }
+    if matches!(role, AccountRole::Student) {
+        crate::student_sync::reconcile_student_logged(pool, account.id).await;
     }
     issue_tokens(pool, &state.config, account.id, role).await
 }

@@ -202,6 +202,7 @@ pub async fn student_courses(
     student: AuthenticatedStudent,
 ) -> Result<Json<Vec<StudentEnrolledCourse>>, ApiError> {
     let pool = state.db_pool();
+    crate::student_sync::reconcile_student_logged(pool, student.id).await;
     let courses = sqlx::query_as!(
         StudentEnrolledCourse,
         r#"select 

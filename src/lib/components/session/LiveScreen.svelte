@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Participant, Screen, Session } from '$lib/types';
   import type { AuthUser } from '$lib/api/auth';
-  import { connectCaptionWebSocket } from '$lib/api/captions';
+  import { connectCaptionWebSocket, getCaptions } from '$lib/api/captions';
   import {
     sendHandRaise,
     clearHandRaise,
@@ -13,6 +13,8 @@
   import { triggerHaptic } from '$lib/native/haptics';
   import AccessibilityDrawer from './AccessibilityDrawer.svelte';
   import LiveQaPanel from './LiveQaPanel.svelte';
+  import LivePollPanel from './LivePollPanel.svelte';
+  import RollingSummaryFeed from '$lib/components/shared/RollingSummaryFeed.svelte';
   import LiveHeader from './LiveHeader.svelte';
   import LiveCaptionCard from './LiveCaptionCard.svelte';
   import LivePresenceCard from './LivePresenceCard.svelte';
@@ -70,7 +72,30 @@
         }
       });
     }
+    // The socket can drop (mobile networks, instance restarts). Poll the REST
+    // list as a safety net so captions never silently stop.
+    const poll = setInterval(async () => {
+      if (!session?.code) return;
+      try {
+        const remote = await getCaptions(session.code);
+        const texts = remote.map((c) => c.text).filter((t) => t?.trim());
+        if (
+          texts.length >
+          captions.filter(
+            (c) =>
+              c !== 'WAITING FOR LIVE CAPTIONS.' &&
+              c !== 'Waiting for captions...'
+          ).length
+        ) {
+          captions = texts;
+          captionIndex = texts.length - 1;
+        }
+      } catch {
+        /* retry next tick */
+      }
+    }, 5000);
     return () => {
+      clearInterval(poll);
       wsCleanup?.();
       void releaseWakeLock();
     };
@@ -163,10 +188,21 @@
       onToggleHandRaise={handleToggleHandRaise}
     />
   </section>
-  <LiveQaPanel
-    sessionCode={session?.code ?? 'A4K9QZ'}
-    participantId={joinedParticipant?.id}
-  />
+  {#if session?.code}
+    <RollingSummaryFeed
+      live
+      sessionCode={session.code}
+      title="What was just covered"
+    />
+    <LivePollPanel
+      sessionCode={session.code}
+      participantId={joinedParticipant?.id}
+    />
+    <LiveQaPanel
+      sessionCode={session.code}
+      participantId={joinedParticipant?.id}
+    />
+  {/if}
   <LiveArchiveCta
     {accountCreated}
     {isClaiming}

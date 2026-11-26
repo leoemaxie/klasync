@@ -1,7 +1,8 @@
-import { http } from './http';
+import { http, getAccessToken } from './http';
 import type { SuccessResponse } from './types';
 
 export type ClaimRecord = {
+  /** Lecture session UUID (server records) or a local placeholder id. */
   id: string;
   course_code: string;
   course_title?: string;
@@ -10,6 +11,11 @@ export type ClaimRecord = {
   session_title: string;
   session_code?: string;
   date: string;
+  started_at?: string;
+  status?: string;
+  /** False when the lecture is only listed because the student is on the roster. */
+  attended?: boolean;
+  has_audio?: boolean;
 };
 
 export type Resource = {
@@ -88,14 +94,44 @@ export function claimLecture(participantId: string): Promise<SuccessResponse> {
   });
 }
 
-export async function getStudentArchive(): Promise<ClaimRecord[]> {
+const ARCHIVE_CACHE_KEY = 'klasync-student-archive-cache';
+
+function cacheArchive(records: ClaimRecord[]) {
   try {
-    const remote = await http<ClaimRecord[]>('/students/archive');
-    if (Array.isArray(remote) && remote.length > 0) {
-      return remote;
-    }
+    localStorage.setItem(ARCHIVE_CACHE_KEY, JSON.stringify(records));
+  } catch {}
+}
+
+function readArchiveCache(): ClaimRecord[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ARCHIVE_CACHE_KEY) ?? '[]');
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // API offline or DB fallback
+    return [];
+  }
+}
+
+/**
+ * The server is the source of truth: it matches the signed-in student to every
+ * lecture their matric number attended, so every device shows the same list.
+ * Device-local claims are only a fallback for guests / being offline; they used
+ * to be shown *instead of* an empty server list, which is why each device only
+ * ever showed the one session it had joined.
+ */
+export async function getStudentArchive(): Promise<ClaimRecord[]> {
+  const signedIn = typeof localStorage !== 'undefined' && !!getAccessToken();
+  if (signedIn) {
+    try {
+      const remote = await http<ClaimRecord[]>('/students/archive');
+      if (Array.isArray(remote)) {
+        cacheArchive(remote);
+        return remote;
+      }
+    } catch {
+      return readArchiveCache().length
+        ? readArchiveCache()
+        : getLocalStudentClaims();
+    }
   }
   return getLocalStudentClaims();
 }
