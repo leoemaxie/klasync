@@ -177,20 +177,6 @@
         sessionCode={appState.session?.code}
         onCaptionIngested={(cap) => ingestCaption(appState, cap)}
       />
-    {:else if activeTab === 'session'}
-      <SessionPanel
-        session={appState.session}
-        apiNotice={appState.apiNotice}
-        isSaving={appState.isSaving}
-        isEndingSession={appState.isSaving}
-        copied={appState.copied}
-        lecturerName={appState.lecturerName}
-        lecturerEmail={appState.lecturerEmail}
-        onCopyInvite={() => copyInvite(appState)}
-        onEndSession={() => endSession(appState)}
-        onStartSession={() => startSession(appState)}
-        onCaptionIngested={(cap) => ingestCaption(appState, cap)}
-      />
     {:else if activeTab === 'live' && appState.session?.live}
       <CaptionControlPanel
         bind:captionDraft={appState.captionDraft}
@@ -214,6 +200,26 @@
         participants={appState.session?.participants || []}
         roster={appState.roster}
       />
+    {/if}
+    <!-- The Room panel owns the microphone stream and recorder, so it stays
+         mounted (hidden) while a session is live: switching tabs must not
+         stop the lecture recording. -->
+    {#if activeTab === 'session' || appState.session?.live}
+      <div style:display={activeTab === 'session' ? 'block' : 'none'}>
+        <SessionPanel
+          session={appState.session}
+          apiNotice={appState.apiNotice}
+          isSaving={appState.isSaving}
+          isEndingSession={appState.isSaving}
+          copied={appState.copied}
+          lecturerName={appState.lecturerName}
+          lecturerEmail={appState.lecturerEmail}
+          onCopyInvite={() => copyInvite(appState)}
+          onEndSession={() => endSession(appState)}
+          onStartSession={() => startSession(appState)}
+          onCaptionIngested={(cap) => ingestCaption(appState, cap)}
+        />
+      </div>
     {/if}
   </div>
 </div>

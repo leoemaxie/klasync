@@ -291,7 +291,7 @@ pub struct PreparedText {
 }
 
 fn is_json_job(job_type: &str) -> bool {
-    matches!(job_type, "flashcards" | "chapters" | "visualization")
+    matches!(job_type, "flashcards" | "quiz" | "chapters" | "visualization")
 }
 
 /// Builds the model request for a text job. Shared with batch submission.
@@ -336,6 +336,14 @@ pub fn check_output(job_type: &str, raw: &str) -> Result<usize, String> {
                 Err("no flashcards could be read from the answer".to_owned())
             } else {
                 Ok(cards.len())
+            }
+        }
+        "quiz" => {
+            let questions = json.as_ref().map(study::parse_quiz).unwrap_or_default();
+            if questions.is_empty() {
+                Err("no quiz questions could be read from the answer".to_owned())
+            } else {
+                Ok(questions.len())
             }
         }
         "chapters" => match json.as_ref().and_then(study::parse_chapters) {
@@ -605,6 +613,33 @@ pub async fn persist_output(
                 count += 1;
             }
             Ok(count)
+        }
+        "quiz" => {
+            let questions = json.as_ref().map(study::parse_quiz).unwrap_or_default();
+            let mut count = 0;
+            for q in questions {
+                let inserted = sqlx::query(
+                    "insert into session_quiz_questions (id, session_id, question, options, correct_index, explanation, topic_tag, difficulty)
+                     select $1, $2, $3, $4, $5, $6, $7, $8
+                     where not exists (select 1 from session_quiz_questions
+                                       where session_id = $2 and lower(question) = lower($3))",
+                )
+                .bind(Uuid::now_v7())
+                .bind(job.session_id)
+                .bind(&q.question)
+                .bind(serde_json::json!(q.options))
+                .bind(q.correct_index)
+                .bind(q.explanation.as_deref())
+                .bind(q.topic_tag.as_deref().map(|t| t.chars().take(100).collect::<String>()))
+                .bind(&q.difficulty)
+                .execute(pool)
+                .await
+                .map_err(|error| error.to_string())?;
+                count += inserted.rows_affected() as usize;
+            }
+            Ok(count.max(usize::from(
+                job.params.get("topic").map(|t| t.is_null()).unwrap_or(true),
+            )))
         }
         "flashcards" => {
             let cards = json

@@ -202,6 +202,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, session_id: Uuid) {
 }
 
 async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<u8>) {
+    let payload_len = payload.len();
     let result = match state
         .ai
         .transcribe(&TranscribeRequest {
@@ -217,11 +218,12 @@ async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<
     {
         Ok(result) => result,
         Err(error) => {
-            tracing::debug!(%error, "Live transcription chunk failed");
+            tracing::warn!(%error, bytes = payload_len, "Live transcription chunk failed");
             return;
         }
     };
     let text = result.text.trim();
+    tracing::debug!(bytes = payload_len, chars = text.len(), "Live transcription chunk");
     if text.is_empty() {
         return;
     }

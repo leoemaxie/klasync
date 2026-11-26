@@ -25,6 +25,15 @@ pub struct Chapter {
 }
 
 #[derive(Debug, Clone)]
+pub struct QuizQuestion {
+    pub question: String,
+    pub options: Vec<String>,
+    pub correct_index: i32,
+    pub explanation: Option<String>,
+    pub topic_tag: Option<String>,
+    pub difficulty: String,
+}
+
 pub struct Card {
     pub prompt: String,
     pub answer: String,
@@ -142,6 +151,18 @@ pub fn system_prompt(job_type: &str, params: &Value) -> String {
                 .map(|t| format!(", focusing specifically on: {t}"))
                 .unwrap_or_default()
         ),
+        "quiz" => format!(
+            "{base} Write 6 to 10 multiple-choice questions that test understanding of the lecture{}. \
+             Return ONLY a valid JSON array of objects with keys: \"question\" (clear, self-contained), \
+             \"options\" (array of exactly 4 short, plausible strings with one clearly correct answer), \
+             \"correct_index\" (integer 0-3 of the right option; vary it across questions), \
+             \"explanation\" (1-2 sentences saying why it is right), \"topic_tag\" (short topic label), \
+             \"difficulty\" (\"easy\", \"medium\" or \"hard\"). Only ask about things the lecture covers. \
+             No markdown fences, no commentary.",
+            topic
+                .map(|t| format!(", focusing specifically on: {t}"))
+                .unwrap_or_default()
+        ),
         "chapters" => format!(
             "{base} Split the lecture into 4 to 8 chronological chapters. Return ONLY a valid JSON \
              array of objects with keys: \"chapter_index\" (integer from 1), \"title\" (short), \
@@ -246,6 +267,49 @@ pub fn parse_flashcards(value: &Value) -> Vec<Card> {
             Some(Card {
                 prompt,
                 answer,
+                topic_tag: str_field(item, &["topic_tag", "topic", "tag"]).map(str::to_owned),
+                difficulty: difficulty.to_owned(),
+            })
+        })
+        .collect()
+}
+
+pub fn parse_quiz(value: &Value) -> Vec<QuizQuestion> {
+    let Some(items) = list_of(value, &["questions", "quiz", "items"]) else {
+        return Vec::new();
+    };
+    items
+        .iter()
+        .filter_map(|item| {
+            let question = str_field(item, &["question", "prompt", "q"])?.to_owned();
+            let options: Vec<String> = item
+                .get("options")
+                .or_else(|| item.get("choices"))?
+                .as_array()?
+                .iter()
+                .filter_map(|o| o.as_str().map(|t| t.trim().to_owned()))
+                .filter(|t| !t.is_empty())
+                .collect();
+            if !(2..=6).contains(&options.len()) {
+                return None;
+            }
+            let correct = int_field(item, &["correct_index", "answer_index", "correct"])?;
+            if correct < 0 || correct as usize >= options.len() {
+                return None;
+            }
+            let difficulty = match str_field(item, &["difficulty"])
+                .map(|d| d.to_ascii_lowercase())
+                .as_deref()
+            {
+                Some("easy") => "easy",
+                Some("hard") => "hard",
+                _ => "medium",
+            };
+            Some(QuizQuestion {
+                question,
+                options,
+                correct_index: correct as i32,
+                explanation: str_field(item, &["explanation", "rationale"]).map(str::to_owned),
                 topic_tag: str_field(item, &["topic_tag", "topic", "tag"]).map(str::to_owned),
                 difficulty: difficulty.to_owned(),
             })
