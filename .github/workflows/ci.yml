@@ -34,7 +34,7 @@ jobs:
 
       # The pnpm version comes from package.json's "packageManager" field, so
       # local, CI and release builds agree.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
         with:
