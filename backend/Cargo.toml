@@ -37,7 +37,7 @@ tower-http = { version = "0.6", default-features = false, features = ["cors", "t
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
 uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7", "std"] }
-qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+qrcode = { version = "0.15", default-features = false, features = ["svg"] }
 async-trait = "0.1"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 sha2 = "0.10"
