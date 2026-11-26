@@ -61,7 +61,7 @@ def audio_chain(name, dur, first_idx, lecture=None, nd=0.0):
         start, length, speed, mode = lecture
         ins += ['-ss', f'{max(0, start):.3f}', '-t', f'{length:.3f}', '-i', 'lecture48.wav']
         if mode == 'duck' and nd:
-            nend = 0.4 + nd + 0.3
+            nend = 0.3 + nd + 0.3
             vol = f"volume='0.18+0.82*clip((t-{nend:.2f})/0.7,0,1)':eval=frame"
         elif mode == 'bed':
             vol = 'volume=0.2'
@@ -72,14 +72,14 @@ def audio_chain(name, dur, first_idx, lecture=None, nd=0.0):
         idx += 1
     if nd:
         ins += ['-i', f'out/narr/{name}.wav']
-        parts.append(f'[{idx}:a]aresample=48000,adelay=400|400,volume=1.5[a2]')
+        parts.append(f'[{idx}:a]aresample=48000,adelay=300|300,volume=1.5[a2]')
         mix.append('[a2]')
         idx += 1
     parts.append(''.join(mix) + f'amix=inputs={len(mix)}:duration=first:normalize=0,alimiter=limit=0.95[aout]')
     return ins, parts, idx
 
 
-def seg(name, layout, d_rng, p_rng, vp, caption, speed=1.0, lecture=None, tool=None, tail=0.9):
+def seg(name, layout, d_rng, p_rng, vp, caption, speed=1.0, lecture=None, tool=None, tail=0.6):
     """layout: D desktop only, P phone only (with studio tool list), S side by side.
     Ranges are (start, end) seconds in each source video."""
     rng = d_rng or p_rng
@@ -143,7 +143,7 @@ def seg(name, layout, d_rng, p_rng, vp, caption, speed=1.0, lecture=None, tool=N
 
 def card(name, title, sub, bullets=(), dur=4.0):
     nd = ndur(name)
-    dur = max(dur, nd + 1.6) if nd else dur
+    dur = max(dur, nd + 1.2) if nd else dur
     parts = [
         f"drawtext=fontfile={SERIF}:textfile={txt(name + '_t', title)}:fontsize=110:fontcolor=0xfff0e0:x=(w-text_w)/2:y=300",
         f"drawtext=fontfile={FONT}:textfile={txt(name + '_s', sub)}:fontsize=44:fontcolor={ACC}:x=(w-text_w)/2:y=450",
@@ -191,11 +191,11 @@ segs.append(seg('t1', 'P', None, s(S['signin_start'], S['transcript_start']), VS
 segs.append(seg('t2', 'P', None, s(S['transcript_start'], S['chapters_start']), VS, 'Searchable transcript, synced to the recording', speed=1.1, tool=0))
 segs.append(seg('t3', 'P', None, s(S['chapters_start'], S['summary_start']), VS, 'Chapters jump to any moment in the lecture', speed=1.0, tool=1))
 segs.append(seg('t3b', 'P', None, s(S['summary_start'], S['map_start']), VS, 'A summary of the key points', speed=1.0, tool=2))
-segs.append(seg('t4', 'P', None, s(S['map_start'], S['cards_start']), VS, 'An interactive concept map: see how the ideas connect', speed=1.6, tool=3))
-segs.append(seg('t5', 'P', None, s(S['cards_start'], S['quiz_start']), VS, 'Flashcards for short, repeatable practice', speed=1.3, tool=4))
-segs.append(seg('t6', 'P', None, s(S['quiz_start'], S['ask_start']), VS, 'New: a quiz with instant feedback and an explanation for every answer', speed=1.8, tool=5))
+segs.append(seg('t4', 'P', None, s(S['map_start'], S['cards_start']), VS, 'An interactive concept map: see how the ideas connect', speed=1.8, tool=3))
+segs.append(seg('t5', 'P', None, s(S['cards_start'], S['quiz_start']), VS, 'Flashcards for short, repeatable practice', speed=1.5, tool=4))
+segs.append(seg('t6', 'P', None, s(S['quiz_start'], S['ask_start']), VS, 'New: a quiz with instant feedback and an explanation for every answer', speed=2.4, tool=5))
 segs.append(seg('t7', 'P', None, s(S['ask_start'], S['study_end']), VS, 'Ask the lecture: answers cite the exact moment', speed=1.2, tool=6))
-segs.append(card('c_out', 'KLASYNC', TAG, ['Every lecture, for every learner.'], dur=6.0))
+segs.append(card('c_out', 'KLASYNC', TAG, ['Every lecture, for every learner.'], dur=5.0))
 
 open('out/concat.txt', 'w').write(''.join(f"file 'seg/{os.path.basename(x)}'\n" for x in segs))
 run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', 'out/concat.txt', '-c', 'copy', 'out/klasync_demo_raw.mp4'])
