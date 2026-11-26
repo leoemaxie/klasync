@@ -9,6 +9,8 @@
     FileText,
     TriangleAlert,
   } from '@lucide/svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import { useStudio } from '$lib/studio/lectureStudio.svelte';
   import { clock } from '$lib/studio/time';
@@ -247,14 +249,15 @@
         spellcheck="false"
       />
       {#if query}
-        <button
-          type="button"
+        <Button
+          icon
+          size="sm"
           class="clear"
           aria-label="Clear search"
           onclick={() => (query = '')}
         >
           <X size={14} />
-        </button>
+        </Button>
       {/if}
     </div>
     {#if filtering}
@@ -264,25 +267,27 @@
     {/if}
     <div class="tools">
       <div class="font" role="group" aria-label="Text size">
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          icon
           aria-label="Smaller text"
           title="Smaller text"
           disabled={fontSize <= 13}
           onclick={() => (fontSize = Math.max(13, fontSize - 1))}
-          >A<small>−</small></button
+          >A<small>−</small></Button
         >
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          icon
           aria-label="Larger text"
           title="Larger text"
           disabled={fontSize >= 24}
           onclick={() => (fontSize = Math.min(24, fontSize + 1))}
-          >A<small>+</small></button
+          >A<small>+</small></Button
         >
       </div>
-      <button
-        type="button"
+      <Button
+        variant="outline"
         class="copy"
         onclick={copyAll}
         disabled={!studio.lines.length}
@@ -291,7 +296,7 @@
         {#if copied}<Check size={14} /><span>Copied</span>{:else}<Copy
             size={14}
           /><span>Copy</span>{/if}
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -301,30 +306,28 @@
         <SkeletonCard lines={4} label="Loading transcript…" />
       </div>
     {:else if studio.transcriptStatus === 'error'}
-      <div class="state" role="alert">
-        <span class="glyph"><TriangleAlert size={20} /></span>
-        <h3>Couldn’t load the transcript</h3>
-        <p>{studio.transcriptError}</p>
-        <button
-          type="button"
-          class="retry"
-          onclick={() => studio.loadTranscript()}>Try again</button
+      <EmptyState
+        tone="error"
+        icon={TriangleAlert}
+        title="Couldn’t load the transcript"
+        description={studio.transcriptError}
+      >
+        <Button variant="outline" onclick={() => studio.loadTranscript()}
+          >Try again</Button
         >
-      </div>
+      </EmptyState>
     {:else if studio.lines.length === 0}
-      <div class="state">
-        <span class="glyph"><FileText size={20} /></span>
-        <h3>No transcript yet</h3>
-        <p>
-          Transcripts appear here once the lecturer’s captions have been saved.
-        </p>
-      </div>
+      <EmptyState
+        icon={FileText}
+        title="No transcript yet"
+        description="Transcripts appear here once the lecturer’s captions have been saved."
+      />
     {:else if rows.length === 0}
-      <div class="state">
-        <span class="glyph"><Search size={20} /></span>
-        <h3>No matches</h3>
-        <p>Nothing in this lecture matches <strong>“{query}”</strong>.</p>
-      </div>
+      <EmptyState
+        icon={Search}
+        title="No matches"
+        description="Nothing in this lecture matches “{query}”."
+      />
     {:else}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
@@ -385,9 +388,9 @@
       </div>
 
       {#if showJump}
-        <button type="button" class="jump" onclick={jumpToLive}>
+        <Button variant="accent" class="jump" onclick={jumpToLive}>
           <ArrowDown size={14} /> Jump to live position
-        </button>
+        </Button>
       {/if}
     {/if}
   </div>
@@ -422,6 +425,30 @@
     min-width: 160px;
     display: flex;
     align-items: center;
+  }
+  .search :global(.clear) {
+    position: absolute;
+    right: 4px;
+  }
+  .font {
+    display: flex;
+    gap: 4px;
+  }
+  .font :global(.ui-btn) {
+    gap: 1px;
+    font-weight: 600;
+  }
+  .font :global(small) {
+    font-size: 11px;
+    margin-left: 1px;
+  }
+  .stage :global(.jump) {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    box-shadow: var(--elev-3);
+    animation: rise var(--motion-base) var(--ease-out);
   }
   .search :global(svg:first-child) {
     position: absolute;
@@ -459,25 +486,6 @@
   .search input::-webkit-search-cancel-button {
     display: none;
   }
-  .clear {
-    position: absolute;
-    right: 4px;
-    display: grid;
-    place-items: center;
-    width: 28px;
-    min-width: 28px;
-    height: 28px;
-    min-height: 28px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-  }
-  .clear:hover {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
   .count {
     font-size: 12.5px;
     color: var(--text-secondary);
@@ -487,64 +495,6 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
-  }
-  .font {
-    display: flex;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .font button {
-    min-width: 36px;
-    width: 36px;
-    height: calc(var(--control-h) - 2px);
-    min-height: calc(var(--control-h) - 2px);
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .font button + button {
-    border-left: 1px solid var(--border-default);
-  }
-  .font button:hover:not(:disabled) {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  .font small {
-    font-size: 11px;
-    margin-left: 1px;
-  }
-  .copy {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 14px;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .copy:hover:not(:disabled) {
-    color: var(--text-primary);
-    border-color: var(--border-strong);
-  }
-  .font button:focus-visible,
-  .copy:focus-visible,
-  .clear:focus-visible,
-  .stamp:focus-visible,
-  .jump:focus-visible,
-  .retry:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .stage {
@@ -652,6 +602,10 @@
     line-height: 28px;
     transition: color var(--motion-fast) var(--ease-out);
   }
+  .stamp:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
   .stamp.none {
     cursor: default;
   }
@@ -684,89 +638,21 @@
     background: rgba(220, 80, 0, 0.5);
     color: var(--text-primary);
   }
-  .jump {
-    position: absolute;
-    left: 50%;
-    bottom: 16px;
-    transform: translateX(-50%);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 16px;
-    border: 0;
-    border-radius: 999px;
-    background: var(--fill-accent);
-    color: var(--text-on-accent);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: var(--elev-3);
-    animation: rise var(--motion-base) var(--ease-out);
-  }
-  .jump:hover {
-    background: var(--fill-accent-hover);
-  }
   @keyframes rise {
     from {
       opacity: 0;
       transform: translate(-50%, 8px);
     }
   }
-  .state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex: 1;
-    padding: 32px 20px;
-    text-align: center;
-  }
-  .glyph {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--surface-3);
-    border: 1px solid var(--border-default);
-    color: var(--text-secondary);
-  }
-  .state h3 {
-    margin: 2px 0 0;
-    font-size: 20px;
-  }
-  .state p {
-    max-width: 340px;
-    margin: 0;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-  .state strong {
-    color: var(--text-primary);
-  }
-  .retry {
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 16px;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 13px;
-  }
   @media (max-width: 720px) {
     .row {
       grid-template-columns: 46px minmax(0, 1fr);
       gap: 6px;
     }
-    .tools .copy span {
+    .tools :global(.copy span) {
       display: none;
     }
-    .copy {
+    .tools :global(.copy) {
       padding: 0 12px;
     }
   }

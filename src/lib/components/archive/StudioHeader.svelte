@@ -13,6 +13,7 @@
   } from '@lucide/svelte';
   import { triggerHaptic } from '$lib/native/haptics';
   import { clock } from '$lib/studio/time';
+  import Button from '$lib/components/ui/Button.svelte';
 
   let {
     claim,
@@ -54,27 +55,27 @@
 <header class="studio-header" class:focus>
   <div class="lead">
     {#if onBack}
-      <button
-        type="button"
-        class="chip back"
+      <Button
+        variant="outline"
+        class="back"
         onclick={onBack}
         aria-label="Back to lectures"
       >
         <ArrowLeft size={15} /><span>Lectures</span>
-      </button>
+      </Button>
     {/if}
     {#if showListToggle}
-      <button
-        type="button"
-        class="chip list-toggle"
+      <Button
+        variant="outline"
+        class="list-toggle"
         onclick={onToggleList}
-        aria-pressed={listOpen}
+        pressed={listOpen}
         title={listOpen ? 'Hide lecture list' : 'Show lecture list'}
       >
         {#if listOpen}<PanelLeftClose size={15} />{:else}<PanelLeft
             size={15}
           />{/if}<span>Lectures</span>
-      </button>
+      </Button>
     {/if}
 
     <div class="title-block">
@@ -103,35 +104,33 @@
   </div>
 
   <div class="header-actions">
-    <button
-      type="button"
-      class="icon"
+    <Button
+      icon
       onclick={handleCopyShare}
       aria-label="Copy link to this lecture"
       title="Copy link"
     >
       {#if isCopied}<Check size={17} />{:else}<Share2 size={17} />{/if}
-    </button>
-    <button
-      type="button"
-      class="icon kbd-btn"
+    </Button>
+    <Button
+      icon
+      class="kbd-btn"
       onclick={onShortcuts}
       aria-label="Keyboard shortcuts"
       title="Keyboard shortcuts (?)"
     >
       <Keyboard size={17} />
-    </button>
-    <button
-      type="button"
-      class="icon focus-btn"
-      class:on={focus}
+    </Button>
+    <Button
+      icon
+      class="focus-btn"
+      pressed={focus}
       onclick={onToggleFocus}
-      aria-pressed={focus}
       aria-label={focus ? 'Exit focus mode' : 'Enter focus mode'}
       title="Focus mode (F)"
     >
       {#if focus}<Shrink size={17} />{:else}<Focus size={17} />{/if}
-    </button>
+    </Button>
   </div>
 </header>
 
@@ -233,71 +232,15 @@
     gap: 2px;
     flex-shrink: 0;
   }
-  .icon,
-  .chip {
-    display: inline-grid;
-    place-items: center;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    transition:
-      background var(--motion-fast) var(--ease-out),
-      color var(--motion-fast) var(--ease-out);
-  }
-  .icon {
-    width: var(--control-h);
-    min-width: var(--control-h);
-    padding: 0;
-    border-radius: 50%;
-  }
-  .chip {
-    grid-auto-flow: column;
-    gap: 6px;
-    padding: 0 14px 0 10px;
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0;
-    text-transform: none;
-    flex-shrink: 0;
-  }
-  .icon:hover,
-  .chip:hover {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  .chip:hover {
-    border-color: var(--border-strong);
-  }
-  .chip[aria-pressed='true'] {
-    background: var(--surface-accent);
-    border-color: var(--border-accent);
-    color: var(--text-primary);
-  }
-  .icon.on {
-    background: var(--surface-accent);
-    color: var(--text-accent);
-  }
-  .icon:focus-visible,
-  .chip:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-  .back {
+  .studio-header :global(.back) {
     display: none;
   }
   @media (max-width: 960px) {
-    .back {
-      display: inline-grid;
+    .studio-header :global(.back) {
+      display: inline-flex;
     }
-    .list-toggle {
-      display: none;
-    }
-    .focus-btn {
+    .studio-header :global(.list-toggle),
+    .studio-header :global(.focus-btn) {
       display: none;
     }
   }
@@ -322,7 +265,7 @@
       align-items: stretch;
       gap: 10px;
     }
-    .back {
+    .studio-header :global(.back) {
       align-self: flex-start;
     }
     .header-actions {
@@ -330,7 +273,7 @@
       top: 0;
       right: 0;
     }
-    .kbd-btn {
+    .studio-header :global(.kbd-btn) {
       display: none;
     }
     .meta {

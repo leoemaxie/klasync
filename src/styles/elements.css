@@ -98,17 +98,18 @@ h3 {
   color: var(--color-warm-cream);
 }
 
+/* Deeper ember fill so cream label text meets AA (5.2:1); see tokens.css. */
 .primary {
-  background: var(--color-ember-accent);
-  border: 1px solid var(--color-ember-accent);
+  background: var(--fill-accent, var(--color-ember-accent));
+  border: 1px solid var(--fill-accent, var(--color-ember-accent));
   border-radius: var(--radius-buttons-pill);
   padding: var(--spacing-14) var(--spacing-31);
   color: var(--color-warm-cream);
 }
 
 .primary:hover:not(:disabled) {
-  background: #f06010;
-  border-color: #f06010;
+  background: var(--fill-accent-hover, #f06010);
+  border-color: var(--fill-accent-hover, #f06010);
 }
 
 .primary-bark {

@@ -16,6 +16,7 @@
     provideStudio,
   } from '$lib/studio/lectureStudio.svelte';
   import { clock } from '$lib/studio/time';
+  import Button from '$lib/components/ui/Button.svelte';
   import ToolTabs from './ToolTabs.svelte';
   import PlayerBar from './PlayerBar.svelte';
   import ChapterRail from './ChapterRail.svelte';
@@ -312,9 +313,8 @@
       <section class="pane stage">
         <div class="pane-head">
           {#if mode === 'wide' && !focus}
-            <button
-              type="button"
-              class="pane-btn"
+            <Button
+              icon
               onclick={() => (railOpen = !railOpen)}
               aria-pressed={railOpen}
               aria-label={railOpen
@@ -325,7 +325,7 @@
               {#if railOpen}<PanelLeftClose size={17} />{:else}<PanelLeftOpen
                   size={17}
                 />{/if}
-            </button>
+            </Button>
           {/if}
           <ToolTabs
             pane="stage"
@@ -337,15 +337,14 @@
             onSelect={(id) => selectTool('stage', id)}
           />
           {#if mode !== 'narrow' && !focus && !sideOpen}
-            <button
-              type="button"
-              class="pane-btn"
+            <Button
+              icon
               onclick={() => (sideOpen = true)}
               aria-label="Show companion panel"
               title="Show companion panel"
             >
               <PanelRightOpen size={17} />
-            </button>
+            </Button>
           {/if}
         </div>
         <div
@@ -375,15 +374,14 @@
               tools={toolIds}
               onSelect={(id) => selectTool('side', id)}
             />
-            <button
-              type="button"
-              class="pane-btn"
+            <Button
+              icon
               onclick={() => (sideOpen = false)}
               aria-label="Hide companion panel"
               title="Hide companion panel"
             >
               <PanelRightClose size={17} />
-            </button>
+            </Button>
           </div>
           <div
             class="pane-body"
@@ -506,31 +504,6 @@
     padding-bottom: 10px;
     margin-bottom: 10px;
     border-bottom: 1px solid var(--border-subtle);
-  }
-  .pane-btn {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: var(--control-h);
-    min-width: var(--control-h);
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-    transition:
-      background var(--motion-fast) var(--ease-out),
-      color var(--motion-fast) var(--ease-out);
-  }
-  .pane-btn:hover {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  .pane-btn:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
   .pane-body {
     flex: 1;

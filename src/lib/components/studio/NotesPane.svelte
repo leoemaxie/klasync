@@ -8,6 +8,8 @@
     Clock,
     LoaderCircle,
   } from '@lucide/svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Segmented from '$lib/components/ui/Segmented.svelte';
   import NotesMarkdownPreview from '$lib/components/archive/NotesMarkdownPreview.svelte';
   import { useStudio } from '$lib/studio/lectureStudio.svelte';
   import { clock } from '$lib/studio/time';
@@ -71,33 +73,23 @@
 
 <div class="notes">
   <div class="toolbar">
-    <div class="seg" role="group" aria-label="Notes view">
-      <button
-        type="button"
-        class:on={mode === 'write'}
-        aria-pressed={mode === 'write'}
-        onclick={() => (mode = 'write')}
-      >
-        <PenLine size={14} /> Write
-      </button>
-      <button
-        type="button"
-        class:on={mode === 'preview'}
-        aria-pressed={mode === 'preview'}
-        onclick={() => (mode = 'preview')}
-      >
-        <Eye size={14} /> Preview
-      </button>
-    </div>
+    <Segmented
+      label="Notes view"
+      bind:value={mode}
+      options={[
+        { value: 'write', label: 'Write', icon: PenLine },
+        { value: 'preview', label: 'Preview', icon: Eye },
+      ]}
+    />
 
-    <button
-      type="button"
-      class="stamp"
+    <Button
+      variant="soft"
+      class="stamp-btn"
       onclick={stamp}
       title="Add a note at the current time (N)"
     >
       <Clock size={14} /><span>Stamp {clock(studio.time)}</span>
-    </button>
+    </Button>
 
     <div class="end">
       <span
@@ -111,25 +103,18 @@
           >{:else}<LoaderCircle size={14} /><span class="sr-only">Saving…</span
           >{/if}
       </span>
-      <button
-        type="button"
-        class="ico"
-        aria-label="Copy notes"
-        title="Copy notes"
-        onclick={copy}
-      >
+      <Button icon aria-label="Copy notes" title="Copy notes" onclick={copy}>
         {#if copied}<Check size={15} />{:else}<Copy size={15} />{/if}
-      </button>
-      <button
-        type="button"
-        class="ico"
+      </Button>
+      <Button
+        icon
         aria-label="Export notes as Markdown"
         title="Export as Markdown"
         onclick={download}
         disabled={!studio.notes.trim()}
       >
         <Download size={15} />
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -154,6 +139,10 @@
 </div>
 
 <style>
+  .toolbar :global(.stamp-btn) {
+    padding: 0 12px;
+    font-variant-numeric: tabular-nums;
+  }
   .notes {
     display: flex;
     flex-direction: column;
@@ -173,63 +162,6 @@
     gap: 4px;
     margin-left: auto;
   }
-  .seg {
-    display: inline-flex;
-    padding: 3px;
-    gap: 2px;
-    background: var(--surface-inset);
-    border: 1px solid var(--border-default);
-    border-radius: 999px;
-  }
-  .seg button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: calc(var(--control-h) - 8px);
-    min-height: calc(var(--control-h) - 8px);
-    padding: 0 10px;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: var(--font-body);
-    font-size: 12.5px;
-    font-weight: 500;
-    letter-spacing: 0;
-    text-transform: none;
-    transition: background var(--motion-fast) var(--ease-out);
-  }
-  .seg button.on {
-    background: var(--surface-3);
-    color: var(--text-primary);
-  }
-  .seg button:hover:not(.on) {
-    color: var(--text-primary);
-  }
-  .stamp {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0 11px;
-    border: 1px solid var(--border-accent);
-    border-radius: 999px;
-    background: var(--surface-accent);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 12.5px;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-  .stamp:hover {
-    background: rgba(220, 80, 0, 0.26);
-  }
-  .stamp :global(svg) {
-    color: var(--text-accent);
-  }
   .status {
     display: inline-flex;
     align-items: center;
@@ -244,29 +176,6 @@
     to {
       transform: rotate(360deg);
     }
-  }
-  .ico {
-    display: grid;
-    place-items: center;
-    width: var(--control-h);
-    min-width: var(--control-h);
-    height: var(--control-h);
-    min-height: var(--control-h);
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-secondary);
-  }
-  .ico:hover:not(:disabled) {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  .seg button:focus-visible,
-  .stamp:focus-visible,
-  .ico:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
   .canvas {
     flex: 1;
