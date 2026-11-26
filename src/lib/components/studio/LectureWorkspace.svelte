@@ -21,6 +21,7 @@
   import NotesPane from './NotesPane.svelte';
   import AskPane from './AskPane.svelte';
   import CardsPane from './CardsPane.svelte';
+  import QuizPane from './QuizPane.svelte';
   import SummaryPane from './SummaryPane.svelte';
   import MapPane from './MapPane.svelte';
   import Splitter from './Splitter.svelte';
@@ -429,6 +430,8 @@
         <MapPane />
       {:else if id === 'flashcards'}
         <CardsPane />
+      {:else if id === 'quiz'}
+        <QuizPane />
       {:else if id === 'chapters'}
         <ChapterRail variant="page" />
       {/if}

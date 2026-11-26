@@ -18,6 +18,16 @@ export interface SessionFlashcard {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+export interface SessionQuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string | null;
+  topic_tag: string | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
 export interface TranscriptLine {
   offset_sec: number | null;
   text: string;
@@ -105,6 +115,13 @@ export async function fetchSessionFlashcards(
   return apiRequest<SessionFlashcard[]>(`${base(id)}/flashcards`);
 }
 
+export async function fetchSessionQuiz(
+  sessionId: string
+): Promise<SessionQuizQuestion[]> {
+  const id = await sessionUuid(sessionId);
+  return apiRequest<SessionQuizQuestion[]>(`${base(id)}/quiz`);
+}
+
 export async function fetchSessionVisualizations(
   sessionId: string
 ): Promise<SessionVisualization[]> {
@@ -145,7 +162,7 @@ export async function fetchRecordingBlob(
 
 async function generate(
   sessionId: string,
-  kind: 'chapters' | 'flashcards' | 'visualization',
+  kind: 'chapters' | 'flashcards' | 'quiz' | 'visualization',
   topic?: string
 ): Promise<StudyJob> {
   const id = await sessionUuid(sessionId);
@@ -159,6 +176,8 @@ export const generateSessionChapters = (sessionId: string) =>
   generate(sessionId, 'chapters');
 export const generateSessionFlashcards = (sessionId: string, topic?: string) =>
   generate(sessionId, 'flashcards', topic);
+export const generateSessionQuiz = (sessionId: string, topic?: string) =>
+  generate(sessionId, 'quiz', topic);
 export const generateSessionVisualization = (
   sessionId: string,
   topic?: string

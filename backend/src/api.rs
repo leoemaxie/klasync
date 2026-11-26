@@ -81,6 +81,14 @@ pub fn router(state: AppState) -> Router {
             get(handlers::ai_study::flashcards),
         )
         .route(
+            "/api/v1/archive/sessions/{session_id}/ai/generate-quiz",
+            post(handlers::ai_study::generate_quiz),
+        )
+        .route(
+            "/api/v1/archive/sessions/{session_id}/quiz",
+            get(handlers::ai_study::quiz),
+        )
+        .route(
             "/api/v1/archive/sessions/{session_id}/ai/generate-visualization",
             post(handlers::ai_study::generate_visualization),
         )

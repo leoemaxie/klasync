@@ -51,6 +51,18 @@ pub struct SessionFlashcard {
 }
 
 #[derive(Debug, Serialize, FromRow)]
+pub struct SessionQuizQuestion {
+    pub id: Uuid,
+    pub question: String,
+    pub options: serde_json::Value,
+    pub correct_index: i32,
+    pub explanation: Option<String>,
+    pub topic_tag: Option<String>,
+    pub difficulty: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
 pub struct JobStatus {
     pub id: Uuid,
     pub job_type: String,
@@ -135,6 +147,40 @@ pub async fn generate_flashcards(
         topic.is_none(),
     )
     .await
+}
+
+pub async fn generate_quiz(
+    State(state): State<AppState>,
+    student: AuthenticatedStudent,
+    Path(session_id): Path<Uuid>,
+    body: Bytes,
+) -> Result<(StatusCode, Json<StudyJobResponse>), ApiError> {
+    let pool = state.db_pool();
+    require_access(pool, &student, session_id).await?;
+    let topic = topic_from(&body);
+    if topic.is_none() && exists_for(pool, "session_quiz_questions", session_id).await {
+        return Ok(ready());
+    }
+    let params = serde_json::json!({ "topic": topic });
+    enqueue(&state, student.id, session_id, "quiz", params, topic.is_none()).await
+}
+
+pub async fn quiz(
+    State(state): State<AppState>,
+    student: AuthenticatedStudent,
+    Path(session_id): Path<Uuid>,
+) -> Result<Json<Vec<SessionQuizQuestion>>, ApiError> {
+    let pool = state.db_pool();
+    require_access(pool, &student, session_id).await?;
+    let rows = sqlx::query_as::<_, SessionQuizQuestion>(
+        "select id, question, options, correct_index, explanation, topic_tag, difficulty, created_at
+         from session_quiz_questions where session_id = $1 order by created_at, id",
+    )
+    .bind(session_id)
+    .fetch_all(pool)
+    .await
+    .log_internal_error("Failed to query session quiz")?;
+    Ok(Json(rows))
 }
 
 pub async fn generate_visualization(
