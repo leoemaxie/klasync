@@ -21,3 +21,6 @@ deploy/certs/
 
 # Local Redis snapshots
 dump.rdb
+
+# Python bytecode caches
+__pycache__/
