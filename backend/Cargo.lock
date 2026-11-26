@@ -1725,6 +1725,7 @@ dependencies = [
  "csv",
  "dotenvy",
  "futures-util",
+ "hmac 0.12.1",
  "jsonwebtoken",
  "qrcode",
  "rand 0.8.7",

@@ -220,8 +220,18 @@ pub async fn get_material(
     .bind(material.id)
     .fetch_all(state.db_pool())
     .await?;
+    let slides: Option<(Option<String>, Option<String>)> =
+        sqlx::query_as("select slides_text, slides_name from lecture_materials where id = $1")
+            .bind(material.id)
+            .fetch_optional(state.db_pool())
+            .await?;
+    let (slides_chars, slides_name) = match slides {
+        Some((Some(text), name)) if !text.trim().is_empty() => (text.chars().count(), name),
+        _ => (0, None),
+    };
     Ok(Json(json!({
         "material": material,
+        "slides": {"has_slides": slides_chars > 0, "chars": slides_chars, "name": slides_name},
         "session": {"id": session.id, "title": session.title},
         "versions": versions.iter().map(|v| json!({
             "id": v.id, "version_no": v.version_no, "origin": v.origin, "model": v.model,
@@ -499,6 +509,65 @@ pub async fn lecture_transcript(
     ))
 }
 
+// ---- lecturer: slides --------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct SlidesInput {
+    pub text: String,
+    pub name: Option<String>,
+}
+
+/// Slides context for a lecture: pasted text (or `.txt`/`.md` content).
+pub async fn put_slides(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+    Json(input): Json<SlidesInput>,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let material = store::ensure_material(state.db_pool(), &session, lecturer.id).await?;
+    let text = crate::materials::slides::clean_text(&input.text).map_err(bad_request)?;
+    let name: Option<String> = input.name.map(|n| n.chars().take(120).collect());
+    let stored = (!text.is_empty()).then_some(text.as_str());
+    store::save_slides(state.db_pool(), material.id, stored, name.as_deref()).await?;
+    Ok(Json(
+        json!({"has_slides": stored.is_some(), "chars": text.chars().count(), "name": name}),
+    ))
+}
+
+/// Slides context from an uploaded `.pptx` (raw body; `?name=` for display).
+pub async fn upload_slides(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+    Path(code): Path<String>,
+    Query(query): Query<SlidesNameQuery>,
+    body: axum::body::Bytes,
+) -> Res<Json<Value>> {
+    let session = owned_session(&state, &lecturer, &code).await?;
+    let material = store::ensure_material(state.db_pool(), &session, lecturer.id).await?;
+    if body.len() > crate::materials::slides::MAX_UPLOAD_BYTES {
+        return Err(bad_request("that file is too large (15 MB at most)"));
+    }
+    let bytes = body.to_vec();
+    // Unzipping and parsing is CPU work: keep it off the async threads.
+    let extracted =
+        tokio::task::spawn_blocking(move || crate::materials::slides::extract_pptx(&bytes))
+            .await
+            .map_err(|e| MatError::from(ServiceError::Internal(e.to_string())))?
+            .map_err(bad_request)?;
+    let text = crate::materials::slides::clean_text(&extracted).map_err(bad_request)?;
+    let name: Option<String> = query.name.map(|n| n.chars().take(120).collect());
+    store::save_slides(state.db_pool(), material.id, Some(&text), name.as_deref()).await?;
+    Ok(Json(
+        json!({"has_slides": true, "chars": text.chars().count(), "name": name}),
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SlidesNameQuery {
+    pub name: Option<String>,
+}
+
 // ---- lecturer: plug-in settings ------------------------------------------------------------
 
 /// Every registered plug-in as `(kind, id, label)`.
@@ -559,6 +628,21 @@ fn is_protected(kind: PluginKind, id: &str) -> bool {
     )
 }
 
+/// The webhook secret is write-only: listings say whether one is set.
+fn redact(kind: PluginKind, id: &str, mut config: Value) -> Value {
+    if kind == PluginKind::Delivery && id == "webhook" {
+        if let Some(map) = config.as_object_mut() {
+            let has = map
+                .get("secret")
+                .and_then(Value::as_str)
+                .is_some_and(|s| !s.is_empty());
+            map.remove("secret");
+            map.insert("has_secret".to_owned(), json!(has));
+        }
+    }
+    config
+}
+
 /// Effective on/off and config for each plug-in, with where it came from
 /// (`course`, `global` or `default`).
 pub async fn list_plugins(
@@ -592,7 +676,7 @@ pub async fn list_plugins(
             let (enabled, config) = pick_setting(mine).unwrap_or((true, json!({})));
             json!({
                 "kind": kind.as_str(), "id": id, "label": label,
-                "enabled": enabled, "config": config, "source": source,
+                "enabled": enabled, "config": redact(kind, id, config), "source": source,
                 "protected": is_protected(kind, id),
             })
         })
@@ -622,9 +706,38 @@ pub async fn put_plugin(
     if !input.enabled && is_protected(kind, &plugin_id) {
         return Err(bad_request("This plug-in cannot be turned off"));
     }
-    let config = input.config.unwrap_or_else(|| json!({}));
+    let mut config = input.config.unwrap_or_else(|| json!({}));
     if !config.is_object() || config.to_string().len() > 8 * 1024 {
         return Err(bad_request("config must be a JSON object under 8 KB"));
+    }
+    if kind == PluginKind::Delivery && plugin_id == "webhook" {
+        if let Some(url) = config
+            .get("url")
+            .and_then(Value::as_str)
+            .filter(|u| !u.is_empty())
+        {
+            crate::materials::lms::validate_destination(url)
+                .await
+                .map_err(bad_request)?;
+        }
+        if config.get("secret").is_some_and(|v| !v.is_string()) {
+            return Err(bad_request("secret must be a string"));
+        }
+        // The secret is write-only, so an update that omits it keeps the old one.
+        if config.get("secret").is_none() {
+            let existing: Option<Value> = sqlx::query_scalar(
+                "select config from material_plugin_settings
+                 where scope = 'course' and course_id = $1 and kind = 'delivery' and plugin_id = 'webhook'",
+            )
+            .bind(course_id)
+            .fetch_optional(state.db_pool())
+            .await?;
+            if let Some(secret) = existing.as_ref().and_then(|c| c.get("secret")).cloned() {
+                if let Some(map) = config.as_object_mut() {
+                    map.insert("secret".to_owned(), secret);
+                }
+            }
+        }
     }
     sqlx::query(
         "insert into material_plugin_settings (scope, course_id, kind, plugin_id, enabled, config)
@@ -641,7 +754,7 @@ pub async fn put_plugin(
     .await?;
     Ok(Json(json!({
         "kind": kind.as_str(), "id": plugin_id, "enabled": input.enabled,
-        "config": config, "source": "course",
+        "config": redact(kind, &plugin_id, config), "source": "course",
     })))
 }
 
@@ -1148,6 +1261,21 @@ mod plugin_tests {
         let n = keys.len();
         keys.dedup();
         assert_eq!(n, keys.len(), "duplicate plug-in ids within a kind");
+    }
+
+    #[test]
+    fn webhook_secret_is_never_echoed() {
+        let shown = redact(
+            PluginKind::Delivery,
+            "webhook",
+            json!({"url": "https://x.example.edu", "secret": "s3cret"}),
+        );
+        assert_eq!(
+            shown,
+            json!({"url": "https://x.example.edu", "has_secret": true})
+        );
+        let other = redact(PluginKind::Renderer, "pdf", json!({"secret": "keep"}));
+        assert_eq!(other, json!({"secret": "keep"}));
     }
 
     #[test]

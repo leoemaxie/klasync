@@ -388,6 +388,15 @@ pub fn router(state: AppState) -> Router {
             post(handlers::materials::unpublish),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides",
+            axum::routing::put(handlers::materials::put_slides),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides/pptx",
+            axum::routing::put(handlers::materials::upload_slides)
+                .layer(axum::extract::DefaultBodyLimit::max(16 * 1024 * 1024)),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/materials/transcript",
             get(handlers::materials::lecture_transcript),
         )

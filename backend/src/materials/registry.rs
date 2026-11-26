@@ -310,6 +310,7 @@ impl Registry {
         registry
             .delivery
             .push(Arc::new(super::delivery::EmailChannel));
+        registry.delivery.push(Arc::new(super::lms::WebhookChannel));
 
         registry
             .analyzers

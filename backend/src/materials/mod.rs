@@ -26,10 +26,12 @@ pub mod compare;
 pub mod delivery;
 pub mod events;
 pub mod generate;
+pub mod lms;
 pub mod prompts;
 pub mod registry;
 pub mod render;
 pub mod service;
+pub mod slides;
 pub mod store;
 
 use sqlx::PgPool;

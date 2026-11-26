@@ -39,24 +39,40 @@ unit-tested.
 - **Email attachments**: `EmailMessage.attachments`; lecture emails carry the
   PDF (DOCX without a browser) up to 8 MB. Books stay link-only.
 - **Concept-map graphics**: `Figure.diagram` (nodes/edges) is drawn as SVG in
-  HTML, PDF and EPUB (`render/svg.rs`). DOCX and Markdown keep the text outline.
+  HTML, PDF and EPUB (`render/svg.rs`), and as PNG in DOCX. Markdown and LaTeX keep the text outline.
 - **Separate worker process**: `KLASYNC_ROLE=worker` runs only the job loops
   (no HTTP), `api` only HTTP, `all` (default) both.
 - **Drafts may be incomplete**: saving a draft only checks schema and size;
   the full validation runs on publish, so a new empty block never loses edits.
 - `GET .../materials/transcript` (lecturer transcript for review) and the
   course materials list now returns every lecture, with `has_material`.
+- **Provider batch mode** (`MATERIALS_BATCH=1`): section jobs go through the
+  provider batch API (about half price, minutes to hours of latency). Answers
+  are validated and stored through the same path as live ones; anything
+  unusable is re-queued interactively. Outline, assembly, summary and the other
+  post-stage generators stay interactive. Verified with a real Gemini batch.
+- **Diagrams in DOCX**: concept-map figures are rasterised to PNG with the
+  headless browser (the one used for PDF) and embedded; without a browser the
+  text outline stays.
+- **LMS push**: the `webhook` delivery channel posts a signed JSON message
+  (`X-Klasync-Signature: sha256=…`, HMAC of the body) with 24-hour download
+  links to a per-course URL (plug-in `config` `{url, secret}`; the secret is
+  write-only). https only, private/loopback addresses refused, no redirects
+  (`MATERIALS_WEBHOOK_ALLOW_HTTP` / `_ALLOW_PRIVATE` relax this for local
+  development). A connector, Zapier/Make flow or script turns it into a Canvas
+  page, Moodle resource and so on.
+- **Slides & notes**: a lecturer can upload a `.pptx` (text read from the
+  OOXML), a `.txt`/`.md`, or paste text; it is added to the outline and section
+  prompts as context (`PUT .../materials/slides[/pptx]`, migration 0015).
 
 **Not built (do not assume it exists):**
 
-- **Provider batch mode** for materials. Jobs run interactively, ordered after
-  other work, with the first draft delayed 4 minutes after the lecture so
-  chapters and the concept map exist. `batch.rs` would need a materials-aware
-  path (`prepare_text_job` does not know these job types).
-- **Diagrams in DOCX** (needs a rasteriser) and **LMS push / slide upload**
-  (spec Phase 6): both need an external integration.
-- **Per-user global plug-in settings UI.** Course overrides have an API and UI;
-  institution-wide (`scope = 'global'`) rows are managed in the database.
+- **Native LMS integrations** (Canvas/Moodle/Blackboard APIs): the webhook is
+  the generic hook; each LMS needs its own connector on the receiving side.
+- **PDF and legacy `.ppt` slides**: no text extractor; export to `.pptx` or
+  paste the text. Slides are text only (images are not read).
+- **Institution-wide plug-in settings UI**: course overrides have an API and
+  UI; `scope = 'global'` rows are managed in the database.
 
 ## Map
 
@@ -122,6 +138,7 @@ Lecturer, per lecture (`{code}` = session short code):
 | `POST .../materials/unpublish` | hide (`{archive: true}` to archive) |
 | `GET .../materials/export?format=pdf&version=<id or draft>[&mode=url]` | download, or a signed URL |
 | `GET .../materials/transcript` | transcript lines for review |
+| `PUT .../materials/slides`, `PUT .../materials/slides/pptx` | slides/notes as text, or a `.pptx` upload |
 | `GET .../materials/versions/{id}` | one version |
 
 Course level: `GET /materials/capabilities`, `GET /courses/{id}/materials`,

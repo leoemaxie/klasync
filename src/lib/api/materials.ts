@@ -5,7 +5,7 @@
  * in step with it (`schema_version` is 1). Text fields hold inline Markdown
  * (`**bold**`, `*italic*`, `` `code` ``); equations are bare LaTeX.
  */
-import { apiRequest, httpBlob } from './http';
+import { apiRequest, httpBlob, API_BASE, getAccessToken } from './http';
 
 // ---- block document -------------------------------------------------------
 
@@ -120,8 +120,15 @@ export interface MaterialDelivery {
   created_at: string;
 }
 
+export interface SlidesInfo {
+  has_slides: boolean;
+  chars: number;
+  name: string | null;
+}
+
 export interface MaterialResponse {
   material: LectureMaterial | null;
+  slides?: SlidesInfo;
   session: { id: string; title: string };
   versions?: MaterialVersionSummary[];
   deliveries?: MaterialDelivery[];
@@ -189,6 +196,37 @@ export const fetchMaterialTranscript = (sessionCode: string) =>
   apiRequest<{
     lines: { offset_sec: number | null; text: string }[];
   }>(`${lecturePath(sessionCode)}/transcript`);
+
+/** Slides/notes as plain text; empty text clears them. */
+export const saveMaterialSlidesText = (
+  sessionCode: string,
+  text: string,
+  name?: string
+) =>
+  apiRequest<SlidesInfo>(`${lecturePath(sessionCode)}/slides`, {
+    method: 'PUT',
+    body: JSON.stringify({ text, name }),
+  });
+
+/** Upload a .pptx; its text becomes generation context. */
+export async function uploadMaterialSlides(
+  sessionCode: string,
+  file: File
+): Promise<SlidesInfo> {
+  const token = getAccessToken();
+  const res = await fetch(
+    `${API_BASE}${lecturePath(sessionCode)}/slides/pptx?name=${encodeURIComponent(file.name)}`,
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+      body: file,
+    }
+  );
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload.error ?? 'Could not read that file');
+  return payload as SlidesInfo;
+}
 
 /** Creates the material if needed and (re)starts generation. */
 export const generateMaterial = (sessionCode: string) =>

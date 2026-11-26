@@ -579,10 +579,19 @@ pub const EXPORT_URL_TTL: std::time::Duration = std::time::Duration::from_secs(3
 /// A short-lived signed download URL for an exported file, when the storage
 /// backend supports signing and the file is cached. `None` means: stream it.
 pub async fn export_url(state: &AppState, file: &Exported) -> Option<String> {
+    export_url_for(state, file, EXPORT_URL_TTL).await
+}
+
+/// Like [`export_url`] with a caller-chosen lifetime (LMS pushes need hours).
+pub async fn export_url_for(
+    state: &AppState,
+    file: &Exported,
+    ttl: std::time::Duration,
+) -> Option<String> {
     let key = file.storage_key.as_deref()?;
     match state
         .storage
-        .presign_get(key, EXPORT_URL_TTL, Some(&file.filename))
+        .presign_get(key, ttl, Some(&file.filename))
         .await
     {
         Ok(url) => url,

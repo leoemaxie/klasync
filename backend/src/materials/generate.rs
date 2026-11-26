@@ -374,6 +374,12 @@ async fn run_outline(
             previous_context(previous, 2_000)
         ));
     }
+    if let Some(slides) = store::load_slides(pool, material.id).await {
+        input.push_str(&format!(
+            "\nThe lecturer's slides (follow their order and wording where they match the lecture):\n{}\n",
+            super::slides::prompt_window(&slides, 8_000)
+        ));
+    }
     input.push_str(&format!("\nTranscript:\n{body}"));
 
     let duration = transcript.duration_sec;
@@ -528,7 +534,11 @@ async fn generate_section_blocks(
 }
 
 /// The model input for one section: `(input, transcript excerpt)`.
-fn section_writer_input(cx: &GenerationContext<'_>, plan: &SectionPlan) -> (String, String) {
+fn section_writer_input(
+    cx: &GenerationContext<'_>,
+    plan: &SectionPlan,
+    slides: Option<&str>,
+) -> (String, String) {
     let limit = cx.state.ai.max_input_chars();
     let excerpt = prompts::slice_transcript(
         &cx.transcript.text,
@@ -560,6 +570,12 @@ fn section_writer_input(cx: &GenerationContext<'_>, plan: &SectionPlan) -> (Stri
             ));
         }
         input.push_str(&format!("\nLecturer's instruction: {instruction}\n"));
+    }
+    if let Some(slides) = slides {
+        input.push_str(&format!(
+            "\nThe lecturer's slides (use their terminology and structure; the transcript stays the source of what was taught):\n{}\n",
+            super::slides::prompt_window(slides, 6_000)
+        ));
     }
     input.push_str(&format!("\nTranscript:\n{excerpt}"));
     (input, excerpt)
@@ -620,7 +636,8 @@ pub async fn prepare_section_request(
         instruction: None,
         precomputed: None,
     };
-    let (input, _) = section_writer_input(&cx, plan);
+    let slides = store::load_slides(pool, material.id).await;
+    let (input, _) = section_writer_input(&cx, plan, slides.as_deref());
     Ok(Some(
         TextRequest::new(Task::Material, prompts::section_system(&settings), input)
             .json()
@@ -988,7 +1005,8 @@ impl Generator for SectionWriter {
         let plan = cx
             .section
             .ok_or_else(|| PluginError::failed("no section to write"))?;
-        let (input, excerpt) = section_writer_input(cx, plan);
+        let slides = store::load_slides(cx.pool, cx.material.id).await;
+        let (input, excerpt) = section_writer_input(cx, plan, slides.as_deref());
         let parse = |value: &Value| {
             let (blocks, dropped) = prompts::parse_blocks(value);
             if blocks.is_empty() {

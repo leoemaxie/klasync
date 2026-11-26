@@ -291,4 +291,22 @@
     color: #ff9b7a;
     font-size: 13px;
   }
+  /* The global label/input styles are for the sign-in forms; undo them here. */
+  .check {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+  }
+  .check input[type='checkbox'] {
+    width: auto;
+    margin: 0;
+    flex: none;
+  }
 </style>

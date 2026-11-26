@@ -107,6 +107,7 @@
       >
       {#key selected.code}
         <LectureMaterialPanel
+          {courseId}
           sessionCode={selected.code}
           sessionId={selected.id}
           title={selected.title}

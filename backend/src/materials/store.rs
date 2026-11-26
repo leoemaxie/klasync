@@ -418,3 +418,35 @@ pub async fn enqueue_job(
     .await?;
     Ok(inserted.rows_affected() > 0)
 }
+
+/// The lecturer's slides text for a material, if any.
+pub async fn load_slides(pool: &PgPool, material_id: Uuid) -> Option<String> {
+    sqlx::query_scalar::<_, Option<String>>(
+        "select slides_text from lecture_materials where id = $1",
+    )
+    .bind(material_id)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .flatten()
+    .filter(|t| !t.trim().is_empty())
+}
+
+/// Replaces (or with `None` clears) the slides text.
+pub async fn save_slides(
+    pool: &PgPool,
+    material_id: Uuid,
+    text: Option<&str>,
+    name: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "update lecture_materials set slides_text = $2, slides_name = $3, updated_at = now() where id = $1",
+    )
+    .bind(material_id)
+    .bind(text)
+    .bind(name)
+    .execute(pool)
+    .await?;
+    Ok(())
+}

@@ -11,10 +11,12 @@
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import MaterialEditor from './MaterialEditor.svelte';
+  import SlidesPanel from './SlidesPanel.svelte';
   import {
     downloadMaterial,
     fetchMaterial,
     fetchMaterialCapabilities,
+    fetchPluginSettings,
     fetchMaterialTranscript,
     generateMaterial,
     publishMaterial,
@@ -27,11 +29,13 @@
   import { exportFilename, saveBlob } from '$lib/materials/download';
 
   let {
+    courseId,
     sessionCode,
     sessionId,
     title,
     onChanged,
   }: {
+    courseId: string;
     sessionCode: string;
     sessionId: string;
     title: string;
@@ -49,6 +53,8 @@
   let editor = $state<MaterialEditor>();
   let editorKey = $state(0);
   let sendEmail = $state(false);
+  let pushLms = $state(false);
+  let lmsConfigured = $state(false);
   let message = $state('');
   let showPublish = $state(false);
 
@@ -89,6 +95,14 @@
     void load();
     fetchMaterialCapabilities()
       .then((c) => (caps = c))
+      .catch(() => {});
+    fetchPluginSettings(courseId)
+      .then((r) => {
+        const w = r.plugins.find(
+          (p) => p.kind === 'delivery' && p.id === 'webhook'
+        );
+        lmsConfigured = !!w?.enabled && !!w.config.url;
+      })
       .catch(() => {});
     fetchMaterialTranscript(sessionCode)
       .then((t) => (transcript = t.lines))
@@ -139,11 +153,14 @@
       'publish',
       () =>
         publishMaterial(sessionCode, {
-          deliver: sendEmail ? ['email'] : [],
+          deliver: [
+            ...(sendEmail ? ['email'] : []),
+            ...(pushLms ? ['webhook'] : []),
+          ],
           message: message.trim() || undefined,
         }),
-      sendEmail
-        ? 'Published. Email is being sent to students.'
+      sendEmail || pushLms
+        ? `Published. ${[sendEmail && 'Email is being sent', pushLms && 'the LMS is being notified'].filter(Boolean).join(' and ')}.`
         : 'Published. Students can read it now.'
     );
     showPublish = false;
@@ -179,7 +196,7 @@
 
   const formats = $derived(caps?.formats.filter((f) => f.available) ?? []);
   const emailChannel = $derived(
-    caps?.delivery_channels.find((c) => c.id === 'email' && !c.deferred)
+    caps?.delivery_channels.find((c) => c.id === 'email')
   );
   const statusLabel: Record<string, string> = {
     draft: 'Draft',
@@ -199,6 +216,11 @@
       description="Klasync drafts a structured handout from the lecture recording. You review, edit and publish it."
     >
       {#if error}<p class="err" role="alert">{error}</p>{/if}
+      <SlidesPanel
+        {sessionCode}
+        info={data?.slides ?? null}
+        onChanged={() => void load()}
+      />
       <Button
         variant="accent"
         disabled={!!busy}
@@ -289,6 +311,12 @@
             </label>
           {/if}
         {/if}
+        {#if lmsConfigured}
+          <label class="check">
+            <input type="checkbox" bind:checked={pushLms} />
+            Also push to the LMS (webhook)
+          </label>
+        {/if}
         <div class="row">
           <Button
             size="sm"
@@ -324,6 +352,12 @@
           : ''}. Try regenerating.
       </p>
     {/if}
+
+    <SlidesPanel
+      {sessionCode}
+      info={data?.slides ?? null}
+      onChanged={() => void load()}
+    />
 
     {#if formats.length && material.draft_doc}
       <div class="exports">
@@ -556,5 +590,23 @@
     flex-wrap: wrap;
     font-size: 13.5px;
     color: var(--text-secondary);
+  }
+  /* The global label/input styles are for the sign-in forms; undo them here. */
+  .check {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+  }
+  .check input[type='checkbox'] {
+    width: auto;
+    margin: 0;
+    flex: none;
   }
 </style>

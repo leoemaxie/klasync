@@ -21,6 +21,8 @@
   let caps = $state<MaterialCapabilities | null>(null);
   let plugins = $state<PluginSetting[]>([]);
   let loading = $state(true);
+  let hookUrl = $state('');
+  let hookSecret = $state('');
   let saving = $state(false);
   let error = $state('');
   let notice = $state('');
@@ -34,6 +36,8 @@
         fetchMaterialCapabilities(),
         fetchPluginSettings(courseId),
       ]);
+      hookUrl =
+        (plugins.find((x) => x.id === 'webhook')?.config.url as string) ?? '';
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not load settings';
     } finally {
@@ -68,6 +72,25 @@
       );
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not update plug-in';
+    }
+  }
+
+  async function saveHook(p: PluginSetting) {
+    error = '';
+    notice = '';
+    try {
+      await setPluginSetting(courseId, p.kind, p.id, {
+        enabled: true,
+        config: {
+          url: hookUrl.trim(),
+          ...(hookSecret ? { secret: hookSecret } : {}),
+        },
+      });
+      hookSecret = '';
+      plugins = (await fetchPluginSettings(courseId)).plugins;
+      notice = 'Webhook saved.';
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Could not save the webhook';
     }
   }
 
@@ -203,6 +226,42 @@
                 >
               {/if}
             </div>
+            {#if p.kind === 'delivery' && p.id === 'webhook'}
+              <div class="webhook">
+                <label class="field">
+                  <span>Webhook URL (https)</span>
+                  <input
+                    type="url"
+                    placeholder="https://lms.example.edu/hooks/klasync"
+                    bind:value={hookUrl}
+                  />
+                </label>
+                <label class="field">
+                  <span>
+                    Signing secret {p.config.has_secret
+                      ? '(set — leave blank to keep)'
+                      : '(optional)'}
+                  </span>
+                  <input
+                    type="password"
+                    autocomplete="off"
+                    bind:value={hookSecret}
+                  />
+                </label>
+                <div class="row">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onclick={() => void saveHook(p)}>Save webhook</Button
+                  >
+                  <span class="muted">
+                    Each publish can push a signed JSON message with 24-hour
+                    download links. Verify it with the
+                    <code>X-Klasync-Signature</code> header (HMAC-SHA256).
+                  </span>
+                </div>
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -299,5 +358,23 @@
     border-radius: 8px;
     color: #ff9b7a;
     font-size: 13px;
+  }
+  /* The global label/input styles are for the sign-in forms; undo them here. */
+  .check {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+  }
+  .check input[type='checkbox'] {
+    width: auto;
+    margin: 0;
+    flex: none;
   }
 </style>
