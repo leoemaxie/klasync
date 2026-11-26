@@ -1,0 +1,9 @@
+Good morning everyone. Today we are covering photosynthesis, the process that powers almost all life on Earth. Photosynthesis converts light energy into chemical energy stored in glucose. The overall equation is six carbon dioxide plus six water, plus light, gives one glucose and six oxygen.
+
+The process happens in the chloroplast, and it has two main stages. The first stage is the light-dependent reactions, which take place in the thylakoid membranes. Chlorophyll absorbs sunlight, mostly red and blue wavelengths, and uses that energy to split water molecules. This is called photolysis, and it releases oxygen as a by-product. The energy captured is stored in two carriers: ATP and NADPH.
+
+The second stage is the Calvin cycle, also called the light-independent reactions. It takes place in the stroma of the chloroplast. The Calvin cycle uses the ATP and NADPH from the first stage to fix carbon dioxide into sugar. The key enzyme is Rubisco, which attaches carbon dioxide to a five-carbon molecule called RuBP. After a series of steps, the cycle produces G3P, a three-carbon sugar, which the plant uses to build glucose.
+
+Several factors limit the rate of photosynthesis. These are light intensity, carbon dioxide concentration, and temperature. If light is low, the light-dependent reactions slow down. If temperature gets too high, enzymes like Rubisco denature and the rate drops sharply.
+
+Finally, remember the link between the two stages. The light reactions make ATP and NADPH, and the Calvin cycle spends them. Neither stage works without the other. For the exam, be ready to name where each stage happens, its inputs, and its outputs. Thank you, and see you next week.

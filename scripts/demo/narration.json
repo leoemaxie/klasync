@@ -1,0 +1,25 @@
+{
+  "style": "Accent: Nigerian English. Tone: warm, clear and upbeat, at a steady natural pace.\n\nTranscript:",
+  "voice": "Kore",
+  "lines": {
+    "c_intro": "Welcome to Klasync, where every lecture is captioned live, and ready to study.",
+    "s1": "The lecturer signs in, reviews the class roster, and starts a live session.",
+    "s2": "Students join from their phones using the session code.",
+    "s3": "As the lecturer speaks, Gemini transcribes the audio, and captions appear instantly on every student's phone.",
+    "s4": "Check-ins, raised hands, and questions reach the lecturer in real time.",
+    "s5": "Meanwhile, an A.I. summary builds as the lecture goes.",
+    "s6a": "With one tap, the lecturer launches an A.I. quiz.",
+    "s6b": "Gemini writes a question from what was just taught. Students answer on their phones, and the results update live.",
+    "s7": "When class ends, attendance is scored automatically, and rolled into course analytics.",
+    "c_mid": "After class, everything is waiting in the student's archive.",
+    "t1": "On mobile, the student signs in to their lecture archive.",
+    "t2": "The transcript is searchable, and synced to the recording.",
+    "t3": "A.I. chapters let them jump to any moment.",
+    "t3b": "And the summary captures the key ideas.",
+    "t4": "An interactive concept map shows how the ideas connect.",
+    "t5": "Flashcards are generated straight from the lecture.",
+    "t6": "The new quiz tests understanding, with instant feedback and explanations.",
+    "t7": "Students can also ask the lecture a question, and every answer cites the moment it came from.",
+    "c_out": "Klasync. Every lecture, accessible to all."
+  }
+}
