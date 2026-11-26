@@ -20,7 +20,7 @@ serde_json = { version = "1", default-features = false, features = ["std"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "derive", "json", "bigdecimal"] }
 bigdecimal = "0.4"
 argon2 = { version = "0.5", default-features = false, features = ["std", "password-hash"] }
-jsonwebtoken = { version = "9", default-features = false }
+jsonwebtoken = { version = "12", default-features = false }
 aws-config = { version = "1", default-features = false }
 aws-credential-types = "1"
 aws-sdk-s3 = { version = "1", default-features = false, features = ["rt-tokio", "default-https-client", "behavior-version-latest"] }
@@ -33,13 +33,13 @@ dotenvy = "0.15"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 thiserror = "2"
 futures-util = { version = "0.3", default-features = false, features = ["alloc", "std"] }
-tower-http = { version = "0.6", default-features = false, features = ["cors", "trace"] }
+tower-http = { version = "0.7", default-features = false, features = ["cors", "trace"] }
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
 uuid = { version = "1", default-features = false, features = ["serde", "v4", "v7", "std"] }
 qrcode = { version = "0.15", default-features = false, features = ["svg"] }
 async-trait = "0.1"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
 sha2 = "0.11"
 redis = { version = "1", default-features = false, features = ["aio", "tokio-comp", "streams", "connection-manager", "tokio-native-tls-comp", "tls-native-tls", "script"] }
 subtle = "2"
