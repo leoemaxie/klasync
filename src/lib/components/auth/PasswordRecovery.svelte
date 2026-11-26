@@ -178,9 +178,7 @@
           class="text-link"
           onclick={() => setMode(mode === 'request' ? 'complete' : 'request')}
         >
-          {mode === 'request'
-            ? 'Have a token?'
-            : 'Request a token'}
+          {mode === 'request' ? 'Have a token?' : 'Request a token'}
         </button>
         <a
           href={role === 'lecturer'

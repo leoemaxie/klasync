@@ -226,7 +226,7 @@ fn validate_university_email(email: &str) -> Result<(), ApiError> {
     let domain = std::env::var("UNIVERSITY_EMAIL_DOMAIN")
         .ok()
         .filter(|value| !value.is_empty())
-        .ok_or_else(|| ApiError::service_unavailable())?;
+        .ok_or_else(ApiError::service_unavailable)?;
     if !email.contains('@')
         || !email
             .to_ascii_lowercase()

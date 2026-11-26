@@ -18,3 +18,6 @@ DESIGN.md
 .pnpm-store/
 
 deploy/certs/
+
+# Local Redis snapshots
+dump.rdb

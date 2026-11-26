@@ -1,0 +1,32 @@
+# Weekly dependency updates, grouped so a week's worth arrives as one PR per
+# ecosystem rather than dozens.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ['*']
+        update-types: [minor, patch]
+  - package-ecosystem: cargo
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      backend:
+        patterns: ['*']
+        update-types: [minor, patch]
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+    groups:
+      desktop:
+        patterns: ['*']
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

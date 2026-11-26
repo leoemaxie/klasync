@@ -361,7 +361,7 @@ pub fn router(state: AppState) -> Router {
             post(handlers::presence::heartbeat),
         )
         .fallback(not_found::not_found)
-        .layer(DefaultBodyLimit::max(1 * 1024 * 1024))
+        .layer(DefaultBodyLimit::max(1024 * 1024))
         .layer(cors)
         .layer(middleware::from_fn_with_state(
             state.clone(),

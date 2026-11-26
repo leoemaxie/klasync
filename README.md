@@ -105,6 +105,23 @@ pnpm format
 
 ---
 
+## Continuous integration
+
+Every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+| Job | What it checks | Run it locally |
+|---|---|---|
+| **Frontend** | Prettier, `svelte-check` (errors fail), unit tests, production build | `pnpm format:check && pnpm check --threshold error && pnpm test && pnpm build` |
+| **Backend** | `cargo fmt`, `clippy -D warnings`, unit and integration tests (no database needed: queries come from the committed `backend/.sqlx` cache) | `cd backend && SQLX_OFFLINE=true cargo clippy --locked --all-targets -- -D warnings && SQLX_OFFLINE=true cargo test --locked` |
+| **Desktop (Tauri, Linux)** | `src-tauri` compiles and links with `--locked`, and passes clippy | `cargo build --locked --manifest-path src-tauri/Cargo.toml` (needs the GTK/WebKit libraries listed in the workflow) |
+| **API lifecycle (e2e)** | The real backend against Postgres + pgvector, TLS Redis and an S3 mock: auth, live captions, recording, archive, access control. No AI key needed | `docker compose up -d --wait postgres redis s3`, run the backend, then `E2E_SKIP_AI=1 python3 scripts/e2e.py` |
+
+`CI passed` is the single check to require in branch protection. If you change
+a SQL query in the backend, refresh the offline cache (`cargo sqlx prepare`, or
+build once with `SQLX_OFFLINE_DIR=backend/.sqlx` against a migrated database) and
+commit `backend/.sqlx`. Dependabot opens grouped weekly update PRs. Releases are
+built separately by `release.yml`.
+
 ## License
 
 MIT

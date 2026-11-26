@@ -28,10 +28,8 @@ pub async fn reconcile_student(
     pool: &PgPool,
     student_id: Uuid,
 ) -> Result<ReconcileOutcome, sqlx::Error> {
-    let mut outcome = ReconcileOutcome::default();
-
     // Participants are only matched when nobody else already owns the row.
-    outcome.claims_created = sqlx::query(
+    let claims_created = sqlx::query(
         "insert into student_session_claims (participant_id, student_account_id, verified_at)
          select p.id, sa.id, now()
          from student_accounts sa
@@ -45,7 +43,7 @@ pub async fn reconcile_student(
     .await?
     .rows_affected();
 
-    outcome.participants_linked = sqlx::query(
+    let participants_linked = sqlx::query(
         "update session_participants p
          set student_account_id = sa.id
          from student_accounts sa
@@ -87,8 +85,11 @@ pub async fn reconcile_student(
     .await?
     .rows_affected();
 
-    outcome.enrollments_created = from_claims + from_roster;
-    Ok(outcome)
+    Ok(ReconcileOutcome {
+        claims_created,
+        participants_linked,
+        enrollments_created: from_claims + from_roster,
+    })
 }
 
 /// Best-effort wrapper for request handlers: reconciliation problems must never

@@ -12,6 +12,7 @@ for the AI steps, and `psql` for database assertions.
     E2E_BASE=http://host:8787 python3 scripts/e2e.py
 
 Environment:
+    E2E_SKIP_AI     1 = run only the steps that need no AI provider (used by CI)
     E2E_BASE        API origin                       (default http://127.0.0.1:8787)
     E2E_DB          psql connection string           (default compose postgres)
     E2E_WAV / E2E_WEBM  speech samples for the audio steps (optional)
@@ -497,14 +498,30 @@ def s_costs():
 
 
 # -------------------------------------------------------------------- main ----
+# Steps that need no AI provider: auth, live captions + summaries (heuristic),
+# audio recording and streaming, archive matching and access control. Used by
+# CI, which has no model keys (E2E_SKIP_AI=1).
+NO_AI_STEPS = (
+    s_health, s_lecturer, s_session, s_join, s_captions, s_rolling, s_hand,
+    s_audio_ws, s_end, s_student, s_access, s_archive_basics, s_stream,
+)
+ALL_STEPS = (
+    s_health, s_lecturer, s_session, s_join, s_captions, s_rolling, s_polls, s_hand,
+    s_audio_ws, s_transcribe, s_end, s_student, s_access, s_archive_basics, s_stream,
+    s_post_lecture, s_index, s_flashcards, s_chapters, s_visual, s_ask, s_search,
+    s_upload, s_backfill, s_costs,
+)
+
+
 def main():
-    print(f"E2E run {RUN} against {BASE}\n")
-    for fn in (
-        s_health, s_lecturer, s_session, s_join, s_captions, s_rolling, s_polls, s_hand,
-        s_audio_ws, s_transcribe, s_end, s_student, s_access, s_archive_basics, s_stream,
-        s_post_lecture, s_index, s_flashcards, s_chapters, s_visual, s_ask, s_search,
-        s_upload, s_backfill, s_costs,
-    ):
+    skip_ai = os.environ.get("E2E_SKIP_AI") == "1"
+    if skip_ai and not os.path.exists(WEBM):
+        # Without a transcription model the bytes are never decoded, so any
+        # payload exercises recording, storage and Range streaming.
+        with open(WEBM, "wb") as f:
+            f.write(os.urandom(60_000))
+    print(f"E2E run {RUN} against {BASE}" + ("  (AI steps skipped)" if skip_ai else "") + "\n")
+    for fn in NO_AI_STEPS if skip_ai else ALL_STEPS:
         try:
             fn()
         except Exception:  # noqa: BLE001

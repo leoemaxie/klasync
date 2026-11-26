@@ -253,12 +253,12 @@ async fn condense(
                 "[{} – {}]",
                 section
                     .lines()
-                    .find_map(|l| study::leading_stamp(l))
+                    .find_map(study::leading_stamp)
                     .unwrap_or_default(),
                 section
                     .lines()
                     .rev()
-                    .find_map(|l| study::leading_stamp(l))
+                    .find_map(study::leading_stamp)
                     .unwrap_or_default()
             );
             let output = state

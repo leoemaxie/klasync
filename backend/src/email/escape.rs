@@ -1,7 +1,7 @@
-/// HTML entity escaping for dynamic values inserted into email templates.
-///
-/// Prevents HTML injection when user-supplied strings (course names, display
-/// names, URLs) are interpolated into the branded email layout.
+//! HTML entity escaping for dynamic values inserted into email templates.
+//!
+//! Prevents HTML injection when user-supplied strings (course names, display
+//! names, URLs) are interpolated into the branded email layout.
 
 pub fn escape_html(input: &str) -> String {
     let mut output = String::with_capacity(input.len());
