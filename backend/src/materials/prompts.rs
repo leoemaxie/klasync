@@ -65,7 +65,8 @@ Return ONLY JSON: {{\"blocks\": [ ... ]}}. Each block is an object with a \"type
 - equation: {{\"latex\" (bare LaTeX, no $ signs), \"caption\"?}}\n\
 - table: {{\"caption\"?, \"header\": [string], \"rows\": [[string]]}}\n\
 - callout: {{\"variant\": \"note\"|\"tip\"|\"warning\"|\"misconception\", \"text\"}}\n\
-Text may use inline Markdown (**bold**, *italic*, `code`).\n\
+Text may use inline Markdown (**bold**, *italic*, `code`). Wrap inline maths in single dollar signs, e.g. $q = k A \\Delta T$. \
+Inside JSON strings every LaTeX backslash must be written as a double backslash (\\\\frac, \\\\text, \\\\times).\n\
 EVERY block must also carry \"sources\": [{{\"start\": \"mm:ss\", \"end\": \"mm:ss\"}}] copied from the transcript \
 timestamps it was written from. If you add something the lecturer did not say (extra context, an additional \
 example), set \"origin\": \"supplemented\" and keep it clearly secondary. Never state facts you are unsure of.\n\
@@ -95,6 +96,87 @@ every question must be answerable from the handout.",
 }
 
 // ---- JSON helpers ---------------------------------------------------------------
+
+/// LaTeX commands that begin with a letter JSON also uses for an escape
+/// (`\t`, `\f`, `\b`, `\r`, `\n`). Models often write them with a single
+/// backslash inside a JSON string, which then parses as a tab, form feed and
+/// so on (`\text` becomes TAB + "ext"). Longest names first.
+const LATEX_COMMANDS: &[&str] = &[
+    "textbf",
+    "textit",
+    "text",
+    "times",
+    "theta",
+    "tau",
+    "tilde",
+    "triangle",
+    "top",
+    "tan",
+    "to",
+    "frac",
+    "forall",
+    "flat",
+    "beta",
+    "begin",
+    "bar",
+    "boldsymbol",
+    "bigl",
+    "bigr",
+    "rightarrow",
+    "right",
+    "rangle",
+    "rho",
+    "nabla",
+    "neq",
+    "neg",
+    "notin",
+    "nu",
+    "ne",
+    "not",
+];
+
+/// Doubles a lone backslash that starts one of [`LATEX_COMMANDS`], so the JSON
+/// parser yields the LaTeX the model meant. Already-doubled backslashes and
+/// real escapes (`\n`, `\"`, `\u00e9`) are left alone.
+pub fn fix_json_latex_escapes(raw: &str) -> String {
+    let chars: Vec<char> = raw.chars().collect();
+    let mut out = String::with_capacity(raw.len() + 16);
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] != '\\' {
+            out.push(chars[i]);
+            i += 1;
+            continue;
+        }
+        // Count the run of backslashes; an odd run ends in a real escape start.
+        let start = i;
+        while i < chars.len() && chars[i] == '\\' {
+            i += 1;
+        }
+        let run = i - start;
+        for _ in 0..run {
+            out.push('\\');
+        }
+        if run % 2 == 1 {
+            let rest: String = chars[i..].iter().take(12).collect();
+            let word_end = |name: &str| {
+                rest.starts_with(name)
+                    && !rest[name.len()..]
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_ascii_alphabetic())
+            };
+            let lead = rest.chars().next();
+            if matches!(lead, Some('t' | 'f' | 'b' | 'r' | 'n'))
+                && LATEX_COMMANDS.iter().any(|name| word_end(name))
+            {
+                // Turn the lone backslash into an escaped backslash.
+                out.push('\\');
+            }
+        }
+    }
+    out
+}
 
 fn str_of<'a>(value: &'a Value, keys: &[&str]) -> Option<&'a str> {
     keys.iter()
@@ -137,7 +219,11 @@ pub fn parse_outline(value: &Value, duration_sec: i32, fallback_title: &str) -> 
         let Some(title) = str_of(item, &["title", "name"]) else {
             continue;
         };
-        let start = item.get("start").and_then(stamp_of).unwrap_or(0).clamp(0, duration);
+        let start = item
+            .get("start")
+            .and_then(stamp_of)
+            .unwrap_or(0)
+            .clamp(0, duration);
         let end = item
             .get("end")
             .and_then(stamp_of)
@@ -146,7 +232,9 @@ pub fn parse_outline(value: &Value, duration_sec: i32, fallback_title: &str) -> 
         sections.push(SectionPlan {
             index: 0,
             title: title.chars().take(120).collect(),
-            objective: str_of(item, &["objective", "summary"]).unwrap_or("").to_owned(),
+            objective: str_of(item, &["objective", "summary"])
+                .unwrap_or("")
+                .to_owned(),
             start_sec: start,
             end_sec: end,
         });
@@ -169,7 +257,9 @@ pub fn parse_outline(value: &Value, duration_sec: i32, fallback_title: &str) -> 
         section.index = i;
     }
     Some(Outline {
-        title: str_of(object, &["title"]).unwrap_or(fallback_title).to_owned(),
+        title: str_of(object, &["title"])
+            .unwrap_or(fallback_title)
+            .to_owned(),
         objectives: str_list(object, &["objectives", "learning_objectives"])
             .into_iter()
             .take(6)
@@ -193,7 +283,9 @@ fn merge_shortest_pair(sections: &mut Vec<SectionPlan>) {
     section.title = format!("{} and {}", section.title, next.title);
     section.end_sec = next.end_sec;
     if !next.objective.is_empty() {
-        section.objective = format!("{} {}", section.objective, next.objective).trim().to_owned();
+        section.objective = format!("{} {}", section.objective, next.objective)
+            .trim()
+            .to_owned();
     }
 }
 
@@ -273,8 +365,14 @@ fn ranges_of(item: &Value) -> Vec<SourceRange> {
         .map(|list| {
             list.iter()
                 .filter_map(|r| {
-                    let start = r.get("start").or_else(|| r.get("start_sec")).and_then(stamp_of)?;
-                    let end = r.get("end").or_else(|| r.get("end_sec")).and_then(stamp_of)?;
+                    let start = r
+                        .get("start")
+                        .or_else(|| r.get("start_sec"))
+                        .and_then(stamp_of)?;
+                    let end = r
+                        .get("end")
+                        .or_else(|| r.get("end_sec"))
+                        .and_then(stamp_of)?;
                     Some(SourceRange {
                         start_sec: start,
                         end_sec: end.max(start),
@@ -311,7 +409,8 @@ pub fn parse_blocks(value: &Value) -> (Vec<Block>, usize) {
             map.remove("id");
             map.remove("locked");
             // Models often name the heading text `title`.
-            if map.get("type").and_then(Value::as_str) == Some("heading") && !map.contains_key("text")
+            if map.get("type").and_then(Value::as_str) == Some("heading")
+                && !map.contains_key("text")
             {
                 if let Some(title) = map.get("title").cloned() {
                     map.insert("text".into(), title);
@@ -525,13 +624,16 @@ pub fn replace_section(doc: &mut MaterialDoc, heading_id: &str, fresh: Vec<Block
         .filter(|b| b.locked)
         .cloned()
         .collect();
-    let existing: std::collections::HashSet<String> = doc.blocks.iter().map(|b| b.id.clone()).collect();
+    let existing: std::collections::HashSet<String> =
+        doc.blocks.iter().map(|b| b.id.clone()).collect();
     let mut fresh = fresh;
     // Fresh ids must not collide with blocks that stay in the document.
     for (n, block) in fresh.iter_mut().enumerate() {
         let mut candidate = format!("{heading_id}-r{}", n + 1);
         let mut bump = 0;
-        while existing.contains(&candidate) && !doc.blocks[start + 1..end].iter().any(|b| b.id == candidate) {
+        while existing.contains(&candidate)
+            && !doc.blocks[start + 1..end].iter().any(|b| b.id == candidate)
+        {
             bump += 1;
             candidate = format!("{heading_id}-r{}-{bump}", n + 1);
         }
@@ -629,6 +731,30 @@ mod tests {
     }
 
     #[test]
+    fn latex_backslashes_survive_json_parsing() {
+        // The model wrote single backslashes inside JSON strings.
+        let raw = r#"{"a": "\text{m}^2 \times 10 \frac{1}{2} \nu and \\text{ok} \n next \u00e9 tab\there"}"#;
+        let broken: Value = serde_json::from_str(raw).unwrap();
+        assert!(
+            broken["a"].as_str().unwrap().contains('\t'),
+            "premise: plain parsing mangles it"
+        );
+        let fixed: Value = serde_json::from_str(&fix_json_latex_escapes(raw)).unwrap();
+        let text = fixed["a"].as_str().unwrap();
+        assert!(
+            text.contains("\\text{m}^2 \\times 10 \\frac{1}{2} \\nu"),
+            "{text}"
+        );
+        assert!(
+            text.contains("\\text{ok}"),
+            "already-doubled backslashes are untouched: {text}"
+        );
+        assert!(text.contains("\n next"), "real newlines stay newlines");
+        assert!(text.contains('é'), "unicode escapes stay");
+        assert!(text.contains("tab\there"), "a real tab escape stays a tab");
+    }
+
+    #[test]
     fn outline_is_clamped_sorted_and_deoverlapped() {
         let value = json!({
             "title": "Lecture 3",
@@ -661,7 +787,8 @@ mod tests {
 
     #[test]
     fn slices_by_timestamp_and_keeps_continuations() {
-        let text = "[00:00] intro\n[01:00] heat flows\nand continues\n[05:00] later topic\n[09:00] end";
+        let text =
+            "[00:00] intro\n[01:00] heat flows\nand continues\n[05:00] later topic\n[09:00] end";
         let slice = slice_transcript(text, 55, 120, 0, 10_000);
         assert!(slice.contains("heat flows"));
         assert!(slice.contains("and continues"));
@@ -689,11 +816,32 @@ mod tests {
     #[test]
     fn grounding_marks_uncited_blocks_supplemented() {
         let mut blocks = vec![
-            Block::new("a", BlockKind::Paragraph { text: "cited".into() })
-                .with_sources(vec![SourceRange { start_sec: 10, end_sec: 5000 }]),
-            Block::new("b", BlockKind::Paragraph { text: "uncited".into() }),
-            Block::new("c", BlockKind::Paragraph { text: "late".into() })
-                .with_sources(vec![SourceRange { start_sec: 9000, end_sec: 9100 }]),
+            Block::new(
+                "a",
+                BlockKind::Paragraph {
+                    text: "cited".into(),
+                },
+            )
+            .with_sources(vec![SourceRange {
+                start_sec: 10,
+                end_sec: 5000,
+            }]),
+            Block::new(
+                "b",
+                BlockKind::Paragraph {
+                    text: "uncited".into(),
+                },
+            ),
+            Block::new(
+                "c",
+                BlockKind::Paragraph {
+                    text: "late".into(),
+                },
+            )
+            .with_sources(vec![SourceRange {
+                start_sec: 9000,
+                end_sec: 9100,
+            }]),
         ];
         let downgraded = ground_blocks(&mut blocks, 600);
         assert_eq!(downgraded, 2);
@@ -707,15 +855,38 @@ mod tests {
     #[test]
     fn repair_fixes_what_it_can() {
         let mut blocks = vec![
-            Block::new("e1", BlockKind::Equation { latex: "$x = \\frac{1}{2}$".into(), caption: None, number: None }),
-            Block::new("e2", BlockKind::Equation { latex: "\\frac{1".into(), caption: None, number: None }),
-            Block::new("t", BlockKind::Table { caption: None, header: vec!["a".into(), "b".into()], rows: vec![vec!["1".into()]] }),
+            Block::new(
+                "e1",
+                BlockKind::Equation {
+                    latex: "$x = \\frac{1}{2}$".into(),
+                    caption: None,
+                    number: None,
+                },
+            ),
+            Block::new(
+                "e2",
+                BlockKind::Equation {
+                    latex: "\\frac{1".into(),
+                    caption: None,
+                    number: None,
+                },
+            ),
+            Block::new(
+                "t",
+                BlockKind::Table {
+                    caption: None,
+                    header: vec!["a".into(), "b".into()],
+                    rows: vec![vec!["1".into()]],
+                },
+            ),
             Block::new("p", BlockKind::Paragraph { text: "  ".into() }),
         ];
         let repairs = repair_blocks(&mut blocks);
         assert_eq!(repairs, 3);
         assert_eq!(blocks.len(), 3);
-        assert!(matches!(&blocks[0].kind, BlockKind::Equation { latex, .. } if latex == "x = \\frac{1}{2}"));
+        assert!(
+            matches!(&blocks[0].kind, BlockKind::Equation { latex, .. } if latex == "x = \\frac{1}{2}")
+        );
         assert!(matches!(blocks[1].kind, BlockKind::Paragraph { .. }));
         assert!(blocks[1].low_confidence);
         assert!(matches!(&blocks[2].kind, BlockKind::Table { rows, .. } if rows[0].len() == 2));
@@ -731,12 +902,27 @@ mod tests {
             objectives: vec!["o".into()],
             sections: vec![plan(0, 0, 100), plan(1, 100, 200)],
         };
-        let eq = |id: &str| Block::new(id, BlockKind::Equation { latex: "a=b".into(), caption: None, number: None });
+        let eq = |id: &str| {
+            Block::new(
+                id,
+                BlockKind::Equation {
+                    latex: "a=b".into(),
+                    caption: None,
+                    number: None,
+                },
+            )
+        };
         let sections = vec![(1, vec![eq("s2-1")]), (0, vec![eq("s1-1")])];
         let doc = assemble(&outline, &sections, "English");
         let ids: Vec<_> = doc.blocks.iter().map(|b| b.id.as_str()).collect();
         assert_eq!(ids, vec!["s1-h", "s1-1", "s2-h", "s2-1"]);
-        assert!(matches!(doc.blocks[3].kind, BlockKind::Equation { number: Some(2), .. }));
+        assert!(matches!(
+            doc.blocks[3].kind,
+            BlockKind::Equation {
+                number: Some(2),
+                ..
+            }
+        ));
         assert!(doc.meta.ai_drafted);
     }
 
@@ -744,17 +930,49 @@ mod tests {
     fn locked_blocks_survive_regeneration() {
         let mut old = MaterialDoc::new("T");
         old.blocks = vec![
-            Block::new("s1-h", BlockKind::Heading { level: 1, text: "A".into() }),
-            Block::new("s1-1", BlockKind::Paragraph { text: "edited by lecturer".into() }),
-            Block::new("keep", BlockKind::Paragraph { text: "lecturer addition".into() }),
+            Block::new(
+                "s1-h",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "A".into(),
+                },
+            ),
+            Block::new(
+                "s1-1",
+                BlockKind::Paragraph {
+                    text: "edited by lecturer".into(),
+                },
+            ),
+            Block::new(
+                "keep",
+                BlockKind::Paragraph {
+                    text: "lecturer addition".into(),
+                },
+            ),
         ];
         old.blocks[1].locked = true;
         old.blocks[2].locked = true;
         let mut new = MaterialDoc::new("T");
         new.blocks = vec![
-            Block::new("s1-h", BlockKind::Heading { level: 1, text: "A".into() }),
-            Block::new("s1-1", BlockKind::Paragraph { text: "ai rewrite".into() }),
-            Block::new("s1-2", BlockKind::Paragraph { text: "ai extra".into() }),
+            Block::new(
+                "s1-h",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "A".into(),
+                },
+            ),
+            Block::new(
+                "s1-1",
+                BlockKind::Paragraph {
+                    text: "ai rewrite".into(),
+                },
+            ),
+            Block::new(
+                "s1-2",
+                BlockKind::Paragraph {
+                    text: "ai extra".into(),
+                },
+            ),
         ];
         assert_eq!(merge_locked(&mut new, &old), 2);
         let texts: Vec<_> = new.blocks.iter().map(Block::plain_text).collect();
@@ -766,14 +984,36 @@ mod tests {
     #[test]
     fn replace_section_keeps_heading_and_locked() {
         let mut doc = MaterialDoc::new("T");
-        let mut locked = Block::new("l", BlockKind::Paragraph { text: "mine".into() });
+        let mut locked = Block::new(
+            "l",
+            BlockKind::Paragraph {
+                text: "mine".into(),
+            },
+        );
         locked.locked = true;
         doc.blocks = vec![
-            Block::new("h1", BlockKind::Heading { level: 1, text: "One".into() }),
+            Block::new(
+                "h1",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "One".into(),
+                },
+            ),
             Block::new("a", BlockKind::Paragraph { text: "old".into() }),
             locked,
-            Block::new("h2", BlockKind::Heading { level: 1, text: "Two".into() }),
-            Block::new("b", BlockKind::Paragraph { text: "other section".into() }),
+            Block::new(
+                "h2",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "Two".into(),
+                },
+            ),
+            Block::new(
+                "b",
+                BlockKind::Paragraph {
+                    text: "other section".into(),
+                },
+            ),
         ];
         let fresh = vec![Block::new("", BlockKind::Paragraph { text: "new".into() })];
         assert!(replace_section(&mut doc, "h1", fresh));
@@ -785,14 +1025,27 @@ mod tests {
     #[test]
     fn fallback_outline_comes_from_chapters() {
         let chapters = vec![
-            study::Chapter { title: "A".into(), summary: "sa".into(), start_sec: 0, end_sec: 100 },
-            study::Chapter { title: "B".into(), summary: "sb".into(), start_sec: 100, end_sec: 200 },
+            study::Chapter {
+                title: "A".into(),
+                summary: "sa".into(),
+                start_sec: 0,
+                end_sec: 100,
+            },
+            study::Chapter {
+                title: "B".into(),
+                summary: "sb".into(),
+                start_sec: 100,
+                end_sec: 200,
+            },
         ];
         let outline = outline_from_chapters(&chapters, "Lec", 200);
         assert_eq!(outline.sections.len(), 2);
         assert_eq!(outline.sections[1].index, 1);
-        let blocks = fallback_section_blocks(&outline.sections[0], "[00:05] hello there\n[00:09] general");
-        assert!(blocks.iter().any(|b| b.plain_text().contains("hello there general")));
+        let blocks =
+            fallback_section_blocks(&outline.sections[0], "[00:05] hello there\n[00:09] general");
+        assert!(blocks
+            .iter()
+            .any(|b| b.plain_text().contains("hello there general")));
         assert!(blocks.last().unwrap().origin == Origin::Supplemented);
     }
 }

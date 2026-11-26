@@ -40,7 +40,11 @@ impl DeliveryChannel for InAppChannel {
     fn label(&self) -> &'static str {
         "In-app archive"
     }
-    async fn deliver(&self, _: &AppState, _: &DeliveryRequest) -> Result<DeliveryOutcome, PluginError> {
+    async fn deliver(
+        &self,
+        _: &AppState,
+        _: &DeliveryRequest,
+    ) -> Result<DeliveryOutcome, PluginError> {
         Ok(DeliveryOutcome::default())
     }
 }
@@ -53,7 +57,11 @@ impl DeliveryChannel for LinkChannel {
     fn label(&self) -> &'static str {
         "Download link"
     }
-    async fn deliver(&self, _: &AppState, _: &DeliveryRequest) -> Result<DeliveryOutcome, PluginError> {
+    async fn deliver(
+        &self,
+        _: &AppState,
+        _: &DeliveryRequest,
+    ) -> Result<DeliveryOutcome, PluginError> {
         Ok(DeliveryOutcome::default())
     }
 }
@@ -65,7 +73,10 @@ struct Recipient {
     display_name: String,
 }
 
-async fn recipients(pool: &PgPool, request: &DeliveryRequest) -> Result<Vec<Recipient>, PluginError> {
+async fn recipients(
+    pool: &PgPool,
+    request: &DeliveryRequest,
+) -> Result<Vec<Recipient>, PluginError> {
     let rows = match &request.audience {
         Audience::EnrolledRoster => {
             sqlx::query_as::<_, Recipient>(
@@ -162,7 +173,12 @@ impl DeliveryChannel for EmailChannel {
         let mut delivered = 0;
         let mut last_error: Option<String> = None;
         for person in &people {
-            let (subject, text, html) = build_email(request, &person.display_name, &link, &state.config.public_app_url);
+            let (subject, text, html) = build_email(
+                request,
+                &person.display_name,
+                &link,
+                &state.config.public_app_url,
+            );
             let message = EmailMessage {
                 to: person.email.clone(),
                 subject,
@@ -185,13 +201,17 @@ impl DeliveryChannel for EmailChannel {
                 last_error.unwrap_or_else(|| "no email could be sent".to_owned()),
             ));
         }
-        Ok(DeliveryOutcome { recipients: people.len(), delivered })
+        Ok(DeliveryOutcome {
+            recipients: people.len(),
+            delivered,
+        })
     }
 }
 
 // ---- requests and processing -------------------------------------------------------------
 
 /// Records a delivery and queues it. Passive channels are marked sent at once.
+#[allow(clippy::too_many_arguments)]
 pub async fn request(
     pool: &PgPool,
     channel_id: &str,
@@ -211,8 +231,12 @@ pub async fn request(
         Target::Book(b) => (None, Some(b)),
     };
     let audience_json = match audience {
-        Audience::EnrolledRoster => json!({"kind": "enrolled_roster", "course_id": course_id, "title": title, "message": message}),
-        Audience::Students(ids) => json!({"kind": "students", "course_id": course_id, "students": ids, "title": title, "message": message}),
+        Audience::EnrolledRoster => {
+            json!({"kind": "enrolled_roster", "course_id": course_id, "title": title, "message": message})
+        }
+        Audience::Students(ids) => {
+            json!({"kind": "students", "course_id": course_id, "students": ids, "title": title, "message": message})
+        }
     };
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
     sqlx::query(
@@ -299,9 +323,18 @@ pub async fn process(state: &AppState, delivery_id: Uuid) -> Result<(), String> 
         delivery_id,
         target,
         course_id,
-        title: row.audience.get("title").and_then(Value::as_str).unwrap_or("Lecture material").to_owned(),
+        title: row
+            .audience
+            .get("title")
+            .and_then(Value::as_str)
+            .unwrap_or("Lecture material")
+            .to_owned(),
         audience: audience_from_json(&row.audience),
-        message: row.audience.get("message").and_then(Value::as_str).map(str::to_owned),
+        message: row
+            .audience
+            .get("message")
+            .and_then(Value::as_str)
+            .map(str::to_owned),
     };
     let outcome = match registry().delivery_channel(&row.channel) {
         Some(channel) => channel.deliver(state, &request).await,
@@ -326,12 +359,14 @@ pub async fn process(state: &AppState, delivery_id: Uuid) -> Result<(), String> 
             .map_err(|e| e.to_string())?;
         }
         Err(error) => {
-            sqlx::query("update material_deliveries set status = 'failed', error = $2 where id = $1")
-                .bind(delivery_id)
-                .bind(error.to_string().chars().take(300).collect::<String>())
-                .execute(pool)
-                .await
-                .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "update material_deliveries set status = 'failed', error = $2 where id = $1",
+            )
+            .bind(delivery_id)
+            .bind(error.to_string().chars().take(300).collect::<String>())
+            .execute(pool)
+            .await
+            .map_err(|e| e.to_string())?;
         }
     }
     Ok(())
@@ -387,6 +422,9 @@ mod tests {
             Audience::Students(ids) => assert_eq!(ids, vec![id]),
             _ => panic!("expected students"),
         }
-        assert!(matches!(audience_from_json(&json!({"kind": "enrolled_roster"})), Audience::EnrolledRoster));
+        assert!(matches!(
+            audience_from_json(&json!({"kind": "enrolled_roster"})),
+            Audience::EnrolledRoster
+        ));
     }
 }

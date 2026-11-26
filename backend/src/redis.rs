@@ -191,7 +191,11 @@ impl RedisStore {
 
     /// Appends a lecture-materials event to the `materials-events` stream, so
     /// other services can react to publishes without polling the database.
-    pub async fn publish_material_event(&self, event_type: &str, payload: &str) -> Result<(), RedisError> {
+    pub async fn publish_material_event(
+        &self,
+        event_type: &str,
+        payload: &str,
+    ) -> Result<(), RedisError> {
         let stream = self.key("materials-events", "stream");
         let mut manager = self.manager.clone();
         tokio::time::timeout(

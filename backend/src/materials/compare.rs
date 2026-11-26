@@ -128,6 +128,7 @@ pub struct SectionMatch {
 }
 
 /// Aligns two ordered lists of sections.
+#[allow(clippy::needless_range_loop)]
 pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
     let (n, m) = (a.len(), b.len());
     let mut sim = vec![vec![(0.0f64, false); m]; n];
@@ -137,7 +138,11 @@ pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
         }
     }
     let ok = |value: (f64, bool)| {
-        let threshold = if value.1 { MATCH_THRESHOLD_VECTOR } else { MATCH_THRESHOLD_LEXICAL };
+        let threshold = if value.1 {
+            MATCH_THRESHOLD_VECTOR
+        } else {
+            MATCH_THRESHOLD_LEXICAL
+        };
         value.0 >= threshold
     };
 
@@ -155,7 +160,9 @@ pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
     let mut pairs: Vec<(usize, usize)> = Vec::new();
     let (mut i, mut j) = (n, m);
     while i > 0 && j > 0 {
-        if ok(sim[i - 1][j - 1]) && (dp[i][j] - (dp[i - 1][j - 1] + sim[i - 1][j - 1].0)).abs() < 1e-9 {
+        if ok(sim[i - 1][j - 1])
+            && (dp[i][j] - (dp[i - 1][j - 1] + sim[i - 1][j - 1].0)).abs() < 1e-9
+        {
             pairs.push((i - 1, j - 1));
             i -= 1;
             j -= 1;
@@ -177,7 +184,11 @@ pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
                 a: Some(i),
                 b: Some(j),
                 similarity: sim[i][j].0,
-                change: if body >= UNCHANGED_THRESHOLD { Change::Unchanged } else { Change::Modified },
+                change: if body >= UNCHANGED_THRESHOLD {
+                    Change::Unchanged
+                } else {
+                    Change::Modified
+                },
             }
         })
         .collect();
@@ -189,7 +200,12 @@ pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
         }
         let best = (0..m)
             .filter(|j| !used_b.contains(j) && ok(sim[i][*j]))
-            .max_by(|x, y| sim[i][*x].0.partial_cmp(&sim[i][*y].0).unwrap_or(std::cmp::Ordering::Equal));
+            .max_by(|x, y| {
+                sim[i][*x]
+                    .0
+                    .partial_cmp(&sim[i][*y].0)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
         if let Some(j) = best {
             used_a.insert(i);
             used_b.insert(j);
@@ -203,12 +219,22 @@ pub fn align(a: &[SectionData], b: &[SectionData]) -> Vec<SectionMatch> {
     }
     for i in 0..n {
         if !used_a.contains(&i) {
-            matches.push(SectionMatch { a: Some(i), b: None, similarity: 0.0, change: Change::Removed });
+            matches.push(SectionMatch {
+                a: Some(i),
+                b: None,
+                similarity: 0.0,
+                change: Change::Removed,
+            });
         }
     }
     for j in 0..m {
         if !used_b.contains(&j) {
-            matches.push(SectionMatch { a: None, b: Some(j), similarity: 0.0, change: Change::Added });
+            matches.push(SectionMatch {
+                a: None,
+                b: Some(j),
+                similarity: 0.0,
+                change: Change::Added,
+            });
         }
     }
     matches.sort_by_key(|x| (x.a.unwrap_or(usize::MAX), x.b.unwrap_or(usize::MAX)));
@@ -375,11 +401,17 @@ fn parse_vector(text: &str) -> Option<Vec<f32>> {
     if inner.is_empty() {
         return None;
     }
-    inner.split(',').map(|v| v.trim().parse::<f32>().ok()).collect()
+    inner
+        .split(',')
+        .map(|v| v.trim().parse::<f32>().ok())
+        .collect()
 }
 
 /// All sections of a course's published materials, in lecture order.
-pub async fn load_course_sections(pool: &PgPool, course_id: Uuid) -> Result<Vec<SectionData>, String> {
+pub async fn load_course_sections(
+    pool: &PgPool,
+    course_id: Uuid,
+) -> Result<Vec<SectionData>, String> {
     let rows = sqlx::query_as::<_, (Uuid, String, Value)>(
         "select v.id, s.title, v.doc
          from lecture_materials m
@@ -447,14 +479,21 @@ pub async fn run_embed_job(
         .map_err(|e| e.to_string())?
         .ok_or_else(|| "the version no longer exists".to_owned())?;
     let doc: MaterialDoc = store::parse_doc(&version.doc)?;
-    let sections: Vec<_> = doc.sections().into_iter().filter(|s| !s.heading.is_empty()).collect();
+    let sections: Vec<_> = doc
+        .sections()
+        .into_iter()
+        .filter(|s| !s.heading.is_empty())
+        .collect();
     if sections.is_empty() {
         return Ok(None);
     }
     let items: Vec<EmbedItem> = sections
         .iter()
         .map(|s| EmbedItem {
-            text: format!("{}\n{}", s.heading, s.body_text()).chars().take(6_000).collect(),
+            text: format!("{}\n{}", s.heading, s.body_text())
+                .chars()
+                .take(6_000)
+                .collect(),
             title: Some(doc.title.clone()),
         })
         .collect();
@@ -528,22 +567,37 @@ impl Analyzer for ComparisonAnalyzer {
                 .map_err(|e| PluginError::failed(e.to_string()))?
                 .ok_or_else(|| PluginError::failed("course not found"))?;
             if info.lecturer_id != input.requested_by {
-                return Err(PluginError::failed("you can only compare your own course offerings"));
+                return Err(PluginError::failed(
+                    "you can only compare your own course offerings",
+                ));
             }
             infos.push(info);
         }
         if infos[0].code.trim().to_lowercase() != infos[1].code.trim().to_lowercase() {
-            return Err(PluginError::failed("these are different courses (the course codes differ)"));
+            return Err(PluginError::failed(
+                "these are different courses (the course codes differ)",
+            ));
         }
-        let a = load_course_sections(pool, course_a).await.map_err(PluginError::Failed)?;
-        let b = load_course_sections(pool, course_b).await.map_err(PluginError::Failed)?;
+        let a = load_course_sections(pool, course_a)
+            .await
+            .map_err(PluginError::Failed)?;
+        let b = load_course_sections(pool, course_b)
+            .await
+            .map_err(PluginError::Failed)?;
         if a.is_empty() || b.is_empty() {
-            return Err(PluginError::failed("both offerings need published materials to compare"));
+            return Err(PluginError::failed(
+                "both offerings need published materials to compare",
+            ));
         }
         let mut report = build_report(&a, &b);
         report["course_a"] = serde_json::to_value(&infos[0]).unwrap_or_default();
         report["course_b"] = serde_json::to_value(&infos[1]).unwrap_or_default();
-        if input.params.get("narrative").and_then(Value::as_bool).unwrap_or(false) {
+        if input
+            .params
+            .get("narrative")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
             report["narrative"] = match narrative(state, &report).await {
                 Some(text) => Value::String(text),
                 None => Value::Null,
@@ -569,10 +623,19 @@ impl Analyzer for ComparisonAnalyzer {
         if event.event_type != "material.published" || !state.ai.supports_embeddings() {
             return Ok(());
         }
-        let get = |key: &str| event.payload.get(key).and_then(Value::as_str).and_then(|s| Uuid::parse_str(s).ok());
-        let (Some(session), Some(lecturer), Some(version), Some(material)) =
-            (get("session_id"), get("lecturer_id"), get("version_id"), get("material_id"))
-        else {
+        let get = |key: &str| {
+            event
+                .payload
+                .get(key)
+                .and_then(Value::as_str)
+                .and_then(|s| Uuid::parse_str(s).ok())
+        };
+        let (Some(session), Some(lecturer), Some(version), Some(material)) = (
+            get("session_id"),
+            get("lecturer_id"),
+            get("version_id"),
+            get("material_id"),
+        ) else {
             return Ok(());
         };
         store::enqueue_job(
@@ -607,7 +670,13 @@ in emphasis. Use only the facts given; do not speculate.",
     )
     .thinking(Thinking::Minimal)
     .max_tokens(600);
-    state.ai.generate(&request).await.ok().map(|o| o.text.trim().to_owned()).filter(|t| !t.is_empty())
+    state
+        .ai
+        .generate(&request)
+        .await
+        .ok()
+        .map(|o| o.text.trim().to_owned())
+        .filter(|t| !t.is_empty())
 }
 
 #[cfg(test)]
@@ -617,7 +686,13 @@ mod tests {
 
     fn section(heading: &str, body: &str) -> SectionData {
         let blocks = vec![
-            Block::new("h", BlockKind::Heading { level: 1, text: heading.into() }),
+            Block::new(
+                "h",
+                BlockKind::Heading {
+                    level: 1,
+                    text: heading.into(),
+                },
+            ),
             Block::new("p", BlockKind::Paragraph { text: body.into() }),
         ];
         SectionData {
@@ -631,10 +706,12 @@ mod tests {
         }
     }
 
-    const COND: &str = "Conduction transfers heat through solids following Fourier law with thermal conductivity";
+    const COND: &str =
+        "Conduction transfers heat through solids following Fourier law with thermal conductivity";
     const CONV: &str = "Convection transfers heat through moving fluids using Newton cooling law and heat transfer coefficient";
     const RAD: &str = "Radiation transfers heat as electromagnetic waves following Stefan Boltzmann law emissivity";
-    const FIN: &str = "Fins extend surface area to increase heat dissipation fin efficiency effectiveness";
+    const FIN: &str =
+        "Fins extend surface area to increase heat dissipation fin efficiency effectiveness";
 
     #[test]
     fn jaccard_and_cosine_behave() {
@@ -655,17 +732,30 @@ mod tests {
         ];
         let b = vec![
             section("Conduction", COND),
-            section("Convection", &format!("{CONV} forced and natural convection correlations Nusselt number")),
+            section(
+                "Convection",
+                &format!("{CONV} forced and natural convection correlations Nusselt number"),
+            ),
             section("Fins", FIN),
         ];
         let matches = align(&a, &b);
-        let find = |i: Option<usize>, j: Option<usize>| matches.iter().find(|m| m.a == i && m.b == j);
+        let find =
+            |i: Option<usize>, j: Option<usize>| matches.iter().find(|m| m.a == i && m.b == j);
         assert_eq!(find(Some(0), Some(0)).unwrap().change, Change::Unchanged);
         assert_eq!(find(Some(1), Some(1)).unwrap().change, Change::Modified);
         assert_eq!(find(Some(2), None).unwrap().change, Change::Removed);
         assert_eq!(find(None, Some(2)).unwrap().change, Change::Added);
         let counts = count(&matches);
-        assert_eq!(counts, Counts { unchanged: 1, modified: 1, moved: 0, added: 1, removed: 1 });
+        assert_eq!(
+            counts,
+            Counts {
+                unchanged: 1,
+                modified: 1,
+                moved: 0,
+                added: 1,
+                removed: 1
+            }
+        );
     }
 
     #[test]
@@ -690,20 +780,67 @@ mod tests {
         assert!(matches[0].a.is_some() && matches[0].b.is_some());
         b[0].vector = Some(vec![0.0, 1.0, 0.0]);
         let matches = align(&a, &b);
-        assert_eq!(count(&matches), Counts { unchanged: 0, modified: 0, moved: 0, added: 1, removed: 1 });
+        assert_eq!(
+            count(&matches),
+            Counts {
+                unchanged: 0,
+                modified: 0,
+                moved: 0,
+                added: 1,
+                removed: 1
+            }
+        );
     }
 
     #[test]
     fn block_diff_separates_added_removed_and_changed() {
         let a = vec![
-            Block::new("1", BlockKind::Definition { term: "Flux".into(), text: "heat per unit area per second".into() }),
-            Block::new("2", BlockKind::Paragraph { text: "Heat flows from hot to cold along the gradient always".into() }),
-            Block::new("3", BlockKind::Equation { latex: "q=-k dT/dx".into(), caption: None, number: None }),
+            Block::new(
+                "1",
+                BlockKind::Definition {
+                    term: "Flux".into(),
+                    text: "heat per unit area per second".into(),
+                },
+            ),
+            Block::new(
+                "2",
+                BlockKind::Paragraph {
+                    text: "Heat flows from hot to cold along the gradient always".into(),
+                },
+            ),
+            Block::new(
+                "3",
+                BlockKind::Equation {
+                    latex: "q=-k dT/dx".into(),
+                    caption: None,
+                    number: None,
+                },
+            ),
         ];
         let b = vec![
-            Block::new("1", BlockKind::Definition { term: "Flux".into(), text: "heat per unit area per second".into() }),
-            Block::new("2", BlockKind::Paragraph { text: "Heat flows from hot to cold along the temperature gradient in solids".into() }),
-            Block::new("9", BlockKind::WorkedExample { title: "Wall".into(), problem: "p".into(), steps: vec!["s".into()], answer: None }),
+            Block::new(
+                "1",
+                BlockKind::Definition {
+                    term: "Flux".into(),
+                    text: "heat per unit area per second".into(),
+                },
+            ),
+            Block::new(
+                "2",
+                BlockKind::Paragraph {
+                    text: "Heat flows from hot to cold along the temperature gradient in solids"
+                        .into(),
+                },
+            ),
+            Block::new(
+                "9",
+                BlockKind::WorkedExample {
+                    title: "Wall".into(),
+                    problem: "p".into(),
+                    steps: vec!["s".into()],
+                    answer: None,
+                },
+            ),
         ];
         let diff = diff_blocks(&a, &b);
         assert_eq!(diff.unchanged, 1);

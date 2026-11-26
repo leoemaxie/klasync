@@ -49,7 +49,10 @@ impl From<ServiceError> for MatError {
             ServiceError::Unavailable(m) => Self(StatusCode::SERVICE_UNAVAILABLE, m),
             ServiceError::Internal(m) => {
                 tracing::error!(error = %m, "materials request failed");
-                Self(StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong. Please try again.".to_owned())
+                Self(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Something went wrong. Please try again.".to_owned(),
+                )
             }
         }
     }
@@ -79,7 +82,11 @@ type Res<T> = Result<T, MatError>;
 
 // ---- lookups --------------------------------------------------------------------------
 
-async fn owned_session(state: &AppState, lecturer: &AuthenticatedLecturer, code: &str) -> Res<SessionInfo> {
+async fn owned_session(
+    state: &AppState,
+    lecturer: &AuthenticatedLecturer,
+    code: &str,
+) -> Res<SessionInfo> {
     let session = store::session_info_by_code(state.db_pool(), code)
         .await?
         .ok_or_else(|| not_found("Session not found"))?;
@@ -95,7 +102,11 @@ async fn material_of(state: &AppState, session: &SessionInfo) -> Res<MaterialRow
         .ok_or_else(|| not_found("No material has been created for this lecture yet"))
 }
 
-async fn owned_course(state: &AppState, lecturer: &AuthenticatedLecturer, course_id: Uuid) -> Res<()> {
+async fn owned_course(
+    state: &AppState,
+    lecturer: &AuthenticatedLecturer,
+    course_id: Uuid,
+) -> Res<()> {
     if store::lecturer_owns_course(state.db_pool(), lecturer.id, course_id).await? {
         Ok(())
     } else {
@@ -107,13 +118,25 @@ fn file_response(file: Exported) -> Res<Response> {
     let name: String = file
         .filename
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, file.content_type)
-        .header(header::CONTENT_DISPOSITION, format!("attachment; filename=\"{name}\""))
-        .header("x-export-cached", if file.cached { "true" } else { "false" })
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{name}\""),
+        )
+        .header(
+            "x-export-cached",
+            if file.cached { "true" } else { "false" },
+        )
         .body(Body::from(file.bytes))
         .map_err(|e| ServiceError::Internal(e.to_string()).into())
 }
@@ -150,7 +173,9 @@ pub async fn get_material(
 ) -> Res<Json<Value>> {
     let session = owned_session(&state, &lecturer, &code).await?;
     let Some(material) = store::material_for_session(state.db_pool(), session.id).await? else {
-        return Ok(Json(json!({"material": null, "session": {"id": session.id, "title": session.title}})));
+        return Ok(Json(
+            json!({"material": null, "session": {"id": session.id, "title": session.title}}),
+        ));
     };
     let versions = sqlx::query_as::<_, VersionSummary>(
         "select id, version_no, origin, model, published_at, created_at
@@ -159,7 +184,18 @@ pub async fn get_material(
     .bind(material.id)
     .fetch_all(state.db_pool())
     .await?;
-    let deliveries = sqlx::query_as::<_, (Uuid, String, String, i32, i32, Option<String>, chrono::DateTime<chrono::Utc>)>(
+    let deliveries = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            String,
+            String,
+            i32,
+            i32,
+            Option<String>,
+            chrono::DateTime<chrono::Utc>,
+        ),
+    >(
         "select d.id, d.channel, d.status, d.recipients, d.delivered, d.error, d.created_at
          from material_deliveries d join material_versions v on v.id = d.version_id
          where v.material_id = $1 order by d.created_at desc limit 50",
@@ -187,14 +223,23 @@ pub async fn generate(
 ) -> Res<(StatusCode, Json<Value>)> {
     let session = owned_session(&state, &lecturer, &code).await?;
     if session.status != "ended" {
-        return Err(MatError(StatusCode::CONFLICT, "Materials can be generated once the lecture has ended.".into()));
+        return Err(MatError(
+            StatusCode::CONFLICT,
+            "Materials can be generated once the lecture has ended.".into(),
+        ));
     }
     if !state.ai.is_configured() {
-        return Err(MatError(StatusCode::SERVICE_UNAVAILABLE, "AI is not configured on this server.".into()));
+        return Err(MatError(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "AI is not configured on this server.".into(),
+        ));
     }
     let material = store::ensure_material(state.db_pool(), &session, lecturer.id).await?;
     let generation = service::request_generation(state.db_pool(), &material, lecturer.id).await?;
-    Ok((StatusCode::ACCEPTED, Json(json!({"material_id": material.id, "generation": generation, "state": "queued"}))))
+    Ok((
+        StatusCode::ACCEPTED,
+        Json(json!({"material_id": material.id, "generation": generation, "state": "queued"})),
+    ))
 }
 
 #[derive(Debug, Deserialize)]
@@ -252,7 +297,14 @@ pub async fn regenerate_section(
 ) -> Res<(StatusCode, Json<Value>)> {
     let session = owned_session(&state, &lecturer, &code).await?;
     let material = material_of(&state, &session).await?;
-    service::request_regeneration(state.db_pool(), &material, &block_id, input.instruction.as_deref(), lecturer.id).await?;
+    service::request_regeneration(
+        state.db_pool(),
+        &material,
+        &block_id,
+        input.instruction.as_deref(),
+        lecturer.id,
+    )
+    .await?;
     Ok((StatusCode::ACCEPTED, Json(json!({"state": "queued"}))))
 }
 
@@ -276,7 +328,10 @@ pub async fn publish(
         &state,
         &material,
         lecturer.id,
-        PublishOptions { deliver: input.deliver, message: input.message },
+        PublishOptions {
+            deliver: input.deliver,
+            message: input.message,
+        },
     )
     .await?;
     Ok(Json(serde_json::to_value(published).unwrap_or_default()))
@@ -332,17 +387,28 @@ pub async fn export_material(
     let material = material_of(&state, &session).await?;
     let format = query.format.as_deref().unwrap_or("pdf");
     let file = match query.version.as_deref() {
-        Some("draft") => service::export_draft(&state, &material, format, query.template.as_deref()).await?,
+        Some("draft") => {
+            service::export_draft(&state, &material, format, query.template.as_deref()).await?
+        }
         other => {
             let version_id = match other {
-                Some(raw) => Uuid::parse_str(raw).map_err(|_| bad_request("version must be an id or \"draft\""))?,
-                None => material.current_version_id.ok_or_else(|| not_found("There is no version to export yet"))?,
+                Some(raw) => Uuid::parse_str(raw)
+                    .map_err(|_| bad_request("version must be an id or \"draft\""))?,
+                None => material
+                    .current_version_id
+                    .ok_or_else(|| not_found("There is no version to export yet"))?,
             };
             let version = store::find_version(state.db_pool(), version_id)
                 .await?
                 .filter(|v| v.material_id == material.id)
                 .ok_or_else(|| not_found("Version not found"))?;
-            service::export(&state, Target::Version(version.id), format, query.template.as_deref()).await?
+            service::export(
+                &state,
+                Target::Version(version.id),
+                format,
+                query.template.as_deref(),
+            )
+            .await?
         }
     };
     file_response(file)
@@ -369,10 +435,18 @@ pub async fn put_settings(
     if !matches!(input.depth.as_str(), "concise" | "standard" | "detailed") {
         return Err(bad_request("depth must be concise, standard or detailed"));
     }
-    if !registry().templates().iter().any(|t| t.id == input.template) {
+    if !registry()
+        .templates()
+        .iter()
+        .any(|t| t.id == input.template)
+    {
         return Err(bad_request("unknown template"));
     }
-    for (name, value, max) in [("audience_level", &input.audience_level, 60), ("language", &input.language, 40), ("tone", &input.tone, 60)] {
+    for (name, value, max) in [
+        ("audience_level", &input.audience_level, 60),
+        ("language", &input.language, 40),
+        ("tone", &input.tone, 60),
+    ] {
         if value.trim().is_empty() || value.chars().count() > max {
             return Err(bad_request(format!("{name} must be 1-{max} characters")));
         }
@@ -408,7 +482,9 @@ pub async fn get_book(
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     owned_course(&state, &lecturer, course_id).await?;
-    let book = book::ensure_book(state.db_pool(), course_id).await.map_err(ServiceError::Internal)?;
+    let book = book::ensure_book(state.db_pool(), course_id)
+        .await
+        .map_err(ServiceError::Internal)?;
     let versions = book::list_book_versions(state.db_pool(), book.id).await?;
     Ok(Json(json!({
         "book": book,
@@ -452,8 +528,16 @@ pub async fn rebuild_book(
     owned_course(&state, &lecturer, course_id).await?;
     let (version_id, version_no, rebuilt, reused) = book::rebuild(state.db_pool(), course_id)
         .await
-        .map_err(|m| if m.starts_with("publish at least") || m.contains("invalid") { bad_request(m) } else { ServiceError::Internal(m).into() })?;
-    Ok(Json(json!({"version_id": version_id, "version_no": version_no, "chapters_rebuilt": rebuilt, "chapters_reused": reused})))
+        .map_err(|m| {
+            if m.starts_with("publish at least") || m.contains("invalid") {
+                bad_request(m)
+            } else {
+                ServiceError::Internal(m).into()
+            }
+        })?;
+    Ok(Json(
+        json!({"version_id": version_id, "version_no": version_no, "chapters_rebuilt": rebuilt, "chapters_reused": reused}),
+    ))
 }
 
 #[derive(Debug, Deserialize)]
@@ -471,7 +555,9 @@ pub async fn publish_book(
     Json(input): Json<BookVersionInput>,
 ) -> Res<Json<Value>> {
     owned_course(&state, &lecturer, course_id).await?;
-    let book_row = book::ensure_book(state.db_pool(), course_id).await.map_err(ServiceError::Internal)?;
+    let book_row = book::ensure_book(state.db_pool(), course_id)
+        .await
+        .map_err(ServiceError::Internal)?;
     let version = book::find_book_version(state.db_pool(), input.version_id)
         .await?
         .filter(|v| v.book_id == book_row.id)
@@ -481,7 +567,9 @@ pub async fn publish_book(
             return Err(bad_request(format!("unknown delivery channel {channel}")));
         }
     }
-    book::publish(state.db_pool(), book_row.id, version.id).await.map_err(ServiceError::Internal)?;
+    book::publish(state.db_pool(), book_row.id, version.id)
+        .await
+        .map_err(ServiceError::Internal)?;
     let mut deliveries = Vec::new();
     for channel in &input.deliver {
         deliveries.push(
@@ -499,7 +587,9 @@ pub async fn publish_book(
             .map_err(ServiceError::Internal)?,
         );
     }
-    Ok(Json(json!({"published": version.id, "deliveries": deliveries})))
+    Ok(Json(
+        json!({"published": version.id, "deliveries": deliveries}),
+    ))
 }
 
 #[derive(Debug, Deserialize)]
@@ -516,14 +606,22 @@ pub async fn export_book(
     Query(query): Query<BookExportQuery>,
 ) -> Res<Response> {
     owned_course(&state, &lecturer, course_id).await?;
-    let book_row = book::ensure_book(state.db_pool(), course_id).await.map_err(ServiceError::Internal)?;
+    let book_row = book::ensure_book(state.db_pool(), course_id)
+        .await
+        .map_err(ServiceError::Internal)?;
     let versions = book::list_book_versions(state.db_pool(), book_row.id).await?;
     let version = match query.version {
         Some(id) => versions.iter().find(|v| v.id == id),
         None => versions.first(),
     }
     .ok_or_else(|| not_found("There is no book version yet. Rebuild the book first."))?;
-    let file = service::export(&state, Target::Book(version.id), query.format.as_deref().unwrap_or("pdf"), query.template.as_deref()).await?;
+    let file = service::export(
+        &state,
+        Target::Book(version.id),
+        query.format.as_deref().unwrap_or("pdf"),
+        query.template.as_deref(),
+    )
+    .await?;
     file_response(file)
 }
 
@@ -549,7 +647,9 @@ pub async fn compare(
     let a = query.a.unwrap_or(course_id);
     owned_course(&state, &lecturer, a).await?;
     owned_course(&state, &lecturer, query.b).await?;
-    let analyzer = registry().analyzer("comparison").ok_or_else(|| not_found("Comparison is not installed"))?;
+    let analyzer = registry()
+        .analyzer("comparison")
+        .ok_or_else(|| not_found("Comparison is not installed"))?;
     let report = analyzer
         .analyze(
             &state,
@@ -593,13 +693,20 @@ pub async fn get_comparison(
     .bind(lecturer.id)
     .fetch_optional(state.db_pool())
     .await?;
-    report.map(Json).ok_or_else(|| not_found("Comparison not found"))
+    report
+        .map(Json)
+        .ok_or_else(|| not_found("Comparison not found"))
 }
 
 // ---- students ---------------------------------------------------------------------------------
 
 fn formats_json() -> Value {
-    json!(registry().renderers().iter().filter(|r| r.available()).map(|r| json!({"id": r.id(), "label": r.label()})).collect::<Vec<_>>())
+    json!(registry()
+        .renderers()
+        .iter()
+        .filter(|r| r.available())
+        .map(|r| json!({"id": r.id(), "label": r.label()}))
+        .collect::<Vec<_>>())
 }
 
 /// The published material for a lecture the student attended or is enrolled for.
@@ -612,7 +719,16 @@ pub async fn student_material(
     if !store::student_can_read_session(pool, student.id, session_id).await? {
         return Err(not_found("Material not found"));
     }
-    let row = sqlx::query_as::<_, (Uuid, i32, Value, Option<chrono::DateTime<chrono::Utc>>, String)>(
+    let row = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            i32,
+            Value,
+            Option<chrono::DateTime<chrono::Utc>>,
+            String,
+        ),
+    >(
         "select v.id, v.version_no, v.doc, v.published_at, s.title
          from lecture_materials m
          join material_versions v on v.id = m.published_version_id
@@ -652,11 +768,21 @@ pub async fn student_material_export(
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| not_found("Material not found"))?;
-    let file = service::export(&state, Target::Version(version_id), query.format.as_deref().unwrap_or("pdf"), None).await?;
+    let file = service::export(
+        &state,
+        Target::Version(version_id),
+        query.format.as_deref().unwrap_or("pdf"),
+        None,
+    )
+    .await?;
     file_response(file)
 }
 
-async fn student_in_course(state: &AppState, student: &AuthenticatedStudent, course_id: Uuid) -> Res<()> {
+async fn student_in_course(
+    state: &AppState,
+    student: &AuthenticatedStudent,
+    course_id: Uuid,
+) -> Res<()> {
     let pool = state.db_pool();
     let allowed: bool = sqlx::query_scalar(
         "select exists(select 1 from student_course_enrollments where student_account_id = $1 and course_id = $2)
@@ -681,7 +807,16 @@ pub async fn student_course_materials(
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     student_in_course(&state, &student, course_id).await?;
-    let rows = sqlx::query_as::<_, (Uuid, Uuid, String, i32, Option<chrono::DateTime<chrono::Utc>>)>(
+    let rows = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            Uuid,
+            String,
+            i32,
+            Option<chrono::DateTime<chrono::Utc>>,
+        ),
+    >(
         "select m.session_id, v.id, s.title, v.version_no, v.published_at
          from lecture_materials m
          join material_versions v on v.id = m.published_version_id
@@ -692,11 +827,12 @@ pub async fn student_course_materials(
     .bind(course_id)
     .fetch_all(state.db_pool())
     .await?;
-    let book_published: Option<Uuid> = sqlx::query_scalar("select published_version_id from course_books where course_id = $1")
-        .bind(course_id)
-        .fetch_optional(state.db_pool())
-        .await?
-        .flatten();
+    let book_published: Option<Uuid> =
+        sqlx::query_scalar("select published_version_id from course_books where course_id = $1")
+            .bind(course_id)
+            .fetch_optional(state.db_pool())
+            .await?
+            .flatten();
     Ok(Json(json!({
         "materials": rows.iter().map(|r| json!({"session_id": r.0, "version_id": r.1, "lecture_title": r.2, "version_no": r.3, "published_at": r.4})).collect::<Vec<_>>(),
         "book_version_id": book_published,
@@ -710,7 +846,16 @@ pub async fn student_book(
     Path(course_id): Path<Uuid>,
 ) -> Res<Json<Value>> {
     student_in_course(&state, &student, course_id).await?;
-    let row = sqlx::query_as::<_, (Uuid, i32, Value, Option<chrono::DateTime<chrono::Utc>>, String)>(
+    let row = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            i32,
+            Value,
+            Option<chrono::DateTime<chrono::Utc>>,
+            String,
+        ),
+    >(
         "select v.id, v.version_no, v.doc, v.published_at, b.title
          from course_books b join book_versions v on v.id = b.published_version_id
          where b.course_id = $1",
@@ -719,7 +864,9 @@ pub async fn student_book(
     .fetch_optional(state.db_pool())
     .await?
     .ok_or_else(|| not_found("The course book has not been published"))?;
-    Ok(Json(json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json()})))
+    Ok(Json(
+        json!({"title": row.4, "version_id": row.0, "version_no": row.1, "published_at": row.3, "doc": row.2, "formats": formats_json()}),
+    ))
 }
 
 pub async fn student_book_export(
@@ -734,6 +881,12 @@ pub async fn student_book_export(
         .fetch_optional(state.db_pool())
         .await?
         .ok_or_else(|| not_found("The course book has not been published"))?;
-    let file = service::export(&state, Target::Book(version_id), query.format.as_deref().unwrap_or("pdf"), None).await?;
+    let file = service::export(
+        &state,
+        Target::Book(version_id),
+        query.format.as_deref().unwrap_or("pdf"),
+        None,
+    )
+    .await?;
     file_response(file)
 }

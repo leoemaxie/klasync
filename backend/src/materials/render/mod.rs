@@ -64,11 +64,9 @@ pub fn outline(doc: &MaterialDoc) -> Vec<(u8, String, String)> {
     doc.blocks
         .iter()
         .filter_map(|block| match &block.kind {
-            BlockKind::Heading { level, text } if *level <= 3 => Some((
-                *level,
-                super::blocks::strip_inline(text),
-                anchor(block),
-            )),
+            BlockKind::Heading { level, text } if *level <= 3 => {
+                Some((*level, super::blocks::strip_inline(text), anchor(block)))
+            }
             _ => None,
         })
         .collect()
@@ -78,7 +76,13 @@ pub fn anchor(block: &Block) -> String {
     let cleaned: String = block
         .id
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
     format!("b-{cleaned}")
 }
@@ -107,16 +111,28 @@ pub(crate) fn sample_doc() -> MaterialDoc {
     use super::blocks::{CalloutVariant, ReadingItem, ReviewQuestion, SourceRange};
     let mut doc = MaterialDoc::new("Heat <transfer> & conduction");
     doc.subtitle = Some("Lecture 3".into());
-    doc.meta.objectives = vec!["Explain **Fourier's law**".into(), "Apply it to a wall".into()];
+    doc.meta.objectives = vec![
+        "Explain **Fourier's law**".into(),
+        "Apply it to a wall".into(),
+    ];
     doc.blocks = vec![
-        Block::new("h1", BlockKind::Heading { level: 1, text: "Conduction".into() }),
+        Block::new(
+            "h1",
+            BlockKind::Heading {
+                level: 1,
+                text: "Conduction".into(),
+            },
+        ),
         Block::new(
             "p1",
             BlockKind::Paragraph {
                 text: "Heat flows from *hot* to cold, as in `q = -k dT/dx`.".into(),
             },
         )
-        .with_sources(vec![SourceRange { start_sec: 5, end_sec: 70 }]),
+        .with_sources(vec![SourceRange {
+            start_sec: 5,
+            end_sec: 70,
+        }]),
         Block::new(
             "d1",
             BlockKind::Definition {
@@ -146,7 +162,10 @@ pub(crate) fn sample_doc() -> MaterialDoc {
             BlockKind::Table {
                 caption: Some("Conductivities".into()),
                 header: vec!["Material".into(), "k (W/mK)".into()],
-                rows: vec![vec!["Copper".into(), "400".into()], vec!["Brick".into(), "0.7".into()]],
+                rows: vec![
+                    vec!["Copper".into(), "400".into()],
+                    vec!["Brick".into(), "0.7".into()],
+                ],
             },
         ),
         Block::new(
@@ -170,10 +189,18 @@ pub(crate) fn sample_doc() -> MaterialDoc {
         Block::new(
             "r1",
             BlockKind::FurtherReading {
-                items: vec![ReadingItem { title: "Incropera, ch. 1".into(), note: None }],
+                items: vec![ReadingItem {
+                    title: "Incropera, ch. 1".into(),
+                    note: None,
+                }],
             },
         ),
-        Block::new("s1", BlockKind::Summary { points: vec!["Heat flows down gradients.".into()] }),
+        Block::new(
+            "s1",
+            BlockKind::Summary {
+                points: vec!["Heat flows down gradients.".into()],
+            },
+        ),
     ];
     doc
 }

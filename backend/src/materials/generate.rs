@@ -111,7 +111,9 @@ pub async fn run_job(
         }
         "material_section" => run_section(state, pool, job, &params).await,
         "material_assemble" => run_assemble(state, pool, job, &params).await,
-        "material_embed" => super::compare::run_embed_job(state, pool, job, params.version_id).await,
+        "material_embed" => {
+            super::compare::run_embed_job(state, pool, job, params.version_id).await
+        }
         other => Err(format!("unknown material job type {other}")),
     };
     if let Err(error) = &result {
@@ -130,10 +132,7 @@ pub async fn run_job(
     result
 }
 
-async fn load_current(
-    pool: &PgPool,
-    params: &JobParams,
-) -> Result<Option<MaterialRow>, String> {
+async fn load_current(pool: &PgPool, params: &JobParams) -> Result<Option<MaterialRow>, String> {
     let material = store::find_material(pool, params.material_id)
         .await
         .map_err(|e| e.to_string())?
@@ -165,7 +164,7 @@ pub(crate) async fn ask<T>(
     let (value, output) = state
         .ai
         .generate_validated(&request, |output| {
-            let json = extract_json(&output.text)
+            let json = extract_json(&prompts::fix_json_latex_escapes(&output.text))
                 .ok_or_else(|| "the answer contained no JSON".to_owned())?;
             parse(&json)
         })
@@ -240,7 +239,10 @@ pub(crate) fn concept_nodes(map: &ConceptMap) -> Vec<(String, String, i64)> {
                 .filter_map(|n| {
                     Some((
                         n.get("label")?.as_str()?.to_owned(),
-                        n.get("group").and_then(Value::as_str).unwrap_or("Concepts").to_owned(),
+                        n.get("group")
+                            .and_then(Value::as_str)
+                            .unwrap_or("Concepts")
+                            .to_owned(),
                         n.get("importance").and_then(Value::as_i64).unwrap_or(2),
                     ))
                 })
@@ -287,7 +289,11 @@ fn previous_context(doc: &MaterialDoc, max_chars: usize) -> String {
             continue;
         }
         let body: String = section.body_text().chars().take(240).collect();
-        out.push_str(&format!("- {}: {}\n", section.heading, body.replace('\n', " ")));
+        out.push_str(&format!(
+            "- {}: {}\n",
+            section.heading,
+            body.replace('\n', " ")
+        ));
         if out.len() > max_chars {
             break;
         }
@@ -298,7 +304,11 @@ fn previous_context(doc: &MaterialDoc, max_chars: usize) -> String {
 fn input_hash(transcript: &str, settings: &MaterialSettings) -> String {
     let mut hasher = Sha256::new();
     hasher.update(transcript.as_bytes());
-    hasher.update(serde_json::to_string(settings).unwrap_or_default().as_bytes());
+    hasher.update(
+        serde_json::to_string(settings)
+            .unwrap_or_default()
+            .as_bytes(),
+    );
     hasher.update(PROMPT_VERSION.as_bytes());
     format!("{:x}", hasher.finalize())
 }
@@ -338,12 +348,22 @@ async fn run_outline(
     } else {
         transcript.text.clone()
     };
-    let mut input = format!("Course: {} {}\nLecture title: {}\n", course.code, course.title, session.title);
+    let mut input = format!(
+        "Course: {} {}\nLecture title: {}\n",
+        course.code, course.title, session.title
+    );
     if !chapters.is_empty() {
-        input.push_str(&format!("\nChapters detected in the lecture:\n{}\n", prompts::chapters_prompt(&chapters)));
+        input.push_str(&format!(
+            "\nChapters detected in the lecture:\n{}\n",
+            prompts::chapters_prompt(&chapters)
+        ));
     }
     if let Some(map) = &concepts {
-        let labels: Vec<String> = concept_nodes(map).into_iter().take(20).map(|n| n.0).collect();
+        let labels: Vec<String> = concept_nodes(map)
+            .into_iter()
+            .take(20)
+            .map(|n| n.0)
+            .collect();
         if !labels.is_empty() {
             input.push_str(&format!("\nKey concepts: {}\n", labels.join(", ")));
         }
@@ -444,7 +464,10 @@ fn outline_from_state(gen_state: &Value) -> Result<(Outline, i32), String> {
             .ok_or_else(|| "the outline is missing".to_owned())?,
     )
     .map_err(|e| format!("the stored outline is invalid: {e}"))?;
-    let duration = gen_state.get("duration").and_then(Value::as_i64).unwrap_or(0) as i32;
+    let duration = gen_state
+        .get("duration")
+        .and_then(Value::as_i64)
+        .unwrap_or(0) as i32;
     Ok((outline, duration))
 }
 
@@ -493,7 +516,11 @@ async fn generate_section_blocks(
     prompts::repair_blocks(&mut blocks);
     let downgraded = prompts::ground_blocks(&mut blocks, duration.max(plan.end_sec));
     if downgraded > 0 {
-        tracing::info!(section = plan.index, downgraded, "Blocks without transcript citations were marked supplemented");
+        tracing::info!(
+            section = plan.index,
+            downgraded,
+            "Blocks without transcript citations were marked supplemented"
+        );
     }
     Ok(blocks)
 }
@@ -507,7 +534,9 @@ async fn run_section(
     let Some(material) = load_current(pool, params).await? else {
         return Ok(None);
     };
-    let index = params.section.ok_or_else(|| "no section index".to_owned())?;
+    let index = params
+        .section
+        .ok_or_else(|| "no section index".to_owned())?;
     let (outline, duration) = outline_from_state(&material.gen_state)?;
     let plan = outline
         .sections
@@ -643,7 +672,9 @@ async fn run_regenerate(
     .await
     .map_err(|e| e.to_string())?;
     if updated.rows_affected() == 0 {
-        return Err("the draft changed while the section was being rewritten; trying again".to_owned());
+        return Err(
+            "the draft changed while the section was being rewritten; trying again".to_owned(),
+        );
     }
     Ok(None)
 }
@@ -668,8 +699,8 @@ async fn run_assemble(
     let mut sections: Vec<(usize, Vec<Block>)> = Vec::new();
     for (key, value) in section_map {
         let index: usize = key.parse().map_err(|_| "bad section key".to_owned())?;
-        let blocks: Vec<Block> =
-            serde_json::from_value(value.clone()).map_err(|e| format!("bad stored section: {e}"))?;
+        let blocks: Vec<Block> = serde_json::from_value(value.clone())
+            .map_err(|e| format!("bad stored section: {e}"))?;
         sections.push((index, blocks));
     }
     let settings = store::load_settings(pool, material.course_id).await;
@@ -711,14 +742,22 @@ async fn run_assemble(
     doc.normalise_ids("b");
     doc.number_equations(1);
     if let Err(problems) = blocks::validate(&doc) {
-        return Err(format!("the assembled material is invalid: {}", problems.join("; ")));
+        return Err(format!(
+            "the assembled material is invalid: {}",
+            problems.join("; ")
+        ));
     }
 
     let models = material
         .gen_state
         .get("models")
         .and_then(Value::as_array)
-        .map(|m| m.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(", "))
+        .map(|m| {
+            m.iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
         .filter(|m| !m.is_empty());
     let hash = material
         .gen_state
@@ -805,7 +844,13 @@ impl Generator for SectionWriter {
             .section
             .ok_or_else(|| PluginError::failed("no section to write"))?;
         let limit = cx.state.ai.max_input_chars();
-        let excerpt = prompts::slice_transcript(&cx.transcript.text, plan.start_sec, plan.end_sec, 30, limit / 2);
+        let excerpt = prompts::slice_transcript(
+            &cx.transcript.text,
+            plan.start_sec,
+            plan.end_sec,
+            30,
+            limit / 2,
+        );
         let mut input = format!(
             "Handout: {}\nSection: {}\nWhat this section should teach: {}\nTranscript window: {}-{}\n",
             cx.outline.title,
@@ -961,7 +1006,10 @@ impl Generator for ReviewQuestionsGenerator {
         match asked {
             Ok((questions, model)) => {
                 note_model(cx.pool, cx.material.id, cx.material.generation, &model).await;
-                Ok(vec![Block::new("", BlockKind::ReviewQuestions { questions })])
+                Ok(vec![Block::new(
+                    "",
+                    BlockKind::ReviewQuestions { questions },
+                )])
             }
             Err(error) => {
                 tracing::warn!(%error, "AI review questions failed; omitting them");
@@ -982,12 +1030,18 @@ pub(crate) fn describe_concept_map(spec: &Value) -> Option<(String, String)> {
         return None;
     }
     let label_of = |id: &Value| -> Option<String> {
-        let id = id.as_str().map(str::to_owned).unwrap_or_else(|| id.to_string());
+        let id = id
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| id.to_string());
         nodes
             .iter()
             .find(|n| {
-                n.get("id").map(|v| v.as_str().map(str::to_owned).unwrap_or_else(|| v.to_string()))
-                    == Some(id.clone())
+                n.get("id").map(|v| {
+                    v.as_str()
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| v.to_string())
+                }) == Some(id.clone())
             })
             .and_then(|n| n.get("label").and_then(Value::as_str).map(str::to_owned))
     };
@@ -995,7 +1049,9 @@ pub(crate) fn describe_concept_map(spec: &Value) -> Option<(String, String)> {
     for node in nodes {
         let (Some(label), group) = (
             node.get("label").and_then(Value::as_str),
-            node.get("group").and_then(Value::as_str).unwrap_or("Concepts"),
+            node.get("group")
+                .and_then(Value::as_str)
+                .unwrap_or("Concepts"),
         ) else {
             continue;
         };
@@ -1011,10 +1067,19 @@ pub(crate) fn describe_concept_map(spec: &Value) -> Option<(String, String)> {
     let mut relations: Vec<String> = Vec::new();
     if let Some(edges) = spec.get("edges").and_then(Value::as_array) {
         for edge in edges.iter().take(30) {
-            let from = edge.get("from").or_else(|| edge.get("source")).and_then(label_of);
-            let to = edge.get("to").or_else(|| edge.get("target")).and_then(label_of);
+            let from = edge
+                .get("from")
+                .or_else(|| edge.get("source"))
+                .and_then(label_of);
+            let to = edge
+                .get("to")
+                .or_else(|| edge.get("target"))
+                .and_then(label_of);
             if let (Some(from), Some(to)) = (from, to) {
-                let label = edge.get("label").and_then(Value::as_str).unwrap_or("relates to");
+                let label = edge
+                    .get("label")
+                    .and_then(Value::as_str)
+                    .unwrap_or("relates to");
                 relations.push(format!("{from} {label} {to}"));
             }
         }
@@ -1024,11 +1089,23 @@ pub(crate) fn describe_concept_map(spec: &Value) -> Option<(String, String)> {
         "Concept map with {} concepts in {} groups ({}).{}",
         nodes.len(),
         groups.len(),
-        groups.iter().map(|(g, _)| g.as_str()).collect::<Vec<_>>().join(", "),
+        groups
+            .iter()
+            .map(|(g, _)| g.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
         if relations.is_empty() {
             String::new()
         } else {
-            format!(" Relationships include: {}.", relations.iter().take(5).cloned().collect::<Vec<_>>().join("; "))
+            format!(
+                " Relationships include: {}.",
+                relations
+                    .iter()
+                    .take(5)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            )
         }
     );
     Some((alt, lines.join("\n")))
@@ -1067,7 +1144,10 @@ impl Generator for ConceptMapFigureGenerator {
 /// Key terms: concept-map concepts plus defined terms, with where each is discussed.
 pub struct GlossaryGenerator;
 
-pub(crate) fn key_terms_table(doc: &MaterialDoc, concepts: &[(String, String, i64)]) -> Option<Block> {
+pub(crate) fn key_terms_table(
+    doc: &MaterialDoc,
+    concepts: &[(String, String, i64)],
+) -> Option<Block> {
     let sections = doc.sections();
     let mut terms: Vec<String> = concepts.iter().take(20).map(|c| c.0.clone()).collect();
     for block in &doc.blocks {
@@ -1085,11 +1165,19 @@ pub(crate) fn key_terms_table(doc: &MaterialDoc, concepts: &[(String, String, i6
             .iter()
             .filter(|s| !s.heading.is_empty())
             .filter(|s| {
-                s.body_text().to_lowercase().contains(&needle) || s.heading.to_lowercase().contains(&needle)
+                s.body_text().to_lowercase().contains(&needle)
+                    || s.heading.to_lowercase().contains(&needle)
             })
             .map(|s| s.heading.clone())
             .collect();
-        rows.push(vec![term, if places.is_empty() { "\u{2014}".to_owned() } else { places.join("; ") }]);
+        rows.push(vec![
+            term,
+            if places.is_empty() {
+                "\u{2014}".to_owned()
+            } else {
+                places.join("; ")
+            },
+        ]);
     }
     if rows.len() < 3 {
         return None;
@@ -1153,18 +1241,48 @@ mod tests {
     fn key_terms_lists_where_each_term_appears() {
         let mut doc = MaterialDoc::new("T");
         doc.blocks = vec![
-            Block::new("h1", BlockKind::Heading { level: 1, text: "Conduction".into() }),
-            Block::new("p1", BlockKind::Paragraph { text: "Fourier's law links flux to gradient.".into() }),
-            Block::new("d1", BlockKind::Definition { term: "Thermal conductivity".into(), text: "A property.".into() }),
-            Block::new("h2", BlockKind::Heading { level: 1, text: "Convection".into() }),
-            Block::new("p2", BlockKind::Paragraph { text: "Fluid motion carries heat.".into() }),
+            Block::new(
+                "h1",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "Conduction".into(),
+                },
+            ),
+            Block::new(
+                "p1",
+                BlockKind::Paragraph {
+                    text: "Fourier's law links flux to gradient.".into(),
+                },
+            ),
+            Block::new(
+                "d1",
+                BlockKind::Definition {
+                    term: "Thermal conductivity".into(),
+                    text: "A property.".into(),
+                },
+            ),
+            Block::new(
+                "h2",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "Convection".into(),
+                },
+            ),
+            Block::new(
+                "p2",
+                BlockKind::Paragraph {
+                    text: "Fluid motion carries heat.".into(),
+                },
+            ),
         ];
         let concepts = vec![
             ("Fourier's law".to_owned(), "Laws".to_owned(), 5),
             ("Convection".to_owned(), "Modes".to_owned(), 4),
         ];
         let table = key_terms_table(&doc, &concepts).unwrap();
-        let BlockKind::Table { rows, .. } = &table.kind else { panic!() };
+        let BlockKind::Table { rows, .. } = &table.kind else {
+            panic!()
+        };
         assert_eq!(rows.len(), 3);
         assert_eq!(rows[0], vec!["Fourier's law", "Conduction"]);
         assert_eq!(rows[1][1], "Convection");
@@ -1186,8 +1304,19 @@ mod tests {
     fn previous_context_is_compact() {
         let mut doc = MaterialDoc::new("T");
         doc.blocks = vec![
-            Block::new("h", BlockKind::Heading { level: 1, text: "Topic".into() }),
-            Block::new("p", BlockKind::Paragraph { text: "x".repeat(1000) }),
+            Block::new(
+                "h",
+                BlockKind::Heading {
+                    level: 1,
+                    text: "Topic".into(),
+                },
+            ),
+            Block::new(
+                "p",
+                BlockKind::Paragraph {
+                    text: "x".repeat(1000),
+                },
+            ),
         ];
         let ctx = previous_context(&doc, 500);
         assert!(ctx.starts_with("- Topic: "));

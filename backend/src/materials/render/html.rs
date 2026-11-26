@@ -7,7 +7,9 @@ use async_trait::async_trait;
 use super::{anchor, outline};
 use crate::materials::{
     blocks::{parse_inline, Block, BlockKind, CalloutVariant, MaterialDoc, Origin},
-    registry::{RenderContext, RenderError, RenderInput, RenderOptions, RenderedFile, Renderer, Template},
+    registry::{
+        RenderContext, RenderError, RenderInput, RenderOptions, RenderedFile, Renderer, Template,
+    },
 };
 
 pub struct HtmlRenderer;
@@ -28,7 +30,8 @@ impl Renderer for HtmlRenderer {
     }
     async fn render(&self, input: &RenderInput<'_>) -> Result<RenderedFile, RenderError> {
         Ok(RenderedFile {
-            bytes: render_html(input.doc, input.context, input.template, input.options).into_bytes(),
+            bytes: render_html(input.doc, input.context, input.template, input.options)
+                .into_bytes(),
             content_type: "text/html; charset=utf-8",
             extension: "html",
         })
@@ -135,7 +138,10 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             } else {
                 ""
             };
-            out.push_str(&format!("<h{level} id=\"{id}\"{class}>{}</h{level}>\n", inline(text)));
+            out.push_str(&format!(
+                "<h{level} id=\"{id}\"{class}>{}</h{level}>\n",
+                inline(text)
+            ));
         }
         BlockKind::Paragraph { text } => {
             out.push_str(&format!("<p id=\"{id}\">{}{badge}</p>\n", inline(text)))
@@ -166,7 +172,10 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             }
             out.push_str("</ol>");
             if let Some(answer) = answer {
-                out.push_str(&format!("<p><strong>Answer:</strong> {}</p>", inline(answer)));
+                out.push_str(&format!(
+                    "<p><strong>Answer:</strong> {}</p>",
+                    inline(answer)
+                ));
             }
             out.push_str("</section>\n");
         }
@@ -187,7 +196,10 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
                 escape(latex)
             ));
             if let Some(caption) = caption {
-                out.push_str(&format!("<p class=\"equation-caption\">{}</p>\n", inline(caption)));
+                out.push_str(&format!(
+                    "<p class=\"equation-caption\">{}</p>\n",
+                    inline(caption)
+                ));
             }
         }
         BlockKind::Figure {
@@ -204,13 +216,19 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
                 Some(text) if !text.trim().is_empty() => {
                     out.push_str("<ul>");
                     for line in text.lines().filter(|l| !l.trim().is_empty()) {
-                        out.push_str(&format!("<li>{}</li>", inline(line.trim_start_matches(['-', '*', ' ']))));
+                        out.push_str(&format!(
+                            "<li>{}</li>",
+                            inline(line.trim_start_matches(['-', '*', ' ']))
+                        ));
                     }
                     out.push_str("</ul>");
                 }
                 _ => out.push_str(&format!("<p>{}</p>", inline(alt))),
             }
-            out.push_str(&format!("<figcaption>{}</figcaption></figure>\n", inline(caption)));
+            out.push_str(&format!(
+                "<figcaption>{}</figcaption></figure>\n",
+                inline(caption)
+            ));
         }
         BlockKind::Table {
             caption,
@@ -248,7 +266,9 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             ));
         }
         BlockKind::ReviewQuestions { questions } => {
-            out.push_str(&format!("<section id=\"{id}\"><h3>Review questions</h3><ol class=\"questions\">"));
+            out.push_str(&format!(
+                "<section id=\"{id}\"><h3>Review questions</h3><ol class=\"questions\">"
+            ));
             for q in questions {
                 out.push_str(&format!("<li>{}", inline(&q.question)));
                 if let Some(answer) = &q.answer {
@@ -262,7 +282,9 @@ fn block_html(block: &Block, out: &mut String, katex: bool, chapter_breaks: bool
             out.push_str("</ol></section>\n");
         }
         BlockKind::FurtherReading { items } => {
-            out.push_str(&format!("<section id=\"{id}\"><h3>Further reading</h3><ul>"));
+            out.push_str(&format!(
+                "<section id=\"{id}\"><h3>Further reading</h3><ul>"
+            ));
             for item in items {
                 out.push_str(&format!("<li>{}", inline(&item.title)));
                 if let Some(note) = &item.note {
@@ -289,9 +311,15 @@ pub fn render_html(
     template: &Template,
     options: RenderOptions,
 ) -> String {
-    let katex_base = std::env::var("MATERIALS_KATEX_URL").ok().filter(|v| !v.is_empty());
+    let katex_base = std::env::var("MATERIALS_KATEX_URL")
+        .ok()
+        .filter(|v| !v.is_empty());
     let language = doc.meta.language.as_deref().unwrap_or("en");
-    let lang_code = if language.eq_ignore_ascii_case("english") { "en" } else { language };
+    let lang_code = if language.eq_ignore_ascii_case("english") {
+        "en"
+    } else {
+        language
+    };
     let mut out = String::with_capacity(8 * 1024);
     out.push_str(&format!(
         "<!doctype html>\n<html lang=\"{}\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{}</title>",
@@ -301,14 +329,21 @@ pub fn render_html(
     if let Some(base) = &katex_base {
         let base = base.trim_end_matches('/');
         out.push_str(&format!(
-            "<link rel=\"stylesheet\" href=\"{b}/katex.min.css\"><script defer src=\"{b}/katex.min.js\"></script><script defer src=\"{b}/contrib/auto-render.min.js\" onload=\"renderMathInElement(document.body,{{delimiters:[{{left:'\\\\[',right:'\\\\]',display:true}}]}})\"></script>",
+            "<link rel=\"stylesheet\" href=\"{b}/katex.min.css\"><script defer src=\"{b}/katex.min.js\"></script><script defer src=\"{b}/contrib/auto-render.min.js\" onload=\"renderMathInElement(document.body,{{delimiters:[{{left:'\\\\[',right:'\\\\]',display:true}},{{left:'$',right:'$',display:false}}]}})\"></script>",
             b = escape(base)
         ));
     }
-    out.push_str(&format!("<style>{}</style></head><body><main>", style(template)));
+    out.push_str(&format!(
+        "<style>{}</style></head><body><main>",
+        style(template)
+    ));
 
     out.push_str("<header class=\"title-block\">");
-    out.push_str(&format!("<p class=\"meta\">{} &middot; {}</p>", escape(&context.course_code), escape(&context.course_title)));
+    out.push_str(&format!(
+        "<p class=\"meta\">{} &middot; {}</p>",
+        escape(&context.course_code),
+        escape(&context.course_title)
+    ));
     out.push_str(&format!("<h1>{}</h1>", escape(&doc.title)));
     if let Some(subtitle) = &doc.subtitle {
         out.push_str(&format!("<p class=\"subtitle\">{}</p>", escape(subtitle)));
@@ -324,10 +359,15 @@ pub fn render_html(
         meta.push(escape(semester));
     }
     if !meta.is_empty() {
-        out.push_str(&format!("<p class=\"meta\">{}</p>", meta.join(" &middot; ")));
+        out.push_str(&format!(
+            "<p class=\"meta\">{}</p>",
+            meta.join(" &middot; ")
+        ));
     }
     if doc.meta.ai_drafted {
-        out.push_str("<p class=\"meta\"><em>AI-drafted; not yet reviewed by the lecturer.</em></p>");
+        out.push_str(
+            "<p class=\"meta\"><em>AI-drafted; not yet reviewed by the lecturer.</em></p>",
+        );
     }
     out.push_str("</header>");
 
@@ -342,7 +382,9 @@ pub fn render_html(
     if options.toc {
         let entries = outline(doc);
         if !entries.is_empty() {
-            out.push_str("<nav class=\"toc\" aria-label=\"Table of contents\"><h2>Contents</h2><ol>");
+            out.push_str(
+                "<nav class=\"toc\" aria-label=\"Table of contents\"><h2>Contents</h2><ol>",
+            );
             for (level, text, target) in entries {
                 out.push_str(&format!(
                     "<li class=\"l{level}\"><a href=\"#{target}\">{}</a></li>",
@@ -354,7 +396,12 @@ pub fn render_html(
     }
 
     for block in &doc.blocks {
-        block_html(block, &mut out, katex_base.is_some(), options.chapter_breaks);
+        block_html(
+            block,
+            &mut out,
+            katex_base.is_some(),
+            options.chapter_breaks,
+        );
     }
 
     let mut foot: Vec<String> = Vec::new();
@@ -365,7 +412,10 @@ pub fn render_html(
         foot.push(format!("Version {}", escape(version)));
     }
     foot.push(context.generated_at.format("%-d %B %Y").to_string());
-    out.push_str(&format!("<footer>{}</footer></main></body></html>", foot.join(" &middot; ")));
+    out.push_str(&format!(
+        "<footer>{}</footer></main></body></html>",
+        foot.join(" &middot; ")
+    ));
     out
 }
 
@@ -377,7 +427,12 @@ mod tests {
     #[test]
     fn escapes_everything_user_supplied() {
         let doc = sample_doc();
-        let html = render_html(&doc, &sample_context(), &builtin_templates()[0], RenderOptions::default());
+        let html = render_html(
+            &doc,
+            &sample_context(),
+            &builtin_templates()[0],
+            RenderOptions::default(),
+        );
         assert!(html.contains("Heat &lt;transfer&gt; &amp; conduction"));
         assert!(!html.contains("<transfer>"));
         assert!(html.contains("<strong>Fourier&#39;s law</strong>"));
@@ -395,7 +450,10 @@ mod tests {
             &doc,
             &sample_context(),
             &builtin_templates()[1],
-            RenderOptions { toc: true, chapter_breaks: true },
+            RenderOptions {
+                toc: true,
+                chapter_breaks: true,
+            },
         );
         assert!(html.contains("<nav class=\"toc\""));
         assert!(html.contains("href=\"#b-h1\""));

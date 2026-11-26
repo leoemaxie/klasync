@@ -62,7 +62,9 @@ fn block_md(block: &Block, out: &mut String) {
             steps,
             answer,
         } => {
-            out.push_str(&format!("#### Worked example: {title}{tag}\n\n{problem}\n\n"));
+            out.push_str(&format!(
+                "#### Worked example: {title}{tag}\n\n{problem}\n\n"
+            ));
             for (i, step) in steps.iter().enumerate() {
                 out.push_str(&format!("{}. {step}\n", i + 1));
             }
@@ -109,7 +111,11 @@ fn block_md(block: &Block, out: &mut String) {
             }
             out.push_str(&format!(
                 "| {} |\n| {} |\n",
-                header.iter().map(|c| cell(c)).collect::<Vec<_>>().join(" | "),
+                header
+                    .iter()
+                    .map(|c| cell(c))
+                    .collect::<Vec<_>>()
+                    .join(" | "),
                 header.iter().map(|_| "---").collect::<Vec<_>>().join(" | ")
             ));
             for row in rows {

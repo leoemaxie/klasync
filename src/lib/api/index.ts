@@ -16,3 +16,4 @@ export * from './questions';
 export * from './analytics';
 export * from './aiStudy';
 export * from './live';
+export * from './materials';

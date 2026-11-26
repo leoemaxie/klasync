@@ -263,30 +263,52 @@ impl Registry {
     pub fn builtin() -> Self {
         let mut registry = Self::default();
         // Generators run in registration order within their stage.
-        registry.generators.push(Arc::new(super::generate::SectionWriter));
-        registry.generators.push(Arc::new(super::generate::SummaryGenerator));
+        registry
+            .generators
+            .push(Arc::new(super::generate::SectionWriter));
+        registry
+            .generators
+            .push(Arc::new(super::generate::SummaryGenerator));
         registry
             .generators
             .push(Arc::new(super::generate::ReviewQuestionsGenerator));
         registry
             .generators
             .push(Arc::new(super::generate::ConceptMapFigureGenerator));
-        registry.generators.push(Arc::new(super::generate::GlossaryGenerator));
+        registry
+            .generators
+            .push(Arc::new(super::generate::GlossaryGenerator));
 
-        registry.renderers.push(Arc::new(super::render::html::HtmlRenderer));
-        registry.renderers.push(Arc::new(super::render::pdf::PdfRenderer::from_env()));
-        registry.renderers.push(Arc::new(super::render::docx::DocxRenderer));
+        registry
+            .renderers
+            .push(Arc::new(super::render::html::HtmlRenderer));
+        registry
+            .renderers
+            .push(Arc::new(super::render::pdf::PdfRenderer::from_env()));
+        registry
+            .renderers
+            .push(Arc::new(super::render::docx::DocxRenderer));
         registry
             .renderers
             .push(Arc::new(super::render::markdown::MarkdownRenderer));
 
-        registry.delivery.push(Arc::new(super::delivery::InAppChannel));
-        registry.delivery.push(Arc::new(super::delivery::LinkChannel));
-        registry.delivery.push(Arc::new(super::delivery::EmailChannel));
+        registry
+            .delivery
+            .push(Arc::new(super::delivery::InAppChannel));
+        registry
+            .delivery
+            .push(Arc::new(super::delivery::LinkChannel));
+        registry
+            .delivery
+            .push(Arc::new(super::delivery::EmailChannel));
 
-        registry.analyzers.push(Arc::new(super::compare::ComparisonAnalyzer));
+        registry
+            .analyzers
+            .push(Arc::new(super::compare::ComparisonAnalyzer));
 
-        registry.templates.extend(super::render::builtin_templates());
+        registry
+            .templates
+            .extend(super::render::builtin_templates());
         registry
     }
 
@@ -441,7 +463,10 @@ mod tests {
         assert!(registry.analyzer("comparison").is_some());
         assert_eq!(registry.generators(Stage::Section).count(), 1);
         assert!(registry.generators(Stage::Post).count() >= 3);
-        assert_eq!(registry.template("does-not-exist").id, registry.templates()[0].id);
+        assert_eq!(
+            registry.template("does-not-exist").id,
+            registry.templates()[0].id
+        );
     }
 
     #[test]

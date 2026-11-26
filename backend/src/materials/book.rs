@@ -25,9 +25,7 @@ use sqlx::{FromRow, PgConnection, PgPool};
 use uuid::Uuid;
 
 use super::{
-    blocks::{
-        self, Block, BlockKind, CalloutVariant, MaterialDoc, ReadingItem, ReviewQuestion,
-    },
+    blocks::{self, Block, BlockKind, CalloutVariant, MaterialDoc, ReadingItem, ReviewQuestion},
     store,
 };
 
@@ -68,8 +66,11 @@ pub struct Pin {
     pub version_id: Uuid,
 }
 
+/// Namespace for block ids. Uses the *tail* of the id: a UUIDv7 starts with a
+/// timestamp, so the head collides for rows created in the same moment.
 fn short(id: Uuid) -> String {
-    id.simple().to_string().chars().take(8).collect()
+    let hex = id.simple().to_string();
+    hex[hex.len() - 12..].to_owned()
 }
 
 /// A material's blocks prepared for reuse in a book: ids are namespaced by the
@@ -112,15 +113,49 @@ pub fn assemble(
         doc.blocks.push(Block::new(id.to_owned(), kind));
     };
     if let Some(preface) = front.preface.as_deref().filter(|t| !t.trim().is_empty()) {
-        push(&mut doc, "front-preface-h", BlockKind::Heading { level: 1, text: "Preface".into() });
-        for (i, paragraph) in preface.split("\n\n").filter(|p| !p.trim().is_empty()).enumerate() {
-            push(&mut doc, &format!("front-preface-{}", i + 1), BlockKind::Paragraph { text: paragraph.trim().to_owned() });
+        push(
+            &mut doc,
+            "front-preface-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Preface".into(),
+            },
+        );
+        for (i, paragraph) in preface
+            .split("\n\n")
+            .filter(|p| !p.trim().is_empty())
+            .enumerate()
+        {
+            push(
+                &mut doc,
+                &format!("front-preface-{}", i + 1),
+                BlockKind::Paragraph {
+                    text: paragraph.trim().to_owned(),
+                },
+            );
         }
     }
     if let Some(syllabus) = front.syllabus.as_deref().filter(|t| !t.trim().is_empty()) {
-        push(&mut doc, "front-syllabus-h", BlockKind::Heading { level: 1, text: "Syllabus".into() });
-        for (i, paragraph) in syllabus.split("\n\n").filter(|p| !p.trim().is_empty()).enumerate() {
-            push(&mut doc, &format!("front-syllabus-{}", i + 1), BlockKind::Paragraph { text: paragraph.trim().to_owned() });
+        push(
+            &mut doc,
+            "front-syllabus-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Syllabus".into(),
+            },
+        );
+        for (i, paragraph) in syllabus
+            .split("\n\n")
+            .filter(|p| !p.trim().is_empty())
+            .enumerate()
+        {
+            push(
+                &mut doc,
+                &format!("front-syllabus-{}", i + 1),
+                BlockKind::Paragraph {
+                    text: paragraph.trim().to_owned(),
+                },
+            );
         }
     }
 
@@ -139,12 +174,18 @@ pub fn assemble(
             push(
                 &mut doc,
                 &format!("unit-{}-h", unit_index + 1),
-                BlockKind::Heading { level: 1, text: unit_title.clone() },
+                BlockKind::Heading {
+                    level: 1,
+                    text: unit_title.clone(),
+                },
             );
         }
         for chapter in &unit.chapters {
             chapter_no += 1;
-            pins.push(Pin { material_id: chapter.material_id, version_id: chapter.version_id });
+            pins.push(Pin {
+                material_id: chapter.material_id,
+                version_id: chapter.version_id,
+            });
             let prefix = short(chapter.material_id);
             doc.blocks.push(Block::new(
                 format!("c{prefix}-chapter"),
@@ -171,7 +212,10 @@ pub fn assemble(
                     }
                     BlockKind::FurtherReading { items } => {
                         for item in items.iter() {
-                            if !reading.iter().any(|r| r.title.eq_ignore_ascii_case(&item.title)) {
+                            if !reading
+                                .iter()
+                                .any(|r| r.title.eq_ignore_ascii_case(&item.title))
+                            {
                                 reading.push(item.clone());
                             }
                         }
@@ -183,7 +227,10 @@ pub fn assemble(
                         if let Some(first) = defined.get(&key) {
                             block.kind = BlockKind::Callout {
                                 variant: CalloutVariant::Note,
-                                text: format!("Recall **{}**, defined in Chapter {first}.", blocks::strip_inline(term)),
+                                text: format!(
+                                    "Recall **{}**, defined in Chapter {first}.",
+                                    blocks::strip_inline(term)
+                                ),
                             };
                         } else {
                             defined.insert(key, chapter_no);
@@ -220,16 +267,45 @@ pub fn assemble(
 
     // Back matter.
     if !questions.is_empty() {
-        push(&mut doc, "back-questions-h", BlockKind::Heading { level: 1, text: "Review questions".into() });
-        push(&mut doc, "back-questions", BlockKind::ReviewQuestions { questions });
+        push(
+            &mut doc,
+            "back-questions-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Review questions".into(),
+            },
+        );
+        push(
+            &mut doc,
+            "back-questions",
+            BlockKind::ReviewQuestions { questions },
+        );
     }
     if !reading.is_empty() {
-        push(&mut doc, "back-reading-h", BlockKind::Heading { level: 1, text: "Further reading".into() });
-        push(&mut doc, "back-reading", BlockKind::FurtherReading { items: reading });
+        push(
+            &mut doc,
+            "back-reading-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Further reading".into(),
+            },
+        );
+        push(
+            &mut doc,
+            "back-reading",
+            BlockKind::FurtherReading { items: reading },
+        );
     }
     if !glossary.is_empty() {
         glossary.sort_by_key(|g| g.0.to_lowercase());
-        push(&mut doc, "back-glossary-h", BlockKind::Heading { level: 1, text: "Glossary".into() });
+        push(
+            &mut doc,
+            "back-glossary-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Glossary".into(),
+            },
+        );
         push(
             &mut doc,
             "back-glossary",
@@ -246,7 +322,14 @@ pub fn assemble(
     if !index.is_empty() {
         let mut entries: Vec<(String, Vec<usize>)> = index.into_iter().collect();
         entries.sort_by_key(|e| e.0.to_lowercase());
-        push(&mut doc, "back-index-h", BlockKind::Heading { level: 1, text: "Index".into() });
+        push(
+            &mut doc,
+            "back-index-h",
+            BlockKind::Heading {
+                level: 1,
+                text: "Index".into(),
+            },
+        );
         push(
             &mut doc,
             "back-index",
@@ -259,7 +342,11 @@ pub fn assemble(
                         chapters.sort_unstable();
                         vec![
                             term,
-                            chapters.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(", "),
+                            chapters
+                                .iter()
+                                .map(|c| c.to_string())
+                                .collect::<Vec<_>>()
+                                .join(", "),
                         ]
                     })
                     .collect(),
@@ -303,10 +390,12 @@ pub struct BookVersionRow {
 const BOOK_VERSION_COLUMNS: &str = "id, book_id, version_no, doc, pins, published_at, created_at";
 
 pub async fn find_book(pool: &PgPool, course_id: Uuid) -> Result<Option<BookRow>, sqlx::Error> {
-    sqlx::query_as::<_, BookRow>(&format!("select {BOOK_COLUMNS} from course_books where course_id = $1"))
-        .bind(course_id)
-        .fetch_optional(pool)
-        .await
+    sqlx::query_as::<_, BookRow>(&format!(
+        "select {BOOK_COLUMNS} from course_books where course_id = $1"
+    ))
+    .bind(course_id)
+    .fetch_optional(pool)
+    .await
 }
 
 pub async fn ensure_book(pool: &PgPool, course_id: Uuid) -> Result<BookRow, String> {
@@ -328,7 +417,10 @@ pub async fn ensure_book(pool: &PgPool, course_id: Uuid) -> Result<BookRow, Stri
         .ok_or_else(|| "the book could not be created".to_owned())
 }
 
-pub async fn find_book_version(pool: &PgPool, id: Uuid) -> Result<Option<BookVersionRow>, sqlx::Error> {
+pub async fn find_book_version(
+    pool: &PgPool,
+    id: Uuid,
+) -> Result<Option<BookVersionRow>, sqlx::Error> {
     sqlx::query_as::<_, BookVersionRow>(&format!(
         "select {BOOK_VERSION_COLUMNS} from book_versions where id = $1"
     ))
@@ -337,7 +429,10 @@ pub async fn find_book_version(pool: &PgPool, id: Uuid) -> Result<Option<BookVer
     .await
 }
 
-pub async fn list_book_versions(pool: &PgPool, book_id: Uuid) -> Result<Vec<BookVersionRow>, sqlx::Error> {
+pub async fn list_book_versions(
+    pool: &PgPool,
+    book_id: Uuid,
+) -> Result<Vec<BookVersionRow>, sqlx::Error> {
     sqlx::query_as::<_, BookVersionRow>(&format!(
         "select {BOOK_VERSION_COLUMNS} from book_versions where book_id = $1 order by version_no desc"
     ))
@@ -356,7 +451,12 @@ pub async fn mark_stale(conn: &mut PgConnection, course_id: Uuid) -> Result<(), 
     .fetch_optional(&mut *conn)
     .await?;
     if let Some(book_id) = changed {
-        store::emit(&mut *conn, "book.stale", json!({"book_id": book_id, "course_id": course_id})).await?;
+        store::emit(
+            &mut *conn,
+            "book.stale",
+            json!({"book_id": book_id, "course_id": course_id}),
+        )
+        .await?;
     }
     Ok(())
 }
@@ -424,14 +524,18 @@ pub async fn rebuild(pool: &PgPool, course_id: Uuid) -> Result<(Uuid, i32, usize
         return Err("publish at least one lecture material before building the book".to_owned());
     }
 
-    let mut cache: serde_json::Map<String, Value> = book.chapter_cache.as_object().cloned().unwrap_or_default();
+    let mut cache: serde_json::Map<String, Value> =
+        book.chapter_cache.as_object().cloned().unwrap_or_default();
     let (mut rebuilt, mut reused) = (0usize, 0usize);
     let mut by_id: HashMap<Uuid, ChapterInput> = HashMap::new();
     let mut order: Vec<Uuid> = Vec::new();
     let mut fresh_cache = serde_json::Map::new();
     for m in &materials {
         let key = m.version_id.to_string();
-        let blocks: Vec<Block> = match cache.remove(&key).and_then(|v| serde_json::from_value(v).ok()) {
+        let blocks: Vec<Block> = match cache
+            .remove(&key)
+            .and_then(|v| serde_json::from_value(v).ok())
+        {
             Some(blocks) => {
                 reused += 1;
                 blocks
@@ -442,7 +546,10 @@ pub async fn rebuild(pool: &PgPool, course_id: Uuid) -> Result<(Uuid, i32, usize
                 fragment(&doc, m.material_id)
             }
         };
-        fresh_cache.insert(key, serde_json::to_value(&blocks).map_err(|e| e.to_string())?);
+        fresh_cache.insert(
+            key,
+            serde_json::to_value(&blocks).map_err(|e| e.to_string())?,
+        );
         by_id.insert(
             m.material_id,
             ChapterInput {
@@ -464,18 +571,29 @@ pub async fn rebuild(pool: &PgPool, course_id: Uuid) -> Result<(Uuid, i32, usize
         });
     } else {
         for spec in &specs {
-            let chapters: Vec<ChapterInput> = spec.material_ids.iter().filter_map(|id| by_id.remove(id)).collect();
+            let chapters: Vec<ChapterInput> = spec
+                .material_ids
+                .iter()
+                .filter_map(|id| by_id.remove(id))
+                .collect();
             if !chapters.is_empty() {
-                units.push(UnitInput { title: spec.title.clone(), chapters });
+                units.push(UnitInput {
+                    title: spec.title.clone(),
+                    chapters,
+                });
             }
         }
         let leftover: Vec<ChapterInput> = order.iter().filter_map(|id| by_id.remove(id)).collect();
         if !leftover.is_empty() {
-            units.push(UnitInput { title: Some("Other lectures".to_owned()), chapters: leftover });
+            units.push(UnitInput {
+                title: Some("Other lectures".to_owned()),
+                chapters: leftover,
+            });
         }
     }
 
-    let mut front: FrontMatter = serde_json::from_value(book.front_matter.clone()).unwrap_or_default();
+    let mut front: FrontMatter =
+        serde_json::from_value(book.front_matter.clone()).unwrap_or_default();
     if front.subtitle.is_none() {
         front.subtitle = Some(format!(
             "{} {} \u{b7} {} {}",
@@ -484,7 +602,10 @@ pub async fn rebuild(pool: &PgPool, course_id: Uuid) -> Result<(Uuid, i32, usize
     }
     let (doc, pins) = assemble(&book.title, &front, &units, &settings.language);
     if let Err(problems) = blocks::validate(&doc) {
-        return Err(format!("the assembled book is invalid: {}", problems.join("; ")));
+        return Err(format!(
+            "the assembled book is invalid: {}",
+            problems.join("; ")
+        ));
     }
 
     let mut tx = pool.begin().await.map_err(|e| e.to_string())?;
@@ -524,12 +645,14 @@ pub async fn publish(pool: &PgPool, book_id: Uuid, version_id: Uuid) -> Result<(
     .await
     .map_err(|e| e.to_string())?;
     let course_id = course_id.ok_or_else(|| "book version not found".to_owned())?;
-    sqlx::query("update course_books set published_version_id = $2, updated_at = now() where id = $1")
-        .bind(book_id)
-        .bind(version_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| e.to_string())?;
+    sqlx::query(
+        "update course_books set published_version_id = $2, updated_at = now() where id = $1",
+    )
+    .bind(book_id)
+    .bind(version_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
     store::emit(
         &mut *tx,
         "book.published",
@@ -558,13 +681,32 @@ mod tests {
     }
 
     fn heading(id: &str, text: &str) -> Block {
-        Block::new(id, BlockKind::Heading { level: 1, text: text.into() })
+        Block::new(
+            id,
+            BlockKind::Heading {
+                level: 1,
+                text: text.into(),
+            },
+        )
     }
     fn def(id: &str, term: &str) -> Block {
-        Block::new(id, BlockKind::Definition { term: term.into(), text: format!("{term} means something") })
+        Block::new(
+            id,
+            BlockKind::Definition {
+                term: term.into(),
+                text: format!("{term} means something"),
+            },
+        )
     }
     fn eq(id: &str) -> Block {
-        Block::new(id, BlockKind::Equation { latex: "a=b".into(), caption: None, number: Some(1) })
+        Block::new(
+            id,
+            BlockKind::Equation {
+                latex: "a=b".into(),
+                caption: None,
+                number: Some(1),
+            },
+        )
     }
     fn key_terms(rows: &[&str]) -> Block {
         Block::new(
@@ -572,7 +714,10 @@ mod tests {
             BlockKind::Table {
                 caption: Some("Key terms".into()),
                 header: vec!["Term".into(), "Where it is discussed".into()],
-                rows: rows.iter().map(|t| vec![(*t).to_owned(), "x".to_owned()]).collect(),
+                rows: rows
+                    .iter()
+                    .map(|t| vec![(*t).to_owned(), "x".to_owned()])
+                    .collect(),
             },
         )
     }
@@ -581,29 +726,71 @@ mod tests {
         vec![UnitInput {
             title: None,
             chapters: vec![
-                chapter(1, "Conduction", vec![
-                    heading("h", "Fourier's law"),
-                    def("d", "Flux"),
-                    eq("e"),
-                    Block::new("q", BlockKind::ReviewQuestions { questions: vec![ReviewQuestion { question: "Why?".into(), answer: None, difficulty: None }] }),
-                    Block::new("r", BlockKind::FurtherReading { items: vec![ReadingItem { title: "Incropera".into(), note: None }] }),
-                    key_terms(&["Flux", "Gradient", "Conductivity"]),
-                ]),
-                chapter(2, "Convection", vec![
-                    heading("h", "Newton's law"),
-                    def("d", "flux"),
-                    def("d2", "Biot number"),
-                    eq("e"),
-                    Block::new("r", BlockKind::FurtherReading { items: vec![ReadingItem { title: "incropera".into(), note: None }, ReadingItem { title: "Cengel".into(), note: None }] }),
-                    key_terms(&["Flux", "Biot number", "Coefficient"]),
-                ]),
+                chapter(
+                    1,
+                    "Conduction",
+                    vec![
+                        heading("h", "Fourier's law"),
+                        def("d", "Flux"),
+                        eq("e"),
+                        Block::new(
+                            "q",
+                            BlockKind::ReviewQuestions {
+                                questions: vec![ReviewQuestion {
+                                    question: "Why?".into(),
+                                    answer: None,
+                                    difficulty: None,
+                                }],
+                            },
+                        ),
+                        Block::new(
+                            "r",
+                            BlockKind::FurtherReading {
+                                items: vec![ReadingItem {
+                                    title: "Incropera".into(),
+                                    note: None,
+                                }],
+                            },
+                        ),
+                        key_terms(&["Flux", "Gradient", "Conductivity"]),
+                    ],
+                ),
+                chapter(
+                    2,
+                    "Convection",
+                    vec![
+                        heading("h", "Newton's law"),
+                        def("d", "flux"),
+                        def("d2", "Biot number"),
+                        eq("e"),
+                        Block::new(
+                            "r",
+                            BlockKind::FurtherReading {
+                                items: vec![
+                                    ReadingItem {
+                                        title: "incropera".into(),
+                                        note: None,
+                                    },
+                                    ReadingItem {
+                                        title: "Cengel".into(),
+                                        note: None,
+                                    },
+                                ],
+                            },
+                        ),
+                        key_terms(&["Flux", "Biot number", "Coefficient"]),
+                    ],
+                ),
             ],
         }]
     }
 
     #[test]
     fn book_has_chapters_back_matter_and_pins() {
-        let front = FrontMatter { preface: Some("Welcome.\n\nEnjoy.".into()), ..Default::default() };
+        let front = FrontMatter {
+            preface: Some("Welcome.\n\nEnjoy.".into()),
+            ..Default::default()
+        };
         let (doc, pins) = assemble("ME 501 book", &front, &two_chapters(), "English");
         assert_eq!(pins.len(), 2);
         let headings: Vec<String> = doc
@@ -616,12 +803,24 @@ mod tests {
             .collect();
         assert_eq!(headings[0], "1:Preface");
         assert!(headings.contains(&"1:Chapter 1: Conduction".to_owned()));
-        assert!(headings.contains(&"2:Fourier's law".to_owned()), "{headings:?}");
+        assert!(
+            headings.contains(&"2:Fourier's law".to_owned()),
+            "{headings:?}"
+        );
         assert!(headings.contains(&"1:Chapter 2: Convection".to_owned()));
-        for back in ["1:Review questions", "1:Further reading", "1:Glossary", "1:Index"] {
+        for back in [
+            "1:Review questions",
+            "1:Further reading",
+            "1:Glossary",
+            "1:Index",
+        ] {
             assert!(headings.contains(&back.to_owned()), "missing {back}");
         }
-        assert!(blocks::validate(&doc).is_ok(), "{:?}", blocks::validate(&doc));
+        assert!(
+            blocks::validate(&doc).is_ok(),
+            "{:?}",
+            blocks::validate(&doc)
+        );
     }
 
     #[test]
@@ -631,9 +830,14 @@ mod tests {
             BlockKind::Callout { text, .. } if text.contains("Recall") => Some(text.clone()),
             _ => None,
         });
-        assert_eq!(recall.as_deref(), Some("Recall **flux**, defined in Chapter 1."));
+        assert_eq!(
+            recall.as_deref(),
+            Some("Recall **flux**, defined in Chapter 1.")
+        );
         let glossary = doc.blocks.iter().find(|b| b.id == "back-glossary").unwrap();
-        let BlockKind::Table { rows, .. } = &glossary.kind else { panic!() };
+        let BlockKind::Table { rows, .. } = &glossary.kind else {
+            panic!()
+        };
         let terms: Vec<&str> = rows.iter().map(|r| r[0].as_str()).collect();
         assert_eq!(terms, vec!["Biot number", "Flux"]);
     }
@@ -650,14 +854,28 @@ mod tests {
             })
             .collect();
         assert_eq!(numbers, vec![1, 2]);
-        let questions = doc.blocks.iter().find(|b| b.id == "back-questions").unwrap();
-        let BlockKind::ReviewQuestions { questions } = &questions.kind else { panic!() };
+        let questions = doc
+            .blocks
+            .iter()
+            .find(|b| b.id == "back-questions")
+            .unwrap();
+        let BlockKind::ReviewQuestions { questions } = &questions.kind else {
+            panic!()
+        };
         assert_eq!(questions[0].question, "[Chapter 1] Why?");
         let reading = doc.blocks.iter().find(|b| b.id == "back-reading").unwrap();
-        let BlockKind::FurtherReading { items } = &reading.kind else { panic!() };
-        assert_eq!(items.len(), 2, "duplicate reading is merged case-insensitively");
+        let BlockKind::FurtherReading { items } = &reading.kind else {
+            panic!()
+        };
+        assert_eq!(
+            items.len(),
+            2,
+            "duplicate reading is merged case-insensitively"
+        );
         let index = doc.blocks.iter().find(|b| b.id == "back-index").unwrap();
-        let BlockKind::Table { rows, .. } = &index.kind else { panic!() };
+        let BlockKind::Table { rows, .. } = &index.kind else {
+            panic!()
+        };
         let flux = rows.iter().find(|r| r[0] == "Flux").unwrap();
         assert_eq!(flux[1], "1, 2");
     }
@@ -666,14 +884,19 @@ mod tests {
     fn units_nest_chapters_one_level_deeper() {
         let mut units = two_chapters();
         let second = units[0].chapters.pop().unwrap();
-        units.push(UnitInput { title: Some("Unit B".into()), chapters: vec![second] });
+        units.push(UnitInput {
+            title: Some("Unit B".into()),
+            chapters: vec![second],
+        });
         units[0].title = Some("Unit A".into());
         let (doc, _) = assemble("B", &FrontMatter::default(), &units, "English");
         let levels: Vec<(u8, String)> = doc
             .blocks
             .iter()
             .filter_map(|b| match &b.kind {
-                BlockKind::Heading { level, text } if text.starts_with("Unit") || text.starts_with("Chapter") => {
+                BlockKind::Heading { level, text }
+                    if text.starts_with("Unit") || text.starts_with("Chapter") =>
+                {
                     Some((*level, text.clone()))
                 }
                 _ => None,
@@ -692,6 +915,9 @@ mod tests {
         let a = fragment(&doc, Uuid::from_u128(1));
         let b = fragment(&doc, Uuid::from_u128(2));
         assert_ne!(a[0].id, b[0].id);
-        assert!(matches!(a[0].kind, BlockKind::Equation { number: None, .. }));
+        assert!(matches!(
+            a[0].kind,
+            BlockKind::Equation { number: None, .. }
+        ));
     }
 }

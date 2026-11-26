@@ -53,19 +53,29 @@ const AUTO_GENERATE_DELAY_SECS: u32 = 240;
 /// Called once per lecture by the post-lecture pipeline: creates the material
 /// and starts generation when the course has auto-generation on and an AI
 /// provider is configured. Never fails the caller.
-pub async fn queue_after_lecture(state: &AppState, pool: &PgPool, session_id: Uuid, lecturer_id: Uuid) {
+pub async fn queue_after_lecture(
+    state: &AppState,
+    pool: &PgPool,
+    session_id: Uuid,
+    lecturer_id: Uuid,
+) {
     if !state.ai.is_configured() {
         return;
     }
     let result: Result<(), String> = async {
-        let Some(session) = store::session_info(pool, session_id).await.map_err(|e| e.to_string())? else {
+        let Some(session) = store::session_info(pool, session_id)
+            .await
+            .map_err(|e| e.to_string())?
+        else {
             return Ok(());
         };
         let settings = store::load_settings(pool, session.course_id).await;
         if !settings.auto_generate {
             return Ok(());
         }
-        let material = store::ensure_material(pool, &session, lecturer_id).await.map_err(|e| e.to_string())?;
+        let material = store::ensure_material(pool, &session, lecturer_id)
+            .await
+            .map_err(|e| e.to_string())?;
         if material.generation > 0 {
             return Ok(()); // already generated or generating
         }

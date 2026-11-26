@@ -103,7 +103,9 @@ impl Renderer for PdfRenderer {
 
     async fn render(&self, input: &RenderInput<'_>) -> Result<RenderedFile, RenderError> {
         let browser = self.browser.as_ref().ok_or_else(|| {
-            RenderError::Unavailable("no headless browser is configured (MATERIALS_PDF_BROWSER)".into())
+            RenderError::Unavailable(
+                "no headless browser is configured (MATERIALS_PDF_BROWSER)".into(),
+            )
         })?;
         let html = render_html(input.doc, input.context, input.template, input.options);
         let _permit = permits()
@@ -140,7 +142,10 @@ async fn run_browser(browser: &Path, work: &Path, html: &str) -> Result<Vec<u8>,
         .arg("--disable-dev-shm-usage")
         .arg("--no-pdf-header-footer")
         .arg("--export-tagged-pdf")
-        .arg(format!("--user-data-dir={}", work.join("profile").display()))
+        .arg(format!(
+            "--user-data-dir={}",
+            work.join("profile").display()
+        ))
         .arg(format!("--print-to-pdf={}", output.display()))
         .arg(format!("file://{}", input.display()))
         .kill_on_drop(true)
@@ -162,7 +167,9 @@ async fn run_browser(browser: &Path, work: &Path, html: &str) -> Result<Vec<u8>,
         ))
     })?;
     if !bytes.starts_with(b"%PDF") {
-        return Err(RenderError::Failed("the browser output is not a PDF".into()));
+        return Err(RenderError::Failed(
+            "the browser output is not a PDF".into(),
+        ));
     }
     Ok(bytes)
 }
@@ -210,7 +217,10 @@ mod tests {
                 doc: &doc,
                 context: &context,
                 template: &templates[0],
-                options: RenderOptions { toc: true, chapter_breaks: false },
+                options: RenderOptions {
+                    toc: true,
+                    chapter_breaks: false,
+                },
             })
             .await
             .expect("pdf renders");

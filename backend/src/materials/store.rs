@@ -98,7 +98,10 @@ pub struct SessionInfo {
     pub started_at: Option<DateTime<Utc>>,
 }
 
-pub async fn session_info(pool: &PgPool, session_id: Uuid) -> Result<Option<SessionInfo>, sqlx::Error> {
+pub async fn session_info(
+    pool: &PgPool,
+    session_id: Uuid,
+) -> Result<Option<SessionInfo>, sqlx::Error> {
     sqlx::query_as::<_, SessionInfo>(
         "select id, course_id, lecturer_id, title, short_code, status::text as status, started_at
          from lecture_sessions where id = $1 and deleted_at is null",
@@ -121,7 +124,10 @@ pub async fn session_info_by_code(
     .await
 }
 
-pub async fn course_info(pool: &PgPool, course_id: Uuid) -> Result<Option<CourseInfo>, sqlx::Error> {
+pub async fn course_info(
+    pool: &PgPool,
+    course_id: Uuid,
+) -> Result<Option<CourseInfo>, sqlx::Error> {
     sqlx::query_as::<_, CourseInfo>(
         "select c.id, c.lecturer_id, c.code, c.title, c.academic_session, c.semester,
                 (select l.name from lecturers l where l.id = c.lecturer_id) as lecturer_name
@@ -240,7 +246,10 @@ pub async fn find_version(pool: &PgPool, id: Uuid) -> Result<Option<VersionRow>,
     .await
 }
 
-pub async fn list_versions(pool: &PgPool, material_id: Uuid) -> Result<Vec<VersionRow>, sqlx::Error> {
+pub async fn list_versions(
+    pool: &PgPool,
+    material_id: Uuid,
+) -> Result<Vec<VersionRow>, sqlx::Error> {
     sqlx::query_as::<_, VersionRow>(&format!(
         "select {VERSION_COLUMNS} from material_versions where material_id = $1 order by version_no desc"
     ))
@@ -284,7 +293,8 @@ pub async fn insert_version(
 }
 
 pub fn parse_doc(value: &Value) -> Result<MaterialDoc, String> {
-    serde_json::from_value(value.clone()).map_err(|error| format!("invalid material document: {error}"))
+    serde_json::from_value(value.clone())
+        .map_err(|error| format!("invalid material document: {error}"))
 }
 
 // ---- student access -------------------------------------------------------------
@@ -356,11 +366,20 @@ pub async fn enqueue_job(
     job_type: &str,
     params: Value,
 ) -> Result<bool, sqlx::Error> {
-    let material_id = params.get("material_id").and_then(Value::as_str).unwrap_or("");
-    let generation = params.get("generation").and_then(Value::as_i64).unwrap_or(0);
+    let material_id = params
+        .get("material_id")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let generation = params
+        .get("generation")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     let section = params.get("section").and_then(Value::as_i64).unwrap_or(-1);
     let nonce = params.get("nonce").and_then(Value::as_str).unwrap_or("");
-    let delay = params.get("delay_secs").and_then(Value::as_f64).unwrap_or(0.0);
+    let delay = params
+        .get("delay_secs")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0);
     let inserted = sqlx::query(
         "insert into ai_jobs (id, session_id, requested_by, job_type, mode, params, run_after)
          select $1, $2, $3, $4, 'interactive', $5, now() + make_interval(secs => $10::double precision)

@@ -11,9 +11,7 @@ use uuid::Uuid;
 
 use super::{
     blocks::{self, MaterialDoc},
-    book,
-    delivery,
-    generate,
+    book, delivery, generate,
     registry::{registry, Audience, RenderContext, RenderError, RenderOptions, Target},
     render::{file_stem, render_with},
     store::{self, MaterialRow, MaterialSettings},
@@ -85,10 +83,14 @@ pub async fn set_review_status(
     status: &str,
 ) -> Result<(), ServiceError> {
     if !matches!(status, "draft" | "in_review") {
-        return Err(ServiceError::Invalid("status must be draft or in_review".into()));
+        return Err(ServiceError::Invalid(
+            "status must be draft or in_review".into(),
+        ));
     }
     if material.status == "published" || material.status == "archived" {
-        return Err(ServiceError::Conflict("A published or archived material cannot go back to review."));
+        return Err(ServiceError::Conflict(
+            "A published or archived material cannot go back to review.",
+        ));
     }
     sqlx::query("update lecture_materials set status = $2, updated_at = now() where id = $1")
         .bind(material.id)
@@ -98,7 +100,11 @@ pub async fn set_review_status(
     Ok(())
 }
 
-pub async fn set_template(pool: &PgPool, material: &MaterialRow, template: &str) -> Result<(), ServiceError> {
+pub async fn set_template(
+    pool: &PgPool,
+    material: &MaterialRow,
+    template: &str,
+) -> Result<(), ServiceError> {
     if !registry().templates().iter().any(|t| t.id == template) {
         return Err(ServiceError::Invalid("unknown template".into()));
     }
@@ -126,7 +132,10 @@ pub async fn request_regeneration(
     if !doc.sections().iter().any(|s| s.block_id == heading_id) {
         return Err(ServiceError::NotFound("That section is not in the draft."));
     }
-    let instruction = instruction.map(str::trim).filter(|i| !i.is_empty()).map(|i| i.chars().take(500).collect::<String>());
+    let instruction = instruction
+        .map(str::trim)
+        .filter(|i| !i.is_empty())
+        .map(|i| i.chars().take(500).collect::<String>());
     store::enqueue_job(
         pool,
         material.session_id,
@@ -184,11 +193,15 @@ pub async fn publish(
 ) -> Result<Published, ServiceError> {
     let pool = state.db_pool();
     if material.generation_state == "queued" || material.generation_state == "generating" {
-        return Err(ServiceError::Conflict("Wait for generation to finish before publishing."));
+        return Err(ServiceError::Conflict(
+            "Wait for generation to finish before publishing.",
+        ));
     }
     for channel in &options.deliver {
         if registry().delivery_channel(channel).is_none() {
-            return Err(ServiceError::Invalid(format!("unknown delivery channel {channel}")));
+            return Err(ServiceError::Invalid(format!(
+                "unknown delivery channel {channel}"
+            )));
         }
     }
     let draft = material
@@ -201,17 +214,27 @@ pub async fn publish(
     doc.meta.ai_drafted = false;
 
     let mut tx = pool.begin().await?;
-    let locked: Option<i32> = sqlx::query_scalar(
-        "select draft_rev from lecture_materials where id = $1 for update",
-    )
-    .bind(material.id)
-    .fetch_optional(&mut *tx)
-    .await?;
+    let locked: Option<i32> =
+        sqlx::query_scalar("select draft_rev from lecture_materials where id = $1 for update")
+            .bind(material.id)
+            .fetch_optional(&mut *tx)
+            .await?;
     if locked != Some(material.draft_rev) {
-        return Err(ServiceError::Conflict("The draft changed while publishing. Please try again."));
+        return Err(ServiceError::Conflict(
+            "The draft changed while publishing. Please try again.",
+        ));
     }
-    let (version_id, version_no) =
-        store::insert_version(&mut tx, material.id, "lecturer", &doc, None, None, None, true).await?;
+    let (version_id, version_no) = store::insert_version(
+        &mut tx,
+        material.id,
+        "lecturer",
+        &doc,
+        None,
+        None,
+        None,
+        true,
+    )
+    .await?;
     sqlx::query(
         "update lecture_materials
          set status = 'published', published_version_id = $2, current_version_id = $2,
@@ -258,7 +281,12 @@ pub async fn publish(
         .await?;
         deliveries.push(id);
     }
-    Ok(Published { version_id, version_no, resource_id, deliveries })
+    Ok(Published {
+        version_id,
+        version_no,
+        resource_id,
+        deliveries,
+    })
 }
 
 /// The format students get by default: PDF when this server can make one.
@@ -276,7 +304,13 @@ async fn publish_resource(
     version_id: Uuid,
 ) -> Result<Option<Uuid>, ServiceError> {
     let pool = state.db_pool();
-    let exported = export(state, Target::Version(version_id), default_resource_format(), None).await?;
+    let exported = export(
+        state,
+        Target::Version(version_id),
+        default_resource_format(),
+        None,
+    )
+    .await?;
     let stored = state
         .storage
         .put(&exported.filename, exported.bytes.clone())
@@ -411,7 +445,9 @@ pub async fn export(
             (
                 doc,
                 material.course_id,
-                session.map(|s| s.title).unwrap_or_else(|| "Lecture".to_owned()),
+                session
+                    .map(|s| s.title)
+                    .unwrap_or_else(|| "Lecture".to_owned()),
                 template.map(str::to_owned).unwrap_or(material.template),
                 format!("v{}", version.version_no),
                 RenderOptions::default(),
@@ -435,7 +471,10 @@ pub async fn export(
                 book_row.1,
                 template.map(str::to_owned).unwrap_or(settings.template),
                 format!("book v{}", version.version_no),
-                RenderOptions { toc: true, chapter_breaks: true },
+                RenderOptions {
+                    toc: true,
+                    chapter_breaks: true,
+                },
             )
         }
     };
@@ -544,7 +583,9 @@ pub async fn export_draft(
     let context = RenderContext {
         course_code: course.code.clone(),
         course_title: course.title.clone(),
-        heading: session.map(|s| s.title).unwrap_or_else(|| "Lecture".to_owned()),
+        heading: session
+            .map(|s| s.title)
+            .unwrap_or_else(|| "Lecture".to_owned()),
         lecturer_name: course.lecturer_name.clone(),
         academic_session: Some(course.academic_session.clone()),
         semester: Some(course.semester.clone()),
@@ -552,9 +593,15 @@ pub async fn export_draft(
         version_label: Some("draft".to_owned()),
     };
     let template = registry().template(template.unwrap_or(&material.template));
-    let file = render_with(renderer.as_ref(), &doc, &context, template, RenderOptions::default())
-        .await
-        .map_err(render_error)?;
+    let file = render_with(
+        renderer.as_ref(),
+        &doc,
+        &context,
+        template,
+        RenderOptions::default(),
+    )
+    .await
+    .map_err(render_error)?;
     Ok(Exported {
         bytes: file.bytes,
         content_type: file.content_type,
@@ -570,8 +617,14 @@ mod tests {
     #[test]
     fn content_types_map_to_static_values() {
         assert_eq!(static_content_type("application/pdf"), "application/pdf");
-        assert!(static_content_type("application/vnd.openxmlformats-officedocument.wordprocessingml.document").contains("wordprocessing"));
-        assert_eq!(static_content_type("text/markdown; charset=utf-8"), "text/markdown; charset=utf-8");
+        assert!(static_content_type(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        .contains("wordprocessing"));
+        assert_eq!(
+            static_content_type("text/markdown; charset=utf-8"),
+            "text/markdown; charset=utf-8"
+        );
         assert_eq!(static_content_type("weird"), "application/octet-stream");
     }
 
