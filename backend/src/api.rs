@@ -175,6 +175,8 @@ pub fn router(state: AppState) -> Router {
             post(auth::register_student),
         )
         .route("/api/v1/auth/students/login", post(auth::login_student))
+        .route("/api/v1/auth/students/me", get(auth::student_me))
+        .route("/api/v1/auth/lecturers/me", get(auth::lecturer_me))
         .route("/api/v1/auth/refresh", post(auth::refresh))
         .route("/api/v1/auth/logout", post(auth::logout))
         .route(
