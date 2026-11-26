@@ -217,7 +217,7 @@ pub async fn lecture_text(
 
 /// Map-reduce for transcripts longer than a provider's context: the cheap tier
 /// condenses each section, so the mid tier still sees the whole lecture.
-async fn condense(
+pub(crate) async fn condense(
     state: &AppState,
     text: &str,
     limit: usize,
@@ -362,6 +362,10 @@ async fn execute_claimed_job(
     job: &PendingJob,
 ) -> Result<Option<Uuid>, String> {
     match job.job_type.as_str() {
+        // Lecture materials (outline, section, assemble, embed) live in their own module.
+        job_type if job_type.starts_with("material_") => {
+            crate::materials::run_job(state, pool, job).await
+        }
         "transcribe" => run_transcribe(state, pool, job).await,
         "embed" => embeddings::embed_session(state, pool, job.session_id)
             .await
@@ -525,7 +529,7 @@ async fn insert_output(
     Ok(Some(output_id))
 }
 
-async fn record_job_usage(
+pub(crate) async fn record_job_usage(
     state: &AppState,
     pool: &PgPool,
     job: &PendingJob,
@@ -773,7 +777,7 @@ pub async fn run_loop(state: AppState) {
              where attempts < $1 and mode = 'interactive' and run_after <= now()
                and (status = 'queued'
                     or (status = 'failed' and started_at < now() - interval '20 seconds'))
-             order by (status = 'queued') desc, created_at asc limit 1",
+             order by (status = 'queued') desc, (job_type like 'material\\_%') asc, created_at asc limit 1",
         )
         .bind(MAX_ATTEMPTS)
         .fetch_optional(pool)

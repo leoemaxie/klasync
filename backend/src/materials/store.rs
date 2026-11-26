@@ -359,15 +359,18 @@ pub async fn enqueue_job(
     let material_id = params.get("material_id").and_then(Value::as_str).unwrap_or("");
     let generation = params.get("generation").and_then(Value::as_i64).unwrap_or(0);
     let section = params.get("section").and_then(Value::as_i64).unwrap_or(-1);
+    let nonce = params.get("nonce").and_then(Value::as_str).unwrap_or("");
+    let delay = params.get("delay_secs").and_then(Value::as_f64).unwrap_or(0.0);
     let inserted = sqlx::query(
-        "insert into ai_jobs (id, session_id, requested_by, job_type, mode, params)
-         select $1, $2, $3, $4, 'interactive', $5
+        "insert into ai_jobs (id, session_id, requested_by, job_type, mode, params, run_after)
+         select $1, $2, $3, $4, 'interactive', $5, now() + make_interval(secs => $10::double precision)
          where not exists (
            select 1 from ai_jobs j
            where j.session_id = $2 and j.job_type = $4
              and j.params->>'material_id' = $6
              and coalesce((j.params->>'generation')::bigint, 0) = $7
              and coalesce((j.params->>'section')::bigint, -1) = $8
+             and coalesce(j.params->>'nonce', '') = $9
              and (j.status in ('queued', 'running', 'completed')
                   or (j.status = 'failed' and j.attempts < 3)))",
     )
@@ -379,6 +382,8 @@ pub async fn enqueue_job(
     .bind(material_id)
     .bind(generation)
     .bind(section)
+    .bind(nonce)
+    .bind(delay)
     .execute(pool)
     .await?;
     Ok(inserted.rows_affected() > 0)

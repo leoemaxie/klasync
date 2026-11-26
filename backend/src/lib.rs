@@ -9,6 +9,7 @@ pub mod config;
 pub mod database;
 pub mod email;
 pub mod embeddings;
+pub mod materials;
 pub mod models;
 pub mod post_lecture;
 pub mod realtime;

@@ -40,7 +40,7 @@ pub enum Stage {
     Post,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SectionPlan {
     pub index: usize,
     pub title: String,
@@ -49,7 +49,7 @@ pub struct SectionPlan {
     pub end_sec: i32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Outline {
     pub title: String,
     pub objectives: Vec<String>,
@@ -268,6 +268,9 @@ impl Registry {
         registry
             .generators
             .push(Arc::new(super::generate::ReviewQuestionsGenerator));
+        registry
+            .generators
+            .push(Arc::new(super::generate::ConceptMapFigureGenerator));
         registry.generators.push(Arc::new(super::generate::GlossaryGenerator));
 
         registry.renderers.push(Arc::new(super::render::html::HtmlRenderer));

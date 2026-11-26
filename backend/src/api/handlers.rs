@@ -18,6 +18,7 @@ pub mod lifecycle;
 pub mod live_controls;
 pub mod live_extras;
 pub mod lms_sync;
+pub mod materials;
 pub mod not_found;
 pub mod participants;
 pub mod polls;
