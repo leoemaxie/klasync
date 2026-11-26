@@ -4,11 +4,17 @@
 
   let {
     onGenerate,
+    seedTopic = '',
   }: {
     onGenerate: (topic?: string) => void | Promise<void>;
+    seedTopic?: string;
   } = $props();
 
   let topic = $state('');
+  // Selected transcript text arrives here ready to generate from.
+  $effect(() => {
+    if (seedTopic) topic = seedTopic;
+  });
   let isGenerating = $state(false);
   const quickTopics = ['Key Formulas', 'Core Definitions', 'Exam Review'];
 

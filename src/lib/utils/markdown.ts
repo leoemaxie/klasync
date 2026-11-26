@@ -24,7 +24,12 @@ export function renderMarkdown(md: string): string {
       .replace(/>/g, '&gt;')
       .replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="md-bold">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>');
+      .replace(/\*(.*?)\*/g, '<em class="md-italic">$1</em>')
+      // [mm:ss] stamps become buttons that replay that moment of the lecture.
+      .replace(
+        /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g,
+        '<button type="button" class="md-time" data-seek="$1" title="Play from $1">$1</button>'
+      );
   }
 
   for (const rawLine of lines) {
