@@ -147,7 +147,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK & NDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Configure Android NDK
         run: |
