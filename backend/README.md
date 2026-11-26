@@ -45,6 +45,38 @@ The Klasync backend is built with Rust and Axum. It handles lecturer authenticat
 
 The server listens on `http://127.0.0.1:8787` by default.
 
+## Running the stack without Docker
+
+`docker compose up` is the supported route (see the root `docker-compose.yml`).
+Where Docker is unavailable (a CI container, a sandbox) the same stack runs
+natively. Postgres needs the `pgvector` extension and the `pg_cron` stub from
+`deploy/postgres/`; Redis must speak TLS; any S3-compatible server works for
+the object store.
+
+```bash
+# Postgres 16 + pgvector (Debian/Ubuntu: apt install postgresql-16 postgresql-16-pgvector)
+cp deploy/postgres/pg_cron.control deploy/postgres/pg_cron--1.0.sql /usr/share/postgresql/16/extension/
+initdb -D "$PGDATA" && pg_ctl -D "$PGDATA" start
+psql -c "CREATE ROLE klasync LOGIN SUPERUSER PASSWORD 'klasync-dev'" -c "CREATE DATABASE klasync OWNER klasync"
+
+# Redis over TLS, using the throwaway CA from scripts/gen-dev-certs.sh
+./scripts/gen-dev-certs.sh
+redis-server --port 0 --tls-port 6380 --tls-cert-file deploy/certs/redis.crt \
+  --tls-key-file deploy/certs/redis.key --tls-ca-cert-file deploy/certs/ca.crt --tls-auth-clients no
+
+# S3 mock (any S3-compatible server), then create the bucket
+pip install "moto[server]" && moto_server -p 9090 &
+curl -X PUT http://127.0.0.1:9090/klasync-lectures
+```
+
+Then run the backend with the variables from the `backend` service in
+`docker-compose.yml`, pointing `DATABASE_URL`, `REDIS_URL=rediss://127.0.0.1:6380`
+and `R2_ENDPOINT=http://127.0.0.1:9090` at these, and `SSL_CERT_FILE` /
+`HTTP_EXTRA_CA_FILE` at a bundle containing the dev CA. With no AI key the
+backend runs with AI disabled: chapters and concept maps fall back to
+heuristics, and flashcards, Ask and semantic search report that they are
+unavailable. `python3 scripts/e2e.py` exercises the whole lifecycle.
+
 ## AI architecture
 
 All AI goes through one interface, `AiGateway` (`src/ai/`). Call sites say *what*

@@ -175,6 +175,8 @@ pub fn router(state: AppState) -> Router {
             post(auth::register_student),
         )
         .route("/api/v1/auth/students/login", post(auth::login_student))
+        .route("/api/v1/auth/students/me", get(auth::student_me))
+        .route("/api/v1/auth/lecturers/me", get(auth::lecturer_me))
         .route("/api/v1/auth/refresh", post(auth::refresh))
         .route("/api/v1/auth/logout", post(auth::logout))
         .route(
@@ -359,7 +361,7 @@ pub fn router(state: AppState) -> Router {
             post(handlers::presence::heartbeat),
         )
         .fallback(not_found::not_found)
-        .layer(DefaultBodyLimit::max(1 * 1024 * 1024))
+        .layer(DefaultBodyLimit::max(1024 * 1024))
         .layer(cors)
         .layer(middleware::from_fn_with_state(
             state.clone(),

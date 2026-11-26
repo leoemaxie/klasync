@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Screen } from '$lib/types';
   import { Archive, Radio } from '@lucide/svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   let {
     claimsCount = 0,
@@ -11,80 +12,50 @@
   } = $props();
 </script>
 
-<header class="workspace-top-bar">
-  <div class="top-bar-left">
-    <h1 class="workspace-title">Lecture Archive</h1>
+<header class="topbar">
+  <div class="titles">
+    <h1 class="title">Lecture archive</h1>
+    <p class="sub">
+      <Archive size={14} />
+      {claimsCount}
+      {claimsCount === 1 ? 'lecture' : 'lectures'}, searchable and ready to
+      study
+    </p>
   </div>
-
-  <div class="top-bar-right">
-    <div class="stat-badge">
-      <Archive size={13} color="var(--color-ember-accent)" />
-      <span>{claimsCount} {claimsCount === 1 ? 'Lecture' : 'Lectures'}</span>
-    </div>
-
-    <button
-      type="button"
-      class="outline join-cta-btn"
-      onclick={() => onNavigate('join')}
-      title="Join a live session"
-    >
-      <Radio size={13} color="var(--color-ember-accent)" />
-      <span>Join Session</span>
-    </button>
-  </div>
+  <Button
+    variant="outline"
+    onclick={() => onNavigate('join')}
+    title="Join a live session"
+  >
+    <Radio size={14} /> Join a session
+  </Button>
 </header>
 
 <style>
-  .workspace-top-bar {
+  .topbar {
     display: flex;
+    align-items: flex-end;
     justify-content: space-between;
-    align-items: center;
     flex-wrap: wrap;
-    gap: var(--spacing-10);
-    padding-bottom: var(--spacing-10);
-    border-bottom: 1px solid var(--color-cork-border);
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .workspace-title {
-    font-family: var(--font-display);
-    font-size: 24px;
-    color: var(--color-warm-cream);
+  .title {
     margin: 0;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 500;
+    line-height: 1.1;
   }
-  .top-bar-right {
+  .sub {
     display: flex;
     align-items: center;
-    gap: var(--spacing-8);
-    flex-wrap: wrap;
+    gap: 7px;
+    margin: 6px 0 0;
+    font-size: 13.5px;
+    color: var(--text-secondary);
   }
-  .stat-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--color-warm-cream);
-    background: rgba(16, 9, 4, 0.6);
-    border: 1px solid var(--color-cork-border);
-    padding: 6px 10px;
-    border-radius: 4px;
-  }
-  .join-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    padding: 6px 12px;
-    text-transform: uppercase;
-  }
-  @media (max-width: 640px) {
-    .workspace-top-bar {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-    .workspace-title {
-      font-size: 18px;
-    }
-    .top-bar-right {
-      display: none;
-    }
+  .sub :global(svg) {
+    color: var(--text-accent);
   }
 </style>

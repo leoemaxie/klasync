@@ -2,8 +2,10 @@
   import { onMount } from 'svelte';
   import type { StudentEnrolledCourse } from '$lib/types';
   import { getStudentCourses } from '$lib/api/courses';
-  import { GraduationCap, Search, BookOpen } from '@lucide/svelte';
+  import { Search, BookOpen, X } from '@lucide/svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import StudentCourseCard from './StudentCourseCard.svelte';
 
   let {
@@ -24,128 +26,141 @@
     }
   });
 
+  const q = $derived(searchQuery.trim().toLowerCase());
   const filteredCourses = $derived(
     courses.filter(
       (c) =>
-        c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.title.toLowerCase().includes(searchQuery.toLowerCase())
+        !q ||
+        c.code.toLowerCase().includes(q) ||
+        c.title.toLowerCase().includes(q)
     )
   );
 </script>
 
-<div class="student-courses-hub">
-  <div class="hub-header">
+<div class="hub">
+  <header class="head">
     <div>
-      <p class="eyebrow">MY COURSES</p>
-      <h2 class="hub-title">Courses</h2>
+      <p class="eyebrow-line">My courses</p>
+      <h2>Courses</h2>
     </div>
 
-    <div class="search-wrap">
-      <Search size={13} class="search-icon" />
+    <div class="search">
+      <Search size={15} />
       <input
         type="search"
         bind:value={searchQuery}
-        placeholder="Search courses..."
-        class="course-search-input"
+        placeholder="Search courses"
         aria-label="Search enrolled courses"
+        autocomplete="off"
       />
+      {#if searchQuery}
+        <Button
+          icon
+          size="sm"
+          class="clear"
+          aria-label="Clear search"
+          onclick={() => (searchQuery = '')}><X size={14} /></Button
+        >
+      {/if}
     </div>
-  </div>
+  </header>
 
   {#if isLoading}
-    <SkeletonCard lines={2} label="Loading courses..." />
+    <SkeletonCard lines={2} label="Loading courses…" />
   {:else if filteredCourses.length === 0}
-    <div class="empty-hub-box">
-      <BookOpen size={28} color="var(--color-driftwood)" />
-      <p class="empty-title">No courses found</p>
-      <p class="hint">
-        {#if searchQuery}
-          Try adjusting your search terms.
-        {:else}
-          Join a live lecture to view your enrolled courses.
-        {/if}
-      </p>
-    </div>
+    <EmptyState
+      icon={BookOpen}
+      title="No courses found"
+      description={searchQuery
+        ? 'Try different words, or clear the search.'
+        : 'Join a live lecture to see your enrolled courses here.'}
+    />
   {:else}
-    <div class="courses-grid">
+    <ul class="grid">
       {#each filteredCourses as course (course.id)}
-        <StudentCourseCard {course} onSelect={onSelectCourseFilter} />
+        <li><StudentCourseCard {course} onSelect={onSelectCourseFilter} /></li>
       {/each}
-    </div>
+    </ul>
   {/if}
 </div>
 
 <style>
-  .student-courses-hub {
+  .hub {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-12);
-    margin-bottom: var(--spacing-14);
+    gap: 16px;
   }
-  .hub-header {
+  .head {
     display: flex;
+    align-items: flex-end;
     justify-content: space-between;
-    align-items: center;
     flex-wrap: wrap;
-    gap: var(--spacing-10);
-    border-bottom: 1px solid var(--color-cork-border);
-    padding-bottom: var(--spacing-10);
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .hub-title {
-    font-family: var(--font-display);
-    font-size: 22px;
-    color: var(--color-warm-cream);
-    margin: 2px 0 0 0;
+  .eyebrow-line {
+    margin: 0 0 2px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-accent);
   }
-  .search-wrap {
+  .head h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 500;
+  }
+  .search {
     position: relative;
     display: flex;
     align-items: center;
+    width: min(320px, 100%);
   }
-  :global(.search-wrap .search-icon) {
+  .search :global(svg:first-child) {
     position: absolute;
-    left: 10px;
-    color: var(--color-driftwood);
+    left: 13px;
+    color: var(--text-tertiary);
+    pointer-events: none;
   }
-  .course-search-input {
-    padding-left: 28px !important;
-    font-size: 12px;
-    min-width: 160px;
+  .search input {
+    width: 100%;
+    height: var(--control-h);
+    min-height: var(--control-h);
     margin: 0;
+    padding: 0 36px 0 38px;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background: var(--surface-inset);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    letter-spacing: 0;
+    text-transform: none;
   }
-  .courses-grid {
+  .search input::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal;
+  }
+  .search input::-webkit-search-cancel-button {
+    display: none;
+  }
+  .search input:focus {
+    outline: none;
+    border-color: var(--border-strong);
+    box-shadow: var(--focus-ring);
+  }
+  .search :global(.clear) {
+    position: absolute;
+    right: 4px;
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--spacing-10);
-  }
-  .empty-hub-box {
-    padding: var(--spacing-20);
-    text-align: center;
-    border: 1px dashed var(--color-cork-border);
-    border-radius: var(--radius-cards);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .empty-title {
-    font-size: 14px;
-    color: var(--color-warm-cream);
-    margin: 0;
-  }
-  @media (max-width: 540px) {
-    .hub-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .search-wrap {
-      width: 100%;
-    }
-    .course-search-input {
-      width: 100%;
-    }
-    .courses-grid {
-      grid-template-columns: 1fr;
-    }
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
   }
 </style>

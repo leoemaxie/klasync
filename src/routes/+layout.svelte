@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../styles/theme.css';
+  import '../styles/tokens.css';
   import '../styles/layout.css';
   import '../styles/elements.css';
   import '../styles/forms.css';

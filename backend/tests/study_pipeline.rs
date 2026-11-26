@@ -60,7 +60,7 @@ async fn seed(pool: &PgPool, tag: &str) -> Fixture {
         )
         .bind(course)
         .bind(format!("Lecture {i}"))
-        .bind(format!("{}{}", &tag[..3].to_uppercase(), i))
+        .bind(format!("{}{}", tag[..3].to_uppercase(), i))
         .bind(status)
         .bind(lecturer)
         .fetch_one(pool)

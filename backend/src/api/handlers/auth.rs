@@ -10,11 +10,65 @@ use crate::{
             AccountRole, AuthTokens, LoginInput, RefreshInput, RegisterLecturerInput,
             RegisterStudentInput,
         },
+        guard::{AuthenticatedLecturer, AuthenticatedStudent},
         passwords,
         service::{issue_tokens, parse_opaque_token, verify_token_hash},
     },
     state::AppState,
 };
+
+/// What the apps show for the signed-in person (name in the header, etc.).
+#[derive(serde::Serialize)]
+pub struct AccountProfile {
+    id: Uuid,
+    name: String,
+    email: String,
+    role: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    matric_number: Option<String>,
+}
+
+pub async fn student_me(
+    State(state): State<AppState>,
+    student: AuthenticatedStudent,
+) -> Result<Json<AccountProfile>, ApiError> {
+    let row = sqlx::query!(
+        "select display_name, email, matric_number from student_accounts where id = $1",
+        student.id
+    )
+    .fetch_optional(state.db_pool())
+    .await
+    .log_internal_error("Failed to load student profile")?
+    .ok_or_else(|| ApiError::unauthorized("Account not found"))?;
+    Ok(Json(AccountProfile {
+        id: student.id,
+        name: row.display_name,
+        email: row.email,
+        role: "student",
+        matric_number: Some(row.matric_number),
+    }))
+}
+
+pub async fn lecturer_me(
+    State(state): State<AppState>,
+    lecturer: AuthenticatedLecturer,
+) -> Result<Json<AccountProfile>, ApiError> {
+    let row = sqlx::query!(
+        "select name, email from lecturers where id = $1",
+        lecturer.id
+    )
+    .fetch_optional(state.db_pool())
+    .await
+    .log_internal_error("Failed to load lecturer profile")?
+    .ok_or_else(|| ApiError::unauthorized("Account not found"))?;
+    Ok(Json(AccountProfile {
+        id: lecturer.id,
+        name: row.name,
+        email: row.email,
+        role: "lecturer",
+        matric_number: None,
+    }))
+}
 
 #[derive(FromRow)]
 struct PasswordAccount {

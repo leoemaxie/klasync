@@ -2,20 +2,49 @@
   import { renderMarkdown } from '$lib/utils/markdown';
   import { FileText } from '@lucide/svelte';
 
-  let { content = '' }: { content?: string } = $props();
+  import { parseClock } from '$lib/studio/time';
+
+  let {
+    content = '',
+    fill = false,
+    onSeek,
+  }: {
+    content?: string;
+    /** Fill the parent's height instead of using the standalone max-height. */
+    fill?: boolean;
+    /** Called with seconds when a [mm:ss] stamp in the notes is pressed. */
+    onSeek?: (seconds: number) => void;
+  } = $props();
   const renderedHtml = $derived(renderMarkdown(content));
+
+  function onClick(event: MouseEvent) {
+    const el = (event.target as HTMLElement).closest<HTMLElement>(
+      '[data-seek]'
+    );
+    if (!el || !onSeek) return;
+    const seconds = parseClock(el.dataset.seek ?? '');
+    if (seconds != null) onSeek(seconds);
+  }
 </script>
 
-<div class="notes-preview-canvas" role="region" aria-label="Notes preview">
+<div
+  class="notes-preview-canvas"
+  class:fill
+  role="region"
+  aria-label="Notes preview"
+>
   {#if content.trim()}
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <article class="markdown-body">
+    <article class="markdown-body" onclick={onClick}>
       {@html renderedHtml}
     </article>
   {:else}
     <div class="empty-preview">
       <FileText size={22} color="var(--color-driftwood)" />
-      <p class="empty-text">No notes to preview. Switch to Edit mode to add study notes.</p>
+      <p class="empty-text">
+        No notes to preview. Switch to Edit mode to add study notes.
+      </p>
     </div>
   {/if}
 </div>
@@ -31,6 +60,34 @@
     padding: var(--spacing-18, 20px);
     color: var(--color-warm-cream);
     box-sizing: border-box;
+  }
+  .notes-preview-canvas.fill {
+    max-height: none;
+    height: 100%;
+    min-height: 0;
+  }
+  :global(.markdown-body .md-time) {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    height: 22px;
+    padding: 0 7px;
+    margin-right: 2px;
+    border: 1px solid var(--border-accent);
+    border-radius: 999px;
+    background: var(--surface-accent);
+    color: var(--text-accent);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: baseline;
+  }
+  :global(.markdown-body .md-time:hover) {
+    background: rgba(220, 80, 0, 0.26);
+    color: var(--text-primary);
   }
   .empty-preview {
     display: flex;
@@ -116,8 +173,14 @@
     line-height: 1.2;
     margin-top: 2px;
   }
-  :global(.markdown-body .md-bold) { color: var(--color-warm-cream); font-weight: 700; }
-  :global(.markdown-body .md-italic) { color: var(--color-warm-cream-dim); font-style: italic; }
+  :global(.markdown-body .md-bold) {
+    color: var(--color-warm-cream);
+    font-weight: 700;
+  }
+  :global(.markdown-body .md-italic) {
+    color: var(--color-warm-cream-dim);
+    font-style: italic;
+  }
   :global(.markdown-body .md-inline-code) {
     font-family: var(--font-mono, monospace);
     font-size: 12px;

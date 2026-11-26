@@ -1,0 +1,68 @@
+/*
+ * Semantic design tokens — surfaces, text, elevation, radii and motion.
+ * These sit on top of the brand palette in theme.css so new UI (the lecture
+ * workspace first) stays consistent: reach for these instead of raw rgba()
+ * values or one-off shadows.
+ */
+:root {
+  /* ── Surfaces (darkest → most raised) ───────────────────── */
+  --surface-page: var(--color-walnut-shadow);
+  --surface-1: rgba(28, 16, 8, 0.55);
+  --surface-2: rgba(40, 25, 14, 0.82);
+  --surface-3: rgba(58, 38, 22, 0.9);
+  --surface-inset: rgba(12, 7, 3, 0.65);
+  --surface-hover: rgba(255, 237, 215, 0.06);
+  --surface-accent: rgba(220, 80, 0, 0.14);
+
+  /* ── Borders ────────────────────────────────────────────── */
+  --border-subtle: rgba(255, 237, 215, 0.08);
+  --border-default: var(--color-cork-border);
+  --border-strong: rgba(255, 237, 215, 0.3);
+  --border-accent: rgba(220, 80, 0, 0.55);
+
+  /* ── Text (all ≥ 4.5:1 on every surface above) ──────────── */
+  --text-primary: var(--color-warm-cream);
+  --text-secondary: rgba(255, 237, 215, 0.78);
+  --text-tertiary: var(--color-driftwood);
+  /* Ember brightened for text on dark surfaces; --color-ember-accent is
+     reserved for fills, borders and large display type. */
+  --text-accent: #ff8c4a;
+  --text-on-accent: #fff6ea;
+  /* Deeper ember for fills that carry text (5.2:1 with --text-on-accent). */
+  --fill-accent: #b84000;
+  --fill-accent-hover: #cc4800;
+
+  /* ── Elevation ──────────────────────────────────────────── */
+  --elev-1: 0 1px 0 rgba(255, 237, 215, 0.04) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-2:
+    0 1px 0 rgba(255, 237, 215, 0.05) inset, 0 6px 18px rgba(0, 0, 0, 0.38);
+  --elev-3:
+    0 1px 0 rgba(255, 237, 215, 0.06) inset, 0 16px 44px rgba(0, 0, 0, 0.55);
+  --glow-accent: 0 0 0 1px var(--border-accent), 0 6px 28px rgba(220, 80, 0, 0.22);
+
+  /* ── Radii ──────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ── Motion ─────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+
+  /* ── Focus ──────────────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px var(--surface-page), 0 0 0 4px var(--text-primary);
+
+  /* ── Control sizing ─────────────────────────────────────── */
+  --control-h: 34px;
+  --control-h-touch: 44px;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --control-h: var(--control-h-touch);
+  }
+}
