@@ -62,11 +62,11 @@ def audio_chain(name, dur, first_idx, lecture=None, nd=0.0):
         ins += ['-ss', f'{max(0, start):.3f}', '-t', f'{length:.3f}', '-i', 'lecture48.wav']
         if mode == 'duck' and nd:
             nend = 0.3 + nd + 0.3
-            vol = f"volume='0.18+0.82*clip((t-{nend:.2f})/0.7,0,1)':eval=frame"
+            vol = f"volume='1.7*(0.1+0.9*clip((t-{nend:.2f})/0.7,0,1))':eval=frame"
         elif mode == 'bed':
-            vol = 'volume=0.2'
+            vol = 'volume=0.4'
         else:
-            vol = 'volume=1.0'
+            vol = 'volume=1.7'
         parts.append(f'[{idx}:a]atempo={speed},{vol},afade=t=in:st=0:d=0.2,afade=t=out:st={max(0, dur - 0.4):.3f}:d=0.4[a1]')
         mix.append('[a1]')
         idx += 1
