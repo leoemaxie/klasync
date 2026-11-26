@@ -6,7 +6,7 @@ Claude spec documents linked from each file.
 
 | File | What it covers | State |
 | --- | --- | --- |
-| [assessments-v1.md](assessments-v1.md) | Lecture-linked quizzes and homework: authoring, AI generation, taking (offline-safe), blind grading, reports | Planned, not started |
+| [assessments-v1.md](assessments-v1.md) | Lecture-linked quizzes and homework: authoring, AI generation, taking (offline-safe), blind grading, reports | Built and verified; see the unticked items |
 | [assessments-v2-gradebook.md](assessments-v2-gradebook.md) | Gradebook: weighted categories, grade ledger, release, LMS passback | Planned for v2 |
 | [assessments-v2-backlog.md](assessments-v2-backlog.md) | Everything else deferred from v1: question bank, richer question types, integrity analytics, TA roles, appeals | Planned for v2 |
 

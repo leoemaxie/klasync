@@ -222,3 +222,18 @@ textarea:focus {
 .as-scope label.option {
   font-size: 14px;
 }
+/* A global rule uppercases every span inside a label; undo it where the span holds a sentence. */
+.as-scope label.check span,
+.as-scope label.inline > span,
+.as-scope label.option span,
+.as-scope label.chip span,
+.as-scope .seg label span,
+.as-scope label.level span,
+.as-scope label.level strong {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.as-scope label.option span,
+.as-scope label.check span {
+  font-size: inherit;
+}

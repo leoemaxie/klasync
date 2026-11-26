@@ -3,8 +3,10 @@
 Spec (full rationale, data model, diagrams): Claude doc "Assessments: Design
 Spec (v1 and v2)". This file is the working checklist.
 
-Status: **planned, nothing built.** Depends softly on the materials engine
-(optional generator input) and not at all on its worker split.
+Status: **built and verified** (backend, frontend, tests, and a real-browser run) except
+the items left unticked below. See `backend/src/assessments/README.md` for the map and the
+list of what is not built. Depends softly on the materials engine (optional generator
+input) and not at all on its worker split.
 
 ## Goal
 
@@ -245,52 +247,52 @@ now and the gradebook in v2.
 ## Phases and tasks
 
 ### Phase 0: Foundations
-- [ ] Reserve migration range `0020`-`0029`; write `0020_assessments.sql` with tables above
-- [ ] Extend `ai_jobs_job_type_check` with `assessment_generate`, `assessment_grade`, `assessment_report` **re-listing every existing type including the materials types**
-- [ ] `backend/src/assessments/` module with `STATUS.md`; question schema, validation, serde types
-- [ ] Separate student-view and lecturer-view question types; test that the student type has no key fields
-- [ ] Outbox table and relay hook
-- [ ] Settings struct with defaults and validation
+- [x] Reserve migration range `0020`-`0029`; write `0020_assessments.sql` with tables above
+- [x] Extend `ai_jobs_job_type_check` with `assessment_generate`, `assessment_grade`, `assessment_report` **re-listing every existing type including the materials types**
+- [x] `backend/src/assessments/` module with `STATUS.md`; question schema, validation, serde types
+- [x] Separate student-view and lecturer-view question types; test that the student type has no key fields
+- [ ] Outbox relay (the table and transactional writes exist; nothing consumes the events yet)
+- [x] Settings struct with defaults and validation
 
 Done when: migrations apply cleanly on a fresh DB and an existing one; schema tests pass.
 
 ### Phase 1: Author, publish, take (online), auto-score
-- [ ] CRUD for assessments and questions; optimistic `draft_rev`
-- [ ] Question types: mcq_single, mcq_multi, true_false, short_answer, long_answer
-- [ ] Publish cuts a version; student list/detail endpoints scoped to enrolled students
-- [ ] Attempt start, resume, autosave, submit; server deadline
-- [ ] Deterministic auto-scoring for objective types
-- [ ] Lecturer builder UI and student take UI (online only)
+- [x] CRUD for assessments and questions; optimistic `draft_rev`
+- [x] Question types: mcq_single, mcq_multi, true_false, short_answer, long_answer
+- [x] Publish cuts a version; student list/detail endpoints scoped to enrolled students
+- [x] Attempt start, resume, autosave, submit; server deadline
+- [x] Deterministic auto-scoring for objective types
+- [x] Lecturer builder UI and student take UI (online only)
 
 Done when: a lecturer publishes a 5-question quiz and an enrolled student takes it and gets a score.
 
 ### Phase 2: AI generation
-- [ ] `assessment_generate` job, prompt versioning, validation, solve-back check, dedupe
-- [ ] Generate dialog, per-question accept/edit/reject, AI badge
-- [ ] Source-range links back to the transcript
+- [x] `assessment_generate` job, prompt versioning, validation, solve-back check, dedupe
+- [x] Generate dialog, per-question accept/edit/reject, AI badge
+- [ ] Source-range links back to the transcript (shown as timestamps, not yet links)
 
 Done when: generating 10 questions from a lecture yields reviewable drafts with transcript links.
 
 ### Phase 3: Integrity and offline
-- [ ] Settings UI (availability, attempts, timing, delivery, integrity, offline)
-- [ ] Seeded shuffle; one-active-device lock; integrity event capture and storage
-- [ ] IndexedDB op log; sync endpoint; offline submit; clock handling; submit receipt
-- [ ] Accommodations
-- [ ] Tests: drop the network mid-attempt, change the device clock, double submit, two devices
+- [x] Settings UI (availability, attempts, timing, delivery, integrity, offline)
+- [x] Seeded shuffle; one-active-device lock; integrity event capture and storage
+- [x] IndexedDB op log; sync endpoint; offline submit; clock handling; submit receipt
+- [ ] Accommodations UI (the API and client exist; the backend rules are done and tested)
+- [x] Tests: drop the network mid-attempt, change the device clock, double submit, two devices
 
 Done when: an attempt started online, finished fully offline and synced later is stored once, correctly, and flagged only if inconsistent.
 
 ### Phase 4: Grading
-- [ ] Blind grading workbench: question-by-question across aliased attempts
-- [ ] `assessment_grade` job; `ai_confirm` and `ai_auto` modes; prompt-injection defences
-- [ ] Append-only grades, overrides, finalize and reveal, release policies
-- [ ] Test that no grader endpoint or AI prompt contains identity before finalize
+- [x] Blind grading workbench: question-by-question across aliased attempts
+- [x] `assessment_grade` job; `ai_confirm` and `ai_auto` modes; prompt-injection defences
+- [x] Append-only grades, overrides, finalize and reveal, release policies
+- [x] Test that no grader endpoint or AI prompt contains identity before finalize
 
 Done when: a lecturer grades blind, finalizes, sees names, and releases; students see exactly what the visibility setting allows.
 
 ### Phase 5: Reports
-- [ ] Funnel, distribution, item analysis, topic mastery; CSV export
-- [ ] Student result and progress views; transcript-moment links
+- [x] Funnel, distribution, item analysis, topic mastery; CSV export
+- [x] Student result and progress views; transcript-moment links
 - [ ] Optional AI narrative
 
 Done when: the lecturer can name the three hardest questions and the weakest topic for a class.
