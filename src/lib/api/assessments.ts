@@ -568,10 +568,14 @@ export interface StudentAssessment {
   course_title: string;
   session_id: string;
   lecture_title: string;
+  instructions_md: string;
   opens_at: string | null;
   due_at: string | null;
   closes_at: string | null;
   time_limit_secs: number;
+  /** What the student agrees to before starting. */
+  rules: StudentSettings;
+  integrity: IntegrityLevel;
   max_attempts: number;
   attempts_used: number;
   in_progress_attempt_id: string | null;

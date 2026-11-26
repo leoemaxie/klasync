@@ -97,7 +97,10 @@ class FakeServer {
       this.applied.set(op.op_id, op);
       const existing = this.answers.get(op.question_id);
       if (!existing || existing.revision <= op.revision) {
-        this.answers.set(op.question_id, { response: op.response, revision: op.revision });
+        this.answers.set(op.question_id, {
+          response: op.response,
+          revision: op.revision,
+        });
       }
       applied++;
     }
@@ -121,7 +124,9 @@ class FakeServer {
   };
 }
 
-function setup(opts: { settings?: Partial<AttemptView['settings']>; batchSize?: number } = {}) {
+function setup(
+  opts: { settings?: Partial<AttemptView['settings']>; batchSize?: number } = {}
+) {
   const clock = new FakeClock();
   const server = new FakeServer(clock);
   const store = new MemoryAttemptStore();
@@ -261,7 +266,8 @@ describe('AttemptEngine: nothing is lost', () => {
   it('splits a large backlog into batches', async () => {
     const t = setup({ batchSize: 50 });
     const engine = await AttemptEngine.open(t.v, t.deps);
-    for (let i = 0; i < 120; i++) await engine.setAnswer(`q${i}`, { selected: ['a'] });
+    for (let i = 0; i < 120; i++)
+      await engine.setAnswer(`q${i}`, { selected: ['a'] });
     await engine.flush();
     expect(t.server.requests.map((r) => r.ops?.length)).toEqual([50, 50, 20]);
     expect(t.server.applied.size).toBe(120);
@@ -410,7 +416,9 @@ describe('time cannot be gamed from the device clock', () => {
     first.dispose();
 
     t.clock.wallMs -= 3_600_000; // wind the clock back, then reload
-    const sameView = view({ server_now: new Date(START + 100_000).toISOString() });
+    const sameView = view({
+      server_now: new Date(START + 100_000).toISOString(),
+    });
     const second = await AttemptEngine.open(sameView, t.deps);
     expect(second.elapsedMs()).toBeGreaterThanOrEqual(100_000);
   });
@@ -465,7 +473,11 @@ describe('integrity signals', () => {
     await engine.flush();
 
     const events = t.server.requests.flatMap((r) => r.events ?? []);
-    expect(events.map((e) => e.kind)).toEqual(['focus_lost', 'offline_start', 'offline_end']);
+    expect(events.map((e) => e.kind)).toEqual([
+      'focus_lost',
+      'offline_start',
+      'offline_end',
+    ]);
     expect(events[2].meta).toEqual({ gap_secs: 42 });
   });
 });

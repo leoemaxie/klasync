@@ -6,12 +6,13 @@
   import ArchiveWelcomeView from './ArchiveWelcomeView.svelte';
   import StudentLectureStudio from './StudentLectureStudio.svelte';
   import StudentCoursesHub from './StudentCoursesHub.svelte';
+  import StudentAssessments from '$lib/components/assessments/StudentAssessments.svelte';
   import { getStudentArchive, type ClaimRecord } from '$lib/api';
   import { lastResumed } from '$lib/studio/resume';
 
   let { screen = $bindable() }: { screen: Screen } = $props();
 
-  let activeViewMode = $state<'courses' | 'claims'>('claims');
+  let activeViewMode = $state<'courses' | 'claims' | 'assessments'>('claims');
   let searchQuery = $state('');
   let selectedClaim = $state<ClaimRecord | null>(null);
   let claims = $state<ClaimRecord[]>([]);
@@ -86,7 +87,7 @@
   <div class="studio-layout" class:list-closed={!!selectedClaim && !listOpen}>
     <div
       class="sidebar-slot"
-      class:hidden-on-mobile={!!selectedClaim || activeViewMode === 'courses'}
+      class:hidden-on-mobile={!!selectedClaim || activeViewMode !== 'claims'}
       class:collapsed={!!selectedClaim && !listOpen}
     >
       <ArchiveSidebar
@@ -102,11 +103,13 @@
 
     <section
       class="studio-detail-canvas panel"
-      class:immersive={!!selectedClaim && activeViewMode !== 'courses'}
-      class:visible-on-mobile={!!selectedClaim || activeViewMode === 'courses'}
+      class:immersive={!!selectedClaim && activeViewMode === 'claims'}
+      class:visible-on-mobile={!!selectedClaim || activeViewMode !== 'claims'}
     >
       {#if activeViewMode === 'courses'}
         <StudentCoursesHub onSelectCourseFilter={handleSelectCourse} />
+      {:else if activeViewMode === 'assessments'}
+        <StudentAssessments />
       {:else if selectedClaim}
         <StudentLectureStudio
           claim={selectedClaim}

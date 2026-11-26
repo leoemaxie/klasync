@@ -191,10 +191,14 @@ pub struct StudentAssessment {
     pub course_title: String,
     pub session_id: Uuid,
     pub lecture_title: String,
+    pub instructions_md: String,
     pub opens_at: Option<DateTime<Utc>>,
     pub due_at: Option<DateTime<Utc>>,
     pub closes_at: Option<DateTime<Utc>>,
     pub time_limit_secs: i64,
+    /// The rules a student agrees to before starting (integrity level and controls).
+    pub rules: StudentSettingsView,
+    pub integrity: super::model::IntegrityLevel,
     pub max_attempts: i32,
     pub attempts_used: i32,
     pub in_progress_attempt_id: Option<Uuid>,
@@ -216,6 +220,7 @@ struct ListRow {
     course_title: String,
     session_id: Uuid,
     lecture_title: String,
+    instructions_md: String,
     opens_at: Option<DateTime<Utc>>,
     due_at: Option<DateTime<Utc>>,
     closes_at: Option<DateTime<Utc>>,
@@ -231,7 +236,7 @@ pub async fn list_for_student(
 ) -> Res<Vec<StudentAssessment>> {
     let rows = sqlx::query_as::<_, ListRow>(
         "select a.id, a.title, a.kind, a.status, a.course_id, c.code as course_code, c.title as course_title,
-                a.session_id, s.title as lecture_title, a.opens_at, a.due_at, a.closes_at, a.settings,
+                a.session_id, s.title as lecture_title, a.instructions_md, a.opens_at, a.due_at, a.closes_at, a.settings,
                 a.results_released_at, a.identity_revealed_at
          from assessments a
          join courses c on c.id = a.course_id
@@ -326,10 +331,13 @@ pub async fn list_for_student(
             course_title: row.course_title,
             session_id: row.session_id,
             lecture_title: row.lecture_title,
+            instructions_md: row.instructions_md,
             opens_at: row.opens_at,
             due_at: row.due_at,
             closes_at: row.closes_at,
             time_limit_secs: settings.time_limit_secs,
+            rules: StudentSettingsView::from(&settings),
+            integrity: settings.integrity,
             max_attempts: settings.max_attempts + acc.extra_attempts,
             attempts_used: used,
             in_progress_attempt_id: open_id,

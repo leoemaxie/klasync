@@ -184,7 +184,8 @@ const defaultId = () =>
 /** A failed `fetch` (no network) is a TypeError; HTTP errors are plain Errors. */
 export const isNetworkError = (error: unknown) =>
   error instanceof TypeError ||
-  (error instanceof Error && /network|failed to fetch|offline/i.test(error.message));
+  (error instanceof Error &&
+    /network|failed to fetch|offline/i.test(error.message));
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000, 30000];
 
@@ -205,7 +206,11 @@ export class AttemptEngine {
   private lastSyncedAt: number | null = null;
   private disposed = false;
 
-  private constructor(stored: StoredAttempt, deps: EngineDeps, resumed: boolean) {
+  private constructor(
+    stored: StoredAttempt,
+    deps: EngineDeps,
+    resumed: boolean
+  ) {
     this.stored = stored;
     this.attemptId = stored.id;
     this.deps = {
@@ -230,7 +235,10 @@ export class AttemptEngine {
    * for this attempt is merged in: local changes the server has not seen win
    * (they are still pending), so a reload never loses work.
    */
-  static async open(view: AttemptView, deps: EngineDeps): Promise<AttemptEngine> {
+  static async open(
+    view: AttemptView,
+    deps: EngineDeps
+  ): Promise<AttemptEngine> {
     const clock = deps.clock ?? systemClock;
     const deviceId = deps.deviceId ?? (deps.newId ?? defaultId)();
     const existing = await deps.store.load(view.attempt_id);
@@ -271,7 +279,8 @@ export class AttemptEngine {
       // Keep the work the server has not confirmed: pending ops, queued submit, newer revisions.
       for (const [qid, local] of Object.entries(existing.answers)) {
         const remote = base.answers[qid];
-        if (!remote || local.revision >= remote.revision) base.answers[qid] = local;
+        if (!remote || local.revision >= remote.revision)
+          base.answers[qid] = local;
       }
       base = {
         ...base,
@@ -454,7 +463,8 @@ export class AttemptEngine {
   private pushOp(op: AnswerOp) {
     const ops = this.stored.pendingOps;
     const index = ops.findIndex((o) => o.question_id === op.question_id);
-    if (index >= 0 && !this.inFlight.has(ops[index].op_id)) ops.splice(index, 1);
+    if (index >= 0 && !this.inFlight.has(ops[index].op_id))
+      ops.splice(index, 1);
     ops.push(op);
   }
 
@@ -464,7 +474,9 @@ export class AttemptEngine {
     if (!this.stored.view.settings.records_integrity) return;
     this.stored.pendingEvents.push({
       kind,
-      client_at: new Date(this.deps.clock.wall() + this.stored.serverOffsetMs).toISOString(),
+      client_at: new Date(
+        this.deps.clock.wall() + this.stored.serverOffsetMs
+      ).toISOString(),
       meta,
     });
     await this.persist();
@@ -493,7 +505,9 @@ export class AttemptEngine {
         });
       }
     } else {
-      const gap = this.offlineSince ? Math.round((now - this.offlineSince) / 1000) : 0;
+      const gap = this.offlineSince
+        ? Math.round((now - this.offlineSince) / 1000)
+        : 0;
       this.online = true;
       this.offlineSince = null;
       if (this.stored.view.settings.records_integrity) {
@@ -575,7 +589,9 @@ export class AttemptEngine {
     const lastBatch =
       ops.length === this.stored.pendingOps.length &&
       events.length === this.stored.pendingEvents.length;
-    const submit = lastBatch ? (this.stored.queuedSubmit ?? undefined) : undefined;
+    const submit = lastBatch
+      ? (this.stored.queuedSubmit ?? undefined)
+      : undefined;
     ops.forEach((o) => this.inFlight.add(o.op_id));
     const request: SyncRequest = {
       device_id: this.deps.deviceId,
@@ -597,7 +613,8 @@ export class AttemptEngine {
         this.scheduleRetry();
       } else {
         // The server answered with an error. Keep the data and retry slowly: it may be transient.
-        this.lastError = error instanceof Error ? error.message : 'Could not sync';
+        this.lastError =
+          error instanceof Error ? error.message : 'Could not sync';
         this.scheduleRetry();
       }
       await this.persist();
@@ -613,19 +630,23 @@ export class AttemptEngine {
     response: SyncResponse
   ) {
     const sent = new Set(ops.map((o) => o.op_id));
-    this.stored.pendingOps = this.stored.pendingOps.filter((o) => !sent.has(o.op_id));
+    this.stored.pendingOps = this.stored.pendingOps.filter(
+      (o) => !sent.has(o.op_id)
+    );
     ops.forEach((o) => this.inFlight.delete(o.op_id));
     this.stored.pendingEvents = this.stored.pendingEvents.slice(events.length);
     this.failures = 0;
     this.lastError = null;
     this.markOnline(true);
     this.lastSyncedAt = this.deps.clock.wall();
-    this.stored.serverOffsetMs = Date.parse(response.server_now) - this.deps.clock.wall();
+    this.stored.serverOffsetMs =
+      Date.parse(response.server_now) - this.deps.clock.wall();
     if (response.deadline_at) this.stored.deadlineAt = response.deadline_at;
     if (response.flagged) this.stored.flagged = true;
     if (response.auto_submitted) this.stored.autoSubmitted = true;
     // The server closed the attempt: nothing more can be sent for it.
-    const finished = response.status !== 'in_progress' || response.receipt !== null;
+    const finished =
+      response.status !== 'in_progress' || response.receipt !== null;
     if (submit && !finished) {
       // Never loop on a submit the server did not confirm; surface it and retry with backoff.
       throw new Error('The server did not confirm the submission');

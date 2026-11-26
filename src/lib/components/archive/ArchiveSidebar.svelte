@@ -9,6 +9,7 @@
     X,
     Play,
     Inbox,
+    ClipboardCheck,
   } from '@lucide/svelte';
   import SkeletonCard from '$lib/components/shared/SkeletonCard.svelte';
   import Button from '$lib/components/ui/Button.svelte';
@@ -18,7 +19,7 @@
   import ArchiveClaimItem from './ArchiveClaimItem.svelte';
 
   let {
-    activeViewMode = $bindable<'courses' | 'claims'>('claims'),
+    activeViewMode = $bindable<'courses' | 'claims' | 'assessments'>('claims'),
     searchQuery = $bindable(''),
     claims = [],
     selectedClaim = null,
@@ -26,7 +27,7 @@
     resumeVersion = 0,
     onSelectClaim,
   }: {
-    activeViewMode: 'courses' | 'claims';
+    activeViewMode: 'courses' | 'claims' | 'assessments';
     searchQuery: string;
     claims: ClaimRecord[];
     selectedClaim: ClaimRecord | null;
@@ -85,6 +86,7 @@
       options={[
         { value: 'claims', label: `Lectures ${claims.length}`, icon: Archive },
         { value: 'courses', label: 'Courses', icon: GraduationCap },
+        { value: 'assessments', label: 'Assessments', icon: ClipboardCheck },
       ]}
     />
 
