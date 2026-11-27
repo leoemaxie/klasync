@@ -19,13 +19,14 @@ RUN touch src/main.rs src/lib.rs && cargo build --release
 
 # --- Runtime stage -----------------------------------------------------------
 # RUNTIME_IMAGE / INSTALL_RUNTIME_DEPS exist for build environments without
-# access to Debian mirrors (use a base that already ships libssl3 + curl).
+# access to Debian mirrors (use a base that already ships libssl3, curl and
+# chromium; chromium at /usr/bin/chromium is what PDF export probes for).
 ARG RUNTIME_IMAGE=debian:bookworm-slim
 FROM ${RUNTIME_IMAGE} AS runner
 ARG INSTALL_RUNTIME_DEPS=true
 RUN if [ "$INSTALL_RUNTIME_DEPS" = "true" ]; then \
       apt-get update \
-      && apt-get install -y --no-install-recommends ca-certificates libssl3 curl tzdata \
+      && apt-get install -y --no-install-recommends ca-certificates libssl3 curl tzdata chromium fonts-liberation \
       && rm -rf /var/lib/apt/lists/*; \
     fi \
     && groupadd -g 10001 klasync && useradd -u 10001 -g klasync -s /usr/sbin/nologin klasync
