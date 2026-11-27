@@ -1,7 +1,14 @@
 name: CI
 
-# Fast feedback on every pull request, and a safety net on main. Releases are
+# Fast feedback on pull requests, and a safety net on main. Releases are
 # built by release.yml; this workflow never publishes anything.
+#
+# Jobs only run when the files they cover changed (see the `changes` job):
+#   pull requests  frontend / backend / desktop / e2e, each only if its paths changed
+#   push to main   only e2e (the PR already ran the other checks), if its paths changed
+#   manual run     everything
+# `CI passed` treats skipped jobs as success, so it stays usable as the single
+# required check in branch protection.
 on:
   pull_request:
   push:
@@ -24,9 +31,62 @@ env:
   SQLX_OFFLINE: 'true'
 
 jobs:
+  # ── Which parts of the repo did this change touch? ─────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Editing this file re-runs everything. `desktop` embeds the built site,
+      # so it also includes every frontend path (the desktop job downloads the
+      # frontend job's artifact, which therefore always runs alongside it).
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            workflow: &workflow
+              - '.github/workflows/ci.yml'
+            frontend: &frontend
+              - *workflow
+              - 'src/**'
+              - 'static/**'
+              - 'index.html'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'svelte.config.js'
+              - 'vite.config.ts'
+              - 'vitest.config.ts'
+              - 'tsconfig.json'
+              - '.prettierrc'
+            desktop:
+              - *frontend
+              - 'src-tauri/**'
+            backend: &backend
+              - *workflow
+              - 'backend/**'
+            e2e:
+              - *backend
+              - 'scripts/e2e.py'
+              - 'scripts/gen-dev-certs.sh'
+              - 'docker-compose.yml'
+              - 'deploy/**'
+
   # ── Frontend: format, types, unit tests, production build ──────────────────
   frontend:
     name: Frontend
+    needs: changes
+    if: github.event_name != 'push' && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.frontend == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -66,6 +126,8 @@ jobs:
   # ── Backend: format, lint, unit tests, build ───────────────────────────────
   backend:
     name: Backend
+    needs: changes
+    if: github.event_name != 'push' && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -95,7 +157,8 @@ jobs:
   # ── Desktop shell: must compile and link on Linux ──────────────────────────
   desktop:
     name: Desktop (Tauri, Linux)
-    needs: frontend
+    needs: [changes, frontend]
+    if: github.event_name != 'push' && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true')
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -132,7 +195,14 @@ jobs:
   # ── API lifecycle against the real stack (no AI provider) ──────────────────
   e2e:
     name: API lifecycle (e2e)
-    needs: backend
+    # On pull requests this waits for the backend job (fail fast); on main the
+    # backend job is skipped, so a skipped backend must not block it.
+    needs: [changes, backend]
+    if: >-
+      ${{ !cancelled()
+      && needs.changes.result == 'success'
+      && (needs.backend.result == 'success' || needs.backend.result == 'skipped')
+      && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.e2e == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -194,7 +264,7 @@ jobs:
   ci-ok:
     name: CI passed
     if: always()
-    needs: [frontend, backend, desktop, e2e]
+    needs: [changes, frontend, backend, desktop, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: All jobs succeeded
