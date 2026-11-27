@@ -63,7 +63,7 @@ unit-tested.
   page, Moodle resource and so on.
 - **Slides & notes**: a lecturer can upload a `.pptx` (text read from the
   OOXML), a `.txt`/`.md`, or paste text; it is added to the outline and section
-  prompts as context (`PUT .../materials/slides[/pptx]`, migration 0017).
+  prompts as context (`PUT .../materials/slides[/pptx]`, migration 0015).
 
 **Not built (do not assume it exists):**
 
