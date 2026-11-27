@@ -6,10 +6,19 @@
     Captions,
     Users,
     BarChart3,
+    ClipboardCheck,
+    FileText,
   } from '@lucide/svelte';
 
   export type TabKey =
-    'course' | 'device' | 'session' | 'live' | 'attendance' | 'analytics';
+    | 'course'
+    | 'device'
+    | 'session'
+    | 'live'
+    | 'attendance'
+    | 'assessments'
+    | 'materials'
+    | 'analytics';
 
   let {
     activeTab = $bindable('course'),
@@ -50,6 +59,8 @@
           },
         ]
       : []),
+    { key: 'assessments', label: 'Assessments', icon: ClipboardCheck },
+    { key: 'materials', label: 'Materials', icon: FileText },
     { key: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]);
   import { triggerHaptic } from '$lib/native/haptics';

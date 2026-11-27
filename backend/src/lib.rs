@@ -2,6 +2,7 @@ pub mod activity;
 pub mod ai;
 pub mod ai_worker;
 pub mod api;
+pub mod assessments;
 pub mod audit;
 pub mod auth;
 pub mod batch;

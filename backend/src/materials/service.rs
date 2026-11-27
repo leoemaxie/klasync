@@ -61,7 +61,8 @@ pub async fn save_draft(
 ) -> Result<i32, ServiceError> {
     doc.normalise_ids("b");
     doc.number_equations(1);
-    blocks::validate(&doc).map_err(|problems| ServiceError::Invalid(problems.join("; ")))?;
+    // Drafts may be incomplete; publishing runs the full validation.
+    blocks::validate_draft(&doc).map_err(|problems| ServiceError::Invalid(problems.join("; ")))?;
     let rev: Option<i32> = sqlx::query_scalar(
         "update lecture_materials set draft_doc = $2, draft_rev = draft_rev + 1, updated_at = now()
          where id = $1 and draft_rev = $3 returning draft_rev",
@@ -387,10 +388,12 @@ pub struct Exported {
     pub content_type: &'static str,
     pub filename: String,
     pub cached: bool,
+    /// Where the cached copy lives, when there is one (enables signed URLs).
+    pub storage_key: Option<String>,
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    crate::utils::hex_lower(Sha256::digest(bytes))
 }
 
 fn static_content_type(value: &str) -> &'static str {
@@ -478,6 +481,19 @@ pub async fn export(
             )
         }
     };
+    if !super::registry::is_enabled(
+        pool,
+        super::registry::PluginKind::Renderer,
+        format,
+        Some(course_id),
+    )
+    .await
+    {
+        return Err(ServiceError::Invalid(format!(
+            "{} export is turned off for this course",
+            renderer.label()
+        )));
+    }
     let template = registry().template(&template_id);
     let course = store::course_info(pool, course_id)
         .await?
@@ -516,6 +532,7 @@ pub async fn export(
                 content_type: static_content_type(&content_type),
                 filename,
                 cached: true,
+                storage_key: Some(key),
             });
         }
         // The object is gone; fall through and render again.
@@ -525,8 +542,10 @@ pub async fn export(
         .await
         .map_err(render_error)?;
     // Caching is best-effort: a storage hiccup must not fail the download.
+    let mut storage_key = None;
     match state.storage.put(&filename, file.bytes.clone()).await {
         Ok(stored) => {
+            storage_key = Some(stored.key.clone());
             let _ = sqlx::query(
                 "insert into material_exports (version_id, book_version_id, format, template, storage_key, content_type, byte_size, checksum)
                  values ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -550,7 +569,37 @@ pub async fn export(
         content_type: file.content_type,
         filename,
         cached: false,
+        storage_key,
     })
+}
+
+/// How long a signed export URL stays valid.
+pub const EXPORT_URL_TTL: std::time::Duration = std::time::Duration::from_secs(300);
+
+/// A short-lived signed download URL for an exported file, when the storage
+/// backend supports signing and the file is cached. `None` means: stream it.
+pub async fn export_url(state: &AppState, file: &Exported) -> Option<String> {
+    export_url_for(state, file, EXPORT_URL_TTL).await
+}
+
+/// Like [`export_url`] with a caller-chosen lifetime (LMS pushes need hours).
+pub async fn export_url_for(
+    state: &AppState,
+    file: &Exported,
+    ttl: std::time::Duration,
+) -> Option<String> {
+    let key = file.storage_key.as_deref()?;
+    match state
+        .storage
+        .presign_get(key, ttl, Some(&file.filename))
+        .await
+    {
+        Ok(url) => url,
+        Err(error) => {
+            tracing::debug!(%error, "Could not sign export URL");
+            None
+        }
+    }
 }
 
 /// Renders the lecturer's working draft on the fly (never cached), so they
@@ -607,6 +656,7 @@ pub async fn export_draft(
         content_type: file.content_type,
         filename: format!("{}-draft.{}", file_stem(&context), renderer.extension()),
         cached: false,
+        storage_key: None,
     })
 }
 

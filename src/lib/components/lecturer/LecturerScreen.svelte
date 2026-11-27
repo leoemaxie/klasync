@@ -4,7 +4,9 @@
   import LecturerNavTabs, { type TabKey } from './LecturerNavTabs.svelte';
   import CourseSetupTab from './CourseSetupTab.svelte';
   import DeviceSetupTab from './DeviceSetupTab.svelte';
+  import MaterialsTab from '$lib/components/materials/MaterialsTab.svelte';
   import LecturerAnalyticsPanel from './LecturerAnalyticsPanel.svelte';
+  import LecturerAssessmentsTab from '$lib/components/assessments/LecturerAssessmentsTab.svelte';
   import SessionPanel from '$lib/components/session/SessionPanel.svelte';
   import CaptionControlPanel from '$lib/components/session/CaptionControlPanel.svelte';
   import AttendancePanel from '$lib/components/session/AttendancePanel.svelte';
@@ -36,6 +38,8 @@
     'session',
     ...(appState.session?.live ? (['live'] as TabKey[]) : []),
     ...(appState.session ? (['attendance'] as TabKey[]) : []),
+    'assessments',
+    'materials',
     'analytics',
   ]);
 
@@ -189,6 +193,20 @@
         sessionCode={appState.session.code}
         participants={appState.session.participants}
         onRefreshAttendance={() => refreshAttendance(appState)}
+      />
+    {:else if activeTab === 'assessments'}
+      <LecturerAssessmentsTab course={appState.activeCourse} />
+    {:else if activeTab === 'materials'}
+      <MaterialsTab
+        courseId={appState.courseId || appState.activeCourse?.id || ''}
+        courseCode={appState.courseCode}
+        currentSession={appState.session
+          ? {
+              id: appState.session.id ?? appState.session.code,
+              code: appState.session.code,
+              title: appState.session.title ?? appState.courseTitle,
+            }
+          : null}
       />
     {:else if activeTab === 'analytics'}
       <LecturerAnalyticsPanel

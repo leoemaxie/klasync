@@ -149,6 +149,10 @@ pub enum BlockKind {
         /// Plain-text rendering of the figure for formats without graphics.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         text_fallback: Option<String>,
+        /// Nodes and edges to draw (concept maps). Formats with graphics draw
+        /// it; the rest use `text_fallback`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        diagram: Option<Diagram>,
     },
     Table {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -374,10 +378,63 @@ impl Section<'_> {
     }
 }
 
+/// A small node-link diagram.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Diagram {
+    pub nodes: Vec<DiagramNode>,
+    #[serde(default)]
+    pub edges: Vec<DiagramEdge>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiagramNode {
+    pub id: String,
+    pub label: String,
+    #[serde(default)]
+    pub group: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiagramEdge {
+    pub from: String,
+    pub to: String,
+    #[serde(default)]
+    pub label: Option<String>,
+}
+
 // ---- validation --------------------------------------------------------------
 
 /// Checks a document against the schema rules. Returns every problem found so
 /// a generator or an editor can show them all at once.
+/// What a *draft* must satisfy to be saved: the right schema, sane size, and
+/// bounded text. Incomplete content (an empty new block, an unfinished
+/// equation) is allowed so edits are never lost; [`validate`] gates publishing.
+pub fn validate_draft(doc: &MaterialDoc) -> Result<(), Vec<String>> {
+    let mut problems = Vec::new();
+    if doc.schema_version != SCHEMA_VERSION {
+        problems.push(format!(
+            "unsupported schema version {} (expected {SCHEMA_VERSION})",
+            doc.schema_version
+        ));
+    }
+    if doc.blocks.len() > MAX_BLOCKS {
+        problems.push(format!("too many blocks (limit {MAX_BLOCKS})"));
+    }
+    if doc.title.chars().count() > 500 {
+        problems.push("the title is too long".to_owned());
+    }
+    for block in &doc.blocks {
+        if block.plain_text().chars().count() > MAX_TEXT_CHARS * 4 {
+            problems.push(format!("block {} has too much text", block.id));
+        }
+    }
+    if problems.is_empty() {
+        Ok(())
+    } else {
+        Err(problems)
+    }
+}
+
 pub fn validate(doc: &MaterialDoc) -> Result<(), Vec<String>> {
     let mut problems = Vec::new();
     if doc.schema_version != SCHEMA_VERSION {
@@ -764,5 +821,20 @@ mod tests {
         assert_eq!(parse_stamp("01:15"), Some(75));
         assert_eq!(parse_stamp("[1:02:03]"), Some(3723));
         assert_eq!(parse_stamp("abc"), None);
+    }
+
+    #[test]
+    fn drafts_may_be_incomplete_but_publishing_may_not() {
+        let mut doc = MaterialDoc::new("T");
+        doc.blocks.push(Block::new(
+            "a",
+            BlockKind::Paragraph {
+                text: String::new(),
+            },
+        ));
+        assert!(validate_draft(&doc).is_ok());
+        assert!(validate(&doc).is_err());
+        doc.schema_version = 99;
+        assert!(validate_draft(&doc).is_err());
     }
 }

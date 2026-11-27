@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { ApiCaption, Course, Resource } from '../api';
+import type { StoredAttempt } from '../assessments/attemptEngine';
 
 export interface KlasyncDBSchema extends DBSchema {
   captions: {
@@ -37,10 +38,18 @@ export interface KlasyncDBSchema extends DBSchema {
       updated_at: number;
     };
   };
+  /** Assessment attempts in progress (or awaiting delivery), kept for offline safety. */
+  assessment_attempts: {
+    key: string;
+    value: StoredAttempt;
+    indexes: {
+      'by-updated': number;
+    };
+  };
 }
 
 const DB_NAME = 'klasync_client_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 let dbPromise: Promise<IDBPDatabase<KlasyncDBSchema>> | null = null;
@@ -83,6 +92,15 @@ export function getDB(): Promise<IDBPDatabase<KlasyncDBSchema>> {
         // 4. General Session State Store
         if (!db.objectStoreNames.contains('session_state')) {
           db.createObjectStore('session_state', { keyPath: 'session_code' });
+        }
+
+        // 5. Assessment attempts (v2): work in progress survives a dropped
+        // connection or a reload until the server has confirmed it.
+        if (!db.objectStoreNames.contains('assessment_attempts')) {
+          const attempts = db.createObjectStore('assessment_attempts', {
+            keyPath: 'id',
+          });
+          attempts.createIndex('by-updated', 'updatedAt');
         }
       },
     });

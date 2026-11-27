@@ -368,6 +368,141 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/participants/{participant_id}/presence",
             post(handlers::presence::heartbeat),
         )
+        // ---- assessments (quizzes and homework) ----
+        .route(
+            "/api/v1/sessions/code/{short_code}/assessments",
+            get(handlers::assessments::list_for_session).post(handlers::assessments::create),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/assessments",
+            get(handlers::assessments::list_for_course),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/assessment-lectures",
+            get(handlers::assessments::course_lectures),
+        )
+        .route(
+            "/api/v1/assessments/{id}",
+            get(handlers::assessments::get).patch(handlers::assessments::patch),
+        )
+        .route(
+            "/api/v1/assessments/{id}/questions",
+            post(handlers::assessments::add_question),
+        )
+        .route(
+            "/api/v1/assessments/{id}/questions/reorder",
+            post(handlers::assessments::reorder_questions),
+        )
+        .route(
+            "/api/v1/assessments/{id}/questions/{question_id}",
+            axum::routing::patch(handlers::assessments::patch_question)
+                .delete(handlers::assessments::delete_question),
+        )
+        .route(
+            "/api/v1/assessments/{id}/generate",
+            post(handlers::assessments::generate_questions),
+        )
+        .route(
+            "/api/v1/assessments/{id}/jobs",
+            get(handlers::assessments::jobs),
+        )
+        .route(
+            "/api/v1/assessments/{id}/publish",
+            post(handlers::assessments::publish),
+        )
+        .route(
+            "/api/v1/assessments/{id}/close",
+            post(handlers::assessments::close),
+        )
+        .route(
+            "/api/v1/assessments/{id}/finalize",
+            post(handlers::assessments::finalize),
+        )
+        .route(
+            "/api/v1/assessments/{id}/release",
+            post(handlers::assessments::release),
+        )
+        .route(
+            "/api/v1/assessments/{id}/archive",
+            post(handlers::assessments::archive),
+        )
+        .route(
+            "/api/v1/assessments/{id}/roster-status",
+            get(handlers::assessments::roster_status),
+        )
+        .route(
+            "/api/v1/assessments/{id}/accommodations",
+            get(handlers::assessments::list_accommodations)
+                .put(handlers::assessments::put_accommodation),
+        )
+        .route(
+            "/api/v1/assessments/{id}/accommodations/{student_id}",
+            axum::routing::delete(handlers::assessments::delete_accommodation),
+        )
+        .route(
+            "/api/v1/assessments/{id}/grading/queue",
+            get(handlers::assessments::grading_queue),
+        )
+        .route(
+            "/api/v1/assessments/{id}/grading/answers/{answer_id}",
+            axum::routing::put(handlers::assessments::put_grade),
+        )
+        .route(
+            "/api/v1/assessments/{id}/grading/answers/{answer_id}/confirm",
+            post(handlers::assessments::confirm_grade),
+        )
+        .route(
+            "/api/v1/assessments/{id}/grading/confirm-all",
+            post(handlers::assessments::confirm_all),
+        )
+        .route(
+            "/api/v1/assessments/{id}/grading/ai-run",
+            post(handlers::assessments::ai_run),
+        )
+        .route(
+            "/api/v1/assessments/{id}/report",
+            get(handlers::assessments::report),
+        )
+        .route(
+            "/api/v1/assessments/{id}/results",
+            get(handlers::assessments::named_results),
+        )
+        .route(
+            "/api/v1/assessments/{id}/integrity",
+            get(handlers::assessments::integrity),
+        )
+        .route(
+            "/api/v1/assessments/{id}/export.csv",
+            get(handlers::assessments::export_csv),
+        )
+        .route(
+            "/api/v1/students/assessments",
+            get(handlers::assessments::student_list),
+        )
+        .route(
+            "/api/v1/students/assessments/{id}/attempts",
+            post(handlers::assessments::student_start),
+        )
+        .route(
+            "/api/v1/students/attempts/{id}",
+            get(handlers::assessments::student_attempt),
+        )
+        .route(
+            "/api/v1/students/attempts/{id}/sync",
+            post(handlers::assessments::student_sync),
+        )
+        .route(
+            "/api/v1/students/attempts/{id}/submit",
+            post(handlers::assessments::student_submit),
+        )
+        .route(
+            "/api/v1/students/attempts/{id}/result",
+            get(handlers::assessments::student_result),
+        )
+        .route(
+            "/api/v1/students/courses/{course_id}/assessment-progress",
+            get(handlers::assessments::student_progress),
+        )
         .route(
             "/api/v1/materials/capabilities",
             get(handlers::materials::capabilities),
@@ -396,6 +531,19 @@ pub fn router(state: AppState) -> Router {
             post(handlers::materials::unpublish),
         )
         .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides",
+            axum::routing::put(handlers::materials::put_slides),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/materials/slides/pptx",
+            axum::routing::put(handlers::materials::upload_slides)
+                .layer(axum::extract::DefaultBodyLimit::max(16 * 1024 * 1024)),
+        )
+        .route(
+            "/api/v1/sessions/code/{short_code}/materials/transcript",
+            get(handlers::materials::lecture_transcript),
+        )
+        .route(
             "/api/v1/sessions/code/{short_code}/materials/export",
             get(handlers::materials::export_material),
         )
@@ -406,6 +554,15 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/courses/{course_id}/materials",
             get(handlers::materials::list_course_materials),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/materials/plugins",
+            get(handlers::materials::list_plugins),
+        )
+        .route(
+            "/api/v1/courses/{course_id}/materials/plugins/{kind}/{plugin_id}",
+            axum::routing::put(handlers::materials::put_plugin)
+                .delete(handlers::materials::reset_plugin),
         )
         .route(
             "/api/v1/courses/{course_id}/materials/settings",

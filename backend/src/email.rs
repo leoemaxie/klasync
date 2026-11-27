@@ -10,6 +10,7 @@ pub mod templates;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use base64::Engine as _;
 use reqwest::{header, Client, StatusCode};
 use serde::Serialize;
 use thiserror::Error;
@@ -18,6 +19,16 @@ use crate::config::AppConfig;
 
 pub type SharedEmailSender = Arc<dyn EmailSender>;
 
+/// A file sent with the message (base64-encoded on the wire).
+#[derive(Debug, Clone)]
+pub struct EmailAttachment {
+    pub filename: String,
+    pub content: std::sync::Arc<Vec<u8>>,
+}
+
+/// Providers cap total message size (Resend: 40 MB). Stay well under it.
+pub const MAX_ATTACHMENT_BYTES: usize = 8 * 1024 * 1024;
+
 #[derive(Debug, Clone)]
 pub struct EmailMessage {
     pub to: String,
@@ -25,6 +36,7 @@ pub struct EmailMessage {
     pub text: String,
     pub html: String,
     pub idempotency_key: String,
+    pub attachments: Vec<EmailAttachment>,
 }
 
 #[derive(Debug, Error)]
@@ -64,12 +76,21 @@ impl ResendEmailSender {
 }
 
 #[derive(Serialize)]
+struct ResendAttachment {
+    filename: String,
+    /// Base64 file content.
+    content: String,
+}
+
+#[derive(Serialize)]
 struct ResendPayload<'a> {
     from: &'a str,
     to: Vec<&'a str>,
     subject: &'a str,
     text: &'a str,
     html: &'a str,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    attachments: Vec<ResendAttachment>,
 }
 
 #[async_trait]
@@ -87,6 +108,15 @@ impl EmailSender for ResendEmailSender {
                 subject: &message.subject,
                 text: &message.text,
                 html: &message.html,
+                attachments: message
+                    .attachments
+                    .iter()
+                    .map(|a| ResendAttachment {
+                        filename: a.filename.clone(),
+                        content: base64::engine::general_purpose::STANDARD
+                            .encode(a.content.as_slice()),
+                    })
+                    .collect(),
             })
             .send()
             .await?;
