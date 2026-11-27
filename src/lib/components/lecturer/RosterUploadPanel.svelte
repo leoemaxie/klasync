@@ -129,8 +129,10 @@
       onclick={(e) => {
         e.stopPropagation();
         triggerFileInput();
-      }}>Browse</button
+      }}
     >
+      Browse
+    </button>
     <input
       bind:this={fileInputRef}
       type="file"
@@ -141,8 +143,8 @@
   </div>
 
   <div class="paste-section">
-    <label for="roster-paste-input"
-      >Or paste rows: <code>matric_number, full_name</code>
+    <label for="roster-paste-input">
+      Or paste rows: <code>matric_number, full_name</code>
       <textarea
         id="roster-paste-input"
         bind:value={rosterText}

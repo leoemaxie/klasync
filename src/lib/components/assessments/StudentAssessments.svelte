@@ -179,8 +179,9 @@
               <Button
                 variant="soft"
                 onclick={() => (view = { kind: 'take', item: fromStored(a) })}
-                >Continue</Button
               >
+                Continue
+              </Button>
             </li>
           {/each}
         </ul>
@@ -227,9 +228,9 @@
                     · {item.attempts_used}/{item.max_attempts} attempts
                   </span>
                 </div>
-                <span class="chip" data-state={item.state}
-                  >{STATE_LABEL[item.state]}</span
-                >
+                <span class="chip" data-state={item.state}>
+                  {STATE_LABEL[item.state]}
+                </span>
                 {#if item.in_progress_attempt_id || item.can_start}
                   <Button variant="accent" onclick={() => open(item)}>
                     {item.in_progress_attempt_id ? 'Continue' : 'Open'}
@@ -243,8 +244,10 @@
                         kind: 'result',
                         attemptId: item.latest_attempt_id!,
                         title: item.title,
-                      })}>Results</Button
+                      })}
                   >
+                    Results
+                  </Button>
                 {/if}
               </li>
             {/each}

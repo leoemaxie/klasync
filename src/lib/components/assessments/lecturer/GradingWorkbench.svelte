@@ -199,23 +199,24 @@
             onclick={() => (questionId = q.id)}
           >
             Q{q.position + 1}
-            {#if q.pending > 0}<span class="pend">{q.pending}</span
-              >{:else}<Check size={13} />{/if}
+            {#if q.pending > 0}<span class="pend">
+                {q.pending}
+              </span>{:else}<Check size={13} />{/if}
           </button>
         {/each}
       </div>
       <div class="tools">
-        <label class="inline"
-          ><input type="checkbox" bind:checked={pendingOnly} /> Only unmarked</label
-        >
+        <label class="inline">
+          <input type="checkbox" bind:checked={pendingOnly} /> Only unmarked
+        </label>
         {#if aiMode && !locked}
           <Button variant="soft" onclick={runAi} disabled={running}>
             {#if running}<Spinner />{:else}<Sparkles size={14} />{/if}
             {running ? 'AI is marking…' : 'Run AI marking'}
           </Button>
-          <Button variant="outline" onclick={confirmHigh}
-            >Confirm confident proposals</Button
-          >
+          <Button variant="outline" onclick={confirmHigh}>
+            Confirm confident proposals
+          </Button>
         {/if}
       </div>
     </div>
@@ -258,19 +259,19 @@
             <div class="ans-head">
               <strong>{a.alias}</strong>
               {#if graded(a)}
-                <span class="tag ok"
-                  ><Check size={12} />
+                <span class="tag ok">
+                  <Check size={12} />
                   {a.score} / {a.max_score}
                   {#if a.grade_source === 'ai'}· AI, confirmed{:else if a.grade_source === 'lecturer'}·
-                    you{/if}</span
-                >
+                    you{/if}
+                </span>
               {:else if a.proposal}
-                <span class="tag ai"
-                  ><Sparkles size={12} /> AI proposes {a.proposal.score} / {a.max_score}
+                <span class="tag ai">
+                  <Sparkles size={12} /> AI proposes {a.proposal.score} / {a.max_score}
                   {#if a.proposal.confidence !== null}· {Math.round(
                       a.proposal.confidence * 100
-                    )}% sure{/if}</span
-                >
+                    )}% sure{/if}
+                </span>
               {/if}
             </div>
             <p class="resp">{responseText(a)}</p>
@@ -322,13 +323,13 @@
                     (feedback[a.answer_id] = e.currentTarget.value)}
                 />
                 {#if a.proposal && !graded(a)}
-                  <Button variant="soft" onclick={() => accept(a)}
-                    ><Check size={14} /> Accept</Button
-                  >
+                  <Button variant="soft" onclick={() => accept(a)}>
+                    <Check size={14} /> Accept
+                  </Button>
                 {/if}
-                <Button variant="accent" onclick={() => save(a)}
-                  >Save grade</Button
-                >
+                <Button variant="accent" onclick={() => save(a)}>
+                  Save grade
+                </Button>
               </div>
             {/if}
           </li>

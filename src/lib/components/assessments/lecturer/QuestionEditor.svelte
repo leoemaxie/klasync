@@ -176,13 +176,14 @@
       <span
         class="badge warn"
         title="The model was unsure, or this has no matching moment in the lecture. Check it."
-        ><TriangleAlert size={12} /> Check this</span
       >
+        <TriangleAlert size={12} /> Check this
+      </span>
     {/if}
     {#if question.source_ranges.length > 0}
-      <span class="badge muted"
-        >From {stamp(question.source_ranges[0].start_sec)}</span
-      >
+      <span class="badge muted">
+        From {stamp(question.source_ranges[0].start_sec)}
+      </span>
     {/if}
     <span class="spacer"></span>
     {#if saving}<span class="state">Saving…</span>
@@ -193,15 +194,19 @@
         class="icon"
         aria-label="Move up"
         disabled={index === 0}
-        onclick={() => onMove(-1)}><ArrowUp size={15} /></button
+        onclick={() => onMove(-1)}
       >
+        <ArrowUp size={15} />
+      </button>
       <button
         type="button"
         class="icon"
         aria-label="Move down"
         disabled={index === count - 1}
-        onclick={() => onMove(1)}><ArrowDown size={15} /></button
+        onclick={() => onMove(1)}
       >
+        <ArrowDown size={15} />
+      </button>
       <button
         type="button"
         class="icon"
@@ -215,16 +220,17 @@
           draft.locked = !draft.locked;
           void save();
         }}
-        >{#if draft.locked}<Lock size={15} />{:else}<Unlock
-            size={15}
-          />{/if}</button
       >
+        {#if draft.locked}<Lock size={15} />{:else}<Unlock size={15} />{/if}
+      </button>
       <button
         type="button"
         class="icon is-danger"
         aria-label="Delete question"
-        onclick={onDelete}><Trash2 size={15} /></button
+        onclick={onDelete}
       >
+        <Trash2 size={15} />
+      </button>
     {/if}
   </header>
 
@@ -243,11 +249,11 @@
   {#if type === 'mcq_single' || type === 'mcq_multi'}
     <fieldset class="field">
       <legend>
-        Options <em
-          >{type === 'mcq_single'
+        Options <em>
+          {type === 'mcq_single'
             ? 'Mark the one correct answer'
-            : 'Mark every correct answer'}</em
-        >
+            : 'Mark every correct answer'}
+        </em>
       </legend>
       {#each options as option (option.id)}
         <div class="opt">
@@ -273,15 +279,17 @@
               type="button"
               class="icon"
               aria-label="Remove option"
-              onclick={() => removeOption(option.id)}><X size={14} /></button
+              onclick={() => removeOption(option.id)}
             >
+              <X size={14} />
+            </button>
           {/if}
         </div>
       {/each}
       {#if editable && options.length < 10}
-        <button type="button" class="add" onclick={addOption}
-          ><Plus size={14} /> Add option</button
-        >
+        <button type="button" class="add" onclick={addOption}>
+          <Plus size={14} /> Add option
+        </button>
       {/if}
       {#if type === 'mcq_multi'}
         <label class="inline">
@@ -325,10 +333,9 @@
     </fieldset>
   {:else if type === 'short_answer'}
     <label class="field">
-      <span
-        >Accepted answers <em>one per line; spacing and capitals are ignored</em
-        ></span
-      >
+      <span>
+        Accepted answers <em>one per line; spacing and capitals are ignored</em>
+      </span>
       <textarea
         rows="3"
         bind:value={acceptedText}
@@ -357,8 +364,9 @@
         <em
           class:bad={rubric.length > 0 &&
             Math.abs(rubricTotal(rubric) - draft.points) > 0.01}
-          >{rubricTotal(rubric)} of {draft.points} points</em
         >
+          {rubricTotal(rubric)} of {draft.points} points
+        </em>
       </legend>
       {#each rubric as criterion (criterion.id)}
         <div class="opt">
@@ -388,23 +396,24 @@
               class="icon"
               aria-label="Remove criterion"
               onclick={() => removeCriterion(criterion.id)}
-              ><X size={14} /></button
             >
+              <X size={14} />
+            </button>
           {/if}
         </div>
       {/each}
       {#if editable}
-        <button type="button" class="add" onclick={addCriterion}
-          ><Plus size={14} /> Add criterion</button
-        >
+        <button type="button" class="add" onclick={addCriterion}>
+          <Plus size={14} /> Add criterion
+        </button>
       {/if}
     </fieldset>
     <label class="field">
-      <span
-        >Reference answer <em
-          >for you and the AI marker; students never see it</em
-        ></span
-      >
+      <span>
+        Reference answer <em>
+          for you and the AI marker; students never see it
+        </em>
+      </span>
       <textarea
         rows="3"
         value={draft.key_payload.reference ?? ''}
@@ -459,9 +468,9 @@
   </div>
 
   <label class="field">
-    <span
-      >Explanation <em>shown to students after results are released</em></span
-    >
+    <span>
+      Explanation <em>shown to students after results are released</em>
+    </span>
     <textarea
       rows="2"
       bind:value={draft.explanation_md}

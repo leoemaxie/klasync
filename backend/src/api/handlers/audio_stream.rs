@@ -223,7 +223,11 @@ async fn transcribe_and_publish(state: AppState, session_id: Uuid, payload: Vec<
         }
     };
     let text = result.text.trim();
-    tracing::debug!(bytes = payload_len, chars = text.len(), "Live transcription chunk");
+    tracing::debug!(
+        bytes = payload_len,
+        chars = text.len(),
+        "Live transcription chunk"
+    );
     if text.is_empty() {
         return;
     }

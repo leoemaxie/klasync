@@ -65,9 +65,9 @@
     <Presentation size={14} />
     Slides &amp; notes
     {#if info?.has_slides}
-      <span class="pill"
-        >{info.name ?? 'added'} · {info.chars.toLocaleString()} chars</span
-      >
+      <span class="pill">
+        {info.name ?? 'added'} · {info.chars.toLocaleString()} chars
+      </span>
     {/if}
   </summary>
   <div class="body">

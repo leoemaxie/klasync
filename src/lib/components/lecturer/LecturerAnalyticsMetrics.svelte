@@ -23,14 +23,14 @@
 
 <div class="metrics-grid">
   <div class="metric-card">
-    <span class="m-val"
-      >{summary
+    <span class="m-val">
+      {summary
         ? formatPercent(summary.avg_attendance_percentage)
-        : `${participants.length}`}</span
-    >
-    <span class="m-lbl"
-      >{summary ? 'Average attendance' : 'Active attendees'}</span
-    >
+        : `${participants.length}`}
+    </span>
+    <span class="m-lbl">
+      {summary ? 'Average attendance' : 'Active attendees'}
+    </span>
   </div>
   <div class="metric-card">
     <span class="m-val">
@@ -41,15 +41,15 @@
     <span class="m-lbl">{summary ? 'Match rate' : 'Verified students'}</span>
   </div>
   <div class="metric-card">
-    <span class="m-val"
-      >{summary ? summary.total_sessions : courseCode ? '1' : '0'}</span
-    >
+    <span class="m-val">
+      {summary ? summary.total_sessions : courseCode ? '1' : '0'}
+    </span>
     <span class="m-lbl">Total sessions</span>
   </div>
   <div class="metric-card">
-    <span class="m-val warning"
-      >{summary ? summary.total_anomalies_flagged : anomalies.length}</span
-    >
+    <span class="m-val warning">
+      {summary ? summary.total_anomalies_flagged : anomalies.length}
+    </span>
     <span class="m-lbl">Flags</span>
   </div>
 </div>

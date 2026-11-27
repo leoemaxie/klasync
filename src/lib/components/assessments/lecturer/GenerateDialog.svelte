@@ -106,9 +106,9 @@
   >
     <header>
       <h3 id="gen-title"><Sparkles size={16} /> Generate questions with AI</h3>
-      <button type="button" class="x" aria-label="Close" onclick={onClose}
-        ><X size={16} /></button
-      >
+      <button type="button" class="x" aria-label="Close" onclick={onClose}>
+        <X size={16} />
+      </button>
     </header>
 
     {#if phase === 'form'}
@@ -145,30 +145,30 @@
       <fieldset>
         <legend>Difficulty mix <em>relative weights</em></legend>
         <div class="grid three">
-          <label
-            ><span>Easy</span><input
+          <label>
+            <span>Easy</span><input
               type="number"
               min="0"
               max="10"
               bind:value={easy}
-            /></label
-          >
-          <label
-            ><span>Medium</span><input
+            />
+          </label>
+          <label>
+            <span>Medium</span><input
               type="number"
               min="0"
               max="10"
               bind:value={medium}
-            /></label
-          >
-          <label
-            ><span>Hard</span><input
+            />
+          </label>
+          <label>
+            <span>Hard</span><input
               type="number"
               min="0"
               max="10"
               bind:value={hard}
-            /></label
-          >
+            />
+          </label>
         </div>
       </fieldset>
       <label class="wide">
@@ -182,9 +182,9 @@
       {#if message}<p class="oops" role="alert">{message}</p>{/if}
       <div class="actions">
         <Button variant="ghost" onclick={onClose}>Cancel</Button>
-        <Button variant="accent" onclick={start}
-          ><Sparkles size={14} /> Generate</Button
-        >
+        <Button variant="accent" onclick={start}>
+          <Sparkles size={14} /> Generate
+        </Button>
       </div>
     {:else if phase === 'running'}
       <div class="status">
@@ -223,9 +223,9 @@
         <p class="oops" role="alert">{message}</p>
         <div class="actions">
           <Button variant="ghost" onclick={onClose}>Close</Button>
-          <Button variant="outline" onclick={() => (phase = 'form')}
-            >Try again</Button
-          >
+          <Button variant="outline" onclick={() => (phase = 'form')}>
+            Try again
+          </Button>
         </div>
       </div>
     {/if}

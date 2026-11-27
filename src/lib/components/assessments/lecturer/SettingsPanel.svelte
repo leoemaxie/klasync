@@ -86,13 +86,13 @@
 >
   <fieldset disabled={!editable}>
     <legend>Basics</legend>
-    <label class="wide"
-      ><span>Title</span><input type="text" bind:value={title} /></label
-    >
     <label class="wide">
-      <span
-        >Instructions <em>shown on the rules screen; Markdown works</em></span
-      >
+      <span>Title</span><input type="text" bind:value={title} />
+    </label>
+    <label class="wide">
+      <span>
+        Instructions <em>shown on the rules screen; Markdown works</em>
+      </span>
       <textarea rows="3" bind:value={instructions}></textarea>
     </label>
   </fieldset>
@@ -100,21 +100,18 @@
   <fieldset disabled={!editable}>
     <legend>Availability</legend>
     <div class="grid">
-      <label
-        ><span>Opens</span><input
-          type="datetime-local"
-          bind:value={opens}
-        /></label
-      >
-      <label
-        ><span>Due</span><input type="datetime-local" bind:value={due} /></label
-      >
-      <label
-        ><span>Closes <em>hard stop</em></span><input
+      <label>
+        <span>Opens</span><input type="datetime-local" bind:value={opens} />
+      </label>
+      <label>
+        <span>Due</span><input type="datetime-local" bind:value={due} />
+      </label>
+      <label>
+        <span>Closes <em>hard stop</em></span><input
           type="datetime-local"
           bind:value={closes}
-        /></label
-      >
+        />
+      </label>
     </div>
     <div class="grid">
       <label>
@@ -127,37 +124,37 @@
         </select>
       </label>
       {#if s.late_policy === 'penalty'}
-        <label
-          ><span>Penalty, % per day</span><input
+        <label>
+          <span>Penalty, % per day</span><input
             type="number"
             min="0"
             max="100"
             bind:value={s.late_penalty_pct_per_day}
-          /></label
-        >
+          />
+        </label>
       {/if}
-      <label
-        ><span>Grace for sending, seconds</span><input
+      <label>
+        <span>Grace for sending, seconds</span><input
           type="number"
           min="0"
           max="600"
           bind:value={s.grace_secs}
-        /></label
-      >
+        />
+      </label>
     </div>
   </fieldset>
 
   <fieldset disabled={!editable}>
     <legend>Attempts and timing</legend>
     <div class="grid">
-      <label
-        ><span>Attempts allowed</span><input
+      <label>
+        <span>Attempts allowed</span><input
           type="number"
           min="1"
           max="10"
           bind:value={s.max_attempts}
-        /></label
-      >
+        />
+      </label>
       <label>
         <span>The score that counts</span>
         <select bind:value={s.keep}>
@@ -166,53 +163,53 @@
           <option value="average">Average</option>
         </select>
       </label>
-      <label
-        ><span>Wait between attempts, minutes</span><input
+      <label>
+        <span>Wait between attempts, minutes</span><input
           type="number"
           min="0"
           bind:value={cooldownMin}
-        /></label
-      >
-      <label
-        ><span>Time limit, minutes <em>0 = none</em></span><input
+        />
+      </label>
+      <label>
+        <span>Time limit, minutes <em>0 = none</em></span><input
           type="number"
           min="0"
           max="1440"
           bind:value={limitMin}
-        /></label
-      >
+        />
+      </label>
     </div>
   </fieldset>
 
   <fieldset disabled={!editable}>
     <legend>Delivery</legend>
-    <label class="check"
-      ><input type="checkbox" bind:checked={s.shuffle_questions} /> Shuffle question
-      order</label
-    >
-    <label class="check"
-      ><input type="checkbox" bind:checked={s.shuffle_options} /> Shuffle answer options</label
-    >
-    <label class="check"
-      ><input
+    <label class="check">
+      <input type="checkbox" bind:checked={s.shuffle_questions} /> Shuffle question
+      order
+    </label>
+    <label class="check">
+      <input type="checkbox" bind:checked={s.shuffle_options} /> Shuffle answer options
+    </label>
+    <label class="check">
+      <input
         type="checkbox"
         disabled={strict}
         checked={strict || s.one_per_page}
         onchange={(e) => (s.one_per_page = e.currentTarget.checked)}
-      /> One question per page</label
-    >
-    <label class="check"
-      ><input
+      /> One question per page
+    </label>
+    <label class="check">
+      <input
         type="checkbox"
         disabled={strict}
         checked={!strict && s.allow_backtracking}
         onchange={(e) => (s.allow_backtracking = e.currentTarget.checked)}
-      /> Let students go back to earlier questions</label
-    >
-    <label class="check"
-      ><input type="checkbox" bind:checked={s.negative_marking} /> Negative marking
-      for wrong single-choice answers</label
-    >
+      /> Let students go back to earlier questions
+    </label>
+    <label class="check">
+      <input type="checkbox" bind:checked={s.negative_marking} /> Negative marking
+      for wrong single-choice answers
+    </label>
   </fieldset>
 
   <fieldset disabled={!editable}>
@@ -235,22 +232,22 @@
       {/each}
     </div>
     {#if s.integrity !== 'open'}
-      <label class="check"
-        ><input
+      <label class="check">
+        <input
           type="checkbox"
           disabled={strict}
           checked={strict || s.require_fullscreen}
           onchange={(e) => (s.require_fullscreen = e.currentTarget.checked)}
-        /> Require fullscreen</label
-      >
-      <label class="check"
-        ><input
+        /> Require fullscreen
+      </label>
+      <label class="check">
+        <input
           type="checkbox"
           disabled={strict}
           checked={strict || s.block_paste}
           onchange={(e) => (s.block_paste = e.currentTarget.checked)}
-        /> Block pasting into answers</label
-      >
+        /> Block pasting into answers
+      </label>
       <label class="inline">
         <span>Auto-submit after this many violations <em>0 = never</em></span>
         <input
@@ -264,10 +261,10 @@
 
   <fieldset disabled={!editable}>
     <legend>Offline</legend>
-    <label class="check"
-      ><input type="checkbox" bind:checked={s.allow_offline_continue} /> Let students
-      keep working and submit if their connection drops</label
-    >
+    <label class="check">
+      <input type="checkbox" bind:checked={s.allow_offline_continue} /> Let students
+      keep working and submit if their connection drops
+    </label>
     <label class="check">
       <input
         type="checkbox"
@@ -301,10 +298,10 @@
       Choice and true/false questions are always scored automatically. You grade
       blind: names stay hidden until you finalise.
     </p>
-    <label class="check"
-      ><input type="checkbox" bind:checked={s.ai_short_answer} /> Let AI mark short
-      answers that don't match the accepted list</label
-    >
+    <label class="check">
+      <input type="checkbox" bind:checked={s.ai_short_answer} /> Let AI mark short
+      answers that don't match the accepted list
+    </label>
   </fieldset>
 
   <fieldset disabled={!editable}>

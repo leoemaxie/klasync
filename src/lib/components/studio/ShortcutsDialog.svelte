@@ -81,9 +81,9 @@
   >
     <header>
       <h2 id="shortcuts-title">Keyboard shortcuts</h2>
-      <button type="button" class="close" aria-label="Close" onclick={onClose}
-        ><X size={18} /></button
-      >
+      <button type="button" class="close" aria-label="Close" onclick={onClose}>
+        <X size={18} />
+      </button>
     </header>
     <div class="cols">
       {#each groups as group}

@@ -92,9 +92,9 @@
         </p>
         <div class="chips">
           {#each suggestions as s}
-            <button type="button" class="chip" onclick={() => submit(s)}
-              >{s}</button
-            >
+            <button type="button" class="chip" onclick={() => submit(s)}>
+              {s}
+            </button>
           {/each}
         </div>
       </div>

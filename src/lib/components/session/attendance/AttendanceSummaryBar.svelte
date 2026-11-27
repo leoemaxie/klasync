@@ -19,9 +19,9 @@
   </div>
 
   <div class="summary-card">
-    <span class="m-val"
-      >{Number.isInteger(matchRate) ? matchRate : matchRate.toFixed(2)}%</span
-    >
+    <span class="m-val">
+      {Number.isInteger(matchRate) ? matchRate : matchRate.toFixed(2)}%
+    </span>
     <span class="m-lbl">Roster Match Rate</span>
   </div>
 

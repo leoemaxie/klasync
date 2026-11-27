@@ -62,9 +62,9 @@
 </script>
 
 <div class="result">
-  <button class="back" type="button" onclick={onBack}
-    ><ArrowLeft size={15} /> Assessments</button
-  >
+  <button class="back" type="button" onclick={onBack}>
+    <ArrowLeft size={15} /> Assessments
+  </button>
   {#if message}
     <p class="notice" role="alert">{message}</p>
   {:else if !result}

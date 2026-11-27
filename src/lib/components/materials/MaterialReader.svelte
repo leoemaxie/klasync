@@ -170,8 +170,10 @@
                   y={n.y + (n.anchor === 'middle' ? (n.y < 320 ? -14 : 22) : 4)}
                   font-size="12"
                   text-anchor={n.anchor}
-                  fill="currentColor">{n.label}</text
+                  fill="currentColor"
                 >
+                  {n.label}
+                </text>
               {/each}
             </svg>
           {:else}
@@ -184,15 +186,15 @@
           <table>
             {#if b.caption}<caption>{@html html(b.caption)}</caption>{/if}
             <thead>
-              <tr
-                >{#each b.header as c}<th>{@html html(c)}</th>{/each}</tr
-              >
+              <tr>
+                {#each b.header as c}<th>{@html html(c)}</th>{/each}
+              </tr>
             </thead>
             <tbody>
               {#each b.rows as row}
-                <tr
-                  >{#each row as c}<td>{@html html(c)}</td>{/each}</tr
-                >
+                <tr>
+                  {#each row as c}<td>{@html html(c)}</td>{/each}
+                </tr>
               {/each}
             </tbody>
           </table>

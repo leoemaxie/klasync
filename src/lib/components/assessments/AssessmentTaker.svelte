@@ -402,13 +402,13 @@
             {es.pending} item{es.pending === 1 ? '' : 's'} waiting to send.
             {#if es.lastError}{es.lastError}{/if}
           </p>
-          <Button variant="soft" onclick={() => engine?.flush()}
-            >Try to send now</Button
-          >
+          <Button variant="soft" onclick={() => engine?.flush()}>
+            Try to send now
+          </Button>
         {/if}
-        <Button variant="accent" onclick={() => onExit(true)}
-          >Back to assessments</Button
-        >
+        <Button variant="accent" onclick={() => onExit(true)}>
+          Back to assessments
+        </Button>
       </div>
     {:else}
       <header class="topbar">
@@ -466,9 +466,9 @@
           <p>
             Your lecturer asked for this assessment to be taken in fullscreen.
           </p>
-          <Button variant="accent" onclick={enterFullscreen}
-            >Enter fullscreen</Button
-          >
+          <Button variant="accent" onclick={enterFullscreen}>
+            Enter fullscreen
+          </Button>
         </div>
       {:else}
         <div class="layout">
@@ -489,8 +489,10 @@
                         behavior: 'smooth',
                         block: 'start',
                       });
-                  }}>{i + 1}</button
+                  }}
                 >
+                  {i + 1}
+                </button>
               {/each}
             </nav>
           {/if}
@@ -504,12 +506,12 @@
                   onfocusin={() => touch(q)}
                 >
                   <legend>
-                    <span class="num"
-                      >Question {i + 1} of {questions.length}</span
-                    >
-                    <span class="pts"
-                      >{q.points} point{q.points === 1 ? '' : 's'}</span
-                    >
+                    <span class="num">
+                      Question {i + 1} of {questions.length}
+                    </span>
+                    <span class="pts">
+                      {q.points} point{q.points === 1 ? '' : 's'}
+                    </span>
                   </legend>
                   <div class="prompt md">
                     {@html renderMarkdown(q.prompt_md)}
@@ -614,20 +616,22 @@
                   variant="outline"
                   disabled={current === 0 || !settings.allow_backtracking}
                   onclick={() => (current = Math.max(0, current - 1))}
-                  ><ArrowLeft size={15} /> Previous</Button
                 >
+                  <ArrowLeft size={15} /> Previous
+                </Button>
                 {#if current < questions.length - 1}
                   <Button
                     variant="outline"
                     onclick={() => (current = current + 1)}
-                    >Next <ArrowRight size={15} /></Button
                   >
+                    Next <ArrowRight size={15} />
+                  </Button>
                 {/if}
               {/if}
               <span class="spacer"></span>
-              <Button variant="accent" onclick={() => (confirming = true)}
-                >Submit</Button
-              >
+              <Button variant="accent" onclick={() => (confirming = true)}>
+                Submit
+              </Button>
             </div>
           </div>
         </div>
@@ -656,9 +660,9 @@
               You can't change them after submitting.
             </p>
             <div class="actions">
-              <Button variant="ghost" onclick={() => (confirming = false)}
-                >Keep working</Button
-              >
+              <Button variant="ghost" onclick={() => (confirming = false)}>
+                Keep working
+              </Button>
               <Button variant="accent" onclick={submit}>Submit now</Button>
             </div>
           </div>

@@ -31,8 +31,9 @@
   <h3 class="course-card-title">{course.title}</h3>
 
   <div class="card-meta-row">
-    <span class="tag session-tag">{course.academic_session || '2025/2026'}</span
-    >
+    <span class="tag session-tag">
+      {course.academic_session || '2025/2026'}
+    </span>
     <span class="tag semester-tag">{course.semester || 'Second Semester'}</span>
   </div>
 

@@ -235,9 +235,9 @@
       <div>
         <h3>{material.draft_doc?.title ?? title}</h3>
         <p class="meta">
-          <span class="pill" data-status={material.status}
-            >{statusLabel[material.status]}</span
-          >
+          <span class="pill" data-status={material.status}>
+            {statusLabel[material.status]}
+          </span>
           {#if data?.versions?.length}· v{data.versions[0].version_no}{/if}
         </p>
       </div>
@@ -256,29 +256,36 @@
             variant="outline"
             disabled={!material.draft_doc || !!busy}
             onclick={() => void toReview('in_review')}
-            >Mark ready for review</Button
           >
+            Mark ready for review
+          </Button>
         {:else if material.status === 'in_review'}
           <Button
             size="sm"
             variant="outline"
             disabled={!!busy}
-            onclick={() => void toReview('draft')}>Back to draft</Button
+            onclick={() => void toReview('draft')}
           >
+            Back to draft
+          </Button>
         {/if}
         {#if material.status === 'published'}
           <Button
             size="sm"
             variant="outline"
             disabled={!!busy}
-            onclick={() => void unpublish(false)}>Unpublish</Button
+            onclick={() => void unpublish(false)}
           >
+            Unpublish
+          </Button>
           <Button
             size="sm"
             variant="outline"
             disabled={!!busy}
-            onclick={() => void unpublish(true)}>Archive</Button
+            onclick={() => void unpublish(true)}
           >
+            Archive
+          </Button>
         {/if}
         <Button
           size="sm"
@@ -326,8 +333,9 @@
           >
             {busy === 'publish' ? 'Publishing…' : 'Confirm publish'}
           </Button>
-          <Button size="sm" onclick={() => (showPublish = false)}>Cancel</Button
-          >
+          <Button size="sm" onclick={() => (showPublish = false)}>
+            Cancel
+          </Button>
         </div>
       </div>
     {/if}
@@ -404,25 +412,24 @@
         <ul>
           {#each data.versions as v}
             <li>
-              <span
-                >v{v.version_no} · {v.origin === 'ai'
-                  ? 'AI draft'
-                  : 'Your edit'}</span
-              >
-              <span class="muted"
-                >{new Date(v.created_at).toLocaleString()}</span
-              >
-              {#if v.published_at}<span class="pill" data-status="published"
-                  >published</span
-                >{/if}
+              <span>
+                v{v.version_no} · {v.origin === 'ai' ? 'AI draft' : 'Your edit'}
+              </span>
+              <span class="muted">
+                {new Date(v.created_at).toLocaleString()}
+              </span>
+              {#if v.published_at}<span class="pill" data-status="published">
+                  published
+                </span>{/if}
               {#each formats.filter((f) => ['pdf', 'docx'].includes(f.id)) as f}
                 <Button
                   size="sm"
                   variant="ghost"
                   disabled={!!busy}
                   onclick={() => void exportAs(f.id as ExportFormat, v.id)}
-                  >{f.label}</Button
                 >
+                  {f.label}
+                </Button>
               {/each}
             </li>
           {/each}

@@ -142,25 +142,25 @@
     </button>
 
     {#if !appState?.currentUser || appState.currentUser.role === 'student'}
-      <button class="nav-btn text" onclick={() => navigate('join')}
-        >Join Session</button
-      >
-      <button class="nav-btn text" onclick={handleStudentArchive}
-        >Archive</button
-      >
+      <button class="nav-btn text" onclick={() => navigate('join')}>
+        Join Session
+      </button>
+      <button class="nav-btn text" onclick={handleStudentArchive}>
+        Archive
+      </button>
     {/if}
 
     {#if appState?.currentUser}
       <div class="user-pill" title={appState.currentUser.email}>
-        <span class="user-name"
-          >{appState.currentUser.name || appState.currentUser.email}</span
-        >
+        <span class="user-name">
+          {appState.currentUser.name || appState.currentUser.email}
+        </span>
       </div>
       <button class="nav-btn danger" onclick={handleLogout}>Sign Out</button>
     {:else}
-      <button class="nav-btn outline" onclick={handleLecturerAccess}
-        >Lecturer Sign In</button
-      >
+      <button class="nav-btn outline" onclick={handleLecturerAccess}>
+        Lecturer Sign In
+      </button>
     {/if}
 
     {#if isTauri && !isMac}
@@ -176,9 +176,9 @@
           aria-label="Minimize"
           title="Minimize"
         >
-          <svg width="10" height="1" viewBox="0 0 10 1"
-            ><rect width="10" height="1" fill="currentColor" /></svg
-          >
+          <svg width="10" height="1" viewBox="0 0 10 1">
+            <rect width="10" height="1" fill="currentColor" />
+          </svg>
         </button>
         <button
           type="button"
@@ -187,16 +187,16 @@
           aria-label="Maximize"
           title="Maximize"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10"
-            ><rect
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <rect
               width="9"
               height="9"
               x="0.5"
               y="0.5"
               fill="none"
               stroke="currentColor"
-            /></svg
-          >
+            />
+          </svg>
         </button>
         <button
           type="button"
@@ -205,13 +205,13 @@
           aria-label="Close"
           title="Close"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10"
-            ><path
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <path
               d="M1,1 L9,9 M9,1 L1,9"
               stroke="currentColor"
               stroke-width="1.2"
-            /></svg
-          >
+            />
+          </svg>
         </button>
       </div>
     {/if}

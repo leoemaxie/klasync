@@ -13,9 +13,9 @@
       ></div>
     {/each}
   </div>
-  <span class="meter-readout"
-    >{isActive ? `${Math.round(level)} dB` : 'MUTED'}</span
-  >
+  <span class="meter-readout">
+    {isActive ? `${Math.round(level)} dB` : 'MUTED'}
+  </span>
 </div>
 
 <style>

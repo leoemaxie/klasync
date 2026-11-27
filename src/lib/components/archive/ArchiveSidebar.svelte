@@ -106,8 +106,10 @@
             size="sm"
             class="clear"
             aria-label="Clear search"
-            onclick={() => (searchQuery = '')}><X size={14} /></Button
+            onclick={() => (searchQuery = '')}
           >
+            <X size={14} />
+          </Button>
         {/if}
       </div>
     {/if}
@@ -125,16 +127,14 @@
               <span class="hit-meta">
                 <span class="hit-course">{hit.course_code}</span>
                 <span class="hit-title">{hit.session_title}</span>
-                <span class="hit-time"
-                  ><Play size={10} fill="currentColor" />
-                  {clock(hit.start_sec)}</span
-                >
+                <span class="hit-time">
+                  <Play size={10} fill="currentColor" />
+                  {clock(hit.start_sec)}
+                </span>
               </span>
-              <span class="hit-text"
-                >{hit.text.slice(0, 140)}{hit.text.length > 140
-                  ? '…'
-                  : ''}</span
-              >
+              <span class="hit-text">
+                {hit.text.slice(0, 140)}{hit.text.length > 140 ? '…' : ''}
+              </span>
             </button>
           {/each}
         </section>

@@ -218,9 +218,9 @@
     <section class="card">
       <div class="head">
         <h3>Structure</h3>
-        <Button size="sm" variant="outline" onclick={addUnit}
-          ><Plus size={14} /> Add part</Button
-        >
+        <Button size="sm" variant="outline" onclick={addUnit}>
+          <Plus size={14} /> Add part
+        </Button>
       </div>
       {#if book.structure.length === 0}
         <p class="muted">
@@ -243,21 +243,27 @@
               size="sm"
               aria-label="Move part up"
               disabled={u === 0}
-              onclick={() => moveUnit(u, -1)}><ArrowUp size={14} /></Button
+              onclick={() => moveUnit(u, -1)}
             >
+              <ArrowUp size={14} />
+            </Button>
             <Button
               icon
               size="sm"
               aria-label="Move part down"
               disabled={u === book.structure.length - 1}
-              onclick={() => moveUnit(u, 1)}><ArrowDown size={14} /></Button
+              onclick={() => moveUnit(u, 1)}
             >
+              <ArrowDown size={14} />
+            </Button>
             <Button
               icon
               size="sm"
               aria-label="Remove part"
-              onclick={() => removeUnit(u)}><Trash2 size={14} /></Button
+              onclick={() => removeUnit(u)}
             >
+              <Trash2 size={14} />
+            </Button>
           </div>
           <ol>
             {#each unit.material_ids as id, i (id)}
@@ -269,23 +275,26 @@
                   aria-label="Move up"
                   disabled={i === 0}
                   onclick={() => moveLecture(u, i, -1)}
-                  ><ArrowUp size={13} /></Button
                 >
+                  <ArrowUp size={13} />
+                </Button>
                 <Button
                   icon
                   size="sm"
                   aria-label="Move down"
                   disabled={i === unit.material_ids.length - 1}
                   onclick={() => moveLecture(u, i, 1)}
-                  ><ArrowDown size={13} /></Button
                 >
+                  <ArrowDown size={13} />
+                </Button>
                 <Button
                   icon
                   size="sm"
                   aria-label="Remove from part"
                   onclick={() => removeLecture(u, i)}
-                  ><Trash2 size={13} /></Button
                 >
+                  <Trash2 size={13} />
+                </Button>
               </li>
             {/each}
           </ol>
@@ -301,8 +310,9 @@
                 size="sm"
                 variant="outline"
                 onclick={() => l.id && addLecture(l.id)}
-                >Add to last part</Button
               >
+                Add to last part
+              </Button>
             </div>
           {/each}
         </div>
@@ -311,8 +321,10 @@
         <Button
           variant="outline"
           disabled={!dirty || !!busy}
-          onclick={() => void save()}>Save structure</Button
+          onclick={() => void save()}
         >
+          Save structure
+        </Button>
         <Button
           variant="accent"
           disabled={!!busy}
@@ -346,21 +358,26 @@
                 variant="ghost"
                 disabled={!!busy}
                 onclick={() => void exportAs('pdf', v)}
-                ><Download size={13} /> PDF</Button
               >
+                <Download size={13} /> PDF
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 disabled={!!busy}
-                onclick={() => void exportAs('docx', v)}>DOCX</Button
+                onclick={() => void exportAs('docx', v)}
               >
+                DOCX
+              </Button>
               {#if book.published_version_id !== v.id}
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={!!busy}
-                  onclick={() => void publish(v)}>Publish</Button
+                  onclick={() => void publish(v)}
                 >
+                  Publish
+                </Button>
               {/if}
             </li>
           {/each}

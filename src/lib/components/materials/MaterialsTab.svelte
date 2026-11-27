@@ -103,8 +103,10 @@
         onclick={() => {
           selected = null;
           void load();
-        }}>← All lectures</button
+        }}
       >
+        ← All lectures
+      </button>
       {#key selected.code}
         <LectureMaterialPanel
           {courseId}
@@ -156,9 +158,9 @@
               <span class="t">{r.title}</span>
               <span class="s">
                 {#if r.status}
-                  <span class="pill" data-status={r.status}
-                    >{statusLabel[r.status]}</span
-                  >
+                  <span class="pill" data-status={r.status}>
+                    {statusLabel[r.status]}
+                  </span>
                 {:else}
                   <span class="pill">Not drafted</span>
                 {/if}

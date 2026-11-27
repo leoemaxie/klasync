@@ -98,8 +98,10 @@
             size="sm"
             variant="outline"
             pressed={i === selectedIndex}
-            onclick={() => (selectedIndex = i)}>{item.title}</Button
+            onclick={() => (selectedIndex = i)}
           >
+            {item.title}
+          </Button>
         {/each}
       </div>
     {/if}

@@ -61,8 +61,10 @@
           size="sm"
           class="clear"
           aria-label="Clear search"
-          onclick={() => (searchQuery = '')}><X size={14} /></Button
+          onclick={() => (searchQuery = '')}
         >
+          <X size={14} />
+        </Button>
       {/if}
     </div>
   </header>

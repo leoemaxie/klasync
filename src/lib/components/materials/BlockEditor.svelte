@@ -93,15 +93,19 @@
             type="button"
             class="mini"
             aria-label={`Remove step ${i + 1}`}
-            onclick={() => set({ steps: dropAt(block.steps, i) })}>✕</button
+            onclick={() => set({ steps: dropAt(block.steps, i) })}
           >
+            ✕
+          </button>
         </div>
       {/each}
       <button
         type="button"
         class="add"
-        onclick={() => set({ steps: [...block.steps, ''] })}>+ Add step</button
+        onclick={() => set({ steps: [...block.steps, ''] })}
       >
+        + Add step
+      </button>
     </div>
     {@render line('Answer (optional)', block.answer ?? '', (v) =>
       set({ answer: v || undefined })
@@ -146,8 +150,10 @@
                   set({
                     header: [...block.header, ''],
                     rows: block.rows.map((r) => [...r, '']),
-                  })}>+</button
+                  })}
               >
+                +
+              </button>
             </th>
           </tr>
         </thead>
@@ -175,8 +181,10 @@
                   type="button"
                   class="mini"
                   aria-label={`Remove row ${r + 1}`}
-                  onclick={() => set({ rows: dropAt(block.rows, r) })}>✕</button
+                  onclick={() => set({ rows: dropAt(block.rows, r) })}
                 >
+                  ✕
+                </button>
               </td>
             </tr>
           {/each}
@@ -189,8 +197,9 @@
         class="add"
         onclick={() =>
           set({ rows: [...block.rows, block.header.map(() => '')] })}
-        >+ Add row</button
       >
+        + Add row
+      </button>
       {#if block.header.length > 1}
         <button
           type="button"
@@ -199,8 +208,10 @@
             set({
               header: block.header.slice(0, -1),
               rows: block.rows.map((r) => r.slice(0, -1)),
-            })}>− Remove last column</button
+            })}
         >
+          − Remove last column
+        </button>
       {/if}
     </div>
   {:else if block.type === 'callout'}
@@ -247,8 +258,9 @@
             class="mini"
             aria-label={`Remove question ${i + 1}`}
             onclick={() => set({ questions: dropAt(block.questions, i) })}
-            >✕</button
           >
+            ✕
+          </button>
         </div>
       {/each}
       <button
@@ -256,8 +268,9 @@
         class="add"
         onclick={() =>
           set({ questions: [...block.questions, { question: '' }] })}
-        >+ Add question</button
       >
+        + Add question
+      </button>
     </div>
   {:else if block.type === 'further_reading'}
     <div class="list">
@@ -291,16 +304,19 @@
             type="button"
             class="mini"
             aria-label={`Remove item ${i + 1}`}
-            onclick={() => set({ items: dropAt(block.items, i) })}>✕</button
+            onclick={() => set({ items: dropAt(block.items, i) })}
           >
+            ✕
+          </button>
         </div>
       {/each}
       <button
         type="button"
         class="add"
         onclick={() => set({ items: [...block.items, { title: '' }] })}
-        >+ Add item</button
       >
+        + Add item
+      </button>
     </div>
   {:else if block.type === 'summary'}
     <div class="list">
@@ -317,16 +333,19 @@
             type="button"
             class="mini"
             aria-label={`Remove point ${i + 1}`}
-            onclick={() => set({ points: dropAt(block.points, i) })}>✕</button
+            onclick={() => set({ points: dropAt(block.points, i) })}
           >
+            ✕
+          </button>
         </div>
       {/each}
       <button
         type="button"
         class="add"
         onclick={() => set({ points: [...block.points, ''] })}
-        >+ Add point</button
       >
+        + Add point
+      </button>
     </div>
   {/if}
 </div>

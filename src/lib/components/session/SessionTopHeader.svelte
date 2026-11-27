@@ -21,13 +21,13 @@
 
   <div class="live-status-pills">
     {#if isPaused}
-      <span class="status-pill paused"
-        ><Pause size={12} aria-hidden="true" /> PAUSED</span
-      >
+      <span class="status-pill paused">
+        <Pause size={12} aria-hidden="true" /> PAUSED
+      </span>
     {:else}
-      <span class="status-pill broadcasting"
-        ><span class="live-dot" aria-hidden="true"></span> LIVE</span
-      >
+      <span class="status-pill broadcasting">
+        <span class="live-dot" aria-hidden="true"></span> LIVE
+      </span>
     {/if}
 
     {#if isRecording}
@@ -46,9 +46,9 @@
         {/if}
       </span>
     {:else}
-      <span class="status-pill idle"
-        ><Mic size={12} aria-hidden="true" /> MIC OFF</span
-      >
+      <span class="status-pill idle">
+        <Mic size={12} aria-hidden="true" /> MIC OFF
+      </span>
     {/if}
   </div>
 </div>

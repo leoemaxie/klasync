@@ -85,9 +85,13 @@
       >
         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
         {#if edge.label && (focusId === edge.from || focusId === edge.to)}
-          <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 4} text-anchor="middle"
-            >{edge.label}</text
+          <text
+            x={(a.x + b.x) / 2}
+            y={(a.y + b.y) / 2 - 4}
+            text-anchor="middle"
           >
+            {edge.label}
+          </text>
         {/if}
       </g>
     {/each}

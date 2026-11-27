@@ -123,9 +123,9 @@
     </div>
     {#if quiz.picked !== null}
       <div class="explain" role="status">
-        <strong
-          >{quiz.picked === q.correct_index ? 'Correct.' : 'Not quite.'}</strong
-        >
+        <strong>
+          {quiz.picked === q.correct_index ? 'Correct.' : 'Not quite.'}
+        </strong>
         {q.explanation ?? ''}
       </div>
       <Button variant="accent" onclick={() => quiz.next()}>
@@ -153,15 +153,19 @@
         size="sm"
         variant="outline"
         type="submit"
-        disabled={quiz.generating}><Sparkles size={14} /> Add</Button
+        disabled={quiz.generating}
       >
+        <Sparkles size={14} /> Add
+      </Button>
       {#each QUICK as q}
         <Button
           size="sm"
           variant="ghost"
           disabled={quiz.generating}
-          onclick={() => void generate(q)}>{q}</Button
+          onclick={() => void generate(q)}
         >
+          {q}
+        </Button>
       {/each}
     </form>
   {/if}

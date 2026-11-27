@@ -93,8 +93,10 @@
           type="button"
           class="text close-btn"
           onclick={() => (isOpen = false)}
-          aria-label="Close modal"><X size={18} /></button
+          aria-label="Close modal"
         >
+          <X size={18} />
+        </button>
       </div>
 
       {#if isCreating}
@@ -109,8 +111,9 @@
             <span>Session:</span>
             <select bind:value={filterSession} class="filter-select">
               <option value="all">All sessions</option>
-              {#each availableSessions as s}<option value={s}>{s}</option
-                >{/each}
+              {#each availableSessions as s}<option value={s}>
+                  {s}
+                </option>{/each}
             </select>
           </div>
           <button

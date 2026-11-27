@@ -90,9 +90,9 @@
         <li class="part">
           <div class="part-head">
             <span class="num">{i + 1}</span>
-            {#if item.source === 'heuristic'}<span class="src"
-                >Keyword based</span
-              >{/if}
+            {#if item.source === 'heuristic'}<span class="src">
+                Keyword based
+              </span>{/if}
             <Button
               size="sm"
               class="to-notes"

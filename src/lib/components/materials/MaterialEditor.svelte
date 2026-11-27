@@ -238,9 +238,9 @@
       {statusText}
     </div>
     {#if saveState === 'error' || saveState === 'dirty'}
-      <Button size="sm" variant="outline" onclick={() => void save()}
-        >Save now</Button
-      >
+      <Button size="sm" variant="outline" onclick={() => void save()}>
+        Save now
+      </Button>
     {/if}
     <div class="spacer"></div>
     {#if problems.length}
@@ -329,14 +329,16 @@
           >
             <header class="block-head">
               <span class="type">{b.type.replace('_', ' ')}</span>
-              {#if b.origin === 'supplemented'}<span class="tag">added</span
-                >{/if}
-              {#if b.low_confidence}<span class="tag warn">low confidence</span
-                >{/if}
+              {#if b.origin === 'supplemented'}<span class="tag">
+                  added
+                </span>{/if}
+              {#if b.low_confidence}<span class="tag warn">
+                  low confidence
+                </span>{/if}
               {#if b.source_ranges?.length}
-                <span class="tag"
-                  >{formatTime(b.source_ranges[0].start_sec)}</span
-                >
+                <span class="tag">
+                  {formatTime(b.source_ranges[0].start_sec)}
+                </span>
               {/if}
               <span class="spacer"></span>
               <Button
@@ -344,16 +346,19 @@
                 size="sm"
                 aria-label="Move up"
                 onclick={() => move(b, -1, true)}
-                disabled={i === 0}><ArrowUp size={14} /></Button
+                disabled={i === 0}
               >
+                <ArrowUp size={14} />
+              </Button>
               <Button
                 icon
                 size="sm"
                 aria-label="Move down"
                 onclick={() => move(b, 1, true)}
                 disabled={i === doc.blocks.length - 1}
-                ><ArrowDown size={14} /></Button
               >
+                <ArrowDown size={14} />
+              </Button>
               <Button
                 icon
                 size="sm"
@@ -377,15 +382,18 @@
                   aria-label="Rewrite this section"
                   onclick={() =>
                     (rewriteFor = rewriteFor === b.id ? null : b.id)}
-                  ><RefreshCw size={14} /></Button
                 >
+                  <RefreshCw size={14} />
+                </Button>
               {/if}
               <Button
                 icon
                 size="sm"
                 aria-label="Delete block"
-                onclick={() => remove(b)}><Trash2 size={14} /></Button
+                onclick={() => remove(b)}
               >
+                <Trash2 size={14} />
+              </Button>
             </header>
 
             {#if rewriteFor === b.id}
@@ -422,26 +430,26 @@
 
             <div class="insert">
               <select bind:value={addType} aria-label="Block type to add">
-                {#each ADDABLE_BLOCKS as a}<option value={a.type}
-                    >{a.label}</option
-                  >{/each}
+                {#each ADDABLE_BLOCKS as a}<option value={a.type}>
+                    {a.label}
+                  </option>{/each}
               </select>
-              <Button size="sm" variant="outline" onclick={() => addBlock(i)}
-                ><Plus size={14} /> Add below</Button
-              >
+              <Button size="sm" variant="outline" onclick={() => addBlock(i)}>
+                <Plus size={14} /> Add below
+              </Button>
             </div>
           </section>
         {:else}
           <p class="muted">Nothing here yet.</p>
           <div class="insert">
             <select bind:value={addType} aria-label="Block type to add">
-              {#each ADDABLE_BLOCKS as a}<option value={a.type}
-                  >{a.label}</option
-                >{/each}
+              {#each ADDABLE_BLOCKS as a}<option value={a.type}>
+                  {a.label}
+                </option>{/each}
             </select>
-            <Button size="sm" variant="outline" onclick={() => addBlock(-1)}
-              ><Plus size={14} /> Add block</Button
-            >
+            <Button size="sm" variant="outline" onclick={() => addBlock(-1)}>
+              <Plus size={14} /> Add block
+            </Button>
           </div>
         {/each}
       </div>

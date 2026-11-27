@@ -52,16 +52,16 @@
       <span class="chip"><Headphones size={12} /> Audio</span>
     {/if}
     {#if resume}
-      <span class="chip resume"
-        ><Play size={11} fill="currentColor" /> Resume {clock(resume.t)}</span
-      >
+      <span class="chip resume">
+        <Play size={11} fill="currentColor" /> Resume {clock(resume.t)}
+      </span>
     {/if}
   </span>
 
   {#if progress != null}
-    <span class="progress" aria-hidden="true"
-      ><i style:width="{progress * 100}%"></i></span
-    >
+    <span class="progress" aria-hidden="true">
+      <i style:width="{progress * 100}%"></i>
+    </span>
   {/if}
 </button>
 

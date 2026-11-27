@@ -98,10 +98,11 @@
         role="status"
         title={studio.notesSaved ? 'All changes saved' : 'Saving…'}
       >
-        {#if studio.notesSaved}<Check size={14} /><span class="sr-only"
-            >All changes saved</span
-          >{:else}<LoaderCircle size={14} /><span class="sr-only">Saving…</span
-          >{/if}
+        {#if studio.notesSaved}<Check size={14} /><span class="sr-only">
+            All changes saved
+          </span>{:else}<LoaderCircle size={14} /><span class="sr-only">
+            Saving…
+          </span>{/if}
       </span>
       <Button icon aria-label="Copy notes" title="Copy notes" onclick={copy}>
         {#if copied}<Check size={15} />{:else}<Copy size={15} />{/if}

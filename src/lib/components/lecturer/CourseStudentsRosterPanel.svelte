@@ -136,8 +136,10 @@
           <button
             type="button"
             class="clear-search-btn"
-            onclick={() => (searchQuery = '')}>✕</button
+            onclick={() => (searchQuery = '')}
           >
+            ✕
+          </button>
         {/if}
       </div>
       <div class="showing-count">

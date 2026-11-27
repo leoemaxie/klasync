@@ -181,16 +181,16 @@
       <label class="field">
         <span>Template</span>
         <select bind:value={settings.template}>
-          {#each caps?.templates ?? [] as t}<option value={t.id}
-              >{t.name}</option
-            >{/each}
+          {#each caps?.templates ?? [] as t}<option value={t.id}>
+              {t.name}
+            </option>{/each}
         </select>
       </label>
     </div>
     <div class="row">
-      <Button type="submit" variant="accent" disabled={saving}
-        >{saving ? 'Saving…' : 'Save settings'}</Button
-      >
+      <Button type="submit" variant="accent" disabled={saving}>
+        {saving ? 'Saving…' : 'Save settings'}
+      </Button>
       {#if notice}<span class="ok" role="status">{notice}</span>{/if}
     </div>
   </form>
@@ -221,9 +221,9 @@
                 {p.protected ? 'always on' : `set by ${sourceLabel[p.source]}`}
               </span>
               {#if p.source === 'course'}
-                <Button size="sm" variant="ghost" onclick={() => void reset(p)}
-                  >Use default</Button
-                >
+                <Button size="sm" variant="ghost" onclick={() => void reset(p)}>
+                  Use default
+                </Button>
               {/if}
             </div>
             {#if p.kind === 'delivery' && p.id === 'webhook'}
@@ -252,8 +252,10 @@
                   <Button
                     size="sm"
                     variant="outline"
-                    onclick={() => void saveHook(p)}>Save webhook</Button
+                    onclick={() => void saveHook(p)}
                   >
+                    Save webhook
+                  </Button>
                   <span class="muted">
                     Each publish can push a signed JSON message with 24-hour
                     download links. Verify it with the

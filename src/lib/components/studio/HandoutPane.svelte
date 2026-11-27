@@ -79,10 +79,10 @@
     />
   {:else}
     <div class="mat-bar">
-      <span class="meta"
-        >Version {material.version_no}{#if material.published_at}
-          · {new Date(material.published_at).toLocaleDateString()}{/if}</span
-      >
+      <span class="meta">
+        Version {material.version_no}{#if material.published_at}
+          · {new Date(material.published_at).toLocaleDateString()}{/if}
+      </span>
       <div class="exports">
         {#each material.formats as f}
           <Button

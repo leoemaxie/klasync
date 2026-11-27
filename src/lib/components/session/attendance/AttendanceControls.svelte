@@ -52,18 +52,24 @@
       <button
         type="button"
         class={statusFilter === 'all' ? 'active' : ''}
-        onclick={() => (statusFilter = 'all')}>All</button
+        onclick={() => (statusFilter = 'all')}
       >
+        All
+      </button>
       <button
         type="button"
         class={statusFilter === 'verified' ? 'active' : ''}
-        onclick={() => (statusFilter = 'verified')}>Verified</button
+        onclick={() => (statusFilter = 'verified')}
       >
+        Verified
+      </button>
       <button
         type="button"
         class={statusFilter === 'provisional' ? 'active' : ''}
-        onclick={() => (statusFilter = 'provisional')}>Provisional</button
+        onclick={() => (statusFilter = 'provisional')}
       >
+        Provisional
+      </button>
     </div>
 
     <select

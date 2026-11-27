@@ -163,11 +163,11 @@
       <div class="tablewrap">
         <table>
           <thead>
-            <tr
-              ><th>#</th><th>Question</th><th>Correct</th><th>Separates</th><th
-                >Skipped</th
-              ><th>Time</th></tr
-            >
+            <tr>
+              <th>#</th><th>Question</th><th>Correct</th><th>Separates</th><th>
+                Skipped
+              </th><th>Time</th>
+            </tr>
           </thead>
           <tbody>
             {#each report.items as item (item.question_id)}
@@ -175,11 +175,12 @@
                 <td>{item.position + 1}</td>
                 <td class="qtext">
                   {item.prompt}
-                  {#if item.topic_tag}<span class="topic">{item.topic_tag}</span
-                    >{/if}
-                  {#each item.flags as f (f)}<span class="flag"
-                      >{FLAG_TEXT[f]}</span
-                    >{/each}
+                  {#if item.topic_tag}<span class="topic">
+                      {item.topic_tag}
+                    </span>{/if}
+                  {#each item.flags as f (f)}<span class="flag">
+                      {FLAG_TEXT[f]}
+                    </span>{/each}
                   {#if item.options.length}
                     <div class="opts">
                       {#each item.options as o (o.option)}
@@ -195,11 +196,11 @@
                   {/if}
                 </td>
                 <td>{pct(item.difficulty)}</td>
-                <td
-                  >{item.discrimination === null
+                <td>
+                  {item.discrimination === null
                     ? '–'
-                    : item.discrimination.toFixed(2)}</td
-                >
+                    : item.discrimination.toFixed(2)}
+                </td>
                 <td>{pct(item.skip_rate)}</td>
                 <td>{item.avg_time_secs}s</td>
               </tr>
@@ -236,22 +237,21 @@
       <p class="help">Status only. Scores stay blind until you finalise.</p>
       <div class="tablewrap">
         <table>
-          <thead
-            ><tr
-              ><th>Student</th><th>Matric</th><th>Status</th><th>Attempts</th
-              ></tr
-            ></thead
-          >
+          <thead>
+            <tr>
+              <th>Student</th><th>Matric</th><th>Status</th><th>Attempts</th>
+            </tr>
+          </thead>
           <tbody>
             {#each roster as r (r.student_account_id)}
               <tr>
                 <td>{r.display_name}</td>
                 <td>{r.matric_number}</td>
-                <td
-                  ><span class="st" data-s={r.state}
-                    >{STATE_LABEL[r.state]}</span
-                  ></td
-                >
+                <td>
+                  <span class="st" data-s={r.state}>
+                    {STATE_LABEL[r.state]}
+                  </span>
+                </td>
                 <td>{r.attempts}</td>
               </tr>
             {/each}
@@ -270,24 +270,24 @@
       {#if integrity.some((i) => i.violations > 0 || i.submitted_offline || i.late)}
         <div class="tablewrap">
           <table>
-            <thead
-              ><tr><th>Candidate</th><th>Flags</th><th>Signals</th></tr></thead
-            >
+            <thead>
+              <tr><th>Candidate</th><th>Flags</th><th>Signals</th></tr>
+            </thead>
             <tbody>
               {#each integrity.filter((i) => i.violations > 0 || i.submitted_offline || i.late) as i (i.alias)}
                 <tr>
                   <td>{i.alias}</td>
                   <td>
                     {#if i.late}<span class="flag">Late</span>{/if}
-                    {#if i.submitted_offline}<span class="flag"
-                        >Submitted offline</span
-                      >{/if}
+                    {#if i.submitted_offline}<span class="flag">
+                        Submitted offline
+                      </span>{/if}
                   </td>
-                  <td
-                    >{Object.entries(i.events)
+                  <td>
+                    {Object.entries(i.events)
                       .map(([k, n]) => `${k.replaceAll('_', ' ')} ×${n}`)
-                      .join(', ') || '–'}</td
-                  >
+                      .join(', ') || '–'}
+                  </td>
                 </tr>
               {/each}
             </tbody>
@@ -300,18 +300,19 @@
       <section class="surface">
         <div class="named-head">
           <h4>Results by student</h4>
-          <Button variant="outline" size="sm" onclick={csv}
-            ><Download size={14} /> Export CSV</Button
-          >
+          <Button variant="outline" size="sm" onclick={csv}>
+            <Download size={14} /> Export CSV
+          </Button>
         </div>
         <div class="tablewrap">
           <table>
-            <thead
-              ><tr
-                ><th>Student</th><th>Matric</th><th>Attempts</th><th>Score</th
-                ><th></th></tr
-              ></thead
-            >
+            <thead>
+              <tr>
+                <th>Student</th><th>Matric</th><th>Attempts</th><th>
+                  Score
+                </th><th></th>
+              </tr>
+            </thead>
             <tbody>
               {#each named as r (r.student_account_id)}
                 <tr>
@@ -319,9 +320,9 @@
                   <td>{r.matric_number}</td>
                   <td>{r.attempts}</td>
                   <td>{r.percent === null ? '–' : `${r.percent}%`}</td>
-                  <td
-                    >{#if r.late}<span class="flag">Late</span>{/if}</td
-                  >
+                  <td>
+                    {#if r.late}<span class="flag">Late</span>{/if}
+                  </td>
                 </tr>
               {/each}
             </tbody>

@@ -94,16 +94,18 @@
         aria-label="Shuffle cards"
         disabled={deck.deck.length < 2}
         onclick={() => press(() => deck.shuffle())}
-        ><Shuffle size={16} /></Button
       >
+        <Shuffle size={16} />
+      </Button>
       <Button
         icon
         title="Reset progress"
         aria-label="Reset progress"
         disabled={deck.masteredCount === 0}
         onclick={() => press(() => deck.resetProgress())}
-        ><RotateCcw size={16} /></Button
       >
+        <RotateCcw size={16} />
+      </Button>
       <Button
         variant={showMake ? 'soft' : 'outline'}
         aria-expanded={showMake}
@@ -143,8 +145,10 @@
             size="sm"
             variant="outline"
             disabled={deck.generating}
-            onclick={() => void generate(q)}>{q}</Button
+            onclick={() => void generate(q)}
           >
+            {q}
+          </Button>
         {/each}
       </div>
     </form>
@@ -179,9 +183,9 @@
       title="All caught up"
       description="You’ve marked every card as known. Review the full deck any time."
     >
-      <Button variant="outline" onclick={() => deck.setFilter('all')}
-        >Review all cards</Button
-      >
+      <Button variant="outline" onclick={() => deck.setFilter('all')}>
+        Review all cards
+      </Button>
     </EmptyState>
   {:else}
     <div class="progress" aria-hidden="true">
@@ -205,13 +209,17 @@
         <Button
           variant="outline"
           class="grow"
-          onclick={() => press(() => deck.rate(false))}>Still learning</Button
+          onclick={() => press(() => deck.rate(false))}
         >
+          Still learning
+        </Button>
         <Button
           variant="accent"
           class="grow"
-          onclick={() => press(() => deck.rate(true))}>Got it</Button
+          onclick={() => press(() => deck.rate(true))}
         >
+          Got it
+        </Button>
       {:else}
         <Button
           variant="outline"
@@ -219,21 +227,25 @@
           aria-label="Previous card"
           disabled={deck.visible.length < 2}
           onclick={() => press(() => deck.go(-1))}
-          ><ChevronLeft size={18} /></Button
         >
+          <ChevronLeft size={18} />
+        </Button>
         <Button
           variant="solid"
           class="grow reveal"
-          onclick={() => press(() => deck.flip())}>Show answer</Button
+          onclick={() => press(() => deck.flip())}
         >
+          Show answer
+        </Button>
         <Button
           variant="outline"
           icon
           aria-label="Next card"
           disabled={deck.visible.length < 2}
           onclick={() => press(() => deck.go(1))}
-          ><ChevronRight size={18} /></Button
         >
+          <ChevronRight size={18} />
+        </Button>
       {/if}
     </div>
   {/if}

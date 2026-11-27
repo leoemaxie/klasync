@@ -204,9 +204,9 @@
 </script>
 
 <div class="ws">
-  <button class="back" type="button" onclick={onBack}
-    ><ArrowLeft size={15} /> All assessments</button
-  >
+  <button class="back" type="button" onclick={onBack}>
+    <ArrowLeft size={15} /> All assessments
+  </button>
 
   {#if loadError}
     <p class="oops" role="alert">{loadError}</p>
@@ -223,25 +223,31 @@
           <Button
             variant="accent"
             disabled={busy || problems.length > 0}
-            onclick={publish}>Publish</Button
+            onclick={publish}
           >
+            Publish
+          </Button>
         {:else if status === 'published'}
           {#if detail.unpublished_changes}
             <Button
               variant="accent"
               disabled={busy || problems.length > 0}
-              onclick={publish}>Republish changes</Button
+              onclick={publish}
             >
+              Republish changes
+            </Button>
           {/if}
-          <Button variant="outline" disabled={busy} onclick={close}
-            >Close</Button
-          >
+          <Button variant="outline" disabled={busy} onclick={close}>
+            Close
+          </Button>
         {:else if status === 'closed'}
           <Button
             variant="accent"
             disabled={busy || detail.pending_grades > 0}
-            onclick={finalize}>Finalise</Button
+            onclick={finalize}
           >
+            Finalise
+          </Button>
         {/if}
         {#if status === 'published' || status === 'closed' || status === 'finalized'}
           <Button variant="outline" disabled={busy} onclick={toggleRelease}>
@@ -249,9 +255,9 @@
           </Button>
         {/if}
         {#if status === 'draft' || status === 'finalized'}
-          <Button variant="ghost" disabled={busy} onclick={archive}
-            >Archive</Button
-          >
+          <Button variant="ghost" disabled={busy} onclick={archive}>
+            Archive
+          </Button>
         {/if}
       </div>
     </header>
@@ -313,14 +319,15 @@
         {/if}
         {#if editable}
           <div class="adders">
-            <Button variant="soft" onclick={() => (generating = true)}
-              ><Sparkles size={14} /> Generate with AI</Button
-            >
+            <Button variant="soft" onclick={() => (generating = true)}>
+              <Sparkles size={14} /> Generate with AI
+            </Button>
             <span class="or">or add</span>
             {#each TYPES as t (t)}
-              <Button variant="outline" size="sm" onclick={() => add(t)}
-                ><Plus size={13} /> {QUESTION_TYPE_LABEL[t]}</Button
-              >
+              <Button variant="outline" size="sm" onclick={() => add(t)}>
+                <Plus size={13} />
+                {QUESTION_TYPE_LABEL[t]}
+              </Button>
             {/each}
           </div>
         {/if}

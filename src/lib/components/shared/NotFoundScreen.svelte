@@ -38,9 +38,9 @@
       </div>
 
       <form class="retry-code-box" onsubmit={handleRetryJoin}>
-        <label for="nf-retry-input" class="retry-label"
-          >Have a session code?</label
-        >
+        <label for="nf-retry-input" class="retry-label">
+          Have a session code?
+        </label>
         <div class="retry-input-row">
           <div class="search-input-wrap">
             <Search size={15} class="input-icon" />

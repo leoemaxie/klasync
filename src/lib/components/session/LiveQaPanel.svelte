@@ -156,13 +156,13 @@
                 minute: '2-digit',
               })}
               {#if q.is_resolved}
-                · <strong class="success"
-                  ><Check
+                · <strong class="success">
+                  <Check
                     size={12}
                     aria-hidden="true"
                     style="vertical-align: middle; display: inline-block;"
-                  /> Resolved</strong
-                >{/if}
+                  /> Resolved
+                </strong>{/if}
             </span>
           </div>
 

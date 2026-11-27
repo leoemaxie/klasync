@@ -269,8 +269,10 @@
             </p>{/if}
         {/if}
         <div class="poll-foot">
-          <span>{active.total} {active.total === 1 ? 'answer' : 'answers'}</span
-          >
+          <span>
+            {active.total}
+            {active.total === 1 ? 'answer' : 'answers'}
+          </span>
           {#if isLecturer}
             <button type="button" class="text" onclick={() => close(active)}>
               <X size={12} /> Close &amp; reveal

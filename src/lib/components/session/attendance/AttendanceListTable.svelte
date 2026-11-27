@@ -50,20 +50,23 @@
           <td class="matric-cell">{p.matric}</td>
           <td>
             {#if p.verified}
-              <span class="status-pill verified"
-                ><ShieldCheck size={12} /> Verified</span
-              >
+              <span class="status-pill verified">
+                <ShieldCheck size={12} /> Verified
+              </span>
             {:else}
-              <span class="status-pill provisional"
-                ><UserX size={12} /> Provisional</span
-              >
+              <span class="status-pill provisional">
+                <UserX size={12} /> Provisional
+              </span>
             {/if}
           </td>
-          <td class="time-cell"><Clock size={11} /> {formatTime(p.joinedAt)}</td
-          >
-          <td class="heartbeats-cell"
-            ><Activity size={11} /> {p.heartbeats || 0}</td
-          >
+          <td class="time-cell">
+            <Clock size={11} />
+            {formatTime(p.joinedAt)}
+          </td>
+          <td class="heartbeats-cell">
+            <Activity size={11} />
+            {p.heartbeats || 0}
+          </td>
         </tr>
       {/each}
     </tbody>
@@ -83,23 +86,25 @@
           </div>
         </div>
         {#if p.verified}
-          <span class="status-pill verified"
-            ><ShieldCheck size={11} /> Verified</span
-          >
+          <span class="status-pill verified">
+            <ShieldCheck size={11} /> Verified
+          </span>
         {:else}
-          <span class="status-pill provisional"
-            ><UserX size={11} /> Provisional</span
-          >
+          <span class="status-pill provisional">
+            <UserX size={11} /> Provisional
+          </span>
         {/if}
       </div>
       <div class="card-meta">
-        <span class="meta-item"
-          ><Clock size={11} /> {formatTime(p.joinedAt)}</span
-        >
+        <span class="meta-item">
+          <Clock size={11} />
+          {formatTime(p.joinedAt)}
+        </span>
         <span class="meta-divider">·</span>
-        <span class="meta-item"
-          ><Activity size={11} /> {p.heartbeats || 0} check-ins</span
-        >
+        <span class="meta-item">
+          <Activity size={11} />
+          {p.heartbeats || 0} check-ins
+        </span>
       </div>
     </div>
   {/each}

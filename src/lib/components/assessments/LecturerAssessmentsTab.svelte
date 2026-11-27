@@ -106,9 +106,9 @@
         {#if course}<p class="sub">{course.code} · {course.title}</p>{/if}
       </div>
       {#if course}
-        <Button variant="accent" onclick={() => (creating = !creating)}
-          ><Plus size={15} /> New assessment</Button
-        >
+        <Button variant="accent" onclick={() => (creating = !creating)}>
+          <Plus size={15} /> New assessment
+        </Button>
       {/if}
     </header>
 
@@ -156,14 +156,16 @@
             </select>
           </label>
           <div class="row">
-            <Button variant="ghost" onclick={() => (creating = false)}
-              >Cancel</Button
-            >
+            <Button variant="ghost" onclick={() => (creating = false)}>
+              Cancel
+            </Button>
             <Button
               variant="accent"
               type="submit"
-              disabled={busy || lectures.length === 0}>Create</Button
+              disabled={busy || lectures.length === 0}
             >
+              Create
+            </Button>
           </div>
           {#if lectures.length === 0}
             <p class="note">

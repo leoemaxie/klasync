@@ -27,9 +27,9 @@
       <span class="eyebrow-accent">●</span> LIVE CAPTIONS
     </p>
     {#if captions.length > 0}
-      <span class="caption-counter"
-        >{captionIndex + 1} of {captions.length}</span
-      >
+      <span class="caption-counter">
+        {captionIndex + 1} of {captions.length}
+      </span>
     {/if}
   </div>
 
@@ -37,9 +37,9 @@
     {#if captions.length === 0}
       <div class="caption-empty-box">
         <p class="empty-prompt">Waiting for captions...</p>
-        <span class="empty-hint"
-          >Captions will appear as the lecturer speaks.</span
-        >
+        <span class="empty-hint">
+          Captions will appear as the lecturer speaks.
+        </span>
       </div>
     {:else}
       <p class="caption-text">

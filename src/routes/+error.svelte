@@ -28,14 +28,16 @@
 
     <div class="actions not-found-actions">
       <a href="#/" class="primary" onclick={() => (screen = 'home')}>Home</a>
-      <a href="#/join" class="outline" onclick={() => (screen = 'join')}
-        >Join Session</a
-      >
+      <a href="#/join" class="outline" onclick={() => (screen = 'join')}>
+        Join Session
+      </a>
       <a
         href="#/auth/lecturer/login"
         class="primary-bark"
-        onclick={() => (screen = 'lecturer-login')}>Lecturer Sign In</a
+        onclick={() => (screen = 'lecturer-login')}
       >
+        Lecturer Sign In
+      </a>
     </div>
   </section>
 </main>

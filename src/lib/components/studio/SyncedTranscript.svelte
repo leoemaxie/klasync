@@ -268,9 +268,10 @@
       {/if}
     </div>
     {#if filtering}
-      <span class="count" role="status"
-        >{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span
-      >
+      <span class="count" role="status">
+        {rows.length}
+        {rows.length === 1 ? 'match' : 'matches'}
+      </span>
     {/if}
     <div class="tools">
       <div class="font" role="group" aria-label="Text size">
@@ -281,8 +282,9 @@
           title="Smaller text"
           disabled={fontSize <= 13}
           onclick={() => (fontSize = Math.max(13, fontSize - 1))}
-          >A<small>−</small></Button
         >
+          A<small>−</small>
+        </Button>
         <Button
           variant="outline"
           icon
@@ -290,8 +292,9 @@
           title="Larger text"
           disabled={fontSize >= 24}
           onclick={() => (fontSize = Math.min(24, fontSize + 1))}
-          >A<small>+</small></Button
         >
+          A<small>+</small>
+        </Button>
       </div>
       <Button
         variant="outline"
@@ -319,9 +322,9 @@
         title="Couldn’t load the transcript"
         description={studio.transcriptError}
       >
-        <Button variant="outline" onclick={() => studio.loadTranscript()}
-          >Try again</Button
-        >
+        <Button variant="outline" onclick={() => studio.loadTranscript()}>
+          Try again
+        </Button>
       </EmptyState>
     {:else if studio.lines.length === 0}
       <EmptyState
@@ -380,14 +383,17 @@
                 class="stamp"
                 aria-label="Play from {clock(row.t)}"
                 title="Play from here"
-                onclick={() => playFrom(row.t)}>{clock(row.t)}</button
+                onclick={() => playFrom(row.t)}
               >
+                {clock(row.t)}
+              </button>
             {:else}
               <span class="stamp none" aria-hidden="true">·</span>
             {/if}
             <p class="line-text">
-              {#each parts(row.text) as p}{#if p.hit}<mark>{p.s}</mark
-                  >{:else}{p.s}{/if}{/each}
+              {#each parts(row.text) as p}{#if p.hit}<mark>
+                    {p.s}
+                  </mark>{:else}{p.s}{/if}{/each}
             </p>
           </div>
         {/each}

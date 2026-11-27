@@ -82,8 +82,9 @@
       <label class="field">
         <span>Compare this offering with</span>
         <select bind:value={other}>
-          {#each offerings as c}<option value={c.id}>{labelOf(c)}</option
-            >{/each}
+          {#each offerings as c}<option value={c.id}>
+              {labelOf(c)}
+            </option>{/each}
         </select>
       </label>
       <label class="check">

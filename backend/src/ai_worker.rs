@@ -291,7 +291,10 @@ pub struct PreparedText {
 }
 
 fn is_json_job(job_type: &str) -> bool {
-    matches!(job_type, "flashcards" | "quiz" | "chapters" | "visualization")
+    matches!(
+        job_type,
+        "flashcards" | "quiz" | "chapters" | "visualization"
+    )
 }
 
 /// Builds the model request for a text job. Shared with batch submission.

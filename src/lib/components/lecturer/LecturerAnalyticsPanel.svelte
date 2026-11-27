@@ -136,17 +136,17 @@
         <div class="anomalies-list">
           {#each anomalies as a}
             <div class="anomaly-row">
-              <span class="anom-badge warning"
-                ><span role="img" aria-label="Warning">⚠️</span>
-                {a.anomaly_type.toUpperCase()}</span
-              >
+              <span class="anom-badge warning">
+                <span role="img" aria-label="Warning">⚠️</span>
+                {a.anomaly_type.toUpperCase()}
+              </span>
               <p><strong>{a.matric_number}</strong>: {a.description}</p>
-              <small
-                >{new Date(a.logged_at).toLocaleTimeString([], {
+              <small>
+                {new Date(a.logged_at).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
-                })}</small
-              >
+                })}
+              </small>
             </div>
           {/each}
         </div>

@@ -108,9 +108,9 @@
         onkeydown={(e) => e.key === 'Escape' && (moreOpen = false)}
       >
         <Ellipsis size={15} />
-        <span class="tab-label"
-          >{overflowActive ? toolById(active).label : 'More'}</span
-        >
+        <span class="tab-label">
+          {overflowActive ? toolById(active).label : 'More'}
+        </span>
       </button>
       {#if moreOpen}
         <div class="menu" role="menu" aria-label="More tools">

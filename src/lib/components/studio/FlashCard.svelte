@@ -60,26 +60,26 @@
     <div class="face front" inert={flipped}>
       <div class="top">
         <span class="tag">{card.topic_tag || 'Question'}</span>
-        <span class="diff" data-level={card.difficulty ?? 'medium'}
-          >{card.difficulty ?? 'medium'}</span
-        >
+        <span class="diff" data-level={card.difficulty ?? 'medium'}>
+          {card.difficulty ?? 'medium'}
+        </span>
       </div>
       <p class="body-text prompt">{card.prompt}</p>
       <div class="bottom">
-        <span class="flip-hint"
-          ><RotateCw size={13} /> Flip to see the answer</span
-        >
-        {#if card.mastered}<span class="done"
-            ><CircleCheck size={14} /> Mastered</span
-          >{/if}
+        <span class="flip-hint">
+          <RotateCw size={13} /> Flip to see the answer
+        </span>
+        {#if card.mastered}<span class="done">
+            <CircleCheck size={14} /> Mastered
+          </span>{/if}
       </div>
     </div>
     <div class="face back" inert={!flipped}>
       <div class="top">
         <span class="tag answer">Answer</span>
-        {#if card.mastered}<span class="done"
-            ><CircleCheck size={14} /> Mastered</span
-          >{/if}
+        {#if card.mastered}<span class="done">
+            <CircleCheck size={14} /> Mastered
+          </span>{/if}
       </div>
       <p class="body-text answer-text">{card.answer}</p>
       <div class="bottom">

@@ -95,17 +95,21 @@
             type="button"
             class={role === 'lecturer' ? 'primary' : 'outline'}
             aria-pressed={role === 'lecturer'}
-            onclick={() => (role = 'lecturer')}>Lecturer</button
+            onclick={() => (role = 'lecturer')}
           >
+            Lecturer
+          </button>
           <button
             type="button"
             class={role === 'student' ? 'primary' : 'outline'}
             aria-pressed={role === 'student'}
-            onclick={() => (role = 'student')}>Student</button
+            onclick={() => (role = 'student')}
           >
+            Student
+          </button>
         </div>
-        <label for="rec-email"
-          >Email
+        <label for="rec-email">
+          Email
           <input
             id="rec-email"
             type="email"
@@ -116,8 +120,8 @@
           />
         </label>
       {:else}
-        <label for="rec-tok"
-          >Reset token
+        <label for="rec-tok">
+          Reset token
           <input
             id="rec-tok"
             bind:value={resetToken}
@@ -126,8 +130,8 @@
           />
         </label>
         <div class="twocol">
-          <label for="rec-pw"
-            >New password <span>(min. 12)</span>
+          <label for="rec-pw">
+            New password <span>(min. 12)</span>
             <input
               id="rec-pw"
               type="password"
@@ -137,8 +141,8 @@
               autocomplete="new-password"
             />
           </label>
-          <label for="rec-cpw"
-            >Confirm password
+          <label for="rec-cpw">
+            Confirm password
             <input
               id="rec-cpw"
               type="password"
@@ -153,9 +157,9 @@
 
       {#if statusNotice}
         <div class="feedback-box" role="status" aria-live="polite">
-          <span class="feedback-badge"
-            >{mode === 'request' ? 'SENT' : 'UPDATED'}</span
-          >
+          <span class="feedback-badge">
+            {mode === 'request' ? 'SENT' : 'UPDATED'}
+          </span>
           <p class="feedback-msg">{statusNotice}</p>
         </div>
       {/if}

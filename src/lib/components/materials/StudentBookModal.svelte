@@ -100,9 +100,9 @@
             </Button>
           {/each}
         {/if}
-        <Button icon size="sm" aria-label="Close" onclick={onClose}
-          ><X size={16} /></Button
-        >
+        <Button icon size="sm" aria-label="Close" onclick={onClose}>
+          <X size={16} />
+        </Button>
       </div>
     </header>
     {#if error && status !== 'error'}<p class="err" role="alert">
@@ -124,9 +124,9 @@
           title="Couldn’t load the course book"
           description={error}
         >
-          <Button variant="outline" onclick={() => void load()}
-            >Try again</Button
-          >
+          <Button variant="outline" onclick={() => void load()}>
+            Try again
+          </Button>
         </EmptyState>
       {:else if book}
         <MaterialReader doc={book.doc} />

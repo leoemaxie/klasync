@@ -22,8 +22,10 @@
       font-family="'Playfair Display', Georgia, serif"
       font-size="28"
       font-weight="500"
-      fill="#ffedd7">K</text
+      fill="#ffedd7"
     >
+      K
+    </text>
     <g fill="#ffedd7" opacity="0.75">
       <rect x="30" y="28" width="2" height="8" rx="1" /><rect
         x="33.5"

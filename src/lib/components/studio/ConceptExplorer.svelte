@@ -283,22 +283,28 @@
           icon
           aria-label="Zoom in"
           title="Zoom in (+)"
-          onclick={() => zoom(1)}><Plus size={15} /></Button
+          onclick={() => zoom(1)}
         >
+          <Plus size={15} />
+        </Button>
         <Button
           size="sm"
           icon
           aria-label="Zoom out"
           title="Zoom out (−)"
-          onclick={() => zoom(-1)}><Minus size={15} /></Button
+          onclick={() => zoom(-1)}
         >
+          <Minus size={15} />
+        </Button>
         <Button
           size="sm"
           icon
           aria-label="Reset view"
           title="Reset view (0)"
-          onclick={() => resetTick++}><Maximize size={15} /></Button
+          onclick={() => resetTick++}
         >
+          <Maximize size={15} />
+        </Button>
       </div>
     {/if}
   </div>
@@ -378,8 +384,10 @@
               icon
               size="sm"
               aria-label="Clear selection"
-              onclick={() => select(null)}><X size={15} /></Button
+              onclick={() => select(null)}
             >
+              <X size={15} />
+            </Button>
           </header>
 
           <h4>In the lecture</h4>

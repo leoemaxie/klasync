@@ -107,9 +107,9 @@
             class="quick-code-btn"
             onclick={handleQuickJoinSubmit}
           >
-            <span
-              >Join session <strong>{searchQuery.toUpperCase()}</strong></span
-            >
+            <span>
+              Join session <strong>{searchQuery.toUpperCase()}</strong>
+            </span>
             <ArrowRight size={14} />
           </button>
         </div>

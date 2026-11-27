@@ -82,21 +82,22 @@
       {#if !focus}
         <p class="eyebrow-row">
           <span class="course-code">{claim.course_code}</span>
-          {#if claim.course_title}<span class="dot" aria-hidden="true">·</span
-            ><span class="course">{claim.course_title}</span>{/if}
+          {#if claim.course_title}<span class="dot" aria-hidden="true">
+              ·
+            </span><span class="course">{claim.course_title}</span>{/if}
           <span class="dot" aria-hidden="true">·</span>
           <time>{claim.date}</time>
-          {#if duration > 0}<span class="dot" aria-hidden="true">·</span><span
-              >{clock(duration)} long</span
-            >{/if}
+          {#if duration > 0}<span class="dot" aria-hidden="true">·</span><span>
+              {clock(duration)} long
+            </span>{/if}
         </p>
       {/if}
       <h1 class="title">{claim.session_title}</h1>
       {#if !focus}
         <div class="meta">
-          {#if claim.session_code}<span class="pill mono" title="Session code"
-              >{claim.session_code}</span
-            >{/if}
+          {#if claim.session_code}<span class="pill mono" title="Session code">
+              {claim.session_code}
+            </span>{/if}
           {#if claim.attended !== false}
             <span class="pill ok"><CheckCircle2 size={12} /> Verified</span>
           {/if}

@@ -151,13 +151,13 @@
 
   <div class="mic-actions">
     {#if !isUsingDeviceMic}
-      <button type="button" class="outline full" onclick={enableDeviceMic}
-        >{sessionCode ? 'Start Audio Stream' : 'Test Microphone'}</button
-      >
+      <button type="button" class="outline full" onclick={enableDeviceMic}>
+        {sessionCode ? 'Start Audio Stream' : 'Test Microphone'}
+      </button>
     {:else}
-      <button type="button" class="danger full" onclick={stopDeviceMic}
-        >Stop Microphone</button
-      >
+      <button type="button" class="danger full" onclick={stopDeviceMic}>
+        Stop Microphone
+      </button>
     {/if}
   </div>
 </div>

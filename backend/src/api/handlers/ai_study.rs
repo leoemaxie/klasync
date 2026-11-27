@@ -162,7 +162,15 @@ pub async fn generate_quiz(
         return Ok(ready());
     }
     let params = serde_json::json!({ "topic": topic });
-    enqueue(&state, student.id, session_id, "quiz", params, topic.is_none()).await
+    enqueue(
+        &state,
+        student.id,
+        session_id,
+        "quiz",
+        params,
+        topic.is_none(),
+    )
+    .await
 }
 
 pub async fn quiz(

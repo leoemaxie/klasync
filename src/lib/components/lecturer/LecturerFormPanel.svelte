@@ -61,9 +61,9 @@
   >
     <div class="pill-left">
       <span class="pill-code">{courseCode || 'NO COURSE SET'}</span>
-      <span class="pill-title"
-        >{courseTitle || 'Click to select or create a course offering'}</span
-      >
+      <span class="pill-title">
+        {courseTitle || 'Click to select or create a course offering'}
+      </span>
     </div>
     <div class="pill-badges">
       <span class="tag session-tag">{academicSession || '2025/2026'}</span>
@@ -85,32 +85,29 @@
       />
     </label>
     <div class="twocol">
-      <label
-        >Course code<input
-          bind:value={courseCode}
-          placeholder="e.g. CSC 312"
-        /></label
-      >
-      <label
-        >Course title<input
+      <label>
+        Course code<input bind:value={courseCode} placeholder="e.g. CSC 312" />
+      </label>
+      <label>
+        Course title<input
           bind:value={courseTitle}
           placeholder="e.g. Human Computer Interaction"
-        /></label
-      >
+        />
+      </label>
     </div>
     <div class="twocol">
-      <label
-        >Academic session<input
+      <label>
+        Academic session<input
           bind:value={academicSession}
           placeholder="e.g. 2025/2026"
-        /></label
-      >
-      <label
-        >Semester<input
+        />
+      </label>
+      <label>
+        Semester<input
           bind:value={semester}
           placeholder="e.g. Second Semester"
-        /></label
-      >
+        />
+      </label>
     </div>
   </div>
 

@@ -117,8 +117,10 @@
       type="button"
       class="outline"
       onclick={onCancel}
-      disabled={isSubmitting}>Cancel</button
+      disabled={isSubmitting}
     >
+      Cancel
+    </button>
     <button type="submit" class="primary" disabled={isSubmitting}>
       {isSubmitting ? 'Creating...' : 'Create Course'}
     </button>

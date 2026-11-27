@@ -154,13 +154,13 @@
   }
 </script>
 
-<svelte:head
-  ><title
+<svelte:head>
+  <title
     >{session?.title
       ? `${session.title} — Live · Klasync`
       : 'Live Session — Klasync'}</title
-  ></svelte:head
->
+  >
+</svelte:head>
 
 <div class="live-workspace-wrap">
   <LiveHeader

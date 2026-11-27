@@ -7,9 +7,9 @@
   <div class="header-badge-row">
     <span class="eyebrow">LECTURER WORKSPACE</span>
     {#if liveCode}
-      <span class="live-status-pill"
-        ><span class="pulse-dot" aria-hidden="true">●</span> LIVE · {liveCode}</span
-      >
+      <span class="live-status-pill">
+        <span class="pulse-dot" aria-hidden="true">●</span> LIVE · {liveCode}
+      </span>
     {/if}
   </div>
 </header>

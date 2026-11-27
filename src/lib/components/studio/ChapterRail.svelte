@@ -72,12 +72,9 @@
               <span class="num" aria-hidden="true">{i + 1}</span>
               <span class="body">
                 <span class="name">{ch.title}</span>
-                <span class="when"
-                  >{rangeLabel(
-                    ch.start_timestamp_sec,
-                    ch.end_timestamp_sec
-                  )}</span
-                >
+                <span class="when">
+                  {rangeLabel(ch.start_timestamp_sec, ch.end_timestamp_sec)}
+                </span>
                 {#if active || variant === 'page'}
                   <span class="summary">{ch.summary}</span>
                 {/if}

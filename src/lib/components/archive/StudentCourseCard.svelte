@@ -31,9 +31,11 @@
   </p>
 
   <div class="foot">
-    <span class="count"
-      ><BookOpen size={14} /> {n} {n === 1 ? 'lecture' : 'lectures'}</span
-    >
+    <span class="count">
+      <BookOpen size={14} />
+      {n}
+      {n === 1 ? 'lecture' : 'lectures'}
+    </span>
     {#if onOpenBook}
       <Button
         variant="outline"
