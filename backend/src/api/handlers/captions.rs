@@ -128,6 +128,7 @@ pub async fn store_caption(
     state: &AppState,
     session_id: Uuid,
     text: &str,
+    source: &str,
 ) -> Result<CaptionChunk, ApiError> {
     let pool = state.db_pool();
     let mut tx = pool
@@ -141,13 +142,14 @@ pub async fn store_caption(
         .await
         .log_internal_error("Failed to lock caption sequence")?;
     let caption = sqlx::query_as::<_, CaptionChunk>(
-        "insert into caption_chunks (id, session_id, sequence_number, text, created_at)
-         values ($1, $2, (select coalesce(max(sequence_number), 0) + 1 from caption_chunks where session_id = $2), $3, now())
+        "insert into caption_chunks (id, session_id, sequence_number, text, source, created_at)
+         values ($1, $2, (select coalesce(max(sequence_number), 0) + 1 from caption_chunks where session_id = $2), $3, $4, now())
          returning id, session_id, text, created_at",
     )
     .bind(Uuid::now_v7())
     .bind(session_id)
     .bind(text)
+    .bind(source)
     .fetch_one(&mut *tx)
     .await
     .log_internal_error("Failed to insert caption chunk")?;

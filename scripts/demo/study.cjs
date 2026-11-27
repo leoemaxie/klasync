@@ -1,4 +1,4 @@
-const { BASE, sleep, api, launch, phone, tap, type, marker } = require('./common');
+const { BASE, sleep, api, launch, phone, tap, type, marker } = require('./common.cjs');
 const { execSync } = require('child_process');
 (async () => {
   const live = require('./out/live_marks.json');
@@ -22,44 +22,56 @@ const { execSync } = require('child_process');
   };
   M.mark('start');
   await p.goto(BASE + '/#/auth/student/login'); await sleep(1500);
-  await type(p.locator('input[type=email]'), 'ada@university.edu', 55);
-  await type(p.locator('input[type=password]'), 'demo-password-123', 55);
+  M.mark('signin_start');
+  await type(p.locator('input[type=email]'), 'ada@university.edu', 90);
+  await type(p.locator('input[type=password]'), 'demo-password-123', 90);
   await sleep(300); await p.locator('input[type=password]').press('Enter');
-  await p.waitForSelector('text=Lecture archive'); await sleep(3000); M.mark('archive');
-  await p.mouse.move(0, 0);
-  await tap(p.locator('text=Attended').first(), 3500); M.mark('studio_open');
-  // transcript + audio
+  await p.waitForSelector('text=Lecture archive'); await sleep(2500);
+  M.mark('archive_start');
+  await p.mouse.move(0, 0); await sleep(1500);
+  await tap(p.locator('text=Attended').first(), 3000);
+  M.mark('transcript_start');
   await sleep(2500);
-  await tap(p.getByRole('button', { name: /^play/i }).first(), 6000).catch(() => console.log('no play btn')); M.mark('audio_played');
+  await tap(p.getByRole('button', { name: /^play/i }).first(), 8000).catch(() => console.log('no play btn'));
   await tap(p.getByRole('button', { name: /^pause/i }).first(), 800).catch(() => {});
-  await openTool('Chapters'); await sleep(3500); M.mark('chapters');
-  await openTool('Summary'); await sleep(4500); M.mark('summary');
-  await openTool('Map'); await sleep(6000); M.mark('map');
-  // flashcards
-  await openTool('Cards'); await sleep(2000); M.mark('cards');
-  for (let i = 0; i < 3; i++) {
-    await tap(p.getByRole('button', { name: /show answer/i }).first(), 1800);
-    await tap(p.getByRole('button', { name: i === 1 ? /still learning/i : /got it/i }).first(), 1200);
+  M.mark('chapters_start');
+  await openTool('Chapters'); await sleep(6000);
+  M.mark('summary_start');
+  await openTool('Summary'); await sleep(6000);
+  // concept map: the canvas sits below the controls, so scroll it into view, then explore
+  M.mark('map_start');
+  await openTool('Map'); await sleep(1500);
+  const canvas = () => p.locator('[aria-label^="Concept map of"]').first();
+  const toCanvas = () => canvas().evaluate(e => e.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  const toTop = () => p.locator('.map-pane').evaluate(e => e.scrollTo({ top: 0, behavior: 'smooth' }));
+  await toCanvas(); await sleep(7000);              // 3D map drifting
+  await toTop(); await sleep(900);
+  await tap(p.getByRole('button', { name: /^\s*2D/ }).first(), 700); await toCanvas(); await sleep(4500); // 2D graph
+  await toTop(); await sleep(900);
+  await tap(p.getByRole('button', { name: /tour/i }).first(), 500); await toCanvas(); await sleep(7000);   // guided tour
+  M.mark('cards_start');
+  await openTool('Cards'); await sleep(2500);
+  for (let i = 0; i < 4; i++) {
+    await tap(p.getByRole('button', { name: /show answer/i }).first(), 2600);
+    await tap(p.getByRole('button', { name: i === 1 ? /still learning/i : /got it/i }).first(), 1500);
   }
-  M.mark('cards_done');
-  // quiz
-  await openTool('Quiz'); await sleep(2500); M.mark('quiz');
+  M.mark('quiz_start');
+  await openTool('Quiz'); await sleep(2500);
   for (let i = 0; i < 8; i++) {
     const opts = p.locator('[data-testid=quiz-option]');
     if (!(await opts.count())) break;
-    await tap(opts.nth(i % 3 === 2 ? 0 : 1), 1100); // mostly picks option B
-    await sleep(1500);
+    await tap(opts.nth(i % 3 === 2 ? 0 : 1), 1100);
+    await sleep(2200);
     await tap(p.getByRole('button', { name: /^(next|see results)$/i }).first(), 700);
-    if (i === 2) M.mark('quiz_midway');
     if (await p.locator('[data-testid=quiz-result]').count()) break;
   }
-  await sleep(3500); M.mark('quiz_result');
-  // ask
+  await sleep(3500);
+  M.mark('ask_start');
   await openTool('Ask'); await sleep(1200);
-  await type(p.getByLabel('Ask a question about this lecture'), 'Where does the Calvin cycle take place and what does it need?', 40);
-  await sleep(300); await tap(p.getByRole('button', { name: /send question/i }), 500); M.mark('ask_sent');
+  await type(p.getByLabel('Ask a question about this lecture'), 'Where does the Calvin cycle take place and what does it need?', 55);
+  await sleep(300); await tap(p.getByRole('button', { name: /send question/i }), 500);
   await p.waitForSelector('text=/stroma/i', { timeout: 60000 }).catch(() => console.log('no stroma answer'));
-  await sleep(4500); M.mark('ask_answer');
+  await sleep(6000); M.mark('study_end');
   await p.screenshot({ path: __dirname + '/out/study_end.png' });
   const vid = await p.video().path();
   M.save({ vid, sid }); await P.ctx.close(); await b.close(); console.log('done', vid);

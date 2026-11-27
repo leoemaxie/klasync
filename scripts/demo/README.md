@@ -9,10 +9,10 @@ mocked in the UI.
 
 | Step | Script | Output |
 | --- | --- | --- |
-| Voices | `tts.py lecture` / `tts.py narration` | `lecture48.wav` (the lecturer, played into Chrome's fake microphone), `out/narr/*.wav` (narrator, Nigerian English accent) |
+| Voices | `tts.py lecture` / `tts.py narration` | `lecture48.wav` (the lecturer, Nigerian English accent, played into Chrome's fake microphone), `out/narr/*.wav` (narrator, Nigerian English accent) |
 | Reset | `reset.sh` | Fresh database, backend and seeded course (roster, past lectures, attendance history) |
-| Live lecture | `live.js` | `out/live_desktop` + `out/live_phone` videos, `out/live_marks.json` |
-| Study archive | `study.js` | `out/study_phone` video, `out/study_marks.json` (waits for the post-lecture AI jobs) |
+| Live lecture | `live.cjs` | `out/live_desktop` + `out/live_phone` videos, `out/live_marks.json` |
+| Study archive | `study.cjs` | `out/study_phone` video, `out/study_marks.json` (waits for the post-lecture AI jobs) |
 | Edit | `compose.py` | `out/klasync_demo.mp4` (1080p, narrated, sped-up stretches) |
 
 The lecturer plays Gemini TTS audio through a fake microphone, so the captions,
@@ -36,17 +36,19 @@ through the API (joins and heartbeats); the phone is a real student session.
 
 ```sh
 cd scripts/demo
-python3 tts.py lecture            # once; commits nothing (outputs are gitignored)
+./stack.sh                        # Postgres, Redis, S3 mock, dev server (if not already running)
+python3 tts.py lecture            # once; outputs are gitignored
 python3 tts.py narration
 ./reset.sh
-node live.js                      # about 3.5 minutes
-node study.js                     # waits for chapters/cards/quiz/map, then ~100 s
+node live.cjs                      # about 3.5 minutes
+node study.cjs                     # waits for chapters/cards/quiz/map, then ~100 s
 python3 compose.py                # -> out/klasync_demo.mp4
 ```
 
-Edit `narration.json` to change the narration (the scene lengths follow it) and
-the `segs` list in `compose.py` to change the cut. Post-lecture jobs are queued
-roughly 2-4 minutes after a session ends, so `study.js` can wait a while.
+Edit `narration.json` to change the narration (scene lengths follow it; keep
+lines short, and avoid wording the TTS safety filter rejects) and the scene
+list at the bottom of `compose.py` to change the cut. Post-lecture jobs are queued
+roughly 2-4 minutes after a session ends, so `study.cjs` can wait a while.
 
 ## Notes
 

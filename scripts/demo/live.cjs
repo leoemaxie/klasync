@@ -1,4 +1,4 @@
-const { BASE, sleep, api, launch, desktop, phone, click, tap, type, marker } = require('./common');
+const { BASE, sleep, api, launch, desktop, phone, click, tap, type, marker } = require('./common.cjs');
 (async () => {
   const M = marker(__dirname + '/out/live_marks.json');
   const b = await launch();
@@ -6,39 +6,51 @@ const { BASE, sleep, api, launch, desktop, phone, click, tap, type, marker } = r
   const d = D.page, p = P.page;
   const off = { desktop: D.t0 - M.T0, phone: P.t0 - M.T0 };
   M.mark('start');
-  // 1. Lecturer signs in
+  // 1. Lecturer signs in (marks below are the START of each beat)
   await d.goto(BASE + '/#/auth/lecturer/login'); await sleep(1500);
-  M.mark('login_page');
-  await type(d.locator('input[type=email]'), 'amara.eze@university.edu');
-  await type(d.locator('input[type=password]'), 'demo-password-123');
-  await sleep(400); await d.locator('input[type=password]').press('Enter');
-  await d.waitForSelector('text=COURSE'); await sleep(3500);
-  M.mark('course_tab');
-  // roster, then mic/device, then room
-  await d.mouse.wheel(0, 500); await sleep(2500); await d.mouse.wheel(0, -500); await sleep(500);
-  await click(d, d.locator('button:has-text("DEVICE")'), 2500); M.mark('device_tab');
-  await click(d, d.locator('button:has-text("ROOM")'), 1500);
+  M.mark('login_start');
+  await type(d.locator('input[type=email]'), 'amara.eze@university.edu', 70);
+  await type(d.locator('input[type=password]'), 'demo-password-123', 70);
+  await sleep(500); await d.locator('input[type=password]').press('Enter');
+  await d.waitForSelector('text=COURSE'); await sleep(2500);
+  M.mark('roster_start');
+  await d.mouse.wheel(0, 450); await sleep(3500); await d.mouse.wheel(0, -450); await sleep(1500);
+  M.mark('device_start');
+  await click(d, d.locator('button:has-text("DEVICE")'), 1500);
+  // hover each microphone option while the narration explains them
+  await d.mouse.move(420, 420, { steps: 20 }); await sleep(2500);
+  await d.mouse.move(900, 420, { steps: 20 }); await sleep(2500);
+  M.mark('room_start');
+  await click(d, d.locator('button:has-text("ROOM")'), 1800);
+  M.mark('start_click');
   await click(d, d.locator('button:has-text("START SESSION")'), 2500);
   const code = (await d.locator('body').innerText()).match(/LIVE · ([A-Z0-9]{8})/)[1];
-  M.mark('session_started', { code }); await sleep(3000);
+  M.mark('session_started', { code }); await sleep(2500);
   // 2. Student phone joins with the code
   await p.goto(BASE + '/#/join'); await sleep(1500);
-  M.mark('phone_join_page');
-  await type(p.locator('input[placeholder="e.g. A4K9QZ"]'), code, 90);
-  await type(p.locator('input[placeholder="MAT/2023/001"]'), 'BIO/26/001', 70);
-  await type(p.locator('input[placeholder="Ada Okafor"]'), 'Ada Okafor', 70);
-  await sleep(400); await tap(p.getByRole('button', { name: /join session/i }).last(), 2500);
+  M.mark('join_start');
+  await type(p.locator('input[placeholder="e.g. A4K9QZ"]'), code, 130);
+  await type(p.locator('input[placeholder="MAT/2023/001"]'), 'BIO/26/001', 110);
+  await type(p.locator('input[placeholder="Ada Okafor"]'), 'Ada Okafor', 110);
+  await sleep(900); M.mark('join_tap');
+  await tap(p.getByRole('button', { name: /join session/i }).last(), 2500);
   M.mark('phone_joined');
   // classmates join in the background (simulated phones)
   const joined = [];
   const others = async () => { for (let i = 2; i <= 11; i++) { const j = await api('POST', `/sessions/code/${code}/join`, { matric_number: `BIO/26/${String(i).padStart(3, '0')}`, display_name: ['', 'Ada Okafor', 'Bola Adeyemi', 'Chidi Nwosu', 'Dayo Balogun', 'Efe Eze', 'Funke Ojo', 'Gbenga Lawal', 'Halima Musa', 'Ife Bello', 'Jide Umar', 'Kemi Ayoola', 'Lara Obi'][i] }); joined.push(j); await sleep(900); } };
   const othersP = others();
   // 3. Lecturer starts the mic: the TTS lecture now plays as the room audio
-  await sleep(2000);
+  await sleep(1500);
   await click(d, d.locator('button:has-text("Record Audio")'), 800);
   const audioT = Date.now(); M.mark('audio_start');
   const at = () => (Date.now() - audioT) / 1000;
   const waitAt = async (s) => { while (at() < s) await sleep(200); };
+  // the student makes the captions easier to read while the lecture begins
+  await sleep(2500); M.mark('access_start');
+  await tap(p.getByRole('button', { name: /^\s*accessibility/i }).first(), 1800);
+  await tap(p.locator('[aria-labelledby="font-size-label"] button').nth(2), 1500);
+  await tap(p.locator('.drawer-content button[aria-pressed]').last(), 2500);
+  await tap(p.getByRole('button', { name: /close/i }).first(), 1200); M.mark('access_end');
   await othersP;
   // heartbeats for everyone so attendance scores are real
   const presence = [1, 1, 0.9, 0.8, 0.7, 0.6, 1, 0.4, 0.85, 0.95];
@@ -75,7 +87,7 @@ const { BASE, sleep, api, launch, desktop, phone, click, tap, type, marker } = r
   // lecturer closes it
   await click(d, d.locator('.live-poll-panel button:has-text("Close"), .live-poll-panel button:has-text("CLOSE")').first(), 1500).catch(() => console.log('no close button'));
   // lecture ends: audio finished + last captions flushed
-  await waitAt(150); M.mark('audio_done');
+  await waitAt(138); M.mark("audio_done");
   await d.evaluate(() => window.scrollTo({ top: 0 })); await sleep(800);
   await click(d, d.locator('button:has-text("END SESSION")'), 2000); M.mark('end_click');
   const confirm = d.getByRole('button', { name: /end session|confirm|yes/i });

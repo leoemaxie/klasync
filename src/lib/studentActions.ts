@@ -80,7 +80,9 @@ export async function refreshCaptions(state: SessionState) {
 
 export function ingestCaption(
   state: SessionState,
-  caption: { text: string; speaker?: string; timestamp?: string }
+  caption: { text: string; speaker?: string; timestamp?: string },
+  /** Set false for captions that already came from the server. */
+  publish = true
 ) {
   if (!caption.text || !caption.text.trim()) return;
   const text = caption.text.trim();
@@ -93,7 +95,7 @@ export function ingestCaption(
 
     // Broadcast caption to backend API & WebSocket subscribers
     const activeCode = state.session?.code || state.sessionCode;
-    if (activeCode) {
+    if (activeCode && publish) {
       void apiPublishCaption(activeCode, text).catch(() => {});
     }
   }

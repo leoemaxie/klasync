@@ -10,10 +10,12 @@ the cloud sandbox). Output is 24 kHz mono PCM wrapped as WAV.
 import base64, json, os, subprocess, sys, time, urllib.request, wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# The lecturer reads long passages (3.8 handles those well); short narration lines
-# need the 3.1 preview, which stops cleanly instead of trailing off.
-LECTURE_MODEL = os.environ.get("LECTURE_TTS_MODEL", "gemini-3.8-flash-tts")
+# gemini-3.8-flash-tts pads short lines with noise, so both voices use the 3.1 preview.
+LECTURE_MODEL = os.environ.get("LECTURE_TTS_MODEL", "gemini-3.1-flash-tts-preview")
 NARRATION_MODEL = os.environ.get("NARRATION_TTS_MODEL", "gemini-3.1-flash-tts-preview")
+
+
+LECTURE_STYLE = "Accent: Nigerian English, as spoken by a university lecturer in Nigeria. Tone: calm, clear and authoritative, at a natural measured teaching pace.\n\nTranscript:"
 
 
 def endpoint(model):
@@ -51,7 +53,7 @@ def speak(text, voice, out_wav, style="", model=None, retries=4):
 def lecture():
     text = open(os.path.join(HERE, "lecture.txt")).read().strip()
     out = os.path.join(HERE, "lecture.wav")
-    secs = speak(text, "Charon", out, "Read this as a calm, clear university lecturer teaching a class, at a natural measured pace:", LECTURE_MODEL)
+    secs = speak(text, "Charon", out, LECTURE_STYLE, LECTURE_MODEL)
     # Chrome's fake microphone wants 48 kHz.
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", out, "-ar", "48000", "-ac", "1", os.path.join(HERE, "lecture48.wav")], check=True)
     print(f"lecture: {secs:.1f}s")
@@ -69,12 +71,13 @@ def narration():
         # The safety filter now and then rejects harmless lines for a given prompt
         # wording; fall back to simpler accent wording rather than failing.
         styles = [cfg["style"], "Say in a warm Nigerian English accent:", "Say in a Nigerian English accent:"]
-        for attempt in range(6):
+        for attempt in range(8):
             style = styles[min(attempt // 2, len(styles) - 1)]
             try:
                 secs = speak(text, cfg["voice"], out, style, NARRATION_MODEL, retries=1)
             except Exception as error:
                 print(f"{key}: attempt {attempt + 1} failed ({error}), trying again")
+                time.sleep(20 if "429" in str(error) else 3)  # back off when rate limited
                 continue
             if secs <= limit:
                 break
